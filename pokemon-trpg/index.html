@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ポケモンTRPG KP補助ツール</title>
+<meta name="description" content="へにポケ ポケモンTRPGルールブック(ver.β2.4)準拠のKP補助ツール。初代(赤緑)151匹・165技を収録。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: 卓の横に置く「計器盤」。左に行動パネル(計算)、右に場のポケモンカード。ドット書体は見出しと数値の要所だけ。 */
+:root{
+  --bg:#eef1ea; --surface:#fbfcf8; --sunk:#e3e8df; --ink:#1b211d; --muted:#5b665f; --line:#cfd6cc;
+  --accent:#c8372d; --accent-ink:#fff; --ally:#2c6fb7; --enemy:#b8452f;
+  --ok:#2f8f46; --warn:#c98a00; --bad:#cf3c1d; --focus:#2c6fb7;
+  --f-disp:"DotGothic16","Zen Kaku Gothic New",system-ui,sans-serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --f-num:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:8px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121614; --surface:#1a1f1c; --sunk:#232a26; --ink:#e6ebe4; --muted:#9aa69e; --line:#333d37;
+  --accent:#ef5a4c; --accent-ink:#1a0d0b; --ally:#6ea8ea; --enemy:#ec7a60;
+  --ok:#5cc275; --warn:#e3b33b; --bad:#f06a4b; --focus:#6ea8ea; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121614; --surface:#1a1f1c; --sunk:#232a26; --ink:#e6ebe4; --muted:#9aa69e; --line:#333d37;
+  --accent:#ef5a4c; --accent-ink:#1a0d0b; --ally:#6ea8ea; --enemy:#ec7a60;
+  --ok:#5cc275; --warn:#e3b33b; --bad:#f06a4b; --focus:#6ea8ea; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.55}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.wrap{max-width:1400px;margin:0 auto;padding-inline:16px;padding-block:14px 60px}
+header.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin-bottom:12px}
+.brand{font-family:var(--f-disp);font-size:22px;letter-spacing:.04em;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
+@media (max-width:520px){.brand{font-size:18px}}
+.brand .ball{width:22px;height:22px;border-radius:50%;border:2px solid var(--ink);background:linear-gradient(var(--accent) 0 44%,var(--ink) 44% 56%,var(--surface) 56%);position:relative;flex:none}
+.brand .ball::after{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--surface);border:2px solid var(--ink)}
+.brand small{font-family:var(--f-body);font-size:12px;color:var(--muted);letter-spacing:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
+.chip{font-size:12px;padding:3px 9px;border-radius:99px;background:var(--sunk);color:var(--muted);border:1px solid var(--line)}
+.chip b{color:var(--ink);font-weight:700}
+nav.tabs{display:flex;gap:4px;border-bottom:2px solid var(--ink);margin-bottom:14px;overflow-x:auto}
+nav.tabs button{background:none;border:0;padding:8px 14px;font-family:var(--f-disp);font-size:15px;color:var(--muted);cursor:pointer;border-radius:6px 6px 0 0;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.grid-battle{display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:980px){.grid-battle{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.panel h2{font-family:var(--f-disp);font-weight:400;font-size:17px;margin:0 0 10px;display:flex;align-items:center;gap:8px;text-wrap:balance}
+.panel h2 .sub{font-family:var(--f-body);font-size:12px;color:var(--muted)}
+h3{font-size:13px;margin:12px 0 6px;color:var(--muted);letter-spacing:.06em}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.field{display:flex;flex-direction:column;gap:3px;min-width:0}
+.field>span{font-size:11px;color:var(--muted);letter-spacing:.05em}
+input[type=number],input[type=text],select,textarea{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 7px;min-width:0}
+input[type=number]{width:64px;font-family:var(--f-num)}
+input.w4{width:52px} input.w3{width:46px}
+textarea{width:100%;font-family:var(--f-num);font-size:12px}
+.btn{border:1px solid var(--line);background:var(--sunk);padding:5px 10px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--ink)}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.btn.sm{padding:2px 7px;font-size:12px}
+.btn.ghost{background:none}
+.btn.danger{color:var(--bad)}
+.dice{display:inline-flex;align-items:center;gap:2px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:1px 2px 1px 6px}
+.dice label{font-size:11px;color:var(--muted);white-space:nowrap}
+.dice input{width:46px;border:0;background:none;text-align:right;font-family:var(--f-num);font-weight:700;padding:3px 2px}
+.dice button{border:0;background:none;cursor:pointer;padding:2px 4px;font-size:15px;line-height:1}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)} .small{font-size:12px}
+.pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:99px;border:1px solid currentColor;white-space:nowrap}
+.pill.ok{color:var(--ok)} .pill.bad{color:var(--bad)} .pill.warn{color:var(--warn)} .pill.ally{color:var(--ally)} .pill.enemy{color:var(--enemy)}
+.type{display:inline-block;font-size:11px;padding:1px 7px;border-radius:4px;color:#fff;font-weight:700;letter-spacing:.03em;white-space:nowrap}
+.type.dk{color:#1b1b1b}
+.cls{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 5px}
+/* battle cards */
+.side-h{font-family:var(--f-disp);font-size:15px;display:flex;align-items:center;gap:8px;margin:0 0 8px}
+.side-h::before{content:"";width:10px;height:10px;border-radius:2px;background:currentColor}
+.side-h.ally{color:var(--ally)} .side-h.enemy{color:var(--enemy)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-bottom:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card.ally{border-top:3px solid var(--ally)} .card.enemy{border-top:3px solid var(--enemy)}
+.card.fainted{opacity:.6}
+.card-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.card-h .nm{font-weight:700;font-size:16px}
+.card-h .sp{font-size:12px;color:var(--muted)}
+.hpbar{height:8px;background:var(--sunk);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+.hpbar i{display:block;height:100%;background:var(--ok);transition:width .25s}
+.hpbar i.y{background:var(--warn)} .hpbar i.r{background:var(--bad)}
+@media (prefers-reduced-motion:reduce){.hpbar i{transition:none}}
+.hpline{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.hpline .big{font-family:var(--f-disp);font-size:20px}
+.bgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:2px;text-align:center}
+.bgrid div{background:var(--sunk);border-radius:4px;padding:2px 0}
+.bgrid small{display:block;font-size:10px;color:var(--muted)}
+.bgrid b{font-family:var(--f-num);font-size:14px}
+.bgrid b.up{color:var(--ok)} .bgrid b.dn{color:var(--bad)}
+.ranks{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}
+.rk{display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1px solid var(--line);border-radius:4px;font-size:11px;padding:0 2px}
+.rk button{border:0;background:none;cursor:pointer;width:18px;padding:0;font-size:13px;color:var(--muted)}
+.rk b{font-family:var(--f-num);min-width:18px;text-align:center}
+.rk b.up{color:var(--ok)} .rk b.dn{color:var(--bad)}
+.mvlist{display:flex;flex-direction:column;gap:3px}
+.mv{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center;font-size:13px;background:var(--bg);border-radius:4px;padding:2px 6px}
+.mv .pp{font-family:var(--f-num);font-size:12px}
+.mv .pp.zero{color:var(--bad)}
+details.more summary{cursor:pointer;font-size:12px;color:var(--muted)}
+/* action panel */
+.res{border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--bg);display:flex;flex-direction:column;gap:6px}
+.res.miss{opacity:.7}
+.res .tt{font-weight:700;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.dmg{font-family:var(--f-disp);font-size:30px;line-height:1;color:var(--accent)}
+.calc{font-family:var(--f-num);font-size:12px;color:var(--muted);word-break:break-all}
+.note{font-size:12px;border-left:3px solid var(--warn);padding:4px 8px;background:var(--sunk);border-radius:0 4px 4px 0}
+.note.ok{border-color:var(--ok)} .note.bad{border-color:var(--bad)}
+.order{display:flex;flex-direction:column;gap:3px;counter-reset:o}
+.order .o{display:grid;grid-template-columns:22px 1fr auto auto;gap:6px;align-items:center;background:var(--bg);border-radius:4px;padding:3px 6px;font-size:13px}
+.order .o::before{counter-increment:o;content:counter(o);font-family:var(--f-disp);color:var(--muted)}
+.order .o.tie{outline:1px dashed var(--warn)}
+.log{max-height:360px;overflow:auto;display:flex;flex-direction:column;gap:4px;font-size:12px}
+.log div{padding:4px 6px;border-bottom:1px solid var(--line);white-space:pre-wrap;word-break:break-all}
+.log .t{color:var(--muted);font-family:var(--f-num);margin-right:6px}
+table.tbl{border-collapse:collapse;width:100%;font-size:13px}
+table.tbl th,table.tbl td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top}
+table.tbl th{white-space:nowrap;font-size:11px;color:var(--muted);font-weight:500;position:sticky;top:0;background:var(--surface)}
+table.tbl td.n{font-family:var(--f-num);text-align:right;font-variant-numeric:tabular-nums}
+.tblwrap{overflow:auto;max-height:560px;border:1px solid var(--line);border-radius:6px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:900px){.two{grid-template-columns:minmax(0,1fr)}}
+.roster{display:flex;flex-direction:column;gap:4px}
+.roster button.item{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 8px;cursor:pointer}
+.roster button.item[aria-current="true"]{border-color:var(--ink);background:var(--sunk)}
+.prose{max-width:70ch}
+.prose p,.prose li{margin:.3em 0}
+.prose h3{color:var(--ink);font-size:14px;margin-top:16px}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;font-size:13px;z-index:9;pointer-events:none}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:13px}
+.kv dt{color:var(--muted)} .kv dd{margin:0}
+.warnrow td{background:color-mix(in srgb,var(--warn) 12%,transparent)}
+.big-t{font-family:var(--f-disp);font-size:26px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><span class="ball" aria-hidden="true"></span>ポケモンTRPG KP補助ツール <small>ルールブック ver.β2.4 準拠</small></div>
+    <div class="chips" id="chips"></div>
+  </header>
+  <nav class="tabs" role="tablist" id="tabs">
+    <button role="tab" data-tab="battle" aria-selected="true">戦闘</button>
+    <button role="tab" data-tab="roster" aria-selected="false">ポケモン登録</button>
+    <button role="tab" data-tab="capture" aria-selected="false">捕獲・逃走</button>
+    <button role="tab" data-tab="ref" aria-selected="false">資料</button>
+    <button role="tab" data-tab="settings" aria-selected="false">設定・保存</button>
+  </nav>
+  <main id="main"></main>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const DATA = {"moves":[{"id":1,"k":"pound","n":"はたく","t":"nor","c":"p","pw":40,"acc":100,"pp":35,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"nor","c":"p","pw":40,"acc":100,"pp":35,"pri":0}},{"id":2,"k":"karate-chop","n":"からてチョップ","t":"nor","c":"p","pw":50,"acc":100,"pp":25,"pri":0,"e":"急所ランク+1","sec":[],"f":{"crit":1},"m":{"t":"fig","c":"p","pw":50,"acc":100,"pp":25,"pri":0}},{"id":3,"k":"double-slap","n":"おうふくビンタ","t":"nor","c":"p","pw":15,"acc":85,"pp":10,"pri":0,"e":"連続技(2〜5回)","sec":[],"f":{"multi":"2-5"},"m":{"t":"nor","c":"p","pw":15,"acc":85,"pp":10,"pri":0}},{"id":4,"k":"comet-punch","n":"れんぞくパンチ","t":"nor","c":"p","pw":18,"acc":85,"pp":15,"pri":0,"e":"連続技(2〜5回)","sec":[],"f":{"multi":"2-5"},"m":{"t":"nor","c":"p","pw":18,"acc":85,"pp":15,"pri":0}},{"id":5,"k":"mega-punch","n":"メガトンパンチ","t":"nor","c":"p","pw":80,"acc":85,"pp":20,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"nor","c":"p","pw":80,"acc":85,"pp":20,"pri":0}},{"id":6,"k":"pay-day","n":"ネコにこばん","t":"nor","c":"p","pw":40,"acc":100,"pp":20,"pri":0,"e":"戦闘後にお金が手に入る(GM裁量)","sec":[],"f":{},"m":{"t":"nor","c":"p","pw":40,"acc":100,"pp":20,"pri":0}},{"id":7,"k":"fire-punch","n":"ほのおのパンチ","t":"fir","c":"s","pw":75,"acc":100,"pp":15,"pri":0,"e":"1割で相手を火傷","sec":[{"k":"brn","ch":10,"tg":"foe"}],"f":{},"m":{"t":"fir","c":"p","pw":75,"acc":100,"pp":15,"pri":0}},{"id":8,"k":"ice-punch","n":"れいとうパンチ","t":"ice","c":"s","pw":75,"acc":100,"pp":15,"pri":0,"e":"1割で相手を氷","sec":[{"k":"frz","ch":10,"tg":"foe"}],"f":{},"m":{"t":"ice","c":"p","pw":75,"acc":100,"pp":15,"pri":0}},{"id":9,"k":"thunder-punch","n":"かみなりパンチ","t":"ele","c":"s","pw":75,"acc":100,"pp":15,"pri":0,"e":"1割で相手を麻痺","sec":[{"k":"par","ch":10,"tg":"foe"}],"f":{},"m":{"t":"ele","c":"p","pw":75,"acc":100,"pp":15,"pri":0}},{"id":10,"k":"scratch","n":"ひっかく","t":"nor","c":"p","pw":40,"acc":100,"pp":35,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"nor","c":"p","pw":40,"acc":100,"pp":35,"pri":0}},{"id":11,"k":"vice-grip","n":"はさむ","t":"nor","c":"p","pw":55,"acc":100,"pp":30,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"nor","c":"p","pw":55,"acc":100,"pp":30,"pri":0}},{"id":12,"k":"guillotine","n":"ハサミギロチン","t":"nor","c":"p","pw":null,"acc":30,"pp":5,"pri":0,"e":"一撃必殺。命中すれば相手は瀕死","sec":[],"f":{"ohko":1},"m":{"t":"nor","c":"p","pw":null,"acc":30,"pp":5,"pri":0}},{"id":13,"k":"razor-wind","n":"かまいたち","t":"nor","c":"p","pw":80,"acc":75,"pp":10,"pri":0,"e":"1ターン目に溜め、2ターン目に攻撃","sec":[],"f":{"charge":1},"m":{"t":"nor","c":"s","pw":80,"acc":100,"pp":10,"pri":0,"e":"1ターン目に溜め、2ターン目に攻撃。急所ランク+1","sec":[],"f":{"charge":1,"crit":1}}},{"id":14,"k":"swords-dance","n":"つるぎのまい","t":"nor","c":"x","pw":null,"acc":null,"pp":30,"pri":0,"e":"自分の攻撃ランク+2","sec":[{"k":"stat","ch":100,"tg":"self","st":{"atk":2}}],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":null,"pp":20,"pri":0}},{"id":15,"k":"cut","n":"いあいぎり","t":"nor","c":"p","pw":50,"acc":95,"pp":30,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"nor","c":"p","pw":50,"acc":95,"pp":30,"pri":0}},{"id":16,"k":"gust","n":"かぜおこし","t":"nor","c":"p","pw":40,"acc":100,"pp":35,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"fly","c":"s","pw":40,"acc":100,"pp":35,"pri":0}},{"id":17,"k":"wing-attack","n":"つばさでうつ","t":"fly","c":"p","pw":35,"acc":100,"pp":35,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"fly","c":"p","pw":60,"acc":100,"pp":35,"pri":0}},{"id":18,"k":"whirlwind","n":"ふきとばし","t":"nor","c":"x","pw":null,"acc":85,"pp":20,"pri":0,"e":"戦闘強制終了技。野生戦では終了できない場合あり","sec":[],"f":{"end":1},"m":{"t":"nor","c":"x","pw":null,"acc":null,"pp":20,"pri":-6}},{"id":19,"k":"fly","n":"そらをとぶ","t":"fly","c":"p","pw":70,"acc":95,"pp":15,"pri":0,"e":"1ターン目に空へ飛び、2ターン目に攻撃","sec":[],"f":{"charge":1},"m":{"t":"fly","c":"p","pw":90,"acc":95,"pp":15,"pri":0}},{"id":20,"k":"bind","n":"しめつける","t":"nor","c":"p","pw":15,"acc":75,"pp":20,"pri":0,"e":"2〜5ターンの間、相手を締め付け行動を封じる(GM裁量)","sec":[],"f":{"trap":1},"m":{"t":"nor","c":"p","pw":15,"acc":85,"pp":20,"pri":0}},{"id":21,"k":"slam","n":"たたきつける","t":"nor","c":"p","pw":80,"acc":75,"pp":20,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"nor","c":"p","pw":80,"acc":75,"pp":20,"pri":0}},{"id":22,"k":"vine-whip","n":"つるのムチ","t":"gra","c":"s","pw":35,"acc":100,"pp":10,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"gra","c":"p","pw":45,"acc":100,"pp":25,"pri":0}},{"id":23,"k":"stomp","n":"ふみつけ","t":"nor","c":"p","pw":65,"acc":100,"pp":20,"pri":0,"e":"3割で相手をひるませる","sec":[{"k":"flinch","ch":30,"tg":"foe"}],"f":{},"m":{"t":"nor","c":"p","pw":65,"acc":100,"pp":20,"pri":0}},{"id":24,"k":"double-kick","n":"にどげり","t":"fig","c":"p","pw":30,"acc":100,"pp":30,"pri":0,"e":"連続技(2回)","sec":[],"f":{"multi":"2"},"m":{"t":"fig","c":"p","pw":30,"acc":100,"pp":30,"pri":0}},{"id":25,"k":"mega-kick","n":"メガトンキック","t":"nor","c":"p","pw":120,"acc":75,"pp":5,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"nor","c":"p","pw":120,"acc":75,"pp":5,"pri":0}},{"id":26,"k":"jump-kick","n":"とびげり","t":"fig","c":"p","pw":70,"acc":95,"pp":25,"pri":0,"e":"外すと自分がダメージを受ける(GM裁量)","sec":[],"f":{},"m":{"t":"fig","c":"p","pw":100,"acc":95,"pp":10,"pri":0}},{"id":27,"k":"rolling-kick","n":"まわしげり","t":"fig","c":"p","pw":60,"acc":85,"pp":15,"pri":0,"e":"3割で相手をひるませる","sec":[{"k":"flinch","ch":30,"tg":"foe"}],"f":{},"m":{"t":"fig","c":"p","pw":60,"acc":85,"pp":15,"pri":0}},{"id":28,"k":"sand-attack","n":"すなかけ","t":"nor","c":"x","pw":null,"acc":100,"pp":15,"pri":0,"e":"相手の命中ランク-1","sec":[{"k":"stat","ch":100,"tg":"foe","st":{"acc":-1}}],"f":{},"m":{"t":"gro","c":"x","pw":null,"acc":100,"pp":15,"pri":0}},{"id":29,"k":"headbutt","n":"ずつき","t":"nor","c":"p","pw":70,"acc":100,"pp":15,"pri":0,"e":"3割で相手をひるませる","sec":[{"k":"flinch","ch":30,"tg":"foe"}],"f":{},"m":{"t":"nor","c":"p","pw":70,"acc":100,"pp":15,"pri":0}},{"id":30,"k":"horn-attack","n":"つのでつく","t":"nor","c":"p","pw":65,"acc":100,"pp":25,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"nor","c":"p","pw":65,"acc":100,"pp":25,"pri":0}},{"id":31,"k":"fury-attack","n":"みだれづき","t":"nor","c":"p","pw":15,"acc":85,"pp":20,"pri":0,"e":"連続技(2〜5回)","sec":[],"f":{"multi":"2-5"},"m":{"t":"nor","c":"p","pw":15,"acc":85,"pp":20,"pri":0}},{"id":32,"k":"horn-drill","n":"つのドリル","t":"nor","c":"p","pw":null,"acc":30,"pp":5,"pri":0,"e":"一撃必殺。命中すれば相手は瀕死","sec":[],"f":{"ohko":1},"m":{"t":"nor","c":"p","pw":null,"acc":30,"pp":5,"pri":0}},{"id":33,"k":"tackle","n":"たいあたり","t":"nor","c":"p","pw":35,"acc":95,"pp":35,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"nor","c":"p","pw":40,"acc":100,"pp":35,"pri":0}},{"id":34,"k":"body-slam","n":"のしかかり","t":"nor","c":"p","pw":85,"acc":100,"pp":15,"pri":0,"e":"3割で相手を麻痺","sec":[{"k":"par","ch":30,"tg":"foe"}],"f":{},"m":{"t":"nor","c":"p","pw":85,"acc":100,"pp":15,"pri":0}},{"id":35,"k":"wrap","n":"まきつく","t":"nor","c":"p","pw":15,"acc":85,"pp":20,"pri":0,"e":"2〜5ターンの間、相手を締め付け行動を封じる(GM裁量)","sec":[],"f":{"trap":1},"m":{"t":"nor","c":"p","pw":15,"acc":90,"pp":20,"pri":0}},{"id":36,"k":"take-down","n":"とっしん","t":"nor","c":"p","pw":90,"acc":85,"pp":20,"pri":0,"e":"与えたダメージの1/4を自分も受ける","sec":[],"f":{"recoil":4},"m":{"t":"nor","c":"p","pw":90,"acc":85,"pp":20,"pri":0,"e":"与えたダメージの1/4を自分も受ける","sec":[]}},{"id":37,"k":"thrash","n":"あばれる","t":"nor","c":"p","pw":90,"acc":100,"pp":20,"pri":0,"e":"自身混乱技。<1d6>で1〜3:2ターン/4〜6:3ターン暴れた後、自分が混乱","sec":[],"f":{"rampage":1},"m":{"t":"nor","c":"p","pw":120,"acc":100,"pp":10,"pri":0}},{"id":38,"k":"double-edge","n":"すてみタックル","t":"nor","c":"p","pw":100,"acc":100,"pp":15,"pri":0,"e":"与えたダメージの1/4を自分も受ける","sec":[],"f":{"recoil":4},"m":{"t":"nor","c":"p","pw":120,"acc":100,"pp":15,"pri":0,"e":"与えたダメージの1/3を自分も受ける","sec":[],"f":{"recoil":3}}},{"id":39,"k":"tail-whip","n":"しっぽをふる","t":"nor","c":"x","pw":null,"acc":100,"pp":30,"pri":0,"e":"相手の防御ランク-1","sec":[{"k":"stat","ch":100,"tg":"foe","st":{"def":-1}}],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":100,"pp":30,"pri":0}},{"id":40,"k":"poison-sting","n":"どくばり","t":"poi","c":"p","pw":15,"acc":100,"pp":35,"pri":0,"e":"2割で相手を毒","sec":[{"k":"psn","ch":20,"tg":"foe"}],"f":{},"m":{"t":"poi","c":"p","pw":15,"acc":100,"pp":35,"pri":0,"e":"3割で相手を毒","sec":[{"k":"psn","ch":30,"tg":"foe"}]}},{"id":41,"k":"twineedle","n":"ダブルニードル","t":"bug","c":"p","pw":25,"acc":100,"pp":20,"pri":0,"e":"連続技(2回)。2割で相手を毒","sec":[{"k":"psn","ch":20,"tg":"foe"}],"f":{"multi":"2"},"m":{"t":"bug","c":"p","pw":25,"acc":100,"pp":20,"pri":0,"e":"連続技(2回)。2割で相手を毒","sec":[{"k":"psn","ch":20,"tg":"foe"}]}},{"id":42,"k":"pin-missile","n":"ミサイルばり","t":"bug","c":"p","pw":14,"acc":85,"pp":20,"pri":0,"e":"連続技(2〜5回)","sec":[],"f":{"multi":"2-5"},"m":{"t":"bug","c":"p","pw":25,"acc":95,"pp":20,"pri":0}},{"id":43,"k":"leer","n":"にらみつける","t":"nor","c":"x","pw":null,"acc":100,"pp":30,"pri":0,"e":"相手の防御ランク-1","sec":[{"k":"stat","ch":100,"tg":"foe","st":{"def":-1}}],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":100,"pp":30,"pri":0}},{"id":44,"k":"bite","n":"かみつく","t":"nor","c":"p","pw":60,"acc":100,"pp":25,"pri":0,"e":"1割で相手をひるませる","sec":[{"k":"flinch","ch":10,"tg":"foe"}],"f":{},"m":{"t":"dar","c":"p","pw":60,"acc":100,"pp":25,"pri":0,"e":"3割で相手をひるませる","sec":[{"k":"flinch","ch":30,"tg":"foe"}]}},{"id":45,"k":"growl","n":"なきごえ","t":"nor","c":"x","pw":null,"acc":100,"pp":40,"pri":0,"e":"相手の攻撃ランク-1","sec":[{"k":"stat","ch":100,"tg":"foe","st":{"atk":-1}}],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":100,"pp":40,"pri":0}},{"id":46,"k":"roar","n":"ほえる","t":"nor","c":"x","pw":null,"acc":100,"pp":20,"pri":0,"e":"戦闘強制終了技。野生戦では終了できない場合あり","sec":[],"f":{"end":1},"m":{"t":"nor","c":"x","pw":null,"acc":null,"pp":20,"pri":-6}},{"id":47,"k":"sing","n":"うたう","t":"nor","c":"x","pw":null,"acc":55,"pp":15,"pri":0,"e":"相手を眠り状態にする","sec":[{"k":"slp","ch":100,"tg":"foe"}],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":55,"pp":15,"pri":0}},{"id":48,"k":"supersonic","n":"ちょうおんぱ","t":"nor","c":"x","pw":null,"acc":55,"pp":20,"pri":0,"e":"相手を混乱させる","sec":[{"k":"conf","ch":100,"tg":"foe"}],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":55,"pp":20,"pri":0}},{"id":49,"k":"sonic-boom","n":"ソニックブーム","t":"nor","c":"p","pw":null,"acc":90,"pp":20,"pri":0,"e":"ダメージ固定技。威力20として計算","sec":[],"f":{"fixed":20},"m":{"t":"nor","c":"s","pw":null,"acc":90,"pp":20,"pri":0}},{"id":50,"k":"disable","n":"かなしばり","t":"nor","c":"x","pw":null,"acc":55,"pp":20,"pri":0,"e":"相手の技1つを一定ターン使えなくする","sec":[],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":100,"pp":20,"pri":0}},{"id":51,"k":"acid","n":"ようかいえき","t":"poi","c":"p","pw":40,"acc":100,"pp":30,"pri":0,"e":"約3割(33%)で相手の防御ランク-1","sec":[{"k":"stat","ch":33,"tg":"foe","st":{"def":-1}}],"f":{},"m":{"t":"poi","c":"s","pw":40,"acc":100,"pp":30,"pri":0,"e":"1割で相手の特防ランク-1","sec":[{"k":"stat","ch":10,"tg":"foe","st":{"spd":-1}}]}},{"id":52,"k":"ember","n":"ひのこ","t":"fir","c":"s","pw":40,"acc":100,"pp":25,"pri":0,"e":"1割で相手を火傷","sec":[{"k":"brn","ch":10,"tg":"foe"}],"f":{},"m":{"t":"fir","c":"s","pw":40,"acc":100,"pp":25,"pri":0}},{"id":53,"k":"flamethrower","n":"かえんほうしゃ","t":"fir","c":"s","pw":95,"acc":100,"pp":15,"pri":0,"e":"1割で相手を火傷","sec":[{"k":"brn","ch":10,"tg":"foe"}],"f":{},"m":{"t":"fir","c":"s","pw":90,"acc":100,"pp":15,"pri":0}},{"id":54,"k":"mist","n":"しろいきり","t":"ice","c":"x","pw":null,"acc":null,"pp":30,"pri":0,"e":"相手から能力を下げられなくなる","sec":[],"f":{},"m":{"t":"ice","c":"x","pw":null,"acc":null,"pp":30,"pri":0}},{"id":55,"k":"water-gun","n":"みずでっぽう","t":"wat","c":"s","pw":40,"acc":100,"pp":25,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"wat","c":"s","pw":40,"acc":100,"pp":25,"pri":0}},{"id":56,"k":"hydro-pump","n":"ハイドロポンプ","t":"wat","c":"s","pw":120,"acc":80,"pp":5,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"wat","c":"s","pw":110,"acc":80,"pp":5,"pri":0}},{"id":57,"k":"surf","n":"なみのり","t":"wat","c":"s","pw":95,"acc":100,"pp":15,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"wat","c":"s","pw":90,"acc":100,"pp":15,"pri":0}},{"id":58,"k":"ice-beam","n":"れいとうビーム","t":"ice","c":"s","pw":95,"acc":100,"pp":10,"pri":0,"e":"1割で相手を氷","sec":[{"k":"frz","ch":10,"tg":"foe"}],"f":{},"m":{"t":"ice","c":"s","pw":90,"acc":100,"pp":10,"pri":0}},{"id":59,"k":"blizzard","n":"ふぶき","t":"ice","c":"s","pw":120,"acc":90,"pp":5,"pri":0,"e":"1割で相手を氷","sec":[{"k":"frz","ch":10,"tg":"foe"}],"f":{},"m":{"t":"ice","c":"s","pw":110,"acc":70,"pp":5,"pri":0}},{"id":60,"k":"psybeam","n":"サイケこうせん","t":"psy","c":"s","pw":65,"acc":100,"pp":20,"pri":0,"e":"1割で相手を混乱","sec":[{"k":"conf","ch":10,"tg":"foe"}],"f":{},"m":{"t":"psy","c":"s","pw":65,"acc":100,"pp":20,"pri":0}},{"id":61,"k":"bubble-beam","n":"バブルこうせん","t":"wat","c":"s","pw":65,"acc":100,"pp":20,"pri":0,"e":"約3割(33%)で相手の敏捷ランク-1","sec":[{"k":"stat","ch":33,"tg":"foe","st":{"spe":-1}}],"f":{},"m":{"t":"wat","c":"s","pw":65,"acc":100,"pp":20,"pri":0,"e":"1割で相手の敏捷ランク-1","sec":[{"k":"stat","ch":10,"tg":"foe","st":{"spe":-1}}]}},{"id":62,"k":"aurora-beam","n":"オーロラビーム","t":"ice","c":"s","pw":65,"acc":100,"pp":20,"pri":0,"e":"約3割(33%)で相手の攻撃ランク-1","sec":[{"k":"stat","ch":33,"tg":"foe","st":{"atk":-1}}],"f":{},"m":{"t":"ice","c":"s","pw":65,"acc":100,"pp":20,"pri":0,"e":"1割で相手の攻撃ランク-1","sec":[{"k":"stat","ch":10,"tg":"foe","st":{"atk":-1}}]}},{"id":63,"k":"hyper-beam","n":"はかいこうせん","t":"nor","c":"p","pw":150,"acc":90,"pp":5,"pri":0,"e":"使用後、次のターン動けない(相手を倒した場合を除く)","sec":[],"f":{"recharge":1},"m":{"t":"nor","c":"s","pw":150,"acc":90,"pp":5,"pri":0}},{"id":64,"k":"peck","n":"つつく","t":"fly","c":"p","pw":35,"acc":100,"pp":35,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"fly","c":"p","pw":35,"acc":100,"pp":35,"pri":0}},{"id":65,"k":"drill-peck","n":"ドリルくちばし","t":"fly","c":"p","pw":80,"acc":100,"pp":20,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"fly","c":"p","pw":80,"acc":100,"pp":20,"pri":0}},{"id":66,"k":"submission","n":"じごくぐるま","t":"fig","c":"p","pw":80,"acc":80,"pp":25,"pri":0,"e":"与えたダメージの1/4を自分も受ける","sec":[],"f":{"recoil":4},"m":{"t":"fig","c":"p","pw":80,"acc":80,"pp":20,"pri":0,"e":"与えたダメージの1/4を自分も受ける","sec":[]}},{"id":67,"k":"low-kick","n":"けたぐり","t":"fig","c":"p","pw":50,"acc":90,"pp":20,"pri":0,"e":"3割で相手をひるませる","sec":[{"k":"flinch","ch":30,"tg":"foe"}],"f":{},"m":{"t":"fig","c":"p","pw":null,"acc":100,"pp":20,"pri":0,"e":"相手の体重が重いほど威力が上がる(GM裁量で威力決定)","sec":[]}},{"id":68,"k":"counter","n":"カウンター","t":"fig","c":"p","pw":null,"acc":100,"pp":20,"pri":-1,"e":"受けたノーマル・かくとう技のダメージを倍にして返す(GM裁量)","sec":[],"f":{},"m":{"t":"fig","c":"p","pw":null,"acc":100,"pp":20,"pri":-5}},{"id":69,"k":"seismic-toss","n":"ちきゅうなげ","t":"fig","c":"p","pw":null,"acc":100,"pp":20,"pri":0,"e":"ダメージ固定技。威力50として計算","sec":[],"f":{"fixed":50},"m":{"t":"fig","c":"p","pw":null,"acc":100,"pp":20,"pri":0}},{"id":70,"k":"strength","n":"かいりき","t":"nor","c":"p","pw":80,"acc":100,"pp":15,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"nor","c":"p","pw":80,"acc":100,"pp":15,"pri":0}},{"id":71,"k":"absorb","n":"すいとる","t":"gra","c":"s","pw":20,"acc":100,"pp":20,"pri":0,"e":"与えたダメージの半分HPを回復","sec":[],"f":{"drain":2},"m":{"t":"gra","c":"s","pw":20,"acc":100,"pp":25,"pri":0}},{"id":72,"k":"mega-drain","n":"メガドレイン","t":"gra","c":"s","pw":40,"acc":100,"pp":10,"pri":0,"e":"与えたダメージの半分HPを回復","sec":[],"f":{"drain":2},"m":{"t":"gra","c":"s","pw":40,"acc":100,"pp":15,"pri":0}},{"id":73,"k":"leech-seed","n":"やどりぎのタネ","t":"gra","c":"x","pw":null,"acc":90,"pp":10,"pri":0,"e":"毎ターン相手の最大HPの1/16を奪う(くさタイプには無効)","sec":[{"k":"leech","ch":100,"tg":"foe"}],"f":{},"m":{"t":"gra","c":"x","pw":null,"acc":90,"pp":10,"pri":0,"e":"毎ターン相手の最大HPの1/8を奪う(くさタイプには無効)","sec":[{"k":"leech","ch":100,"tg":"foe"}]}},{"id":74,"k":"growth","n":"せいちょう","t":"nor","c":"x","pw":null,"acc":null,"pp":40,"pri":0,"e":"自分の特攻・特防ランク+1(初代:とくしゅ+1)","sec":[{"k":"stat","ch":100,"tg":"self","st":{"spa":1,"spd":1}}],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":null,"pp":20,"pri":0,"e":"自分の攻撃・特攻ランク+1","sec":[{"k":"stat","ch":100,"tg":"self","st":{"atk":1,"spa":1}}]}},{"id":75,"k":"razor-leaf","n":"はっぱカッター","t":"gra","c":"s","pw":55,"acc":95,"pp":25,"pri":0,"e":"急所ランク+1","sec":[],"f":{"crit":1},"m":{"t":"gra","c":"p","pw":55,"acc":95,"pp":25,"pri":0}},{"id":76,"k":"solar-beam","n":"ソーラービーム","t":"gra","c":"s","pw":120,"acc":100,"pp":10,"pri":0,"e":"1ターン目に溜め、2ターン目に攻撃","sec":[],"f":{"charge":1},"m":{"t":"gra","c":"s","pw":120,"acc":100,"pp":10,"pri":0}},{"id":77,"k":"poison-powder","n":"どくのこな","t":"poi","c":"x","pw":null,"acc":75,"pp":35,"pri":0,"e":"相手を毒状態にする","sec":[{"k":"psn","ch":100,"tg":"foe"}],"f":{},"m":{"t":"poi","c":"x","pw":null,"acc":75,"pp":35,"pri":0}},{"id":78,"k":"stun-spore","n":"しびれごな","t":"gra","c":"x","pw":null,"acc":75,"pp":30,"pri":0,"e":"相手を麻痺状態にする","sec":[{"k":"par","ch":100,"tg":"foe"}],"f":{},"m":{"t":"gra","c":"x","pw":null,"acc":75,"pp":30,"pri":0}},{"id":79,"k":"sleep-powder","n":"ねむりごな","t":"gra","c":"x","pw":null,"acc":75,"pp":15,"pri":0,"e":"相手を眠り状態にする","sec":[{"k":"slp","ch":100,"tg":"foe"}],"f":{},"m":{"t":"gra","c":"x","pw":null,"acc":75,"pp":15,"pri":0}},{"id":80,"k":"petal-dance","n":"はなびらのまい","t":"gra","c":"s","pw":70,"acc":100,"pp":20,"pri":0,"e":"自身混乱技。<1d6>で1〜3:2ターン/4〜6:3ターン暴れた後、自分が混乱","sec":[],"f":{"rampage":1},"m":{"t":"gra","c":"s","pw":120,"acc":100,"pp":10,"pri":0}},{"id":81,"k":"string-shot","n":"いとをはく","t":"bug","c":"x","pw":null,"acc":95,"pp":40,"pri":0,"e":"相手の敏捷ランク-1","sec":[{"k":"stat","ch":100,"tg":"foe","st":{"spe":-1}}],"f":{},"m":{"t":"bug","c":"x","pw":null,"acc":95,"pp":40,"pri":0}},{"id":82,"k":"dragon-rage","n":"りゅうのいかり","t":"dra","c":"s","pw":null,"acc":100,"pp":10,"pri":0,"e":"ダメージ固定技。威力40として計算","sec":[],"f":{"fixed":40},"m":{"t":"dra","c":"s","pw":null,"acc":100,"pp":10,"pri":0}},{"id":83,"k":"fire-spin","n":"ほのおのうず","t":"fir","c":"s","pw":15,"acc":70,"pp":15,"pri":0,"e":"2〜5ターンの間、相手を炎の渦に閉じ込める(GM裁量)","sec":[],"f":{"trap":1},"m":{"t":"fir","c":"s","pw":35,"acc":85,"pp":15,"pri":0}},{"id":84,"k":"thunder-shock","n":"でんきショック","t":"ele","c":"s","pw":40,"acc":100,"pp":30,"pri":0,"e":"1割で相手を麻痺","sec":[{"k":"par","ch":10,"tg":"foe"}],"f":{},"m":{"t":"ele","c":"s","pw":40,"acc":100,"pp":30,"pri":0}},{"id":85,"k":"thunderbolt","n":"１０まんボルト","t":"ele","c":"s","pw":95,"acc":100,"pp":15,"pri":0,"e":"1割で相手を麻痺","sec":[{"k":"par","ch":10,"tg":"foe"}],"f":{},"m":{"t":"ele","c":"s","pw":90,"acc":100,"pp":15,"pri":0}},{"id":86,"k":"thunder-wave","n":"でんじは","t":"ele","c":"x","pw":null,"acc":100,"pp":20,"pri":0,"e":"相手を麻痺状態にする(じめんタイプには無効)","sec":[{"k":"par","ch":100,"tg":"foe"}],"f":{},"m":{"t":"ele","c":"x","pw":null,"acc":90,"pp":20,"pri":0}},{"id":87,"k":"thunder","n":"かみなり","t":"ele","c":"s","pw":120,"acc":70,"pp":10,"pri":0,"e":"1割で相手を麻痺","sec":[{"k":"par","ch":10,"tg":"foe"}],"f":{},"m":{"t":"ele","c":"s","pw":110,"acc":70,"pp":10,"pri":0,"e":"3割で相手を麻痺","sec":[{"k":"par","ch":30,"tg":"foe"}]}},{"id":88,"k":"rock-throw","n":"いわおとし","t":"roc","c":"p","pw":50,"acc":65,"pp":15,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"roc","c":"p","pw":50,"acc":90,"pp":15,"pri":0}},{"id":89,"k":"earthquake","n":"じしん","t":"gro","c":"p","pw":100,"acc":100,"pp":10,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"gro","c":"p","pw":100,"acc":100,"pp":10,"pri":0}},{"id":90,"k":"fissure","n":"じわれ","t":"gro","c":"p","pw":null,"acc":30,"pp":5,"pri":0,"e":"一撃必殺。命中すれば相手は瀕死","sec":[],"f":{"ohko":1},"m":{"t":"gro","c":"p","pw":null,"acc":30,"pp":5,"pri":0}},{"id":91,"k":"dig","n":"あなをほる","t":"gro","c":"p","pw":100,"acc":100,"pp":10,"pri":0,"e":"1ターン目に地中へ潜り、2ターン目に攻撃","sec":[],"f":{"charge":1},"m":{"t":"gro","c":"p","pw":80,"acc":100,"pp":10,"pri":0}},{"id":92,"k":"toxic","n":"どくどく","t":"poi","c":"x","pw":null,"acc":85,"pp":10,"pri":0,"e":"相手を猛毒状態にする","sec":[{"k":"tox","ch":100,"tg":"foe"}],"f":{},"m":{"t":"poi","c":"x","pw":null,"acc":90,"pp":10,"pri":0}},{"id":93,"k":"confusion","n":"ねんりき","t":"psy","c":"s","pw":50,"acc":100,"pp":25,"pri":0,"e":"1割で相手を混乱","sec":[{"k":"conf","ch":10,"tg":"foe"}],"f":{},"m":{"t":"psy","c":"s","pw":50,"acc":100,"pp":25,"pri":0}},{"id":94,"k":"psychic","n":"サイコキネシス","t":"psy","c":"s","pw":90,"acc":100,"pp":10,"pri":0,"e":"約3割(33%)で相手の特攻・特防ランク-1(初代:とくしゅ-1)","sec":[{"k":"stat","ch":33,"tg":"foe","st":{"spa":-1,"spd":-1}}],"f":{},"m":{"t":"psy","c":"s","pw":90,"acc":100,"pp":10,"pri":0,"e":"1割で相手の特防ランク-1","sec":[{"k":"stat","ch":10,"tg":"foe","st":{"spd":-1}}]}},{"id":95,"k":"hypnosis","n":"さいみんじゅつ","t":"psy","c":"x","pw":null,"acc":60,"pp":20,"pri":0,"e":"相手を眠り状態にする","sec":[{"k":"slp","ch":100,"tg":"foe"}],"f":{},"m":{"t":"psy","c":"x","pw":null,"acc":60,"pp":20,"pri":0}},{"id":96,"k":"meditate","n":"ヨガのポーズ","t":"psy","c":"x","pw":null,"acc":null,"pp":40,"pri":0,"e":"自分の攻撃ランク+1","sec":[{"k":"stat","ch":100,"tg":"self","st":{"atk":1}}],"f":{},"m":{"t":"psy","c":"x","pw":null,"acc":null,"pp":40,"pri":0}},{"id":97,"k":"agility","n":"こうそくいどう","t":"psy","c":"x","pw":null,"acc":null,"pp":30,"pri":0,"e":"自分の敏捷ランク+2","sec":[{"k":"stat","ch":100,"tg":"self","st":{"spe":2}}],"f":{},"m":{"t":"psy","c":"x","pw":null,"acc":null,"pp":30,"pri":0}},{"id":98,"k":"quick-attack","n":"でんこうせっか","t":"nor","c":"p","pw":40,"acc":100,"pp":30,"pri":1,"e":"優先度+1","sec":[],"f":{},"m":{"t":"nor","c":"p","pw":40,"acc":100,"pp":30,"pri":1}},{"id":99,"k":"rage","n":"いかり","t":"nor","c":"p","pw":20,"acc":100,"pp":20,"pri":0,"e":"いかり状態になり、攻撃を受けるたび攻撃ランク+1(GM裁量)","sec":[],"f":{},"m":{"t":"nor","c":"p","pw":20,"acc":100,"pp":20,"pri":0}},{"id":100,"k":"teleport","n":"テレポート","t":"psy","c":"x","pw":null,"acc":null,"pp":20,"pri":0,"e":"戦闘強制終了技。野生戦では終了できない場合あり","sec":[],"f":{"end":1},"m":{"t":"psy","c":"x","pw":null,"acc":null,"pp":20,"pri":-6}},{"id":101,"k":"night-shade","n":"ナイトヘッド","t":"gho","c":"p","pw":null,"acc":100,"pp":15,"pri":0,"e":"ダメージ固定技。威力50として計算","sec":[],"f":{"fixed":50},"m":{"t":"gho","c":"s","pw":null,"acc":100,"pp":15,"pri":0}},{"id":102,"k":"mimic","n":"ものまね","t":"nor","c":"x","pw":null,"acc":null,"pp":10,"pri":0,"e":"相手の技を1つコピーする","sec":[],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":null,"pp":10,"pri":0}},{"id":103,"k":"screech","n":"いやなおと","t":"nor","c":"x","pw":null,"acc":85,"pp":40,"pri":0,"e":"相手の防御ランク-2","sec":[{"k":"stat","ch":100,"tg":"foe","st":{"def":-2}}],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":85,"pp":40,"pri":0}},{"id":104,"k":"double-team","n":"かげぶんしん","t":"nor","c":"x","pw":null,"acc":null,"pp":15,"pri":0,"e":"自分の回避ランク+1","sec":[{"k":"stat","ch":100,"tg":"self","st":{"eva":1}}],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":null,"pp":15,"pri":0}},{"id":105,"k":"recover","n":"じこさいせい","t":"nor","c":"x","pw":null,"acc":null,"pp":20,"pri":0,"e":"自分の最大HPの半分を回復","sec":[{"k":"heal","ch":100,"tg":"self"}],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":null,"pp":5,"pri":0}},{"id":106,"k":"harden","n":"かたくなる","t":"nor","c":"x","pw":null,"acc":null,"pp":30,"pri":0,"e":"自分の防御ランク+1","sec":[{"k":"stat","ch":100,"tg":"self","st":{"def":1}}],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":null,"pp":30,"pri":0}},{"id":107,"k":"minimize","n":"ちいさくなる","t":"nor","c":"x","pw":null,"acc":null,"pp":20,"pri":0,"e":"自分の回避ランク+1","sec":[{"k":"stat","ch":100,"tg":"self","st":{"eva":1}}],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":null,"pp":10,"pri":0}},{"id":108,"k":"smokescreen","n":"えんまく","t":"nor","c":"x","pw":null,"acc":100,"pp":20,"pri":0,"e":"相手の命中ランク-1","sec":[{"k":"stat","ch":100,"tg":"foe","st":{"acc":-1}}],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":100,"pp":20,"pri":0}},{"id":109,"k":"confuse-ray","n":"あやしいひかり","t":"gho","c":"x","pw":null,"acc":100,"pp":10,"pri":0,"e":"相手を混乱させる","sec":[{"k":"conf","ch":100,"tg":"foe"}],"f":{},"m":{"t":"gho","c":"x","pw":null,"acc":100,"pp":10,"pri":0}},{"id":110,"k":"withdraw","n":"からにこもる","t":"wat","c":"x","pw":null,"acc":null,"pp":40,"pri":0,"e":"自分の防御ランク+1","sec":[{"k":"stat","ch":100,"tg":"self","st":{"def":1}}],"f":{},"m":{"t":"wat","c":"x","pw":null,"acc":null,"pp":40,"pri":0}},{"id":111,"k":"defense-curl","n":"まるくなる","t":"nor","c":"x","pw":null,"acc":null,"pp":40,"pri":0,"e":"自分の防御ランク+1","sec":[{"k":"stat","ch":100,"tg":"self","st":{"def":1}}],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":null,"pp":40,"pri":0}},{"id":112,"k":"barrier","n":"バリアー","t":"psy","c":"x","pw":null,"acc":null,"pp":30,"pri":0,"e":"自分の防御ランク+2","sec":[{"k":"stat","ch":100,"tg":"self","st":{"def":2}}],"f":{},"m":{"t":"psy","c":"x","pw":null,"acc":null,"pp":20,"pri":0}},{"id":113,"k":"light-screen","n":"ひかりのかべ","t":"psy","c":"x","pw":null,"acc":null,"pp":30,"pri":0,"e":"壁。味方への特殊技の威力を2/3にする","sec":[{"k":"wall_s","ch":100,"tg":"self"}],"f":{},"m":{"t":"psy","c":"x","pw":null,"acc":null,"pp":30,"pri":0}},{"id":114,"k":"haze","n":"くろいきり","t":"ice","c":"x","pw":null,"acc":null,"pp":30,"pri":0,"e":"全員の能力ランク変化を元に戻す","sec":[{"k":"haze","ch":100,"tg":"self"}],"f":{},"m":{"t":"ice","c":"x","pw":null,"acc":null,"pp":30,"pri":0}},{"id":115,"k":"reflect","n":"リフレクター","t":"psy","c":"x","pw":null,"acc":null,"pp":20,"pri":0,"e":"壁。味方への物理技の威力を2/3にする","sec":[{"k":"wall_p","ch":100,"tg":"self"}],"f":{},"m":{"t":"psy","c":"x","pw":null,"acc":null,"pp":20,"pri":0}},{"id":116,"k":"focus-energy","n":"きあいだめ","t":"nor","c":"x","pw":null,"acc":null,"pp":30,"pri":0,"e":"自分の急所ランク+1","sec":[{"k":"stat","ch":100,"tg":"self","st":{"crit":1}}],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":null,"pp":30,"pri":0}},{"id":117,"k":"bide","n":"がまん","t":"nor","c":"p","pw":null,"acc":null,"pp":10,"pri":0,"e":"2〜3ターン我慢し、受けたダメージを倍にして返す(GM裁量)","sec":[],"f":{},"m":{"t":"nor","c":"p","pw":null,"acc":null,"pp":10,"pri":1}},{"id":118,"k":"metronome","n":"ゆびをふる","t":"nor","c":"x","pw":null,"acc":null,"pp":10,"pri":0,"e":"特例制限技。習得はGMと相談","sec":[],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":null,"pp":10,"pri":0}},{"id":119,"k":"mirror-move","n":"オウムがえし","t":"fly","c":"x","pw":null,"acc":null,"pp":20,"pri":0,"e":"相手が直前に使った技を使う","sec":[],"f":{},"m":{"t":"fly","c":"x","pw":null,"acc":null,"pp":20,"pri":0}},{"id":120,"k":"self-destruct","n":"じばく","t":"nor","c":"p","pw":130,"acc":100,"pp":5,"pri":0,"e":"使用後、自分は瀕死になる","sec":[],"f":{"selfko":1},"m":{"t":"nor","c":"p","pw":200,"acc":100,"pp":5,"pri":0}},{"id":121,"k":"egg-bomb","n":"タマゴばくだん","t":"nor","c":"p","pw":100,"acc":75,"pp":10,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"nor","c":"p","pw":100,"acc":75,"pp":10,"pri":0}},{"id":122,"k":"lick","n":"したでなめる","t":"gho","c":"p","pw":20,"acc":100,"pp":30,"pri":0,"e":"3割で相手を麻痺","sec":[{"k":"par","ch":30,"tg":"foe"}],"f":{},"m":{"t":"gho","c":"p","pw":30,"acc":100,"pp":30,"pri":0}},{"id":123,"k":"smog","n":"スモッグ","t":"poi","c":"p","pw":20,"acc":70,"pp":20,"pri":0,"e":"4割で相手を毒","sec":[{"k":"psn","ch":40,"tg":"foe"}],"f":{},"m":{"t":"poi","c":"s","pw":30,"acc":70,"pp":20,"pri":0}},{"id":124,"k":"sludge","n":"ヘドロこうげき","t":"poi","c":"p","pw":65,"acc":100,"pp":20,"pri":0,"e":"4割で相手を毒","sec":[{"k":"psn","ch":40,"tg":"foe"}],"f":{},"m":{"t":"poi","c":"s","pw":65,"acc":100,"pp":20,"pri":0,"e":"3割で相手を毒","sec":[{"k":"psn","ch":30,"tg":"foe"}]}},{"id":125,"k":"bone-club","n":"ホネこんぼう","t":"gro","c":"p","pw":65,"acc":85,"pp":20,"pri":0,"e":"1割で相手をひるませる","sec":[{"k":"flinch","ch":10,"tg":"foe"}],"f":{},"m":{"t":"gro","c":"p","pw":65,"acc":85,"pp":20,"pri":0}},{"id":126,"k":"fire-blast","n":"だいもんじ","t":"fir","c":"s","pw":120,"acc":85,"pp":5,"pri":0,"e":"3割で相手を火傷","sec":[{"k":"brn","ch":30,"tg":"foe"}],"f":{},"m":{"t":"fir","c":"s","pw":110,"acc":85,"pp":5,"pri":0,"e":"1割で相手を火傷","sec":[{"k":"brn","ch":10,"tg":"foe"}]}},{"id":127,"k":"waterfall","n":"たきのぼり","t":"wat","c":"s","pw":80,"acc":100,"pp":15,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"wat","c":"p","pw":80,"acc":100,"pp":15,"pri":0,"e":"2割で相手をひるませる","sec":[{"k":"flinch","ch":20,"tg":"foe"}]}},{"id":128,"k":"clamp","n":"からではさむ","t":"wat","c":"s","pw":35,"acc":75,"pp":10,"pri":0,"e":"2〜5ターンの間、相手を挟み込み行動を封じる(GM裁量)","sec":[],"f":{"trap":1},"m":{"t":"wat","c":"p","pw":35,"acc":85,"pp":15,"pri":0}},{"id":129,"k":"swift","n":"スピードスター","t":"nor","c":"p","pw":60,"acc":null,"pp":20,"pri":0,"e":"必中技(回避判定なし)","sec":[],"f":{},"m":{"t":"nor","c":"s","pw":60,"acc":null,"pp":20,"pri":0}},{"id":130,"k":"skull-bash","n":"ロケットずつき","t":"nor","c":"p","pw":100,"acc":100,"pp":15,"pri":0,"e":"1ターン目に溜め、2ターン目に攻撃","sec":[],"f":{"charge":1},"m":{"t":"nor","c":"p","pw":130,"acc":100,"pp":10,"pri":0,"e":"1ターン目に溜めて防御ランク+1、2ターン目に攻撃","sec":[]}},{"id":131,"k":"spike-cannon","n":"とげキャノン","t":"nor","c":"p","pw":20,"acc":100,"pp":15,"pri":0,"e":"連続技(2〜5回)","sec":[],"f":{"multi":"2-5"},"m":{"t":"nor","c":"p","pw":20,"acc":100,"pp":15,"pri":0}},{"id":132,"k":"constrict","n":"からみつく","t":"nor","c":"p","pw":10,"acc":100,"pp":35,"pri":0,"e":"約3割(33%)で相手の敏捷ランク-1","sec":[{"k":"stat","ch":33,"tg":"foe","st":{"spe":-1}}],"f":{},"m":{"t":"nor","c":"p","pw":10,"acc":100,"pp":35,"pri":0,"e":"1割で相手の敏捷ランク-1","sec":[{"k":"stat","ch":10,"tg":"foe","st":{"spe":-1}}]}},{"id":133,"k":"amnesia","n":"ドわすれ","t":"psy","c":"x","pw":null,"acc":null,"pp":20,"pri":0,"e":"自分の特攻・特防ランク+2(初代:とくしゅ+2)","sec":[{"k":"stat","ch":100,"tg":"self","st":{"spa":2,"spd":2}}],"f":{},"m":{"t":"psy","c":"x","pw":null,"acc":null,"pp":20,"pri":0,"e":"自分の特防ランク+2","sec":[{"k":"stat","ch":100,"tg":"self","st":{"spd":2}}]}},{"id":134,"k":"kinesis","n":"スプーンまげ","t":"psy","c":"x","pw":null,"acc":80,"pp":15,"pri":0,"e":"相手の命中ランク-1","sec":[{"k":"stat","ch":100,"tg":"foe","st":{"acc":-1}}],"f":{},"m":{"t":"psy","c":"x","pw":null,"acc":80,"pp":15,"pri":0}},{"id":135,"k":"soft-boiled","n":"タマゴうみ","t":"nor","c":"x","pw":null,"acc":null,"pp":5,"pri":0,"e":"自分の最大HPの半分を回復","sec":[{"k":"heal","ch":100,"tg":"self"}],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":null,"pp":5,"pri":0}},{"id":136,"k":"high-jump-kick","n":"とびひざげり","t":"fig","c":"p","pw":85,"acc":90,"pp":20,"pri":0,"e":"外すと自分がダメージを受ける(GM裁量)","sec":[],"f":{},"m":{"t":"fig","c":"p","pw":130,"acc":90,"pp":10,"pri":0}},{"id":137,"k":"glare","n":"へびにらみ","t":"nor","c":"x","pw":null,"acc":75,"pp":30,"pri":0,"e":"相手を麻痺状態にする","sec":[{"k":"par","ch":100,"tg":"foe"}],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":100,"pp":30,"pri":0}},{"id":138,"k":"dream-eater","n":"ゆめくい","t":"psy","c":"s","pw":100,"acc":100,"pp":15,"pri":0,"e":"眠っている相手にのみ有効。与えたダメージの半分HPを回復","sec":[],"f":{"drain":2},"m":{"t":"psy","c":"s","pw":100,"acc":100,"pp":15,"pri":0}},{"id":139,"k":"poison-gas","n":"どくガス","t":"poi","c":"x","pw":null,"acc":55,"pp":40,"pri":0,"e":"相手を毒状態にする","sec":[{"k":"psn","ch":100,"tg":"foe"}],"f":{},"m":{"t":"poi","c":"x","pw":null,"acc":90,"pp":40,"pri":0}},{"id":140,"k":"barrage","n":"たまなげ","t":"nor","c":"p","pw":15,"acc":85,"pp":20,"pri":0,"e":"連続技(2〜5回)","sec":[],"f":{"multi":"2-5"},"m":{"t":"nor","c":"p","pw":15,"acc":85,"pp":20,"pri":0}},{"id":141,"k":"leech-life","n":"きゅうけつ","t":"bug","c":"p","pw":20,"acc":100,"pp":15,"pri":0,"e":"与えたダメージの半分HPを回復","sec":[],"f":{"drain":2},"m":{"t":"bug","c":"p","pw":80,"acc":100,"pp":10,"pri":0}},{"id":142,"k":"lovely-kiss","n":"あくまのキッス","t":"nor","c":"x","pw":null,"acc":75,"pp":10,"pri":0,"e":"相手を眠り状態にする","sec":[{"k":"slp","ch":100,"tg":"foe"}],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":75,"pp":10,"pri":0}},{"id":143,"k":"sky-attack","n":"ゴッドバード","t":"fly","c":"p","pw":140,"acc":90,"pp":5,"pri":0,"e":"1ターン目に溜め、2ターン目に攻撃","sec":[],"f":{"charge":1},"m":{"t":"fly","c":"p","pw":140,"acc":90,"pp":5,"pri":0,"e":"1ターン目に溜め、2ターン目に攻撃。3割でひるみ・急所ランク+1","sec":[{"k":"flinch","ch":30,"tg":"foe"}],"f":{"charge":1,"crit":1}}},{"id":144,"k":"transform","n":"へんしん","t":"nor","c":"x","pw":null,"acc":null,"pp":10,"pri":0,"e":"相手と同じ姿・能力・技になる(GM裁量)","sec":[],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":null,"pp":10,"pri":0}},{"id":145,"k":"bubble","n":"あわ","t":"wat","c":"s","pw":20,"acc":100,"pp":30,"pri":0,"e":"約3割(33%)で相手の敏捷ランク-1","sec":[{"k":"stat","ch":33,"tg":"foe","st":{"spe":-1}}],"f":{},"m":{"t":"wat","c":"s","pw":40,"acc":100,"pp":30,"pri":0,"e":"1割で相手の敏捷ランク-1","sec":[{"k":"stat","ch":10,"tg":"foe","st":{"spe":-1}}]}},{"id":146,"k":"dizzy-punch","n":"ピヨピヨパンチ","t":"nor","c":"p","pw":70,"acc":100,"pp":10,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"nor","c":"p","pw":70,"acc":100,"pp":10,"pri":0,"e":"2割で相手を混乱","sec":[{"k":"conf","ch":20,"tg":"foe"}]}},{"id":147,"k":"spore","n":"キノコのほうし","t":"gra","c":"x","pw":null,"acc":100,"pp":15,"pri":0,"e":"相手を眠り状態にする","sec":[{"k":"slp","ch":100,"tg":"foe"}],"f":{},"m":{"t":"gra","c":"x","pw":null,"acc":100,"pp":15,"pri":0}},{"id":148,"k":"flash","n":"フラッシュ","t":"nor","c":"x","pw":null,"acc":70,"pp":20,"pri":0,"e":"相手の命中ランク-1","sec":[{"k":"stat","ch":100,"tg":"foe","st":{"acc":-1}}],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":100,"pp":20,"pri":0}},{"id":149,"k":"psywave","n":"サイコウェーブ","t":"psy","c":"s","pw":null,"acc":80,"pp":15,"pri":0,"e":"ダメージ固定技。<1d6>で1,2:威力30/3,4:威力50/5,6:威力70","sec":[],"f":{"psywave":1},"m":{"t":"psy","c":"s","pw":null,"acc":100,"pp":15,"pri":0}},{"id":150,"k":"splash","n":"はねる","t":"nor","c":"x","pw":null,"acc":null,"pp":40,"pri":0,"e":"何も起こらない","sec":[],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":null,"pp":40,"pri":0}},{"id":151,"k":"acid-armor","n":"とける","t":"poi","c":"x","pw":null,"acc":null,"pp":40,"pri":0,"e":"自分の防御ランク+2","sec":[{"k":"stat","ch":100,"tg":"self","st":{"def":2}}],"f":{},"m":{"t":"poi","c":"x","pw":null,"acc":null,"pp":20,"pri":0}},{"id":152,"k":"crabhammer","n":"クラブハンマー","t":"wat","c":"s","pw":90,"acc":85,"pp":10,"pri":0,"e":"急所ランク+1","sec":[],"f":{"crit":1},"m":{"t":"wat","c":"p","pw":100,"acc":90,"pp":10,"pri":0}},{"id":153,"k":"explosion","n":"だいばくはつ","t":"nor","c":"p","pw":170,"acc":100,"pp":5,"pri":0,"e":"使用後、自分は瀕死になる","sec":[],"f":{"selfko":1},"m":{"t":"nor","c":"p","pw":250,"acc":100,"pp":5,"pri":0}},{"id":154,"k":"fury-swipes","n":"みだれひっかき","t":"nor","c":"p","pw":18,"acc":80,"pp":15,"pri":0,"e":"連続技(2〜5回)","sec":[],"f":{"multi":"2-5"},"m":{"t":"nor","c":"p","pw":18,"acc":80,"pp":15,"pri":0}},{"id":155,"k":"bonemerang","n":"ホネブーメラン","t":"gro","c":"p","pw":50,"acc":90,"pp":10,"pri":0,"e":"連続技(2回)","sec":[],"f":{"multi":"2"},"m":{"t":"gro","c":"p","pw":50,"acc":90,"pp":10,"pri":0}},{"id":156,"k":"rest","n":"ねむる","t":"psy","c":"x","pw":null,"acc":null,"pp":5,"pri":0,"e":"HPと状態異常を全回復し、自分は眠り状態になる","sec":[{"k":"rest","ch":100,"tg":"self"}],"f":{},"m":{"t":"psy","c":"x","pw":null,"acc":null,"pp":5,"pri":0}},{"id":157,"k":"rock-slide","n":"いわなだれ","t":"roc","c":"p","pw":75,"acc":90,"pp":10,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"roc","c":"p","pw":75,"acc":90,"pp":10,"pri":0,"e":"3割で相手をひるませる","sec":[{"k":"flinch","ch":30,"tg":"foe"}]}},{"id":158,"k":"hyper-fang","n":"ひっさつまえば","t":"nor","c":"p","pw":80,"acc":90,"pp":15,"pri":0,"e":"1割で相手をひるませる","sec":[{"k":"flinch","ch":10,"tg":"foe"}],"f":{},"m":{"t":"nor","c":"p","pw":80,"acc":90,"pp":15,"pri":0}},{"id":159,"k":"sharpen","n":"かくばる","t":"nor","c":"x","pw":null,"acc":null,"pp":30,"pri":0,"e":"自分の攻撃ランク+1","sec":[{"k":"stat","ch":100,"tg":"self","st":{"atk":1}}],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":null,"pp":30,"pri":0}},{"id":160,"k":"conversion","n":"テクスチャー","t":"nor","c":"x","pw":null,"acc":null,"pp":30,"pri":0,"e":"自分のタイプを相手と同じにする(GM裁量)","sec":[],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":null,"pp":30,"pri":0}},{"id":161,"k":"tri-attack","n":"トライアタック","t":"nor","c":"p","pw":80,"acc":100,"pp":10,"pri":0,"e":"追加効果なし","sec":[],"f":{},"m":{"t":"nor","c":"s","pw":80,"acc":100,"pp":10,"pri":0,"e":"2割で相手を火傷・麻痺・氷のいずれか","sec":[{"k":"tri","ch":20,"tg":"foe"}]}},{"id":162,"k":"super-fang","n":"いかりのまえば","t":"nor","c":"p","pw":null,"acc":90,"pp":10,"pri":0,"e":"HP半減技。威力[相手の体力B×10×(現在HP÷最大HP)]","sec":[],"f":{"superfang":1},"m":{"t":"nor","c":"p","pw":null,"acc":90,"pp":10,"pri":0}},{"id":163,"k":"slash","n":"きりさく","t":"nor","c":"p","pw":70,"acc":100,"pp":20,"pri":0,"e":"急所ランク+1","sec":[],"f":{"crit":1},"m":{"t":"nor","c":"p","pw":70,"acc":100,"pp":20,"pri":0}},{"id":164,"k":"substitute","n":"みがわり","t":"nor","c":"x","pw":null,"acc":null,"pp":10,"pri":0,"e":"最大HPの1/4を使って身代わりを作る","sec":[],"f":{},"m":{"t":"nor","c":"x","pw":null,"acc":null,"pp":10,"pri":0}},{"id":165,"k":"struggle","n":"わるあがき","t":"nor","c":"p","pw":50,"acc":null,"pp":10,"pri":0,"e":"与えたダメージの1/2を自分も受ける","sec":[],"f":{"recoil":2},"m":{"t":"nor","c":"p","pw":50,"acc":null,"pp":1,"pri":0,"e":"最大HPの1/4のダメージを自分も受ける","sec":[],"f":{"recoil":0}}}],"mons":[{"no":1,"n":"フシギダネ","t":["gra","poi"],"mt":["gra","poi"],"g":[45,49,49,65,45],"b":[45,49,49,65,65,45],"cr":45,"evo":[2],"lv":[[1,33],[1,45],[7,73],[13,22],[20,77],[27,75],[34,74],[41,79],[48,76]],"tm":[14,15,34,36,38,72,76,92,99,102,104,115,117,156,164]},{"no":2,"n":"フシギソウ","t":["gra","poi"],"mt":["gra","poi"],"g":[60,62,63,80,60],"b":[60,62,63,80,80,60],"cr":45,"evo":[3],"lv":[[1,33],[1,45],[1,73],[7,73],[13,22],[22,77],[30,75],[38,74],[46,79],[54,76]],"tm":[14,15,34,36,38,72,76,92,99,102,104,115,117,156,164]},{"no":3,"n":"フシギバナ","t":["gra","poi"],"mt":["gra","poi"],"g":[80,82,83,100,80],"b":[80,82,83,100,100,80],"cr":45,"evo":[],"lv":[[1,22],[1,33],[1,45],[1,73],[7,73],[13,22],[22,77],[30,75],[43,74],[55,79],[65,76]],"tm":[14,15,34,36,38,63,72,76,92,99,102,104,115,117,156,164]},{"no":4,"n":"ヒトカゲ","t":["fir"],"mt":["fir"],"g":[39,52,43,50,65],"b":[39,52,43,60,50,65],"cr":45,"evo":[5],"lv":[[1,10],[1,45],[9,52],[15,43],[22,99],[30,163],[38,53],[46,83]],"tm":[5,14,15,25,34,36,38,66,68,69,70,82,91,92,99,102,104,115,117,126,129,130,156,164]},{"no":5,"n":"リザード","t":["fir"],"mt":["fir"],"g":[58,64,58,65,80],"b":[58,64,58,80,65,80],"cr":45,"evo":[6],"lv":[[1,10],[1,45],[1,52],[9,52],[15,43],[24,99],[33,163],[42,53],[56,83]],"tm":[5,14,15,25,34,36,38,66,68,69,70,82,91,92,99,102,104,115,117,126,129,130,156,164]},{"no":6,"n":"リザードン","t":["fir","fly"],"mt":["fir","fly"],"g":[78,84,78,85,100],"b":[78,84,78,109,85,100],"cr":45,"evo":[],"lv":[[1,10],[1,43],[1,45],[1,52],[9,52],[15,43],[24,99],[36,163],[46,53],[55,83]],"tm":[5,14,15,25,34,36,38,63,66,68,69,70,82,89,90,91,92,99,102,104,115,117,126,129,130,156,164]},{"no":7,"n":"ゼニガメ","t":["wat"],"mt":["wat"],"g":[44,48,65,50,43],"b":[44,48,65,50,64,43],"cr":45,"evo":[8],"lv":[[1,33],[1,39],[8,145],[15,55],[22,44],[28,110],[35,130],[42,56]],"tm":[5,25,34,36,38,55,57,58,59,61,66,68,69,70,91,92,99,102,104,115,117,130,156,164]},{"no":8,"n":"カメール","t":["wat"],"mt":["wat"],"g":[59,63,80,65,58],"b":[59,63,80,65,80,58],"cr":45,"evo":[9],"lv":[[1,33],[1,39],[1,145],[8,145],[15,55],[24,44],[31,110],[39,130],[47,56]],"tm":[5,25,34,36,38,55,57,58,59,61,66,68,69,70,91,92,99,102,104,115,117,130,156,164]},{"no":9,"n":"カメックス","t":["wat"],"mt":["wat"],"g":[79,83,100,85,78],"b":[79,83,100,85,105,78],"cr":45,"evo":[],"lv":[[1,33],[1,39],[1,55],[1,145],[8,145],[15,55],[24,44],[31,110],[42,130],[52,56]],"tm":[5,25,34,36,38,55,57,58,59,61,63,66,68,69,70,89,90,91,92,99,102,104,115,117,130,156,164]},{"no":10,"n":"キャタピー","t":["bug"],"mt":["bug"],"g":[45,30,35,20,45],"b":[45,30,35,20,20,45],"cr":255,"evo":[11],"lv":[[1,33],[1,81]],"tm":[]},{"no":11,"n":"トランセル","t":["bug"],"mt":["bug"],"g":[50,20,55,25,30],"b":[50,20,55,25,25,30],"cr":120,"evo":[12],"lv":[[1,106]],"tm":[]},{"no":12,"n":"バタフリー","t":["bug","fly"],"mt":["bug","fly"],"g":[60,45,50,80,70],"b":[60,45,50,90,80,70],"cr":45,"evo":[],"lv":[[1,93],[12,93],[15,77],[16,78],[17,79],[21,48],[26,18],[32,60]],"tm":[13,18,36,38,63,72,76,92,94,99,100,102,104,115,117,129,149,156,164]},{"no":13,"n":"ビードル","t":["bug","poi"],"mt":["bug","poi"],"g":[40,35,30,20,50],"b":[40,35,30,20,20,50],"cr":255,"evo":[14],"lv":[[1,40],[1,81]],"tm":[]},{"no":14,"n":"コクーン","t":["bug","poi"],"mt":["bug","poi"],"g":[45,25,50,25,35],"b":[45,25,50,25,25,35],"cr":120,"evo":[15],"lv":[[1,106]],"tm":[]},{"no":15,"n":"スピアー","t":["bug","poi"],"mt":["bug","poi"],"g":[65,80,40,45,75],"b":[65,90,40,45,80,75],"cr":45,"evo":[],"lv":[[1,31],[12,31],[16,116],[20,41],[25,99],[30,42],[35,97]],"tm":[14,15,36,38,63,72,92,99,102,104,115,117,129,130,156,164]},{"no":16,"n":"ポッポ","t":["nor","fly"],"mt":["nor","fly"],"g":[40,45,40,35,56],"b":[40,45,40,35,35,56],"cr":255,"evo":[17],"lv":[[1,16],[5,28],[12,98],[19,18],[28,17],[36,97],[44,119]],"tm":[13,18,19,36,38,92,99,102,104,115,117,129,143,156,164]},{"no":17,"n":"ピジョン","t":["nor","fly"],"mt":["nor","fly"],"g":[63,60,55,50,71],"b":[63,60,55,50,50,71],"cr":120,"evo":[18],"lv":[[1,16],[1,28],[5,28],[12,98],[21,18],[31,17],[40,97],[49,119]],"tm":[13,18,19,36,38,92,99,102,104,115,117,129,143,156,164]},{"no":18,"n":"ピジョット","t":["nor","fly"],"mt":["nor","fly"],"g":[83,80,75,70,91],"b":[83,80,75,70,70,101],"cr":45,"evo":[],"lv":[[1,16],[1,28],[1,98],[5,28],[12,98],[21,18],[31,17],[44,97],[54,119]],"tm":[13,18,19,36,38,63,92,99,102,104,115,117,129,143,156,164]},{"no":19,"n":"コラッタ","t":["nor"],"mt":["nor"],"g":[30,56,35,25,72],"b":[30,56,35,25,35,72],"cr":255,"evo":[20],"lv":[[1,33],[1,39],[7,98],[14,158],[23,116],[34,162]],"tm":[34,36,38,55,59,61,85,87,91,92,99,102,104,117,129,130,156,164]},{"no":20,"n":"ラッタ","t":["nor"],"mt":["nor"],"g":[55,81,60,50,97],"b":[55,81,60,50,70,97],"cr":127,"evo":[],"lv":[[1,33],[1,39],[1,98],[7,98],[14,158],[27,116],[41,162]],"tm":[34,36,38,55,58,59,61,63,85,87,91,92,99,102,104,117,129,130,156,164]},{"no":21,"n":"オニスズメ","t":["nor","fly"],"mt":["nor","fly"],"g":[40,60,30,31,70],"b":[40,60,30,31,31,70],"cr":255,"evo":[22],"lv":[[1,45],[1,64],[9,43],[15,31],[22,119],[29,65],[36,97]],"tm":[13,18,19,36,38,92,99,102,104,117,129,143,156,164]},{"no":22,"n":"オニドリル","t":["nor","fly"],"mt":["nor","fly"],"g":[65,90,65,61,100],"b":[65,90,65,61,61,100],"cr":90,"evo":[],"lv":[[1,43],[1,45],[1,64],[9,43],[15,31],[25,119],[34,65],[43,97]],"tm":[13,18,19,36,38,63,92,99,102,104,117,129,143,156,164]},{"no":23,"n":"アーボ","t":["poi"],"mt":["poi"],"g":[35,60,44,40,55],"b":[35,60,44,40,54,55],"cr":255,"evo":[24],"lv":[[1,35],[1,43],[10,40],[17,44],[24,137],[31,103],[38,51]],"tm":[34,36,38,70,72,89,90,91,92,99,102,104,117,130,156,157,164]},{"no":24,"n":"アーボック","t":["poi"],"mt":["poi"],"g":[60,85,69,65,80],"b":[60,95,69,65,79,80],"cr":90,"evo":[],"lv":[[1,35],[1,40],[1,43],[10,40],[17,44],[27,137],[36,103],[47,51]],"tm":[34,36,38,63,70,72,89,90,91,92,99,102,104,117,130,156,157,164]},{"no":25,"n":"ピカチュウ","t":["ele"],"mt":["ele"],"g":[35,55,30,50,90],"b":[35,55,40,50,50,90],"cr":190,"evo":[26],"lv":[[1,45],[1,84],[9,86],[16,98],[26,129],[33,97],[43,87]],"tm":[5,6,25,34,36,38,66,69,85,86,87,92,99,102,104,115,117,129,130,148,156,164]},{"no":26,"n":"ライチュウ","t":["ele"],"mt":["ele"],"g":[60,90,55,90,100],"b":[60,90,55,90,80,110],"cr":75,"evo":[],"lv":[[1,45],[1,84],[1,86]],"tm":[5,6,25,34,36,38,63,66,69,85,86,87,92,99,102,104,115,117,129,130,148,156,164]},{"no":27,"n":"サンド","t":["gro"],"mt":["gro"],"g":[50,75,85,30,40],"b":[50,75,85,20,30,40],"cr":255,"evo":[28],"lv":[[1,10],[10,28],[17,163],[24,40],[31,129],[38,154]],"tm":[14,15,34,36,38,66,69,70,89,90,91,92,99,102,104,117,129,130,156,157,164]},{"no":28,"n":"サンドパン","t":["gro"],"mt":["gro"],"g":[75,100,110,55,65],"b":[75,100,110,45,55,65],"cr":90,"evo":[],"lv":[[1,10],[1,28],[10,28],[17,163],[27,40],[36,129],[47,154]],"tm":[14,15,34,36,38,63,66,69,70,89,90,91,92,99,102,104,117,129,130,156,157,164]},{"no":29,"n":"ニドラン♀","t":["poi"],"mt":["poi"],"g":[55,47,52,40,41],"b":[55,47,52,40,40,41],"cr":235,"evo":[30],"lv":[[1,33],[1,45],[8,10],[14,40],[21,39],[29,44],[36,154],[43,24]],"tm":[34,36,38,59,85,87,92,99,102,104,115,117,130,156,164]},{"no":30,"n":"ニドリーナ","t":["poi"],"mt":["poi"],"g":[70,62,67,55,56],"b":[70,62,67,55,55,56],"cr":120,"evo":[31],"lv":[[1,10],[1,33],[1,45],[8,10],[14,40],[23,39],[32,44],[41,154],[50,24]],"tm":[32,34,36,38,55,58,59,61,85,87,92,99,102,104,115,117,130,156,164]},{"no":31,"n":"ニドクイン","t":["poi","gro"],"mt":["poi","gro"],"g":[90,82,87,75,76],"b":[90,92,87,75,85,76],"cr":45,"evo":[],"lv":[[1,10],[1,33],[1,34],[1,39],[8,10],[14,40],[23,34]],"tm":[5,6,25,32,34,36,38,55,57,58,59,61,63,66,68,69,70,85,87,89,90,92,99,102,104,115,117,126,130,156,157,164]},{"no":32,"n":"ニドラン♂","t":["poi"],"mt":["poi"],"g":[46,57,40,40,50],"b":[46,57,40,40,40,50],"cr":235,"evo":[33],"lv":[[1,33],[1,43],[8,30],[14,40],[21,116],[29,31],[36,32],[43,24]],"tm":[32,34,36,38,59,85,87,92,99,102,104,115,117,130,156,164]},{"no":33,"n":"ニドリーノ","t":["poi"],"mt":["poi"],"g":[61,72,57,55,65],"b":[61,72,57,55,55,65],"cr":120,"evo":[34],"lv":[[1,30],[1,33],[1,43],[8,30],[14,40],[23,116],[32,31],[41,32],[50,24]],"tm":[32,34,36,38,55,58,59,61,85,87,92,99,102,104,115,117,130,156,164]},{"no":34,"n":"ニドキング","t":["poi","gro"],"mt":["poi","gro"],"g":[81,92,77,75,85],"b":[81,102,77,85,75,85],"cr":45,"evo":[],"lv":[[1,30],[1,33],[1,37],[1,40],[8,30],[14,40],[23,37]],"tm":[5,6,25,32,34,36,38,55,57,58,59,61,63,66,68,69,70,85,87,89,90,92,99,102,104,115,117,126,130,156,157,164]},{"no":35,"n":"ピッピ","t":["nor"],"mt":["fai"],"g":[70,45,48,60,35],"b":[70,45,48,60,65,35],"cr":150,"evo":[36],"lv":[[1,1],[1,45],[13,47],[18,3],[24,107],[31,118],[39,111],[48,113]],"tm":[5,25,34,36,38,55,58,59,61,66,68,69,70,76,85,86,87,92,94,99,100,102,104,115,117,118,126,130,148,149,156,161,164]},{"no":36,"n":"ピクシー","t":["nor"],"mt":["fai"],"g":[95,70,73,85,60],"b":[95,70,73,95,90,60],"cr":25,"evo":[],"lv":[[1,3],[1,47],[1,107],[1,118]],"tm":[5,25,34,36,38,55,58,59,61,63,66,68,69,70,76,85,86,87,92,94,99,100,102,104,115,117,118,126,130,148,149,156,161,164]},{"no":37,"n":"ロコン","t":["fir"],"mt":["fir"],"g":[38,41,40,65,65],"b":[38,41,40,50,65,65],"cr":190,"evo":[38],"lv":[[1,39],[1,52],[16,98],[21,46],[28,109],[35,53],[42,83]],"tm":[34,36,38,91,92,99,102,104,115,117,126,129,130,156,164]},{"no":38,"n":"キュウコン","t":["fir"],"mt":["fir"],"g":[73,76,75,100,100],"b":[73,76,75,81,100,100],"cr":75,"evo":[],"lv":[[1,39],[1,46],[1,52],[1,98]],"tm":[34,36,38,63,91,92,99,102,104,115,117,126,129,130,156,164]},{"no":39,"n":"プリン","t":["nor"],"mt":["nor","fai"],"g":[115,45,20,25,20],"b":[115,45,20,45,25,20],"cr":170,"evo":[40],"lv":[[1,47],[9,1],[14,50],[19,111],[24,3],[29,156],[34,34],[39,38]],"tm":[5,25,34,36,38,55,58,59,61,66,68,69,70,76,85,86,87,92,94,99,100,102,104,115,117,126,130,148,149,156,161,164]},{"no":40,"n":"プクリン","t":["nor"],"mt":["nor","fai"],"g":[140,70,45,50,45],"b":[140,70,45,85,50,45],"cr":50,"evo":[],"lv":[[1,3],[1,47],[1,50],[1,111]],"tm":[5,25,34,36,38,55,58,59,61,63,66,68,69,70,76,85,86,87,92,94,99,100,102,104,115,117,126,130,148,149,156,161,164]},{"no":41,"n":"ズバット","t":["poi","fly"],"mt":["poi","fly"],"g":[40,45,35,40,55],"b":[40,45,35,30,40,55],"cr":255,"evo":[42],"lv":[[1,141],[10,48],[15,44],[21,109],[28,17],[36,114]],"tm":[13,18,36,38,72,92,99,102,104,117,129,156,164]},{"no":42,"n":"ゴルバット","t":["poi","fly"],"mt":["poi","fly"],"g":[75,80,70,75,90],"b":[75,80,70,65,75,90],"cr":90,"evo":[],"lv":[[1,44],[1,103],[1,141],[10,48],[15,44],[21,109],[32,17],[43,114]],"tm":[13,18,36,38,63,72,92,99,102,104,117,129,156,164]},{"no":43,"n":"ナゾノクサ","t":["gra","poi"],"mt":["gra","poi"],"g":[45,50,55,75,30],"b":[45,50,55,75,65,30],"cr":255,"evo":[44],"lv":[[1,71],[15,77],[17,78],[19,79],[24,51],[33,80],[46,76]],"tm":[14,15,36,38,72,76,92,99,102,104,115,117,156,164]},{"no":44,"n":"クサイハナ","t":["gra","poi"],"mt":["gra","poi"],"g":[60,65,70,85,40],"b":[60,65,70,85,75,40],"cr":120,"evo":[45],"lv":[[1,71],[1,77],[1,78],[15,77],[17,78],[19,79],[28,51],[38,80],[52,76]],"tm":[14,15,36,38,72,76,92,99,102,104,115,117,156,164]},{"no":45,"n":"ラフレシア","t":["gra","poi"],"mt":["gra","poi"],"g":[75,80,85,100,50],"b":[75,80,85,110,90,50],"cr":45,"evo":[],"lv":[[1,51],[1,78],[1,79],[1,80],[15,77],[17,78],[19,79]],"tm":[14,15,34,36,38,63,72,76,92,99,102,104,115,117,156,164]},{"no":46,"n":"パラス","t":["bug","gra"],"mt":["bug","gra"],"g":[35,70,55,55,25],"b":[35,70,55,45,55,25],"cr":190,"evo":[47],"lv":[[1,10],[13,78],[20,141],[27,147],[34,163],[41,74]],"tm":[14,15,34,36,38,72,76,91,92,99,102,104,115,117,130,156,164]},{"no":47,"n":"パラセクト","t":["bug","gra"],"mt":["bug","gra"],"g":[60,95,80,80,30],"b":[60,95,80,60,80,30],"cr":75,"evo":[],"lv":[[1,10],[1,78],[1,141],[13,78],[20,141],[30,147],[39,163],[48,74]],"tm":[14,15,34,36,38,63,72,76,91,92,99,102,104,115,117,130,156,164]},{"no":48,"n":"コンパン","t":["bug","poi"],"mt":["bug","poi"],"g":[60,55,50,40,45],"b":[60,55,50,40,55,45],"cr":190,"evo":[49],"lv":[[1,33],[1,50],[24,77],[27,141],[30,78],[35,60],[38,79],[43,94]],"tm":[36,38,72,76,92,94,99,102,104,115,117,149,156,164]},{"no":49,"n":"モルフォン","t":["bug","poi"],"mt":["bug","poi"],"g":[70,65,60,90,90],"b":[70,65,60,90,75,90],"cr":75,"evo":[],"lv":[[1,33],[1,50],[1,77],[1,141],[24,77],[27,141],[30,78],[38,60],[43,79],[50,94]],"tm":[13,18,36,38,63,72,76,92,94,99,100,102,104,115,117,129,149,156,164]},{"no":50,"n":"ディグダ","t":["gro"],"mt":["gro"],"g":[10,55,25,45,95],"b":[10,55,25,35,45,95],"cr":255,"evo":[51],"lv":[[1,10],[15,45],[19,91],[24,28],[31,163],[40,89]],"tm":[34,36,38,89,90,91,92,99,102,104,117,156,157,164]},{"no":51,"n":"ダグトリオ","t":["gro"],"mt":["gro"],"g":[35,80,50,70,120],"b":[35,100,50,50,70,120],"cr":50,"evo":[],"lv":[[1,10],[1,45],[1,91],[15,45],[19,91],[24,28],[35,163],[47,89]],"tm":[34,36,38,63,89,90,91,92,99,102,104,117,156,157,164]},{"no":52,"n":"ニャース","t":["nor"],"mt":["nor"],"g":[40,45,35,40,90],"b":[40,45,35,40,40,90],"cr":255,"evo":[53],"lv":[[1,10],[1,45],[12,44],[17,6],[24,103],[33,154],[44,163]],"tm":[6,34,36,38,55,61,85,87,92,99,102,104,117,129,130,156,164]},{"no":53,"n":"ペルシアン","t":["nor"],"mt":["nor"],"g":[65,70,60,65,115],"b":[65,70,60,65,65,115],"cr":90,"evo":[],"lv":[[1,10],[1,44],[1,45],[1,103],[12,44],[17,6],[24,103],[37,154],[51,163]],"tm":[6,34,36,38,55,61,63,85,87,92,99,102,104,117,129,130,156,164]},{"no":54,"n":"コダック","t":["wat"],"mt":["wat"],"g":[50,52,48,50,55],"b":[50,52,48,65,50,55],"cr":190,"evo":[55],"lv":[[1,10],[28,39],[31,50],[36,93],[43,154],[52,56]],"tm":[5,6,25,34,36,38,55,57,58,59,61,66,68,69,70,91,92,99,102,104,117,129,130,156,164]},{"no":55,"n":"ゴルダック","t":["wat"],"mt":["wat"],"g":[80,82,78,80,85],"b":[80,82,78,95,80,85],"cr":75,"evo":[],"lv":[[1,10],[1,39],[1,50],[28,39],[31,50],[39,93],[48,154],[59,56]],"tm":[5,6,25,34,36,38,55,57,58,59,61,63,66,68,69,70,91,92,99,102,104,117,129,130,156,164]},{"no":56,"n":"マンキー","t":["fig"],"mt":["fig"],"g":[40,80,35,35,70],"b":[40,80,35,35,45,70],"cr":190,"evo":[57],"lv":[[1,10],[1,43],[15,2],[21,154],[27,116],[33,69],[39,37]],"tm":[5,6,25,34,36,38,66,68,69,70,85,87,91,92,99,102,104,117,118,129,130,156,157,164]},{"no":57,"n":"オコリザル","t":["fig"],"mt":["fig"],"g":[65,105,60,60,95],"b":[65,105,60,60,70,95],"cr":75,"evo":[],"lv":[[1,2],[1,10],[1,43],[1,154],[15,2],[21,154],[27,116],[37,69],[46,37]],"tm":[5,6,25,34,36,38,63,66,68,69,70,85,87,91,92,99,102,104,117,118,129,130,156,157,164]},{"no":58,"n":"ガーディ","t":["fir"],"mt":["fir"],"g":[55,70,45,50,60],"b":[55,70,45,70,50,60],"cr":190,"evo":[59],"lv":[[1,44],[1,46],[18,52],[23,43],[30,36],[39,97],[50,53]],"tm":[34,36,38,82,91,92,99,102,104,115,117,126,129,130,156,164]},{"no":59,"n":"ウインディ","t":["fir"],"mt":["fir"],"g":[90,110,80,80,95],"b":[90,110,80,100,80,95],"cr":75,"evo":[],"lv":[[1,36],[1,43],[1,46],[1,52]],"tm":[34,36,38,63,82,91,92,99,100,102,104,115,117,126,129,130,156,164]},{"no":60,"n":"ニョロモ","t":["wat"],"mt":["wat"],"g":[40,50,40,40,90],"b":[40,50,40,40,40,90],"cr":255,"evo":[61],"lv":[[1,145],[16,95],[19,55],[25,3],[31,34],[38,133],[45,56]],"tm":[34,36,38,55,57,58,59,61,92,94,99,102,104,117,130,149,156,164]},{"no":61,"n":"ニョロゾ","t":["wat"],"mt":["wat"],"g":[65,65,65,50,90],"b":[65,65,65,50,50,90],"cr":120,"evo":[62],"lv":[[1,55],[1,95],[1,145],[16,95],[19,55],[26,3],[33,34],[41,133],[49,56]],"tm":[5,25,34,36,38,55,57,58,59,61,66,68,69,70,89,90,92,94,99,102,104,117,118,130,149,156,164]},{"no":62,"n":"ニョロボン","t":["wat","fig"],"mt":["wat","fig"],"g":[90,85,95,70,70],"b":[90,95,95,70,90,70],"cr":45,"evo":[],"lv":[[1,3],[1,34],[1,55],[1,95],[16,95],[19,55]],"tm":[5,25,34,36,38,55,57,58,59,61,63,66,68,69,70,89,90,92,94,99,102,104,117,118,130,149,156,164]},{"no":63,"n":"ケーシィ","t":["psy"],"mt":["psy"],"g":[25,20,15,105,90],"b":[25,20,15,105,55,90],"cr":200,"evo":[64],"lv":[[1,100]],"tm":[5,25,34,36,38,66,68,69,86,92,94,99,100,102,104,115,117,118,130,148,149,156,161,164]},{"no":64,"n":"ユンゲラー","t":["psy"],"mt":["psy"],"g":[40,35,30,120,105],"b":[40,35,30,120,70,105],"cr":100,"evo":[65],"lv":[[1,50],[1,93],[1,100],[16,93],[20,50],[27,60],[31,105],[38,94],[42,115]],"tm":[5,25,34,36,38,66,68,69,86,91,92,94,99,100,102,104,115,117,118,130,148,149,156,161,164]},{"no":65,"n":"フーディン","t":["psy"],"mt":["psy"],"g":[55,50,45,135,120],"b":[55,50,45,135,95,120],"cr":50,"evo":[],"lv":[[1,50],[1,93],[1,100],[16,93],[20,50],[27,60],[31,105],[38,94],[42,115]],"tm":[5,25,34,36,38,63,66,68,69,86,91,92,94,99,100,102,104,115,117,118,130,148,149,156,161,164]},{"no":66,"n":"ワンリキー","t":["fig"],"mt":["fig"],"g":[70,80,50,35,35],"b":[70,80,50,35,35,35],"cr":180,"evo":[67],"lv":[[1,2],[20,67],[25,43],[32,116],[39,69],[46,66]],"tm":[5,25,34,36,38,66,68,69,70,89,90,91,92,99,102,104,117,118,126,130,156,157,164]},{"no":67,"n":"ゴーリキー","t":["fig"],"mt":["fig"],"g":[80,100,70,50,45],"b":[80,100,70,50,60,45],"cr":90,"evo":[68],"lv":[[1,2],[1,43],[1,67],[20,67],[25,43],[36,116],[44,69],[52,66]],"tm":[5,25,34,36,38,66,68,69,70,89,90,91,92,99,102,104,117,118,126,130,156,157,164]},{"no":68,"n":"カイリキー","t":["fig"],"mt":["fig"],"g":[90,130,80,65,55],"b":[90,130,80,65,85,55],"cr":45,"evo":[],"lv":[[1,2],[1,43],[1,67],[20,67],[25,43],[36,116],[44,69],[52,66]],"tm":[5,25,34,36,38,63,66,68,69,70,89,90,91,92,99,102,104,117,118,126,130,156,157,164]},{"no":69,"n":"マダツボミ","t":["gra","poi"],"mt":["gra","poi"],"g":[50,75,35,70,40],"b":[50,75,35,70,30,40],"cr":255,"evo":[70],"lv":[[1,22],[1,74],[13,35],[15,77],[18,79],[21,78],[26,51],[33,75],[42,21]],"tm":[14,15,36,38,72,76,92,99,102,104,115,117,156,164]},{"no":70,"n":"ウツドン","t":["gra","poi"],"mt":["gra","poi"],"g":[65,90,50,85,55],"b":[65,90,50,85,45,55],"cr":120,"evo":[71],"lv":[[1,22],[1,35],[1,74],[13,35],[15,77],[18,79],[23,78],[29,51],[38,75],[49,21]],"tm":[14,15,36,38,72,76,92,99,102,104,115,117,156,164]},{"no":71,"n":"ウツボット","t":["gra","poi"],"mt":["gra","poi"],"g":[80,105,65,100,70],"b":[80,105,65,100,70,70],"cr":45,"evo":[],"lv":[[1,51],[1,75],[1,78],[1,79],[13,35],[15,77],[18,79]],"tm":[14,15,34,36,38,63,72,76,92,99,102,104,115,117,156,164]},{"no":72,"n":"メノクラゲ","t":["wat","poi"],"mt":["wat","poi"],"g":[40,40,35,100,70],"b":[40,40,35,50,100,70],"cr":190,"evo":[73],"lv":[[1,51],[7,48],[13,35],[18,40],[22,55],[27,132],[33,112],[40,103],[48,56]],"tm":[14,15,36,38,55,57,58,59,61,72,92,99,102,104,115,117,130,156,164]},{"no":73,"n":"ドククラゲ","t":["wat","poi"],"mt":["wat","poi"],"g":[80,70,65,120,100],"b":[80,70,65,80,120,100],"cr":60,"evo":[],"lv":[[1,35],[1,48],[1,51],[7,48],[13,35],[18,40],[22,55],[27,132],[35,112],[43,103],[50,56]],"tm":[14,15,36,38,55,57,58,59,61,63,72,92,99,102,104,115,117,130,156,164]},{"no":74,"n":"イシツブテ","t":["roc","gro"],"mt":["roc","gro"],"g":[40,80,100,30,20],"b":[40,80,100,30,30,20],"cr":255,"evo":[75],"lv":[[1,33],[11,111],[16,88],[21,120],[26,106],[31,89],[36,153]],"tm":[5,34,36,38,66,68,69,70,89,90,91,92,99,102,104,117,118,120,126,153,156,157,164]},{"no":75,"n":"ゴローン","t":["roc","gro"],"mt":["roc","gro"],"g":[55,95,115,45,35],"b":[55,95,115,45,45,35],"cr":120,"evo":[76],"lv":[[1,33],[1,111],[11,111],[16,88],[21,120],[29,106],[36,89],[43,153]],"tm":[5,34,36,38,66,68,69,70,89,90,91,92,99,102,104,117,118,120,126,153,156,157,164]},{"no":76,"n":"ゴローニャ","t":["roc","gro"],"mt":["roc","gro"],"g":[80,110,130,55,45],"b":[80,120,130,55,65,45],"cr":45,"evo":[],"lv":[[1,33],[1,111],[11,111],[16,88],[21,120],[29,106],[36,89],[43,153]],"tm":[5,25,34,36,38,63,66,68,69,70,89,90,91,92,99,102,104,117,118,120,126,153,156,157,164]},{"no":77,"n":"ポニータ","t":["fir"],"mt":["fir"],"g":[50,85,55,65,90],"b":[50,85,55,65,65,90],"cr":190,"evo":[78],"lv":[[1,52],[30,39],[32,23],[35,45],[39,83],[43,36],[48,97]],"tm":[32,34,36,38,92,99,102,104,115,117,126,129,130,156,164]},{"no":78,"n":"ギャロップ","t":["fir"],"mt":["fir"],"g":[65,100,70,80,105],"b":[65,100,70,80,80,105],"cr":60,"evo":[],"lv":[[1,23],[1,39],[1,45],[1,52],[30,39],[32,23],[35,45],[39,83],[47,36],[55,97]],"tm":[32,34,36,38,63,92,99,102,104,115,117,126,129,130,156,164]},{"no":79,"n":"ヤドン","t":["wat","psy"],"mt":["wat","psy"],"g":[90,65,65,40,15],"b":[90,65,65,40,40,15],"cr":190,"evo":[80],"lv":[[1,93],[18,50],[22,29],[27,45],[33,55],[40,133],[48,94]],"tm":[6,34,36,38,55,57,58,59,61,70,86,89,90,91,92,94,99,100,102,104,115,117,126,129,130,148,149,156,161,164]},{"no":80,"n":"ヤドラン","t":["wat","psy"],"mt":["wat","psy"],"g":[95,75,110,80,30],"b":[95,75,110,100,80,30],"cr":75,"evo":[],"lv":[[1,29],[1,50],[1,93],[18,50],[22,29],[27,45],[33,55],[37,110],[44,133],[55,94]],"tm":[5,6,25,34,36,38,55,57,58,59,61,63,66,68,69,70,86,89,90,91,92,94,99,100,102,104,115,117,126,129,130,148,149,156,161,164]},{"no":81,"n":"コイル","t":["ele"],"mt":["ele","ste"],"g":[25,35,70,95,45],"b":[25,35,70,95,55,45],"cr":190,"evo":[82],"lv":[[1,33],[21,49],[25,84],[29,48],[35,86],[41,129],[47,103]],"tm":[36,38,85,86,87,92,99,100,102,104,115,117,129,148,156,164]},{"no":82,"n":"レアコイル","t":["ele"],"mt":["ele","ste"],"g":[50,60,95,120,70],"b":[50,60,95,120,70,70],"cr":60,"evo":[],"lv":[[1,33],[1,49],[1,84],[21,49],[25,84],[29,48],[38,86],[46,129],[54,103]],"tm":[36,38,63,85,86,87,92,99,100,102,104,115,117,129,148,156,164]},{"no":83,"n":"カモネギ","t":["nor","fly"],"mt":["nor","fly"],"g":[52,65,55,58,60],"b":[52,90,55,58,62,60],"cr":45,"evo":[],"lv":[[1,28],[1,64],[7,43],[15,31],[23,14],[31,97],[39,163]],"tm":[13,14,15,18,19,34,36,38,92,99,102,104,115,117,129,130,156,164]},{"no":84,"n":"ドードー","t":["nor","fly"],"mt":["nor","fly"],"g":[35,85,45,35,75],"b":[35,85,45,35,35,75],"cr":190,"evo":[85],"lv":[[1,64],[20,45],[24,31],[30,65],[36,99],[40,161],[44,97]],"tm":[18,19,34,36,38,92,99,102,104,115,117,130,143,156,161,164]},{"no":85,"n":"ドードリオ","t":["nor","fly"],"mt":["nor","fly"],"g":[60,110,70,60,100],"b":[60,110,70,60,60,110],"cr":45,"evo":[],"lv":[[1,31],[1,45],[1,64],[20,45],[24,31],[30,65],[39,99],[45,161],[51,97]],"tm":[18,19,34,36,38,63,92,99,102,104,115,117,130,143,156,161,164]},{"no":86,"n":"パウワウ","t":["wat"],"mt":["wat"],"g":[65,45,55,70,45],"b":[65,45,55,45,70,45],"cr":190,"evo":[87],"lv":[[1,29],[30,45],[35,62],[40,156],[45,36],[50,58]],"tm":[6,32,34,36,38,55,57,58,59,61,70,92,99,102,104,117,130,156,164]},{"no":87,"n":"ジュゴン","t":["wat","ice"],"mt":["wat","ice"],"g":[90,70,80,95,70],"b":[90,70,80,70,95,70],"cr":75,"evo":[],"lv":[[1,29],[1,45],[1,62],[30,45],[35,62],[44,156],[50,36],[56,58]],"tm":[6,32,34,36,38,55,57,58,59,61,63,70,92,99,102,104,117,130,156,164]},{"no":88,"n":"ベトベター","t":["poi"],"mt":["poi"],"g":[80,80,50,40,25],"b":[80,80,50,40,50,25],"cr":190,"evo":[89],"lv":[[1,1],[1,50],[30,139],[33,107],[37,124],[42,106],[48,103],[55,151]],"tm":[34,72,85,87,92,99,102,104,117,120,126,153,156,164]},{"no":89,"n":"ベトベトン","t":["poi"],"mt":["poi"],"g":[105,105,75,65,50],"b":[105,105,75,65,100,50],"cr":75,"evo":[],"lv":[[1,1],[1,50],[1,139],[30,139],[33,107],[37,124],[45,106],[53,103],[60,151]],"tm":[34,63,72,85,87,92,99,102,104,117,120,126,153,156,164]},{"no":90,"n":"シェルダー","t":["wat"],"mt":["wat"],"g":[30,65,100,45,40],"b":[30,65,100,45,25,40],"cr":190,"evo":[91],"lv":[[1,33],[1,110],[18,48],[23,128],[30,62],[39,43],[50,58]],"tm":[36,38,55,57,58,59,61,92,99,100,102,104,115,117,120,129,153,156,161,164]},{"no":91,"n":"パルシェン","t":["wat","ice"],"mt":["wat","ice"],"g":[50,95,180,85,70],"b":[50,95,180,85,45,70],"cr":60,"evo":[],"lv":[[1,48],[1,62],[1,110],[1,128],[50,131]],"tm":[36,38,55,57,58,59,61,63,92,99,100,102,104,115,117,120,129,153,156,161,164]},{"no":92,"n":"ゴース","t":["gho","poi"],"mt":["gho","poi"],"g":[30,35,30,100,80],"b":[30,35,30,100,35,80],"cr":190,"evo":[93],"lv":[[1,101],[1,109],[1,122],[27,95],[35,138]],"tm":[72,85,87,92,94,99,102,104,117,120,138,149,153,156,164]},{"no":93,"n":"ゴースト","t":["gho","poi"],"mt":["gho","poi"],"g":[45,50,45,115,95],"b":[45,50,45,115,55,95],"cr":90,"evo":[94],"lv":[[1,101],[1,109],[1,122],[29,95],[38,138]],"tm":[72,85,87,92,94,99,102,104,117,120,138,149,153,156,164]},{"no":94,"n":"ゲンガー","t":["gho","poi"],"mt":["gho","poi"],"g":[60,65,60,130,110],"b":[60,65,60,130,75,110],"cr":45,"evo":[],"lv":[[1,101],[1,109],[1,122],[29,95],[38,138]],"tm":[5,25,34,36,38,63,66,68,69,70,72,85,87,92,94,99,102,104,117,118,120,130,138,149,153,156,164]},{"no":95,"n":"イワーク","t":["roc","gro"],"mt":["roc","gro"],"g":[35,45,160,30,70],"b":[35,45,160,30,45,70],"cr":45,"evo":[],"lv":[[1,33],[1,103],[15,20],[19,88],[25,99],[33,21],[43,106]],"tm":[34,36,38,70,89,90,91,92,99,102,104,117,120,130,153,156,157,164]},{"no":96,"n":"スリープ","t":["psy"],"mt":["psy"],"g":[60,48,45,90,42],"b":[60,48,45,43,90,42],"cr":190,"evo":[97],"lv":[[1,1],[1,95],[12,50],[17,93],[24,29],[29,139],[32,94],[37,96]],"tm":[5,25,34,36,38,66,68,69,86,92,94,99,100,102,104,115,117,118,130,138,148,149,156,161,164]},{"no":97,"n":"スリーパー","t":["psy"],"mt":["psy"],"g":[85,73,70,115,67],"b":[85,73,70,73,115,67],"cr":75,"evo":[],"lv":[[1,1],[1,50],[1,93],[1,95],[12,50],[17,93],[24,29],[33,139],[37,94],[43,96]],"tm":[5,25,34,36,38,63,66,68,69,86,92,94,99,100,102,104,115,117,118,130,138,148,149,156,161,164]},{"no":98,"n":"クラブ","t":["wat"],"mt":["wat"],"g":[30,105,90,25,50],"b":[30,105,90,25,25,50],"cr":225,"evo":[99],"lv":[[1,43],[1,145],[20,11],[25,12],[30,23],[35,152],[40,106]],"tm":[14,15,34,36,38,55,57,58,59,61,70,92,99,102,104,117,156,164]},{"no":99,"n":"キングラー","t":["wat"],"mt":["wat"],"g":[55,130,115,50,75],"b":[55,130,115,50,50,75],"cr":60,"evo":[],"lv":[[1,11],[1,43],[1,145],[20,11],[25,12],[34,23],[42,152],[49,106]],"tm":[14,15,34,36,38,55,57,58,59,61,63,70,92,99,102,104,117,156,164]},{"no":100,"n":"ビリリダマ","t":["ele"],"mt":["ele"],"g":[40,30,50,55,100],"b":[40,30,50,55,55,100],"cr":190,"evo":[101],"lv":[[1,33],[1,103],[17,49],[22,120],[29,113],[36,129],[43,153]],"tm":[36,85,86,87,92,99,100,102,104,115,117,120,129,148,153,156,164]},{"no":101,"n":"マルマイン","t":["ele"],"mt":["ele"],"g":[60,50,70,80,140],"b":[60,50,70,80,80,150],"cr":60,"evo":[],"lv":[[1,33],[1,49],[1,103],[17,49],[22,120],[29,113],[40,129],[50,153]],"tm":[36,63,85,86,87,92,99,100,102,104,115,117,120,129,130,148,153,156,164]},{"no":102,"n":"タマタマ","t":["gra","psy"],"mt":["gra","psy"],"g":[60,40,80,60,40],"b":[60,40,80,60,45,40],"cr":90,"evo":[103],"lv":[[1,95],[1,140],[25,115],[28,73],[32,78],[37,77],[42,76],[48,79]],"tm":[36,38,92,94,99,100,102,104,115,117,120,121,149,153,156,164]},{"no":103,"n":"ナッシー","t":["gra","psy"],"mt":["gra","psy"],"g":[95,95,85,125,55],"b":[95,95,85,125,75,55],"cr":45,"evo":[],"lv":[[1,95],[1,140],[28,23]],"tm":[36,38,63,70,72,76,92,94,99,100,102,104,115,117,120,121,149,153,156,164]},{"no":104,"n":"カラカラ","t":["gro"],"mt":["gro"],"g":[50,50,95,40,35],"b":[50,50,95,40,50,35],"cr":190,"evo":[105],"lv":[[1,45],[1,125],[25,43],[31,116],[38,37],[43,155],[46,99]],"tm":[5,25,34,36,38,55,58,59,61,66,68,69,70,89,90,91,92,99,102,104,117,126,130,156,164]},{"no":105,"n":"ガラガラ","t":["gro"],"mt":["gro"],"g":[60,80,110,50,45],"b":[60,80,110,50,80,45],"cr":75,"evo":[],"lv":[[1,43],[1,45],[1,116],[1,125],[25,43],[33,116],[41,37],[48,155],[55,99]],"tm":[5,25,34,36,38,55,58,59,61,63,66,68,69,70,89,90,91,92,99,102,104,117,126,130,156,164]},{"no":106,"n":"サワムラー","t":["fig"],"mt":["fig"],"g":[50,120,53,35,87],"b":[50,120,53,35,110,87],"cr":45,"evo":[],"lv":[[1,24],[1,96],[33,27],[38,26],[43,116],[48,136],[53,25]],"tm":[5,25,34,36,38,66,68,69,70,92,99,102,104,117,118,129,130,156,164]},{"no":107,"n":"エビワラー","t":["fig"],"mt":["fig"],"g":[50,105,79,35,76],"b":[50,105,79,35,110,76],"cr":45,"evo":[],"lv":[[1,4],[1,97],[33,7],[38,8],[43,9],[48,5],[53,68]],"tm":[5,25,34,36,38,66,68,69,70,92,99,102,104,117,118,129,130,156,164]},{"no":108,"n":"ベロリンガ","t":["nor"],"mt":["nor"],"g":[90,55,75,60,30],"b":[90,55,75,60,75,30],"cr":45,"evo":[],"lv":[[1,35],[1,48],[7,23],[15,50],[23,111],[31,21],[39,103]],"tm":[5,14,15,25,34,36,38,55,57,58,59,61,63,66,68,69,70,85,87,89,90,92,99,102,104,117,126,130,156,164]},{"no":109,"n":"ドガース","t":["poi"],"mt":["poi"],"g":[40,65,95,60,35],"b":[40,65,95,60,45,35],"cr":190,"evo":[110],"lv":[[1,33],[1,123],[32,124],[37,108],[40,120],[45,114],[48,153]],"tm":[85,87,92,99,102,104,117,120,126,153,156,164]},{"no":110,"n":"マタドガス","t":["poi"],"mt":["poi"],"g":[65,90,120,85,60],"b":[65,90,120,85,70,60],"cr":60,"evo":[],"lv":[[1,33],[1,123],[1,124],[32,124],[39,108],[43,120],[49,114],[53,153]],"tm":[63,85,87,92,99,102,104,117,120,126,153,156,164]},{"no":111,"n":"サイホーン","t":["gro","roc"],"mt":["gro","roc"],"g":[80,85,95,30,25],"b":[80,85,95,30,30,25],"cr":120,"evo":[112],"lv":[[1,30],[30,23],[35,39],[40,31],[45,32],[50,43],[55,36]],"tm":[32,34,36,38,70,85,87,89,90,91,92,99,102,104,117,126,130,156,157,164]},{"no":112,"n":"サイドン","t":["gro","roc"],"mt":["gro","roc"],"g":[105,130,120,45,40],"b":[105,130,120,45,45,40],"cr":60,"evo":[],"lv":[[1,23],[1,30],[1,31],[1,39],[30,23],[35,39],[40,31],[48,32],[55,43],[64,36]],"tm":[5,6,25,32,34,36,38,55,57,58,59,61,63,66,68,69,70,85,87,89,90,91,92,99,102,104,117,126,130,156,157,164]},{"no":113,"n":"ラッキー","t":["nor"],"mt":["nor"],"g":[250,5,5,105,50],"b":[250,5,5,35,105,50],"cr":30,"evo":[],"lv":[[1,1],[1,3],[24,47],[30,45],[38,107],[44,111],[48,113],[54,38]],"tm":[5,25,34,36,38,55,58,59,61,63,66,68,69,70,76,85,86,87,92,94,99,100,102,104,115,117,118,121,126,130,135,148,149,156,161,164]},{"no":114,"n":"モンジャラ","t":["gra"],"mt":["gra"],"g":[65,55,115,100,60],"b":[65,55,115,100,40,60],"cr":45,"evo":[],"lv":[[1,20],[1,132],[29,71],[32,77],[36,78],[39,79],[45,21],[49,74]],"tm":[14,15,34,36,38,63,72,76,92,99,102,104,117,130,156,164]},{"no":115,"n":"ガルーラ","t":["nor"],"mt":["nor"],"g":[105,95,80,40,90],"b":[105,95,80,40,80,90],"cr":45,"evo":[],"lv":[[1,4],[1,99],[26,44],[31,39],[36,5],[41,43],[46,146]],"tm":[5,25,34,36,38,55,57,58,59,61,63,66,68,69,70,85,87,89,90,92,99,102,104,117,126,130,156,157,164]},{"no":116,"n":"タッツー","t":["wat"],"mt":["wat"],"g":[30,40,70,70,60],"b":[30,40,70,70,25,60],"cr":225,"evo":[117],"lv":[[1,145],[19,108],[24,43],[30,55],[37,97],[45,56]],"tm":[36,38,55,57,58,59,61,92,99,102,104,117,129,130,156,164]},{"no":117,"n":"シードラ","t":["wat"],"mt":["wat"],"g":[55,65,95,95,85],"b":[55,65,95,95,45,85],"cr":75,"evo":[],"lv":[[1,108],[1,145],[19,108],[24,43],[30,55],[41,97],[52,56]],"tm":[36,38,55,57,58,59,61,63,92,99,102,104,117,129,130,156,164]},{"no":118,"n":"トサキント","t":["wat"],"mt":["wat"],"g":[45,67,60,50,63],"b":[45,67,60,35,50,63],"cr":225,"evo":[119],"lv":[[1,39],[1,64],[19,48],[24,30],[30,31],[37,127],[45,32],[54,97]],"tm":[32,36,38,55,57,58,59,61,92,99,102,104,117,129,130,156,164]},{"no":119,"n":"アズマオウ","t":["wat"],"mt":["wat"],"g":[80,92,65,80,68],"b":[80,92,65,65,80,68],"cr":60,"evo":[],"lv":[[1,39],[1,48],[1,64],[19,48],[24,30],[30,31],[39,127],[48,32],[54,97]],"tm":[32,36,38,55,57,58,59,61,63,92,99,102,104,117,129,130,156,164]},{"no":120,"n":"ヒトデマン","t":["wat"],"mt":["wat"],"g":[30,45,55,70,85],"b":[30,45,55,70,55,85],"cr":225,"evo":[121],"lv":[[1,33],[17,55],[22,106],[27,105],[32,129],[37,107],[42,113],[47,56]],"tm":[36,38,55,57,58,59,61,85,86,87,92,94,99,100,102,104,115,117,129,130,148,149,156,161,164]},{"no":121,"n":"スターミー","t":["wat","psy"],"mt":["wat","psy"],"g":[60,75,85,100,115],"b":[60,75,85,100,85,115],"cr":60,"evo":[],"lv":[[1,33],[1,55],[1,106]],"tm":[36,38,55,57,58,59,61,63,85,86,87,92,94,99,100,102,104,115,117,129,130,148,149,156,161,164]},{"no":122,"n":"バリヤード","t":["psy"],"mt":["psy","fai"],"g":[40,45,65,100,90],"b":[40,45,65,100,120,90],"cr":45,"evo":[],"lv":[[1,93],[1,112],[15,93],[23,113],[31,3],[39,96],[47,164]],"tm":[5,25,34,36,38,63,66,68,69,76,85,86,87,92,94,99,100,102,104,115,117,118,130,148,149,156,164]},{"no":123,"n":"ストライク","t":["bug","fly"],"mt":["bug","fly"],"g":[70,110,80,55,105],"b":[70,110,80,55,80,105],"cr":45,"evo":[],"lv":[[1,98],[17,43],[20,116],[24,104],[29,163],[35,14],[42,97]],"tm":[14,15,36,38,63,92,99,102,104,117,129,130,156,164]},{"no":124,"n":"ルージュラ","t":["ice","psy"],"mt":["ice","psy"],"g":[65,50,35,95,95],"b":[65,50,35,115,95,95],"cr":45,"evo":[],"lv":[[1,1],[1,142],[18,122],[23,3],[31,8],[39,34],[47,37],[58,59]],"tm":[5,25,34,36,38,55,58,59,61,63,66,68,69,92,94,99,100,102,104,115,117,118,130,149,156,164]},{"no":125,"n":"エレブー","t":["ele"],"mt":["ele"],"g":[65,83,57,85,105],"b":[65,83,57,95,85,105],"cr":45,"evo":[],"lv":[[1,43],[1,98],[34,84],[37,103],[42,9],[49,113],[54,87]],"tm":[5,25,34,36,38,63,66,68,69,70,85,86,87,92,94,99,100,102,104,115,117,118,129,130,148,149,156,164]},{"no":126,"n":"ブーバー","t":["fir"],"mt":["fir"],"g":[65,95,57,85,93],"b":[65,95,57,100,85,93],"cr":45,"evo":[],"lv":[[1,52],[36,43],[39,109],[43,7],[48,108],[52,123],[55,53]],"tm":[5,25,34,36,38,63,66,68,69,70,92,94,99,100,102,104,117,118,126,130,149,156,164]},{"no":127,"n":"カイロス","t":["bug"],"mt":["bug"],"g":[65,125,100,55,85],"b":[65,125,100,55,70,85],"cr":45,"evo":[],"lv":[[1,11],[25,69],[30,12],[36,116],[43,106],[49,163],[54,14]],"tm":[14,15,34,36,38,63,66,69,70,92,99,102,104,117,156,164]},{"no":128,"n":"ケンタロス","t":["nor"],"mt":["nor"],"g":[75,100,95,70,110],"b":[75,100,95,40,70,110],"cr":45,"evo":[],"lv":[[1,33],[21,23],[28,39],[35,43],[44,99],[51,36]],"tm":[32,34,36,38,58,59,63,70,85,87,89,90,92,99,102,104,117,126,130,156,164]},{"no":129,"n":"コイキング","t":["wat"],"mt":["wat"],"g":[20,10,55,20,80],"b":[20,10,55,15,20,80],"cr":255,"evo":[130],"lv":[[1,150],[15,33]],"tm":[]},{"no":130,"n":"ギャラドス","t":["wat","fly"],"mt":["wat","fly"],"g":[95,125,79,100,81],"b":[95,125,79,60,100,81],"cr":45,"evo":[],"lv":[[1,43],[1,44],[1,56],[1,82],[20,44],[25,82],[32,43],[41,56],[52,63]],"tm":[34,36,38,55,57,58,59,61,63,70,82,85,87,92,99,102,104,115,117,126,130,156,164]},{"no":131,"n":"ラプラス","t":["wat","ice"],"mt":["wat","ice"],"g":[130,85,80,95,60],"b":[130,85,80,85,95,60],"cr":45,"evo":[],"lv":[[1,45],[1,55],[16,47],[20,54],[25,34],[31,109],[38,58],[46,56]],"tm":[32,34,36,38,55,57,58,59,61,63,70,76,82,85,87,92,94,99,102,104,115,117,130,149,156,164]},{"no":132,"n":"メタモン","t":["nor"],"mt":["nor"],"g":[48,48,48,48,48],"b":[48,48,48,48,48,48],"cr":35,"evo":[],"lv":[[1,144]],"tm":[]},{"no":133,"n":"イーブイ","t":["nor"],"mt":["nor"],"g":[55,55,50,65,55],"b":[55,55,50,45,65,55],"cr":45,"evo":[134,135,136],"lv":[[1,28],[1,33],[27,98],[31,39],[37,44],[45,36]],"tm":[34,36,38,92,99,102,104,115,117,129,130,156,164]},{"no":134,"n":"シャワーズ","t":["wat"],"mt":["wat"],"g":[130,65,60,110,65],"b":[130,65,60,110,95,65],"cr":45,"evo":[],"lv":[[1,28],[1,33],[1,55],[1,98],[27,98],[31,55],[37,39],[40,44],[42,151],[44,114],[48,54],[54,56]],"tm":[34,36,38,55,57,58,59,61,63,92,99,102,104,115,117,129,130,156,164]},{"no":135,"n":"サンダース","t":["ele"],"mt":["ele"],"g":[65,65,60,110,130],"b":[65,65,60,110,95,130],"cr":45,"evo":[],"lv":[[1,28],[1,33],[1,84],[1,98],[27,98],[31,84],[37,39],[40,86],[42,24],[44,97],[48,42],[54,87]],"tm":[34,36,38,63,85,86,87,92,99,102,104,115,117,129,130,148,156,164]},{"no":136,"n":"ブースター","t":["fir"],"mt":["fir"],"g":[65,130,60,110,65],"b":[65,130,60,95,110,65],"cr":45,"evo":[],"lv":[[1,28],[1,33],[1,52],[1,98],[27,98],[31,52],[37,39],[40,44],[42,43],[44,83],[48,99],[54,53]],"tm":[34,36,38,63,92,99,102,104,115,117,126,129,130,156,164]},{"no":137,"n":"ポリゴン","t":["nor"],"mt":["nor"],"g":[65,60,70,75,40],"b":[65,60,70,85,75,40],"cr":45,"evo":[],"lv":[[1,33],[1,159],[1,160],[23,60],[28,105],[35,97],[42,161]],"tm":[36,38,58,59,63,85,86,87,92,94,99,100,102,104,115,117,129,130,148,149,156,161,164]},{"no":138,"n":"オムナイト","t":["roc","wat"],"mt":["roc","wat"],"g":[35,40,100,90,35],"b":[35,40,100,90,55,35],"cr":45,"evo":[139],"lv":[[1,55],[1,110],[34,30],[39,43],[46,131],[53,56]],"tm":[34,36,38,55,57,58,59,61,92,99,102,104,115,117,156,164]},{"no":139,"n":"オムスター","t":["roc","wat"],"mt":["roc","wat"],"g":[70,60,125,115,55],"b":[70,60,125,115,70,55],"cr":45,"evo":[],"lv":[[1,30],[1,55],[1,110],[34,30],[39,43],[44,131],[49,56]],"tm":[32,34,36,38,55,57,58,59,61,63,66,69,92,99,102,104,115,117,130,156,164]},{"no":140,"n":"カブト","t":["roc","wat"],"mt":["roc","wat"],"g":[30,80,90,45,55],"b":[30,80,90,55,45,55],"cr":45,"evo":[141],"lv":[[1,10],[1,106],[34,71],[39,163],[44,43],[49,56]],"tm":[34,36,38,55,57,58,59,61,92,99,102,104,115,117,156,164]},{"no":141,"n":"カブトプス","t":["roc","wat"],"mt":["roc","wat"],"g":[60,115,105,70,80],"b":[60,115,105,65,70,80],"cr":45,"evo":[],"lv":[[1,10],[1,71],[1,106],[34,71],[39,163],[46,43],[53,56]],"tm":[13,14,25,34,36,38,55,57,58,59,61,63,66,69,92,99,102,104,115,117,130,156,164]},{"no":142,"n":"プテラ","t":["roc","fly"],"mt":["roc","fly"],"g":[80,105,65,60,130],"b":[80,105,65,60,75,130],"cr":45,"evo":[],"lv":[[1,17],[1,97],[33,48],[38,44],[45,36],[54,63]],"tm":[13,18,19,36,38,63,82,92,99,102,104,115,117,126,129,143,156,164]},{"no":143,"n":"カビゴン","t":["nor"],"mt":["nor"],"g":[160,110,65,65,30],"b":[160,110,65,65,110,30],"cr":25,"evo":[],"lv":[[1,29],[1,133],[1,156],[35,34],[41,106],[48,38],[56,63]],"tm":[5,6,25,34,36,38,55,57,58,59,61,63,66,68,69,70,76,85,87,89,90,92,94,99,102,104,115,117,118,120,126,130,149,156,157,164]},{"no":144,"n":"フリーザー","t":["ice","fly"],"mt":["ice","fly"],"g":[90,85,100,125,85],"b":[90,85,100,95,125,85],"cr":3,"evo":[],"lv":[[1,58],[1,64],[51,59],[55,97],[60,54]],"tm":[13,18,19,36,38,55,58,59,61,63,92,99,102,104,115,117,129,143,156,164]},{"no":145,"n":"サンダー","t":["ele","fly"],"mt":["ele","fly"],"g":[90,90,85,125,100],"b":[90,90,85,125,90,100],"cr":3,"evo":[],"lv":[[1,65],[1,84],[51,87],[55,97],[60,113]],"tm":[13,18,19,36,38,63,85,86,87,92,99,102,104,115,117,129,143,148,156,164]},{"no":146,"n":"ファイヤー","t":["fir","fly"],"mt":["fir","fly"],"g":[90,100,90,125,90],"b":[90,100,90,125,85,90],"cr":3,"evo":[],"lv":[[1,64],[1,83],[51,43],[55,97],[60,143]],"tm":[13,18,19,36,38,63,92,99,102,104,115,117,126,129,143,156,164]},{"no":147,"n":"ミニリュウ","t":["dra"],"mt":["dra"],"g":[41,64,45,50,50],"b":[41,64,45,50,50,50],"cr":45,"evo":[148],"lv":[[1,35],[1,43],[10,86],[20,97],[30,21],[40,82],[50,63]],"tm":[34,36,38,55,57,58,59,61,82,85,86,87,92,99,102,104,115,117,126,129,130,156,164]},{"no":148,"n":"ハクリュー","t":["dra"],"mt":["dra"],"g":[61,84,65,70,70],"b":[61,84,65,70,70,70],"cr":45,"evo":[149],"lv":[[1,35],[1,43],[1,86],[10,86],[20,97],[35,21],[45,82],[55,63]],"tm":[32,34,36,38,55,57,58,59,61,82,85,86,87,92,99,102,104,115,117,126,129,130,156,164]},{"no":149,"n":"カイリュー","t":["dra","fly"],"mt":["dra","fly"],"g":[91,134,95,100,80],"b":[91,134,95,100,100,80],"cr":45,"evo":[],"lv":[[1,35],[1,43],[1,86],[1,97],[10,86],[20,97],[35,21],[45,82],[60,63]],"tm":[13,32,34,36,38,55,57,58,59,61,63,70,82,85,86,87,92,99,102,104,115,117,126,129,130,156,164]},{"no":150,"n":"ミュウツー","t":["psy"],"mt":["psy"],"g":[106,110,90,154,130],"b":[106,110,90,154,90,130],"cr":3,"evo":[],"lv":[[1,50],[1,93],[1,94],[1,129],[63,112],[66,94],[70,105],[75,54],[81,133]],"tm":[5,6,25,34,36,38,55,58,59,61,63,66,68,69,70,76,85,86,87,92,94,99,100,102,104,115,117,118,120,126,130,148,149,156,161,164]},{"no":151,"n":"ミュウ","t":["psy"],"mt":["psy"],"g":[100,100,100,100,100],"b":[100,100,100,100,100,100],"cr":45,"evo":[],"lv":[[1,1],[10,144],[20,5],[30,118],[40,94]],"tm":[5,6,13,14,15,18,19,25,32,34,36,38,55,57,58,59,61,63,66,68,69,70,72,76,82,85,86,87,89,90,91,92,94,99,100,102,104,115,117,118,120,121,126,129,130,135,138,143,148,149,153,156,157,161,164]}]};
+/* ================= 基本データ ================= */
+const TYPES={nor:['ノーマル','#9c9a74'],fir:['ほのお','#e5762a'],wat:['みず','#4f82e6'],ele:['でんき','#f2c923',1],gra:['くさ','#5fae3c'],ice:['こおり','#8fd3d0',1],fig:['かくとう','#b8322b'],poi:['どく','#9442a0'],gro:['じめん','#d9b45a',1],fly:['ひこう','#8f7ae0'],psy:['エスパー','#e8517f'],bug:['むし','#98ad1c'],roc:['いわ','#a8943a'],gho:['ゴースト','#69508f'],dra:['ドラゴン','#6337e0'],dar:['あく','#6b5445'],ste:['はがね','#a9a9c4',1],fai:['フェアリー','#d67aa6']};
+const CHART={nor:[[],['roc','ste'],['gho']],fir:[['gra','ice','bug','ste'],['fir','wat','roc','dra'],[]],wat:[['fir','gro','roc'],['wat','gra','dra'],[]],ele:[['wat','fly'],['ele','gra','dra'],['gro']],gra:[['wat','gro','roc'],['fir','gra','poi','fly','bug','dra','ste'],[]],ice:[['gra','gro','fly','dra'],['fir','wat','ice','ste'],[]],fig:[['nor','ice','roc','dar','ste'],['poi','fly','psy','bug','fai'],['gho']],poi:[['gra','fai'],['poi','gro','roc','gho'],['ste']],gro:[['fir','ele','poi','roc','ste'],['gra','bug'],['fly']],fly:[['gra','fig','bug'],['ele','roc','ste'],[]],psy:[['fig','poi'],['psy','ste'],['dar']],bug:[['gra','psy','dar'],['fir','fig','poi','fly','gho','ste','fai'],[]],roc:[['fir','ice','fly','bug'],['fig','gro','ste'],[]],gho:[['psy','gho'],['dar'],['nor']],dra:[['dra'],['ste'],['fai']],dar:[['psy','gho'],['fig','dar','fai'],[]],ste:[['ice','roc','fai'],['fir','wat','ele','ste'],[]],fai:[['fig','dra','dar'],['fir','poi','ste'],[]]};
+const SK=['hp','atk','def','spa','spd','spe'];
+const SL={hp:'体力B',atk:'攻撃B',def:'防御B',spa:'特攻B',spd:'特防B',spe:'敏捷B'};
+const RK=['atk','def','spa','spd','spe','acc','eva','crit'];
+const RL={atk:'攻撃',def:'防御',spa:'特攻',spd:'特防',spe:'敏捷',acc:'命中',eva:'回避',crit:'急所'};
+const STATUS={'':'なし',psn:'毒',tox:'猛毒',par:'麻痺',brn:'火傷',slp:'眠り',frz:'氷'};
+const SEC_L={brn:'火傷',par:'麻痺',frz:'氷',psn:'毒',tox:'猛毒',slp:'眠り',conf:'混乱',flinch:'ひるみ',leech:'やどりぎ',tri:'火傷/麻痺/氷',heal:'HP回復',rest:'ねむる',wall_p:'リフレクター',wall_s:'ひかりのかべ',haze:'くろいきり'};
+const ITEMS=[
+ {k:'kizu',n:'キズぐすり',p:200,heal:20,d:'HPを20回復'},
+ {k:'iikizu',n:'いいキズぐすり',p:500,heal:50,d:'HPを50回復'},
+ {k:'sugoi',n:'すごいキズぐすり',p:1200,heal:120,d:'HPを120回復'},
+ {k:'mantan',n:'まんたんのくすり',p:1500,heal:9999,d:'HPを全回復'},
+ {k:'kaifuku',n:'かいふくのくすり',p:2000,heal:9999,cure:'all',d:'HP全回復＋状態異常回復'},
+ {k:'dokukeshi',n:'どくけし',p:100,cure:['psn','tox'],d:'毒・猛毒を回復'},
+ {k:'mahi',n:'まひなおし',p:100,cure:['par'],d:'麻痺を回復'},
+ {k:'yakedo',n:'やけどなおし',p:100,cure:['brn'],d:'火傷を回復'},
+ {k:'koori',n:'こおりなおし',p:100,cure:['frz'],d:'氷を回復'},
+ {k:'nemuke',n:'ねむけざまし',p:100,cure:['slp'],d:'眠りを回復'},
+ {k:'nandemo',n:'なんでもなおし',p:300,cure:'all',d:'状態異常を全て回復'},
+ {k:'genki',n:'げんきのかけら',p:1000,revive:1,d:'瀕死から回復しHPを半分に'},
+ {k:'ppaid',n:'ピーピーエイド',p:300,pp:10,d:'技1つのPPを10回復'},
+ {k:'mball',n:'モンスターボール',p:200,ball:1.0,d:'捕獲係数1.0'},
+ {k:'sball',n:'スーパーボール',p:600,ball:1.5,d:'捕獲係数1.5'},
+ {k:'hball',n:'ハイパーボール',p:800,ball:2.0,d:'捕獲係数2.0'},
+];
+const MON=Object.fromEntries(DATA.mons.map(m=>[m.no,m]));
+const MOVE=Object.fromEntries(DATA.moves.map(m=>[m.id,m]));
+const MOVES_SORTED=[...DATA.moves].sort((a,b)=>a.n.localeCompare(b.n,'ja'));
+
+/* ================= 状態 ================= */
+const DEF_CFG={ver:'excite',gen:'g1',div:10,minDmg:0,climax:false,g1ghost:true,autoAfter:true};
+let S=null;S=load()||sample();
+let UI={tab:'battle',sel:null,act:{att:null,mv:null,tg:[],dice:{},opt:{}},cap:{tg:null,ball:1,bonus:0,dice:{}},esc:{dice:{}},refq:'',refk:'moves',lfilter:'lv'};
+try{const t=localStorage.getItem('pkkp_tab');if(t)UI.tab=t}catch(e){}
+
+function uid(){return Math.random().toString(36).slice(2,9)}
+function clone(o){return JSON.parse(JSON.stringify(o))}
+function save(){try{localStorage.setItem('pkkp_state',JSON.stringify(S))}catch(e){}}
+function load(){try{const s=JSON.parse(localStorage.getItem('pkkp_state'));if(s&&s.units){s.cfg={...DEF_CFG,...s.cfg};return s}}catch(e){}return null}
+function cfg(){return S?S.cfg:DEF_CFG}
+
+function baseStats(no,gen){const m=MON[no];gen=gen||cfg().gen;if(gen==='g1'){const g=m.g;return{hp:g[0],atk:g[1],def:g[2],spa:g[3],spd:g[3],spe:g[4]}}const b=m.b;return{hp:b[0],atk:b[1],def:b[2],spa:b[3],spd:b[4],spe:b[5]}}
+function calcB(no){const b=baseStats(no);return Object.fromEntries(SK.map(k=>[k,Math.floor(b[k]/10)]))}
+function calcHP(no){return Math.floor((baseStats(no).hp+75)/2)}
+function monTypes(u){if(u.types&&u.types.length)return u.types;const m=MON[u.no];return cfg().gen==='g1'?m.t:m.mt}
+function MV(id){const m=MOVE[id];if(!m)return null;if(cfg().gen==='modern'){const o=m.m;return{...m,t:o.t,c:o.c,pw:o.pw,acc:o.acc,pp:o.pp,pri:o.pri,e:o.e??m.e,sec:o.sec??m.sec,f:o.f??m.f}}return m}
+function autoMoves(no,lv){const m=MON[no];const ids=[];m.lv.filter(x=>x[0]<=lv).forEach(x=>{const i=ids.indexOf(x[1]);if(i>=0)ids.splice(i,1);ids.push(x[1])});return ids.slice(-4)}
+function newUnit(no,o={}){const B=calcB(no),hp=calcHP(no);const mv=(o.moves||autoMoves(no,o.lv||20)).map(id=>({id,pp:MV(id).pp,max:MV(id).pp}));
+  return{uid:uid(),no,nick:o.nick||'',owner:o.owner||'',side:o.side||'ally',inBattle:o.inBattle??true,B,maxHp:hp,hp,status:'',toxN:1,slpN:0,conf:false,attract:false,leech:false,ranks:blankRanks(),moves:mv,enhanced:false,canEvo:null,memo:o.memo||'',types:null}}
+function blankRanks(){return Object.fromEntries(RK.map(k=>[k,0]))}
+function sample(){
+  const s={cfg:{...DEF_CFG},units:[],walls:{ally:{p:false,s:false},enemy:{p:false,s:false}},turn:1,log:[],money:{}};
+  s.units.push(Object.assign(newUnit(5,{nick:'いちご',owner:'ホノカ(例)',side:'ally',moves:[52,163,43,99]})));
+  s.units.push(Object.assign(newUnit(25,{nick:'',owner:'ユウキ(例)',side:'ally',moves:[84,98,86,39]})));
+  s.units.push(Object.assign(newUnit(21,{nick:'',owner:'野生(例)',side:'enemy',moves:[64,45,43,31]})));
+  s.units.push(Object.assign(newUnit(32,{nick:'',owner:'野生(例)',side:'enemy',moves:[43,33,24,40]})));
+  s.log.push({t:'--',x:'サンプルの戦闘を表示しています。「設定・保存」→「全データを消去」で白紙から始められます。'});
+  return s}
+function U(id){return S.units.find(u=>u.uid===id)}
+function uname(u){if(!u)return'?';const sp=MON[u.no].n;return u.nick?`${u.nick}(${sp})`:sp}
+function active(){return S.units.filter(u=>u.inBattle)}
+
+/* ================= ルール計算 ================= */
+function rankMul(r){r=Math.max(-6,Math.min(6,r));return r>=0?(2+r)/2:2/(2-r)}
+function effB(u,k){let v=Math.floor(u.B[k]*(k==='hp'?1:rankMul(u.ranks[k]||0)));if(k==='atk'&&u.status==='brn')v=Math.floor(v/2);if(k==='spe'&&u.status==='par')v=Math.floor(v/2);return v}
+function evadeB(def,att){let v=u_spe_noRank(def);const r=Math.max(-6,Math.min(6,(def.ranks.eva||0)-(att?att.ranks.acc||0:0)));return{v:Math.floor(v*rankMul(r)),r}}
+function u_spe_noRank(u){let v=u.B.spe;if(u.status==='par')v=Math.floor(v/2);return v}
+function typeEff(at,dts){let e=1;const g1=cfg().gen==='g1';for(const d of dts){let x=1;const c=CHART[at];if(c[0].includes(d))x=2;else if(c[1].includes(d))x=.5;else if(c[2].includes(d))x=0;
+  if(g1){if(at==='bug'&&d==='poi')x=2;if(at==='poi'&&d==='bug')x=2;if(at==='ice'&&d==='fir')x=1;if(at==='gho'&&d==='psy')x=cfg().g1ghost?0:2}e*=x}return e}
+function effText(e){return e===0?'効果がないようだ':e>=2?'効果は抜群だ':e<1?'効果はいまひとつのようだ':''}
+function isStab(u,mv){return monTypes(u).includes(mv.t)}
+function sheetPow(u,mv,pw){pw=pw??mv.pw;if(pw==null)return null;const p1=Math.floor(pw/cfg().div);return Math.floor(p1*(isStab(u,mv)?1.5:1))}
+function critNeed(u,mv){const r=Math.min(3,(u.ranks.crit||0)+((mv.f&&mv.f.crit)||0));return 11-r}
+function hitsFromRoll(v){if(v==null||v==='')return null;const x=cfg().ver==='excite'?[[6,2],[9,3],[11,4],[12,5]]:[[4,2],[7,3],[10,4],[12,5]];for(const [m,h] of x)if(v<=m)return h;return 5}
+function psyPow(v){return v<=2?30:v<=4?50:70}
+function p2d6ge(k){if(k<=2)return 1;if(k>12)return 0;let c=0;for(let a=1;a<=6;a++)for(let b=1;b<=6;b++)if(a+b>=k)c++;return c/36}
+function p2d6le(k){return 1-p2d6ge(k+1)}
+function pct(p){return Math.round(p*1000)/10+'%'}
+function rnd(n,s){let t=0;for(let i=0;i<n;i++)t+=1+Math.floor(Math.random()*s);return t}
+function secTarget(ch){return 101-ch}
+function hpColor(u){const r=u.hp/u.maxHp;return r<=.2?'r':r<=.5?'y':''}
+
+/* ================= 描画ユーティリティ ================= */
+const $=s=>document.querySelector(s);
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function tchip(t){const x=TYPES[t];return `<span class="type${x[2]?' dk':''}" style="background:${x[1]}">${x[0]}</span>`}
+function clsL(c){return c==='p'?'物理':c==='s'?'特殊':'変化'}
+function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,1800)}
+function copy(text){const done=()=>toast('コピーしました');if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text))}else fallbackCopy(text)}
+function fallbackCopy(text){const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy')}catch(e){}ta.remove();toast(ok?'コピーしました':'コピーできませんでした。手動で選択してください')}
+function dice(key,label,sides,count,store){const v=store[key]??'';return `<span class="dice"><label for="d_${key}">${esc(label)}</label><input id="d_${key}" type="number" inputmode="numeric" data-dice="${key}" data-store="${store===UI.act.dice?'act':store===UI.cap.dice?'cap':'esc'}" value="${v}" min="${count}" max="${count*sides}"><button type="button" title="${count}d${sides}を振る" data-roll="${key}" data-n="${count}" data-s="${sides}" data-store="${store===UI.act.dice?'act':store===UI.cap.dice?'cap':'esc'}">🎲</button></span>`}
+function addLog(x){S.log.push({t:'T'+S.turn,x});if(S.log.length>400)S.log.shift()}
+
+/* ================= ヘッダ ================= */
+function renderChips(){const c=cfg();$('#chips').innerHTML=`<span class="chip">版 <b>${c.ver==='excite'?'エキサイト':'マスター'}</b></span><span class="chip">データ <b>${c.gen==='g1'?'初代(赤緑)':'最新'}</b></span><span class="chip">威力 <b>÷${c.div}</b></span>${c.ver==='excite'?`<span class="chip">強化フェイズ <b>${c.climax?'有効':'無効'}</b></span>`:''}<span class="chip">ターン <b>${S.turn}</b></span>`}
+
+/* ================= 戦闘タブ ================= */
+function renderBattle(){
+  const act=active();
+  const allies=act.filter(u=>u.side==='ally'),enemies=act.filter(u=>u.side==='enemy');
+  const bench=S.units.filter(u=>!u.inBattle);
+  return `<div class="grid-battle">
+  <div class="stack">
+    <section class="panel" aria-labelledby="h-act"><h2 id="h-act">行動パネル <span class="sub">技の命中・ダメージ・追加効果</span></h2>${renderAction()}</section>
+    <section class="panel"><h2>行動順 <span class="sub">敏捷B(ランク・麻痺込み)順</span></h2>${renderOrder()}</section>
+    <section class="panel"><h2>ログ <span class="sub">ココフォリアに貼れる形式</span></h2>
+      <div class="row" style="margin-bottom:6px"><button class="btn sm" data-act="copylog">全ログをコピー</button><button class="btn sm" data-act="copylast">最新1件をコピー</button><button class="btn sm ghost danger" data-act="clearlog">ログ消去</button></div>
+      <div class="log" id="log">${S.log.slice().reverse().map(l=>`<div><span class="t">${esc(l.t)}</span>${esc(l.x)}</div>`).join('')}</div></section>
+  </div>
+  <div>
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn" data-act="turn+">ターン終了 → ${S.turn+1}ターン目へ</button>
+      <button class="btn" data-act="endbattle">戦闘終了処理</button>
+      <span class="muted small">壁：</span>
+      ${['ally','enemy'].map(sd=>`<label class="small"><input type="checkbox" data-wall="${sd}.p" ${S.walls[sd].p?'checked':''}> ${sd==='ally'?'味方':'相手'}リフレクター</label><label class="small"><input type="checkbox" data-wall="${sd}.s" ${S.walls[sd].s?'checked':''}> ${sd==='ally'?'味方':'相手'}ひかりのかべ</label>`).join('')}
+    </div>
+    <h2 class="side-h ally">味方</h2><div class="cards">${allies.map(renderCard).join('')||'<p class="muted">場に味方がいません。「ポケモン登録」で登録するか、控えから出してください。</p>'}</div>
+    <h2 class="side-h enemy">相手</h2><div class="cards">${enemies.map(renderCard).join('')||'<p class="muted">場に相手がいません。</p>'}</div>
+    <section class="panel"><h2>控え・登録済み <span class="sub">クリックで場に出す</span></h2>
+      <div class="row">${bench.map(u=>`<button class="btn sm" data-act="tobattle" data-u="${u.uid}"><span class="pill ${u.side}">${u.side==='ally'?'味方':'相手'}</span> ${esc(uname(u))} <span class="num">${u.hp}/${u.maxHp}</span></button>`).join('')||'<span class="muted small">控えはいません</span>'}</div>
+      <div class="row" style="margin-top:10px"><span class="small muted">すぐ追加：</span>${quickAdd()}</div>
+    </section>
+  </div></div>`}
+function quickAdd(){return `<input type="text" list="dl-mon" id="qa-mon" placeholder="No.か名前" style="width:140px"><select id="qa-side"><option value="enemy">相手(野生)</option><option value="ally">味方</option></select><span class="field" style="flex-direction:row;align-items:center;gap:4px"><span>技Lv目安</span><input type="number" id="qa-lv" value="20" class="w3"></span><button class="btn sm pri" data-act="quickadd">場に追加</button>`}
+function monDatalist(){return `<datalist id="dl-mon">${DATA.mons.map(m=>`<option value="${String(m.no).padStart(3,'0')} ${m.n}">`).join('')}</datalist>`}
+function parseMon(v){v=(v||'').trim();const n=parseInt(v,10);if(n>=1&&n<=151)return n;const m=DATA.mons.find(m=>m.n===v||v.endsWith(m.n));return m?m.no:null}
+
+function renderCard(u){
+  const tp=monTypes(u),r=Math.max(0,u.hp/u.maxHp);
+  const bcells=SK.map(k=>{const e=k==='hp'?u.B.hp:effB(u,k);const cls=e>u.B[k]?'up':e<u.B[k]?'dn':'';return `<div><small>${SL[k].replace('B','')}</small><b class="${cls}">${e}</b></div>`}).join('');
+  const ranks=RK.map(k=>{const v=u.ranks[k]||0;return `<div class="rk"><button data-rank="${u.uid}.${k}.-1" aria-label="${RL[k]}ランクを下げる">−</button><span>${RL[k]}</span><b class="${v>0?'up':v<0?'dn':''}">${v>0?'+'+v:v}</b><button data-rank="${u.uid}.${k}.1" aria-label="${RL[k]}ランクを上げる">＋</button></div>`}).join('');
+  const mvs=u.moves.map((m,i)=>{const mv=MV(m.id);if(!mv)return'';const sp=sheetPow(u,mv);return `<div class="mv"><span>${tchip(mv.t)} ${esc(mv.n)} <span class="cls">${clsL(mv.c)}</span> ${sp!=null?`<span class="num small muted">威${sp}</span>`:''}</span><span class="pp num ${m.pp<=0?'zero':''}">${m.pp}/${m.max}</span><span><button class="btn sm" data-pp="${u.uid}.${i}.-1" aria-label="PPを1減らす">−</button><button class="btn sm" data-pp="${u.uid}.${i}.1" aria-label="PPを1増やす">＋</button></span></div>`}).join('');
+  const fl=[];if(u.status)fl.push(`<span class="pill bad">${STATUS[u.status]}${u.status==='tox'?' n='+u.toxN:''}${u.status==='slp'?' n='+u.slpN:''}</span>`);if(u.conf)fl.push('<span class="pill warn">混乱</span>');if(u.attract)fl.push('<span class="pill warn">メロメロ</span>');if(u.leech)fl.push('<span class="pill warn">やどりぎ</span>');if(u.hp<=0)fl.push('<span class="pill bad">瀕死</span>');
+  const canEvo=u.canEvo??MON[u.no].evo.length>0;
+  return `<article class="card ${u.side} ${u.hp<=0?'fainted':''}">
+   <div class="card-h"><span class="nm">${esc(u.nick||MON[u.no].n)}</span><span class="sp">No.${String(u.no).padStart(3,'0')} ${MON[u.no].n}${u.owner?' / '+esc(u.owner):''}</span>${tp.map(tchip).join('')}${fl.join('')}</div>
+   <div class="hpline"><span class="big num">${u.hp}</span><span class="muted">/ ${u.maxHp}</span>
+     <input type="number" id="hpd-${u.uid}" placeholder="増減" class="w4" aria-label="HPの増減量"><button class="btn sm" data-hp="${u.uid}.-1">ダメージ</button><button class="btn sm" data-hp="${u.uid}.1">回復</button></div>
+   <div class="hpbar" role="img" aria-label="HP ${Math.round(r*100)}%"><i class="${hpColor(u)}" style="width:${r*100}%"></i></div>
+   <div class="bgrid">${bcells}</div>
+   <div class="row small">
+     <select data-uf="${u.uid}.status" aria-label="状態異常">${Object.entries(STATUS).map(([k,v])=>`<option value="${k}" ${u.status===k?'selected':''}>${v}</option>`).join('')}</select>
+     <label><input type="checkbox" data-uf="${u.uid}.conf" ${u.conf?'checked':''}>混乱</label>
+     <label><input type="checkbox" data-uf="${u.uid}.attract" ${u.attract?'checked':''}>メロメロ</label>
+     <label><input type="checkbox" data-uf="${u.uid}.leech" ${u.leech?'checked':''}>やどりぎ</label>
+   </div>
+   <div class="mvlist">${mvs}</div>
+   <div class="row">
+     <button class="btn sm pri" data-act="setatt" data-u="${u.uid}">このポケモンで行動</button>
+     <button class="btn sm" data-act="after" data-u="${u.uid}" title="毒・猛毒・火傷・やどりぎのダメージ">行動後処理</button>
+     <select data-item="${u.uid}" aria-label="道具を使う"><option value="">道具を使う…</option>${ITEMS.filter(i=>!i.ball).map(i=>`<option value="${i.k}">${i.n}</option>`).join('')}</select>
+   </div>
+   <details class="more"><summary>ランク変動・その他</summary>
+     <div class="ranks" style="margin-top:6px">${ranks}</div>
+     <div class="row" style="margin-top:6px">
+      <button class="btn sm" data-act="resetrank" data-u="${u.uid}">ランクを戻す</button>
+      <button class="btn sm" data-act="tobench" data-u="${u.uid}">控えに戻す(交代)</button>
+      <button class="btn sm" data-act="edit" data-u="${u.uid}">編集</button>
+      <button class="btn sm" data-act="coco" data-u="${u.uid}">ココフォリア駒をコピー</button>
+      ${u.side==='enemy'?`<button class="btn sm" data-act="tocap" data-u="${u.uid}">捕獲判定へ</button>`:''}
+      <span class="small muted">進化${canEvo?'可':'なし'}${cfg().ver==='excite'?` / 技の強化${u.enhanced?'済':'未'}`:''}</span>
+     </div>
+     ${u.memo?`<p class="small muted">${esc(u.memo)}</p>`:''}
+   </details>
+  </article>`}
+
+function renderOrder(){
+  const a=active().filter(u=>u.hp>0).map(u=>({u,s:effB(u,'spe')})).sort((x,y)=>y.s-x.s);
+  if(!a.length)return '<p class="muted">場にポケモンがいません。</p>';
+  return `<div class="order">${a.map((x,i)=>{const tie=a.some((y,j)=>j!==i&&y.s===x.s&&y.u.side!==x.u.side);return `<div class="o ${tie?'tie':''}"><span>${esc(uname(x.u))} <span class="pill ${x.u.side}">${x.u.side==='ally'?'味':'敵'}</span></span><span class="num">敏捷 ${x.s}</span><button class="btn sm" data-act="setatt" data-u="${x.u.uid}">行動</button></div>`}).join('')}</div>
+  <p class="small muted" style="margin:6px 0 0">優先度のある技(でんこうせっか等)は先に宣言して先に動きます。点線は相手と同速：その都度<1d6>を振って大きい順。${a.some((x,i)=>a.some((y,j)=>j!==i&&y.s===x.s&&y.u.side!==x.u.side))?' <button class="btn sm" data-act="tieroll">同速の1d6を振る</button>':''}</p>`}
+
+/* ---------- 行動パネル ---------- */
+function renderAction(){
+  const A=UI.act, act=active();
+  const att=U(A.att);
+  const opts=act.map(u=>`<option value="${u.uid}" ${A.att===u.uid?'selected':''}>${u.side==='ally'?'[味]':'[敵]'} ${esc(uname(u))}</option>`).join('');
+  let h=`<div class="stack"><div class="row"><label class="field" style="flex:1"><span>行動するポケモン</span><select id="a-att" data-a="att"><option value="">選択…</option>${opts}</select></label></div>`;
+  if(!att)return h+'<p class="muted small">カードの「このポケモンで行動」か、上で選択してください。</p></div>';
+  // 行動前判定
+  const pre=preChecks(att);
+  if(pre.items.length){h+=`<div class="res"><div class="tt">行動前判定</div>${pre.items.map(x=>`<div class="row">${x.dice}<span class="small">${x.text}</span></div>`).join('')}${pre.canAct===false?`<div class="note bad">行動できません。</div>`:pre.canAct===true?'<div class="note ok">行動できます。</div>':''}</div>`}
+  const own=att.moves.map(m=>m.id);
+  const mvOpts=`<optgroup label="覚えている技">${att.moves.map(m=>{const mv=MV(m.id);return `<option value="${m.id}" ${A.mv==m.id?'selected':''}>${mv.n} (PP ${m.pp}/${m.max})</option>`}).join('')}</optgroup><optgroup label="その他の技">${MOVES_SORTED.filter(m=>!own.includes(m.id)).map(m=>`<option value="${m.id}" ${A.mv==m.id?'selected':''}>${m.n}</option>`).join('')}</optgroup>`;
+  h+=`<label class="field"><span>技</span><select id="a-mv" data-a="mv"><option value="">選択…</option>${mvOpts}</select></label>`;
+  const mv=MV(A.mv);
+  if(!mv)return h+'</div>';
+  const self=mv.sec.length&&mv.sec.every(s=>s.tg==='self')&&mv.c==='x';
+  h+=`<div class="small">${tchip(mv.t)} <span class="cls">${clsL(mv.c)}</span> 威力 <b class="num">${mv.pw??'—'}</b> 命中 <b class="num">${mv.acc??'必中'}</b> PP <b class="num">${mv.pp}</b>${mv.pri?` 優先度 <b>${mv.pri>0?'+':''}${mv.pri}</b>`:''}<br><span class="muted">${esc(mv.e)}</span></div>`;
+  if(!self){
+    h+=`<div class="field"><span>対象(複数選択で範囲技扱い＝ダメージ2/3)</span><div class="row">${act.filter(u=>u.uid!==att.uid).map(u=>`<label class="small"><input type="checkbox" data-tg="${u.uid}" ${A.tg.includes(u.uid)?'checked':''}> <span class="pill ${u.side}">${u.side==='ally'?'味':'敵'}</span> ${esc(uname(u))}</label>`).join('')}</div></div>`;
+  }
+  h+=`<details class="more"><summary>補正・オプション</summary><div class="row" style="margin-top:6px">
+     <label class="field"><span>威力補正(③に掛ける)</span><input type="number" step="0.1" data-opt="powMul" value="${A.opt.powMul??1}"></label>
+     <label class="field"><span>ダメージ倍率</span><input type="number" step="0.1" data-opt="dmgMul" value="${A.opt.dmgMul??1}"></label>
+     <label class="field"><span>ダメージ加算</span><input type="number" data-opt="dmgAdd" value="${A.opt.dmgAdd??0}"></label>
+     <label class="field"><span>威力を上書き</span><input type="number" data-opt="powOver" value="${A.opt.powOver??''}" placeholder="—"></label>
+     <label class="small"><input type="checkbox" data-opt="noStab" ${A.opt.noStab?'checked':''}> タイプ一致なし</label>
+   </div><p class="small muted">てだすけ(ダメージ1.5倍)等はダメージ倍率へ。</p></details>`;
+  const R=computeAction(att,mv,self?[]:A.tg.map(U).filter(Boolean),self);
+  h+=R.html;
+  h+=`<div class="row"><button class="btn" data-act="rollall">未入力のダイスを全部振る</button><button class="btn ghost" data-act="rerollall">すべて振り直す</button></div>`;
+  if(R.ready)h+=`<div class="row"><button class="btn pri" data-act="apply">結果を反映してログに記録</button><button class="btn" data-act="copyres">結果テキストをコピー</button></div>`;
+  else h+=`<p class="small muted">${esc(R.wait||'ダイスを入力するか🎲で振ってください。')}</p>`;
+  UI.lastR=R;
+  return h+'</div>'}
+
+function preChecks(u){
+  const D=UI.act.dice,items=[];let can=true,pending=false;
+  const need=(k)=>{if(D[k]===''||D[k]==null){pending=true;return null}return +D[k]};
+  if(u.hp<=0){items.push({dice:'',text:'瀕死のため行動できません'});return{items,canAct:false}}
+  if(u.status==='par'){const v=need('pre_par');items.push({dice:dice('pre_par','麻痺 2d6',6,2,D),text:v==null?'4以下で行動できない（行動不能率 '+pct(p2d6le(4))+'）':v<=4?'<b>しびれて動けない！</b>':'行動できる'});if(v!=null&&v<=4)can=false}
+  if(u.status==='slp'){const t=7-2*u.slpN,v=need('pre_slp');items.push({dice:dice('pre_slp','眠り 1d6',6,1,D),text:v==null?`目標値 ${t} 以上で目を覚ます(n=${u.slpN})`:v>=t?'<b>目を覚ました！</b>行動できる':'ぐうぐう眠っている（n+1）'});if(v!=null&&v<t)can=false}
+  if(u.status==='frz'){const v=need('pre_frz');items.push({dice:dice('pre_frz','氷 1d6',6,1,D),text:v==null?'5以上で氷がとける':v>=5?'<b>氷がとけた！</b>行動できる':'凍って動けない'});if(v!=null&&v<5)can=false}
+  if(can&&u.conf){const v=need('pre_conf');items.push({dice:dice('pre_conf','混乱 1d6',6,1,D),text:v==null?'3以上で行動、5以上で混乱が解ける。2以下は自分に攻撃B分のダメージ':v>=5?'<b>混乱が解けた！</b>行動できる':v>=3?'混乱しているが行動できる':`わけもわからず自分を攻撃！ ${effB(u,'atk')}ダメージ`});if(v!=null&&v<3)can=false}
+  if(can&&u.attract){const v=need('pre_att');items.push({dice:dice('pre_att','メロメロ 1d6',6,1,D),text:v==null?'3以上で行動できる':v>=3?'行動できる':'メロメロで技が出せない'});if(v!=null&&v<3)can=false}
+  return{items,canAct:items.length?(can?(pending?null:true):false):true}}
+
+function computeAction(att,mv,tgs,self){
+  const A=UI.act,D=A.dice,c=cfg();const out={lines:[],ready:true,html:'',targets:[]};
+  const need=(k)=>{if(D[k]===''||D[k]==null){out.ready=false;return null}return +D[k]};
+  const pre=preChecks(att);
+  if(pre.canAct===false){out.cantAct=true;out.html='';out.ready=true;out.text=`【${uname(att)}】行動できなかった`;return out}
+  if(pre.canAct===null)out.ready=false;
+  let html='';
+  if(!self&&!tgs.length){out.ready=false;out.wait='対象を選んでください。';return Object.assign(out,{html:''})}
+  const f=mv.f||{};
+  let pw=mv.pw, powNote='';
+  if(f.fixed){pw=f.fixed;powNote=`固定ダメージ技→威力${pw}`}
+  if(f.psywave){const v=need('psy');html+=`<div class="row">${dice('psy','サイコウェーブ 1d6',6,1,D)}<span class="small">${v==null?'1,2:30 / 3,4:50 / 5,6:70':'威力'+psyPow(v)}</span></div>`;if(v!=null)pw=psyPow(v)}
+  let hits=1;
+  if(f.multi==='2'){hits=2}
+  if(f.multi==='2-5'){const v=need('hits');const hh=hitsFromRoll(v);html+=`<div class="row">${dice('hits','回数 2d6',6,2,D)}<span class="small">${v==null?(c.ver==='excite'?'2〜6:×2 / 7〜9:×3 / 10〜11:×4 / 12:×5':'2〜4:×2 / 5〜7:×3 / 8〜10:×4 / 11〜12:×5'):'<b>'+hh+'回</b>当たった'}</span></div>`;if(hh)hits=hh}
+  if(f.rampage){const v=need('rmp');html+=`<div class="row">${dice('rmp','持続 1d6',6,1,D)}<span class="small">${v==null?'1〜3:2ターン / 4〜6:3ターン':(v<=3?2:3)+'ターン暴れた後、混乱する'}</span></div>`}
+  if(A.opt.powOver!==''&&A.opt.powOver!=null&&!isNaN(+A.opt.powOver)&&String(A.opt.powOver).trim()!==''){pw=+A.opt.powOver;powNote='威力を上書き'}
+  const multiT=tgs.length>1;
+  // 共通ダメージダイス
+  let diceSum=null,crit=false,diceText='',mainDie=null;
+  const dmgMove=mv.c!=='x'&&!f.ohko;
+  if(dmgMove&&!self){
+    const cn=critNeed(att,mv);const v=need('dmg0');mainDie=v;
+    let chain=`<div class="row">${dice('dmg0','ダメージ 2d6',6,2,D)}<span class="small">${v==null?`${cn}以上で急所（${pct(p2d6ge(cn))}）`:v>=cn?'<b>急所に当たった！</b>':''}</span></div>`;
+    if(v!=null){diceSum=v;const parts=[v];let i=0,last=v;
+      while(last>=cn&&i<20){i++;const k='dmg'+i;const w=need(k);chain+=`<div class="row" style="padding-left:14px">${dice(k,'急所追加 2d6',6,2,D)}<span class="small">${w==null?'':w>=cn?'さらに急所！':''}</span></div>`;if(w==null)break;diceSum+=w;parts.push(w);last=w}
+      crit=parts.length>1;diceText=parts.join('+')}
+    html+=chain}
+  // 強化フェイズ
+  let enh=null;
+  if(c.ver==='excite'&&c.climax&&dmgMove&&!self&&att.hp*2<=att.maxHp&&mainDie!=null){
+    const t=Math.floor(att.hp/att.maxHp*12);const canEvo=att.canEvo??MON[att.no].evo.length>0;enh={t,move:null,evo:null};
+    let eh='';
+    if(mainDie>=8&&!att.enhanced){const v=need('enh');enh.move=v==null?null:v>=t;eh+=`<div class="row">${dice('enh','技の強化 2d6',6,2,D)}<span class="small">目標値 ${t}（${pct(p2d6ge(t))}）${v==null?'':v>=t?' <b>成功！新しい技を習得</b>':' 失敗'}</span></div>`}
+    if(mainDie>=10&&canEvo){const v=need('evo');enh.evo=v==null?null:v>=t;eh+=`<div class="row">${dice('evo','進化 2d6',6,2,D)}<span class="small">目標値 ${t}（${pct(p2d6ge(t))}）${v==null?'':v>=t?' <b>成功！進化できる</b>':' 失敗'}</span></div>`}
+    if(eh)html+=`<div class="res" style="border-color:var(--accent)"><div class="tt">強化フェイズ！ <span class="small muted">HP半分以下で出目${mainDie}</span></div>${eh}${enh.move?'<div class="note ok">元の技のダメージ計算後、GMが選んだ新しい技で再度ダメージ計算し合計を与えます。その後元の技を忘れ新技に書き換えます。</div>':''}${enh.evo?'<div class="note ok">進化先はGMが選択。新技のダメージは進化後のステータスで計算します(進化・習得はキャンセル可)。</div>':''}</div>`;
+  }
+  // 対象ごと
+  const res=[];
+  const list=self?[att]:tgs;
+  for(const tg of list){
+    const r={tg,dodged:false,dmg:0,eff:1,secs:[],text:''};
+    let th=`<div class="res"><div class="tt">→ ${esc(uname(tg))} <span class="pill ${tg.side}">HP ${tg.hp}/${tg.maxHp}</span></div>`;
+    // 回避
+    if(!self&&mv.acc!=null){
+      const want=A.opt['ev_'+tg.uid]!==false;
+      const eb=evadeB(tg,att);const need2=mv.acc-eb.v;
+      th+=`<div class="row"><label class="small"><input type="checkbox" data-opt="ev_${tg.uid}" ${want?'checked':''}> 回避判定する</label>`;
+      if(want){const v=need('ev_'+tg.uid);th+=dice('ev_'+tg.uid,'回避 1d100',100,1,D)+`<span class="small">敏捷B${eb.v}${eb.r?`(命中/回避ランク${eb.r>0?'+':''}${eb.r})`:''}＋出目 ≧ 命中${mv.acc}で回避（回避率 ${pct(Math.max(0,Math.min(1,(101-Math.max(1,need2))/100)))}）${v==null?'':(eb.v+v>=mv.acc?` → <b>${eb.v+v} 回避！</b>`:` → ${eb.v+v} 命中`)}</span>`;if(v!=null&&eb.v+v>=mv.acc)r.dodged=true;r.evText=v==null?'':`回避${eb.v}+${v}=${eb.v+v}${eb.v+v>=mv.acc?'≧':'<'}${mv.acc}`}
+      th+='</div>'}
+    if(r.dodged){th+=`<div class="note">かわされた！</div></div>`;r.text=`${uname(tg)}：回避(${r.evText})`;res.push(r);html+=th;continue}
+    // ダメージ
+    if(f.ohko&&!self){const e=typeEff(mv.t,monTypes(tg));r.eff=e;if(e===0){th+=`<div class="note">効果がないようだ</div>`;r.text=`${uname(tg)}：効果なし`}else{r.ohko=true;r.dmg=tg.hp;th+=`<div class="dmg">一撃必殺</div>`;r.text=`${uname(tg)}：一撃必殺！`}}
+    else if(dmgMove&&!self){
+      let tpw=pw;if(f.superfang){tpw=Math.floor(tg.B.hp*10*(tg.hp/tg.maxHp));powNote=`HP半減技→威力${tpw}`}
+      tpw=tpw==null?0:tpw*hits;
+      const stab=!A.opt.noStab&&isStab(att,mv);
+      const p1=Math.floor(tpw/c.div),p2=Math.floor(p1*(stab?1.5:1));
+      const e=typeEff(mv.t,monTypes(tg));r.eff=e;
+      const wall=(mv.c==='p'&&S.walls[tg.side].p)||(mv.c==='s'&&S.walls[tg.side].s);
+      const pm=(+A.opt.powMul||1);
+      const p3=Math.floor(p2*e*(wall?2/3:1)*pm);
+      const ak=mv.c==='p'?'atk':'spa',dk=mv.c==='p'?'def':'spd';
+      const AB=effB(att,ak),DB=effB(tg,dk);
+      if(diceSum!=null){
+        let raw=AB+p3-DB+diceSum;let d=raw;
+        if(multiT)d=Math.floor(d*2/3);
+        d=Math.floor(d*(+A.opt.dmgMul||1))+(+A.opt.dmgAdd||0);
+        d=Math.max(c.minDmg,d);if(e===0)d=0;
+        r.dmg=d;r.crit=crit;
+        const formula=`${SL[ak]}${AB} + 威力[${tpw}${hits>1?`(${hits}回)`:''}÷${c.div}=${p1}${stab?`→一致×1.5=${p2}`:''}${(e!==1||wall||pm!==1)?`→${e!==1?'相性×'+e:''}${wall?'壁×2/3':''}${pm!==1?'×'+pm:''}=${p3}`:''}] − ${SL[dk]}${DB} + 2d6[${diceText}]${multiT?' ×2/3(範囲)':''}${(+A.opt.dmgMul||1)!==1?' ×'+A.opt.dmgMul:''}${(+A.opt.dmgAdd||0)?' +'+A.opt.dmgAdd:''}`;
+        th+=`<div class="row" style="align-items:baseline"><span class="dmg">${d}</span><span>ダメージ ${crit?'<span class="pill bad">急所</span>':''} ${e!==1?`<span class="pill ${e>1?'ok':'warn'}">${effText(e)}</span>`:''}</span><span class="small muted">残りHP ${Math.max(0,tg.hp-d)}</span></div><div class="calc">${esc(formula)}</div>${powNote?`<div class="small muted">${esc(powNote)}</div>`:''}`;
+        r.text=`${uname(tg)}：${r.evText?r.evText+' 命中 / ':''}${d}ダメージ${crit?'(急所)':''}${effText(e)?'('+effText(e)+')':''} HP${tg.hp}→${Math.max(0,tg.hp-d)}　[${formula}]`;
+      }else{th+=`<div class="calc">${SL[ak]}${AB} + 威力項${p3} − ${SL[dk]}${DB} + 2d6 ${multiT?'×2/3':''}${e!==1?'（'+effText(e)+'）':''}</div>`}
+    }else{r.text=`${uname(tg)}：${r.evText?r.evText+' 命中':''}`}
+    // 追加効果
+    (mv.sec||[]).forEach((s,i)=>{
+      if(self&&s.tg!=='self')return; if(!self&&s.tg==='self'&&mv.c!=='x')return;
+      if(r.eff===0&&mv.c!=='x')return;
+      const target=s.tg==='self'?att:tg;
+      const k='sec_'+tg.uid+'_'+i;
+      if(mv.c==='x'){r.secs.push({s,target,ok:true});th+=`<div class="note ok">${esc(secLabel(s))}${s.tg==='self'?'（自分）':''}</div>`;return}
+      const t=secTarget(s.ch);const v=need(k);const ok=v!=null&&v>=t;
+      r.secs.push({s,target,ok});
+      th+=`<div class="row">${dice(k,'追加効果 1d100',100,1,D)}<span class="small">${esc(secLabel(s))} ${s.ch}%（目標値 ${t}）${v==null?'':ok?' → <b>発動！</b>':' → 不発'}</span></div>`;
+      if(ok)r.text+=` / 追加効果:${secLabel(s)}発動`});
+    th+='</div>';html+=th;res.push(r)}
+  // 自分への反動など
+  const notes=[];
+  const totalDmg=res.reduce((a,r)=>a+(r.dodged?0:Math.min(r.dmg,r.tg.hp)),0);
+  if(f.drain&&totalDmg>0)notes.push(`HP吸収：+${Math.floor(totalDmg/f.drain)}`);
+  if(f.recoil!=null&&res.some(r=>!r.dodged&&r.dmg>0))notes.push(`反動：−${f.recoil===0?Math.floor(att.maxHp/4):Math.max(1,Math.floor(totalDmg/f.recoil))}`);
+  if(f.selfko)notes.push('使用後、自分は瀕死');
+  if(f.recharge)notes.push('次のターンは反動で動けない(相手を倒した場合を除く)');
+  if(f.charge)notes.push('溜め技：1ターン目は溜め(ここでの計算は2ターン目の攻撃時に)');
+  if(f.end)notes.push('戦闘強制終了技');
+  if(f.trap)notes.push('拘束技：拘束中の処理はGM裁量');
+  const after=afterDamage(att);
+  if(c.autoAfter&&after)notes.push(`行動後：${after.label} −${after.dmg}`);
+  if(notes.length)html+=`<div class="note">${notes.map(esc).join('<br>')}</div>`;
+  out.html=html;out.res=res;out.totalDmg=totalDmg;out.enh=enh;out.after=after;out.mv=mv;out.att=att;
+  out.text=`【${uname(att)}】${mv.n}${hits>1?`(${hits}回)`:''}\n`+res.map(r=>'　'+r.text).join('\n')+(notes.length?'\n　'+notes.join(' / '):'')+(enh&&(enh.move||enh.evo)?`\n　強化フェイズ：${enh.move?'技の強化成功 ':''}${enh.evo?'進化成功':''}`:'');
+  return out}
+function secLabel(s){if(s.k==='stat')return Object.entries(s.st).map(([k,v])=>`${s.tg==='self'?'自分':'相手'}の${RL[k]}${v>0?'+':''}${v}`).join('・');return (s.tg==='self'?'':'相手を')+SEC_L[s.k]}
+function afterDamage(u){if(u.hp<=0)return null;let d=0,l=[];const g1=cfg().gen==='g1';
+  if(u.status==='psn'||u.status==='brn'){d+=Math.max(1,Math.floor(u.maxHp/16));l.push(STATUS[u.status])}
+  if(u.status==='tox'){d+=Math.max(1,Math.floor(u.maxHp*u.toxN/16));l.push(`猛毒(${u.toxN}/16)`)}
+  if(u.leech){const x=Math.max(1,Math.floor(u.maxHp/(g1?16:8)));d+=x;l.push('やどりぎ')}
+  return d?{dmg:d,label:l.join('+')}:null}
+function applyAfter(u,log){const a=afterDamage(u);if(!a)return'';const b=u.hp;u.hp=Math.max(0,u.hp-a.dmg);if(u.status==='tox')u.toxN++;const t=`${uname(u)}は${a.label}のダメージ −${a.dmg} (HP${b}→${u.hp})`;if(log)addLog(t);return t}
+
+function applyAction(){
+  const A=UI.act,att=U(A.att),R=UI.lastR;if(!att||!R)return;
+  const pre=preChecks(att);const lines=[];const D=A.dice;
+  // 行動前判定の反映
+  if(att.status==='slp'&&D.pre_slp!=null&&D.pre_slp!==''){if(+D.pre_slp>=7-2*att.slpN){att.status='';att.slpN=0;lines.push(`${uname(att)}は目を覚ました`)}else{att.slpN++;lines.push(`${uname(att)}は眠っている`)}}
+  if(att.status==='frz'&&D.pre_frz!=null&&D.pre_frz!==''){if(+D.pre_frz>=5){att.status='';lines.push(`${uname(att)}の氷がとけた`)}else lines.push(`${uname(att)}は凍って動けない`)}
+  if(att.status==='par'&&D.pre_par!=null&&D.pre_par!==''&&+D.pre_par<=4)lines.push(`${uname(att)}はしびれて動けない`);
+  if(att.conf&&D.pre_conf!=null&&D.pre_conf!==''){const v=+D.pre_conf;if(v>=5){att.conf=false;lines.push(`${uname(att)}の混乱が解けた`)}else if(v<3){const d=effB(att,'atk');const b=att.hp;att.hp=Math.max(0,att.hp-d);lines.push(`${uname(att)}は混乱して自分を攻撃 −${d} (HP${b}→${att.hp})`)}}
+  if(att.attract&&D.pre_att!=null&&D.pre_att!==''&&+D.pre_att<3)lines.push(`${uname(att)}はメロメロで動けない`);
+  if(R.cantAct||pre.canAct===false){const a=cfg().autoAfter?applyAfter(att,false):'';if(a)lines.push(a);addLog(`【${uname(att)}】\n　`+lines.join('\n　'));finishAct();return}
+  const mv=R.mv,f=mv.f||{};
+  const slot=att.moves.find(m=>m.id===mv.id);if(slot)slot.pp=Math.max(0,slot.pp-1);
+  for(const r of R.res){if(r.dodged)continue;const tg=r.tg;
+    if(r.dmg>0){tg.hp=Math.max(0,tg.hp-r.dmg)}
+    for(const x of r.secs){if(!x.ok)continue;applySec(x.s,x.target,att,lines)}}
+  if(f.drain&&R.totalDmg>0){const h=Math.floor(R.totalDmg/f.drain);att.hp=Math.min(att.maxHp,att.hp+h)}
+  if(f.recoil!=null&&R.res.some(r=>!r.dodged&&r.dmg>0)){const d=f.recoil===0?Math.floor(att.maxHp/4):Math.max(1,Math.floor(R.totalDmg/f.recoil));att.hp=Math.max(0,att.hp-d)}
+  if(f.selfko)att.hp=0;
+  if(R.enh&&R.enh.move)att.enhanced=true;
+  let text=(lines.length?`【${uname(att)}】`+lines.join(' / ')+'\n':'')+R.text;
+  if(cfg().autoAfter){const a=applyAfter(att,false);if(a)text+='\n　'+a}
+  R.res.forEach(r=>{if(!r.dodged&&r.tg.hp<=0&&r.dmg>0)text+=`\n　${uname(r.tg)}は倒れた！`});
+  addLog(text);finishAct()}
+function finishAct(){UI.act.dice={};UI.act.opt={};save();render();toast('反映しました')}
+function applySec(s,t,att,lines){
+  if(s.k==='stat'){for(const[k,v]of Object.entries(s.st))t.ranks[k]=Math.max(k==='crit'?0:-6,Math.min(k==='crit'?3:6,(t.ranks[k]||0)+v));return}
+  if(['brn','par','frz','psn','tox','slp'].includes(s.k)){if(t.status){lines.push(`${uname(t)}は既に${STATUS[t.status]}のため${SEC_L[s.k]}にならない`);return}t.status=s.k;if(s.k==='tox')t.toxN=1;if(s.k==='slp')t.slpN=0;return}
+  if(s.k==='conf'){t.conf=true;return} if(s.k==='leech'){t.leech=true;return}
+  if(s.k==='flinch'){lines.push(`${uname(t)}はひるんだ(このターン行動不可)`);return}
+  if(s.k==='tri'){const k=['brn','par','frz'][Math.floor(Math.random()*3)];if(!t.status){t.status=k}lines.push(`トライアタック：${STATUS[k]}`);return}
+  if(s.k==='heal'){t.hp=Math.min(t.maxHp,t.hp+Math.floor(t.maxHp/2));return}
+  if(s.k==='rest'){t.hp=t.maxHp;t.status='slp';t.slpN=0;return}
+  if(s.k==='wall_p'){S.walls[att.side].p=true;return} if(s.k==='wall_s'){S.walls[att.side].s=true;return}
+  if(s.k==='haze'){active().forEach(u=>u.ranks=blankRanks());return}}
+
+/* ================= 登録タブ ================= */
+function renderRoster(){
+  const sel=U(UI.sel);
+  return `<div class="two"><section class="panel"><h2>登録済みポケモン <span class="sub">${S.units.length}匹</span></h2>
+   <div class="row" style="margin-bottom:10px"><input type="text" list="dl-mon" id="nw-mon" placeholder="No.か名前 (例: 025 / ピカチュウ)" style="flex:1"><select id="nw-side"><option value="ally">味方(PC)</option><option value="enemy">相手</option></select><button class="btn pri" data-act="newunit">新規登録</button></div>
+   <div class="roster">${S.units.map(u=>`<button class="item" data-act="select" data-u="${u.uid}" aria-current="${u.uid===UI.sel}"><span class="pill ${u.side}">${u.side==='ally'?'味方':'相手'}</span><span>${esc(uname(u))}${u.owner?` <span class="muted small">/ ${esc(u.owner)}</span>`:''}</span><span class="num small">${u.inBattle?'場 ':''}${u.hp}/${u.maxHp}</span></button>`).join('')||'<p class="muted">まだ登録がありません。</p>'}</div>
+  </section>
+  <section class="panel">${sel?renderEditor(sel):'<h2>編集</h2><p class="muted">左のリストから選ぶか、新規登録してください。</p>'}</section></div>`}
+function renderEditor(u){
+  const m=MON[u.no];const base=baseStats(u.no);
+  const learnLv=m.lv,learnTm=m.tm;
+  const ids=UI.lfilter==='lv'?[...new Set(learnLv.map(x=>x[1]))]:UI.lfilter==='tm'?learnTm:MOVES_SORTED.map(x=>x.id);
+  const lvOf=id=>{const x=learnLv.filter(y=>y[1]===id).map(y=>y[0]);return x.length?'Lv'+x.join('/'):''};
+  const rows=ids.map(id=>{const mv=MV(id);const sp=sheetPow(u,mv);const bad=mv.pw&&mv.acc&&mv.pw*mv.acc>=8000;const has=u.moves.some(x=>x.id===id);
+    return `<tr class="${bad&&cfg().ver==='excite'?'warnrow':''}"><td>${esc(mv.n)}<div class="small muted">${lvOf(id)||(learnTm.includes(id)?'わざマシン':'')}</div></td><td>${tchip(mv.t)}</td><td>${clsL(mv.c)}</td><td class="n">${mv.pw??'—'}</td><td class="n">${sp??'—'}</td><td class="n">${mv.acc??'必中'}</td><td class="n">${mv.pp}</td><td class="small">${esc(mv.e)}${bad?` <span class="pill warn">威力×命中≧8000</span>`:''}</td><td>${has?'<span class="small muted">習得済</span>':`<button class="btn sm" data-act="learn" data-m="${id}">覚える</button>`}</td></tr>`}).join('');
+  return `<h2>${esc(uname(u))} <span class="sub">No.${String(u.no).padStart(3,'0')} ${tchipList(u)}</span></h2>
+  <div class="stack">
+   <div class="row">
+     <label class="field"><span>ニックネーム</span><input type="text" data-ef="nick" value="${esc(u.nick)}"></label>
+     <label class="field"><span>トレーナー</span><input type="text" data-ef="owner" value="${esc(u.owner)}"></label>
+     <label class="field"><span>陣営</span><select data-ef="side"><option value="ally" ${u.side==='ally'?'selected':''}>味方</option><option value="enemy" ${u.side==='enemy'?'selected':''}>相手</option></select></label>
+     <label class="field"><span>場に出す</span><input type="checkbox" data-ef="inBattle" ${u.inBattle?'checked':''}></label>
+   </div>
+   <div class="row">
+     <label class="field"><span>種族 (変更後は下の再計算を)</span><input type="text" list="dl-mon" data-ef="no" value="${String(u.no).padStart(3,'0')} ${m.n}" style="width:160px"></label>
+     <label class="field"><span>進化</span><select data-ef="canEvo"><option value="" ${u.canEvo==null?'selected':''}>自動(${m.evo.length?'あり':'なし'})</option><option value="1" ${u.canEvo===true?'selected':''}>あり</option><option value="0" ${u.canEvo===false?'selected':''}>なし</option></select></label>
+   </div>
+   <div>
+    <h3>ボーナス値(種族値÷10)</h3>
+    <div class="row">${SK.map(k=>`<label class="field"><span>${SL[k]} <span class="muted">(${base[k]})</span></span><input type="number" data-ef="B.${k}" value="${u.B[k]}" class="w4"></label>`).join('')}</div>
+    <div class="row" style="margin-top:6px"><label class="field"><span>最大HP <span class="muted">目安 ${calcHP(u.no)}</span></span><input type="number" data-ef="maxHp" value="${u.maxHp}" class="w4"></label><label class="field"><span>現在HP</span><input type="number" data-ef="hp" value="${u.hp}" class="w4"></label>
+    <button class="btn sm" data-act="recalc">種族値からB・HPを再計算</button><button class="btn sm" data-act="grow">キャンペーン成長(1d6×2)</button></div>
+   </div>
+   <div><h3>覚えている技 (最大4つ)</h3>
+    <div class="mvlist">${u.moves.map((x,i)=>{const mv=MV(x.id);return `<div class="mv"><span>${tchip(mv.t)} ${esc(mv.n)} <span class="cls">${clsL(mv.c)}</span> <span class="small muted">威力/10 ${sheetPow(u,mv)??'—'} 命中 ${mv.acc??'必中'}</span></span><span class="num small">PP <input type="number" class="w3" data-mpp="${i}.pp" value="${x.pp}">/<input type="number" class="w3" data-mpp="${i}.max" value="${x.max}"></span><button class="btn sm danger" data-act="forget" data-i="${i}">忘れる</button></div>`}).join('')||'<p class="muted small">技がありません</p>'}</div>
+   </div>
+   <label class="field"><span>メモ(特性の代わりの設定・特殊能力など)</span><textarea data-ef="memo" rows="2">${esc(u.memo)}</textarea></label>
+   <div class="row"><button class="btn" data-act="coco" data-u="${u.uid}">ココフォリア駒をコピー</button><button class="btn" data-act="dup">複製</button><button class="btn danger" data-act="delunit">削除</button></div>
+   <div>
+    <h3>技を探す</h3>
+    <div class="row" role="radiogroup">${[['lv','レベル技(赤緑)'],['tm','わざマシン(赤緑)'],['all','全165技']].map(([k,l])=>`<label class="small"><input type="radio" name="lf" data-lf="${k}" ${UI.lfilter===k?'checked':''}> ${l}</label>`).join('')}</div>
+    <p class="small muted">「威力/10」はキャラシ記載値(①÷${cfg().div}→②タイプ一致)。${cfg().ver==='excite'?'エキサイト版は基本的にレベル技から選び、威力×命中率が8000以上の技は選択不可(黄色の行)。':'マスター版は技の制限なし。'}</p>
+    <div class="tblwrap"><table class="tbl"><thead><tr><th>技</th><th>タイプ</th><th>分類</th><th>威力</th><th>威力/10</th><th>命中</th><th>PP</th><th>効果</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+   </div>
+  </div>`}
+function tchipList(u){return monTypes(u).map(tchip).join(' ')}
+
+/* ================= 捕獲・逃走 ================= */
+function renderCapture(){
+  const C=UI.cap,enemies=S.units.filter(u=>u.side==='enemy');
+  const tg=U(C.tg)||enemies.find(u=>u.inBattle)||enemies[0];if(tg)C.tg=tg.uid;
+  let cap='';
+  if(tg){const m=MON[tg.no];const st=['psn','tox','par','brn'].includes(tg.status)?1.5:['slp','frz'].includes(tg.status)?2.5:1;
+    const ball=+C.ball||1;const raw=12-(tg.maxHp*3-tg.hp*2)*m.cr*ball/(tg.maxHp*3)*st*12/255;const t=Math.floor(raw)-(+C.bonus||0);
+    const v=C.dice.cap;const has=v!==''&&v!=null;
+    cap=`<div class="kv"><dt>対象</dt><dd>${esc(uname(tg))} HP ${tg.hp}/${tg.maxHp}</dd><dt>捕捉率</dt><dd class="num">${m.cr}</dd><dt>状態補正</dt><dd>${st}（${STATUS[tg.status]}）</dd></div>
+    <p class="calc">12 − (${tg.maxHp}×3 − ${tg.hp}×2) × ${m.cr} × ${ball} ÷ (${tg.maxHp}×3) × ${st} × 12/255 = ${raw.toFixed(2)} → ${Math.floor(raw)}${C.bonus?` − RPボーナス${C.bonus}`:''}</p>
+    <div class="row"><span>目標値</span><span class="big-t num">${t}</span><span class="muted">成功率 ${pct(p2d6ge(t))}</span></div>
+    <div class="row">${dice('cap','捕獲 2d6',6,2,C.dice)}${has?(+v>=t?'<span class="pill ok">捕まえた！</span> <button class="btn sm pri" data-act="captured">味方に加える</button>':'<span class="pill bad">ボールから出てしまった（ボールは失われる）</span>'):''}</div>`}
+  // 逃走
+  const allies=active().filter(u=>u.side==='ally'&&u.hp>0),foes=active().filter(u=>u.side==='enemy'&&u.hp>0);
+  const E=UI.esc.dice;const maxSpe=foes.length?Math.max(...foes.map(u=>effB(u,'spe'))):0;
+  let sum=0,ok=true;const rows=allies.map(u=>{const v=E['e_'+u.uid];if(v===''||v==null)ok=false;else sum+=effB(u,'spe')+(+v);return `<div class="row">${dice('e_'+u.uid,uname(u)+' 2d6',6,2,E)}<span class="small">敏捷B ${effB(u,'spe')}${v!==''&&v!=null?' → '+(effB(u,'spe')+(+v)):''}</span></div>`}).join('');
+  const ev=E.foe;const tgt=ev!==''&&ev!=null?maxSpe+(+ev):null;const avg=allies.length&&ok?sum/allies.length:null;
+  const esc_=`<p class="small muted">戦闘中のPC全員が逃走を選んだ時に使います。相手の最大敏捷B＋2d6（目標値）に対し、PC側の[敏捷B＋2d6]の平均で対抗ロール。同値は受動側(相手)有利＝失敗。</p>
+   <div class="row">${dice('foe','相手 2d6',6,2,E)}<span class="small">相手の最大敏捷B ${maxSpe}${tgt!=null?' → 目標値 <b>'+tgt+'</b>':''}</span></div>${rows||'<p class="muted small">場に味方がいません</p>'}
+   ${avg!=null&&tgt!=null?`<div class="row"><span>平均 <b class="num">${Math.round(avg*100)/100}</b> vs 目標値 <b class="num">${tgt}</b></span>${avg>tgt?'<span class="pill ok">逃走成功！</span>':'<span class="pill bad">逃げられない！（このターン他の行動不可）</span>'}<button class="btn sm" data-act="esclog">ログに記録</button></div>`:''}
+   <div class="row"><button class="btn sm" data-act="escroll">全部振る</button><button class="btn sm ghost" data-act="escclear">クリア</button></div>`;
+  return `<div class="two"><section class="panel"><h2>捕獲判定 <span class="sub">09.ポケモンの捕獲</span></h2>
+   <div class="row" style="margin-bottom:8px"><label class="field"><span>対象(相手)</span><select data-cap="tg">${enemies.map(u=>`<option value="${u.uid}" ${tg&&u.uid===tg.uid?'selected':''}>${esc(uname(u))} ${u.hp}/${u.maxHp}</option>`).join('')}</select></label>
+   <label class="field"><span>ボール</span><select data-cap="ball">${ITEMS.filter(i=>i.ball).map(i=>`<option value="${i.ball}" ${+C.ball===i.ball?'selected':''}>${i.n} ×${i.ball}</option>`).join('')}</select></label>
+   <label class="field"><span>RPボーナス(目標値を下げる)</span><input type="number" data-cap="bonus" value="${C.bonus}" class="w3"></label></div>
+   ${cap||'<p class="muted">相手のポケモンがいません。</p>'}
+   <p class="small muted">野生のポケモンが複数いる場合は狙いが定まらず捕獲できません。手持ちは基本3匹まで。</p></section>
+   <section class="panel"><h2>逃走判定 <span class="sub">06.戦闘ルール</span></h2>${esc_}</section></div>`}
+
+/* ================= 資料 ================= */
+function renderRef(){
+  const q=UI.refq.trim();
+  let body='';
+  if(UI.refk==='moves'){const list=MOVES_SORTED.map(m=>MV(m.id)).filter(m=>!q||m.n.includes(q)||TYPES[m.t][0].includes(q)||m.e.includes(q));
+    body=`<div class="tblwrap"><table class="tbl"><thead><tr><th>技</th><th>タイプ</th><th>分類</th><th>威力</th><th>命中</th><th>PP</th><th>優先</th><th>効果</th></tr></thead><tbody>${list.map(m=>`<tr><td>${esc(m.n)}</td><td>${tchip(m.t)}</td><td>${clsL(m.c)}</td><td class="n">${m.pw??'—'}</td><td class="n">${m.acc??'必中'}</td><td class="n">${m.pp}</td><td class="n">${m.pri||''}</td><td class="small">${esc(m.e)}</td></tr>`).join('')}</tbody></table></div>`}
+  else if(UI.refk==='mons'){const list=DATA.mons.filter(m=>!q||m.n.includes(q)||String(m.no)===q);
+    body=`<div class="tblwrap"><table class="tbl"><thead><tr><th>No.</th><th>ポケモン</th><th>タイプ</th>${SK.map(k=>`<th>${SL[k]}</th>`).join('')}<th>HP目安</th><th>捕捉率</th><th>進化</th></tr></thead><tbody>${list.map(m=>{const b=baseStats(m.no);const tp=cfg().gen==='g1'?m.t:m.mt;return `<tr><td class="n">${m.no}</td><td>${m.n}</td><td>${tp.map(tchip).join(' ')}</td>${SK.map(k=>`<td class="n">${Math.floor(b[k]/10)}</td>`).join('')}<td class="n">${calcHP(m.no)}</td><td class="n">${m.cr}</td><td class="small">${m.evo.map(e=>MON[e].n).join('・')}</td></tr>`}).join('')}</tbody></table></div>`}
+  else if(UI.refk==='types'){const ts=cfg().gen==='g1'?['nor','fir','wat','ele','gra','ice','fig','poi','gro','fly','psy','bug','roc','gho','dra']:Object.keys(TYPES);
+    body=`<p class="small muted">縦＝技のタイプ、横＝受けるタイプ。タイプ相性は③で威力に掛けます。${cfg().gen==='g1'?'初代仕様：むし⇔どく抜群、こおり→ほのお等倍、ゴースト→エスパー'+(cfg().g1ghost?'無効(赤緑の挙動)':'抜群(本来の設計)'):''}</p><div class="tblwrap"><table class="tbl"><thead><tr><th></th>${ts.map(t=>`<th>${TYPES[t][0].slice(0,2)}</th>`).join('')}</tr></thead><tbody>${ts.map(a=>`<tr><td>${tchip(a)}</td>${ts.map(d=>{const e=typeEff(a,[d]);return `<td class="n" style="${e>1?'color:var(--ok);font-weight:700':e===0?'color:var(--bad);font-weight:700':e<1?'color:var(--muted)':''}">${e===1?'':e===.5?'½':e}</td>`}).join('')}</tr>`).join('')}</tbody></table></div>`}
+  else if(UI.refk==='items'){body=`<div class="tblwrap"><table class="tbl"><thead><tr><th>道具</th><th>値段</th><th>効果</th></tr></thead><tbody>${ITEMS.map(i=>`<tr><td>${i.n}</td><td class="n">¥${i.p}</td><td>${i.d}</td></tr>`).join('')}</tbody></table></div><p class="small muted">所持金の目安：エキサイト版¥3,000／マスター版¥7,000。売値は買値の半分。</p>`}
+  else body=rulesProse();
+  return `<section class="panel"><div class="row" style="margin-bottom:10px">${[['rules','ルール早見'],['moves','技一覧'],['mons','ポケモン一覧'],['types','タイプ相性'],['items','道具']].map(([k,l])=>`<button class="btn ${UI.refk===k?'pri':''}" data-refk="${k}">${l}</button>`).join('')}${['moves','mons'].includes(UI.refk)?`<input type="text" id="refq" placeholder="検索" value="${esc(UI.refq)}" style="margin-left:auto">`:''}</div>${body}</section>`}
+function rulesProse(){const c=cfg();return `<div class="prose">
+<h3>ダメージ</h3><p>[攻撃側 攻撃B or 特攻B ＋ 威力項 − 防御側 防御B or 特防B ＋ 2d6]</p>
+<p>威力項は ①威力÷${c.div}(切捨) → ②タイプ一致×1.5(切捨) → ③タイプ相性・壁(×2/3)・その他(切捨) の順。キャラシには②までの値を書く。範囲技で複数を対象にしたらダメージ×2/3(切捨)。</p>
+<p>2d6が11以上で急所：もう一度2d6を振って加算し、11未満が出るまで繰り返す。急所ランク+1ごとに必要な出目が1下がる(最大+3)。</p>
+<h3>回避</h3><p>技を受けた側が望めば、[敏捷B＋1d100]が命中率以上で回避。命中ランクと回避ランクは相殺し、その結果を敏捷Bに掛ける。敏捷のランクは回避に影響しない。</p>
+<h3>追加効果</h3><p>目標値[101−発生率]で1d100、達成値が同値以上で発動。</p>
+<h3>ランク</h3><p>2/2基準。上昇は分子、下降は分母を1ずつ増やす(±6まで)。各ボーナス値に掛け、ダメージには直接掛けない。</p>
+<table class="tbl" style="max-width:520px"><tr>${[-6,-4,-2,-1,0,1,2,4,6].map(r=>`<th>${r>0?'+':''}${r}</th>`).join('')}</tr><tr>${[-6,-4,-2,-1,0,1,2,4,6].map(r=>`<td class="n">×${Math.round(rankMul(r)*100)/100}</td>`).join('')}</tr></table>
+<h3>状態異常</h3><ul>
+<li>毒：自分の行動後に最大HPの1/16。猛毒はn/16(nは1から増加、交代でリセット)</li>
+<li>麻痺：敏捷B半分。行動時2d6で4以下なら行動不能</li><li>火傷：攻撃B半分。行動後に最大HPの1/16</li>
+<li>眠り：行動時1d6が[7−2n]以上で回復(nは失敗ごとに+1)</li><li>氷：行動時1d6が5以上で回復</li>
+<li>混乱：行動時1d6。3以上で行動、5以上で回復。失敗で自分の攻撃B分のダメージ</li><li>メロメロ：行動時1d6が3以上で行動</li>
+<li>毒・猛毒・麻痺・火傷・眠り・氷は戦闘後も継続。その他は交代や戦闘後に消える</li></ul>
+<h3>処理順</h3><p>④逃走 → ②道具 → ③交代 → ①ポケモンへの指示(→自分のポケモン以外への道具) → ⑤何もしない。ポケモンは敏捷B順、同速の敵味方は都度1d6。</p>
+<h3>強化フェイズ(エキサイト版)</h3><p>要所の戦闘でHP半分以下の時、ダメージの2d6が8以上なら技の強化判定、10以上(進化可能なら)進化判定。目標値[(現在HP÷最大HP)×12]に対し2d6。技の強化は1戦闘に1回。</p>
+<p class="small muted">※ルールブックでは進化の目標値が「(現在HP − 最大HP)×12」と書かれていますが、技の強化と同じ「÷」の誤記と判断して計算しています。</p>
+<h3>連続技の回数(2d6)</h3><p>エキサイト版：2〜6で×2、7〜9で×3、10〜11で×4、12で×5／マスター版：2〜4で×2、5〜7で×3、8〜10で×4、11〜12で×5。当たった回数だけ威力を加算。</p>
+<h3>初代(赤緑)データについて</h3><p>「初代」設定では、タイプ(フェアリー・はがね無し)、種族値(特攻・特防＝とくしゅ)、技の威力・命中・PP・追加効果を赤緑に合わせています。物理/特殊は技のタイプで決まります(ほのお・みず・くさ・でんき・エスパー・こおり・ドラゴンが特殊)。</p>
+</div>`}
+
+/* ================= 設定 ================= */
+function renderSettings(){const c=cfg();
+  return `<div class="two"><section class="panel"><h2>ルール設定</h2><div class="stack">
+   <label class="field"><span>バージョン</span><select data-cfg="ver"><option value="excite" ${c.ver==='excite'?'selected':''}>エキサイト版(強化フェイズあり)</option><option value="master" ${c.ver==='master'?'selected':''}>マスター版</option></select></label>
+   <label class="small"><input type="checkbox" data-cfg="climax" ${c.climax?'checked':''}> 物語の要所となる戦闘(強化フェイズを判定する)</label>
+   <label class="field"><span>データ基準</span><select data-cfg="gen"><option value="g1" ${c.gen==='g1'?'selected':''}>初代(赤緑)：タイプ・種族値・技性能・相性</option><option value="modern" ${c.gen==='modern'?'selected':''}>最新世代の数値</option></select></label>
+   <p class="small muted" style="margin:0">データ基準を変えても登録済みポケモンのBは自動では変わりません。必要なら編集画面の「再計算」を押してください。</p>
+   <label class="small"><input type="checkbox" data-cfg="g1ghost" ${c.g1ghost?'checked':''}> 初代：ゴースト技→エスパーを「効果なし」にする(赤緑の挙動)</label>
+   <label class="field"><span>威力の除数(①)</span><input type="number" data-cfg="div" value="${c.div}" class="w3"></label>
+   <label class="field"><span>最低ダメージ(ルール記載なし・卓で決める)</span><input type="number" data-cfg="minDmg" value="${c.minDmg}" class="w3"></label>
+   <label class="small"><input type="checkbox" data-cfg="autoAfter" ${c.autoAfter?'checked':''}> 行動パネルで反映する時、毒・火傷・やどりぎの行動後ダメージも自動で入れる</label>
+  </div></section>
+  <section class="panel"><h2>保存・読み込み</h2><div class="stack">
+   <p class="small">データはこのブラウザに自動保存されます。別の端末へ移す時や念のための控えは、下のテキストをコピーしてメモ帳などに保存してください。</p>
+   <div class="row"><button class="btn" data-act="exp">バックアップをコピー</button></div>
+   <label class="field"><span>復元：バックアップのテキストを貼り付け</span><textarea id="imp" rows="5" placeholder='{"cfg":…}'></textarea></label>
+   <div class="row"><button class="btn" data-act="imp">復元する</button></div>
+   <h3>リセット</h3>
+   <div class="row"><button class="btn danger" data-act="wipe">${UI.wipeArm?'本当に消去する(もう一度押す)':'全データを消去'}</button><button class="btn" data-act="sample">サンプルを読み込む</button></div>
+   <h3>ココフォリアでの使い方</h3>
+   <ol class="small prose"><li>各ポケモンの「ココフォリア駒をコピー」を押す</li><li>ココフォリアの盤面をクリックして Ctrl+V(貼り付け)。HP・PP・ボーナス値・チャットパレット入りの駒ができます</li><li>戦闘の計算結果は「結果テキストをコピー」やログのコピーでチャット欄に貼れます</li><li>PLが振ったダイスの値は、行動パネルのダイス欄に直接入力できます</li></ol>
+  </div></section></div>`}
+
+/* ================= ココフォリア ================= */
+function cocoJSON(u){
+  const params=SK.map(k=>({label:SL[k],value:String(u.B[k])}));
+  const status=[{label:'HP',value:u.hp,max:u.maxHp},...u.moves.map(m=>({label:'PP:'+MV(m.id).n,value:m.pp,max:m.max}))];
+  const cmd=['1d100+{敏捷B} 回避判定(達成値が技の命中率以上で回避)'];
+  u.moves.forEach(m=>{const mv=MV(m.id);const sp=sheetPow(u,mv);const cn=critNeed(u,mv);
+    if(mv.c!=='x'&&sp!=null)cmd.push(`2d6+{${mv.c==='p'?'攻撃B':'特攻B'}}+${sp} 【${mv.n}】ダメージ(相手の${mv.c==='p'?'防御B':'特防B'}を引く/タイプ相性は別/出目${cn}以上で急所)`);
+    else if(mv.c!=='x'&&mv.f&&(mv.f.fixed||mv.f.psywave||mv.f.superfang))cmd.push(`2d6+{特攻B} 【${mv.n}】${mv.e}`);
+    (mv.sec||[]).filter(s=>mv.c!=='x'&&s.ch<100).forEach(s=>cmd.push(`1d100>=${101-s.ch} 【${mv.n}】追加効果 ${secLabel(s)}(${s.ch}%)`))});
+  cmd.push('2d6>=11 急所の追加ダイス','2d6 連続技の回数','2d6>=5 麻痺判定(4以下で行動不能)','1d6 眠り判定(7-2n以上で回復)','1d6>=5 氷判定','1d6 混乱判定(3以上行動/5以上回復)','1d6>=3 メロメロ判定','2d6 行為判定');
+  const memo=`No.${u.no} ${MON[u.no].n} [${monTypes(u).map(t=>TYPES[t][0]).join('/')}]\n`+u.moves.map(m=>{const mv=MV(m.id);return `${mv.n}：${TYPES[mv.t][0]}/${clsL(mv.c)} 威力/10:${sheetPow(u,mv)??'-'} 命中:${mv.acc??'必中'} ${mv.e}`}).join('\n')+(u.memo?'\n'+u.memo:'');
+  return JSON.stringify({kind:'character',data:{name:u.nick||MON[u.no].n,memo,initiative:effB(u,'spe'),externalUrl:'',status,params,commands:cmd.join('\n'),color:u.side==='ally'?'#2c6fb7':'#b8452f'}})}
+
+/* ================= メイン描画 ================= */
+function render(){
+  renderChips();
+  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===UI.tab));
+  const f=document.activeElement&&document.activeElement.id;
+  const m=$('#main');
+  m.innerHTML=monDatalist()+(UI.tab==='battle'?renderBattle():UI.tab==='roster'?renderRoster():UI.tab==='capture'?renderCapture():UI.tab==='ref'?renderRef():renderSettings());
+  if(f){const el=document.getElementById(f);if(el&&el!==document.body){el.focus();if(el.select&&el.type==='text'&&el.id==='refq'){const v=el.value;el.setSelectionRange(v.length,v.length)}}}
+}
+
+/* ================= イベント ================= */
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button,[data-tab]');if(!t)return;
+  if(t.dataset.tab){UI.tab=t.dataset.tab;try{localStorage.setItem('pkkp_tab',UI.tab)}catch(e){}render();return}
+  if(t.dataset.roll){const st=storeOf(t.dataset.store);st[t.dataset.roll]=rnd(+t.dataset.n,+t.dataset.s);render();return}
+  if(t.dataset.rank){const[id,k,d]=t.dataset.rank.split('.');const u=U(id);u.ranks[k]=Math.max(k==='crit'?0:-6,Math.min(k==='crit'?3:6,(u.ranks[k]||0)+(+d)));save();render();return}
+  if(t.dataset.pp){const[id,i,d]=t.dataset.pp.split('.');const m=U(id).moves[+i];m.pp=Math.max(0,Math.min(m.max,m.pp+(+d)));save();render();return}
+  if(t.dataset.hp){const[id,d]=t.dataset.hp.split('.');const u=U(id);const v=Math.abs(+$('#hpd-'+id).value||0);if(!v){toast('増減量を入力してください');return}const b=u.hp;u.hp=Math.max(0,Math.min(u.maxHp,u.hp+(+d)*v));addLog(`${uname(u)} HP${b}→${u.hp} (${d>0?'+':'−'}${v})`);save();render();return}
+  if(t.dataset.refk){UI.refk=t.dataset.refk;render();return}
+  const a=t.dataset.act;if(!a)return;const u=U(t.dataset.u);
+  switch(a){
+   case 'setatt':UI.act={att:u.uid,mv:null,tg:[],dice:{},opt:{}};UI.tab='battle';break;
+   case 'rollall':rollAll(false);break;
+   case 'rerollall':rollAll(true);break;
+   case 'apply':applyAction();return;
+   case 'copyres':if(UI.lastR)copy(UI.lastR.text);return;
+   case 'copylog':copy(S.log.map(l=>`[${l.t}] ${l.x}`).join('\n'));return;
+   case 'copylast':if(S.log.length)copy(S.log[S.log.length-1].x);return;
+   case 'clearlog':S.log=[];break;
+   case 'turn+':S.turn++;addLog(`--- ${S.turn}ターン目 ---`);break;
+   case 'endbattle':active().forEach(x=>{x.ranks=blankRanks();x.conf=false;x.attract=false;x.leech=false;x.toxN=1});S.walls={ally:{p:false,s:false},enemy:{p:false,s:false}};S.units.forEach(x=>x.enhanced=false);addLog('戦闘終了：ランク変動・混乱・メロメロ・やどりぎ・壁を解除（毒・麻痺・火傷・眠り・氷は継続）');S.turn=1;break;
+   case 'tobattle':u.inBattle=true;break;
+   case 'tobench':u.inBattle=false;u.ranks=blankRanks();u.conf=false;u.attract=false;u.leech=false;u.toxN=1;addLog(`${uname(u)}を控えに戻した`);if(UI.act.att===u.uid)UI.act.att=null;break;
+   case 'after':{const x=applyAfter(u,true);if(!x)toast('行動後ダメージはありません');break}
+   case 'resetrank':u.ranks=blankRanks();break;
+   case 'edit':UI.sel=u.uid;UI.tab='roster';break;
+   case 'coco':copy(cocoJSON(u));return;
+   case 'tocap':UI.cap.tg=u.uid;UI.cap.dice={};UI.tab='capture';break;
+   case 'quickadd':{const no=parseMon($('#qa-mon').value);if(!no){toast('ポケモンが見つかりません');return}const side=$('#qa-side').value;const nu=newUnit(no,{side,lv:+$('#qa-lv').value||20,owner:side==='enemy'?'野生':''});S.units.push(nu);addLog(`${side==='enemy'?'相手':'味方'}の${MON[no].n}が現れた！`);break}
+   case 'tieroll':{const a2=active().filter(x=>x.hp>0);const txt=a2.map(x=>`${uname(x)}:${rnd(1,6)}`).join(' / ');addLog('同速判定1d6 '+txt);break}
+   case 'newunit':{const no=parseMon($('#nw-mon').value);if(!no){toast('ポケモンが見つかりません');return}const nu=newUnit(no,{side:$('#nw-side').value,inBattle:false});S.units.push(nu);UI.sel=nu.uid;break}
+   case 'select':UI.sel=u.uid;break;
+   case 'learn':{const s=U(UI.sel);if(s.moves.length>=4){toast('技は4つまでです。先に忘れさせてください');return}const mv=MV(+t.dataset.m);s.moves.push({id:mv.id,pp:mv.pp,max:mv.pp});break}
+   case 'forget':U(UI.sel).moves.splice(+t.dataset.i,1);break;
+   case 'recalc':{const s=U(UI.sel);s.B=calcB(s.no);const h=calcHP(s.no);s.hp=Math.round(s.hp/s.maxHp*h);s.maxHp=h;break}
+   case 'grow':{const s=U(UI.sel);const a1=rnd(1,6),a2=rnd(1,6);const k1=SK[a1-1],k2=SK[a2-1];addLog(`${uname(s)}の成長ダイス 1d6×2 → ${a1}(${SL[k1]}) / ${a2}(${SL[k2]})。どちらか1つを+1(体力BならHPも+5)`);toast(`${SL[k1]} か ${SL[k2]} を+1してください`);break}
+   case 'dup':{const s=clone(U(UI.sel));s.uid=uid();S.units.push(s);UI.sel=s.uid;break}
+   case 'delunit':S.units=S.units.filter(x=>x.uid!==UI.sel);UI.sel=null;break;
+   case 'captured':{const tg=U(UI.cap.tg);tg.side='ally';tg.owner='';tg.inBattle=false;addLog(`${uname(tg)}を捕まえた！`);UI.cap.dice={};break}
+   case 'escroll':{const E=UI.esc.dice;E.foe=rnd(2,6);active().filter(x=>x.side==='ally'&&x.hp>0).forEach(x=>E['e_'+x.uid]=rnd(2,6));break}
+   case 'escclear':UI.esc.dice={};break;
+   case 'esclog':{const E=UI.esc.dice;const al=active().filter(x=>x.side==='ally'&&x.hp>0);const foes=active().filter(x=>x.side==='enemy'&&x.hp>0);const mx=Math.max(0,...foes.map(x=>effB(x,'spe')));const tg=mx+(+E.foe);const avg=al.reduce((s,x)=>s+effB(x,'spe')+(+E['e_'+x.uid]),0)/al.length;addLog(`逃走判定：目標値${mx}+${E.foe}=${tg} / 味方平均 ${Math.round(avg*100)/100} → ${avg>tg?'逃走成功':'失敗'}`);toast('記録しました');break}
+   case 'exp':copy(JSON.stringify(S));return;
+   case 'imp':{try{const s=JSON.parse($('#imp').value);if(!s.units)throw 0;s.cfg={...DEF_CFG,...s.cfg};S=s;toast('復元しました')}catch(err){toast('読み込めませんでした。バックアップのテキスト全体を貼り付けてください');return}break}
+   case 'wipe':if(!UI.wipeArm){UI.wipeArm=true;render();return}UI.wipeArm=false;S={cfg:{...S.cfg},units:[],walls:{ally:{p:false,s:false},enemy:{p:false,s:false}},turn:1,log:[]};UI.act={att:null,mv:null,tg:[],dice:{},opt:{}};UI.sel=null;toast('消去しました');break;
+   case 'sample':S=sample();break;
+  }
+  save();render()});
+function storeOf(k){return k==='act'?UI.act.dice:k==='cap'?UI.cap.dice:UI.esc.dice}
+function rollAll(force){
+  // 必要なダイスが出揃うまで繰り返し描画して埋める
+  const D=UI.act.dice;if(force){for(const k in D)delete D[k]}
+  for(let i=0;i<30;i++){render();const ins=[...document.querySelectorAll('#main input[data-store="act"][data-dice]')].filter(x=>x.value==='');if(!ins.length)break;ins.forEach(x=>{const b=x.nextElementSibling;D[x.dataset.dice]=rnd(+b.dataset.n,+b.dataset.s)})}
+}
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.dataset.dice){const st=storeOf(t.dataset.store);st[t.dataset.dice]=t.value===''?'':+t.value;render();return}
+  if(t.dataset.a==='att'){UI.act={att:t.value||null,mv:null,tg:[],dice:{},opt:{}};render();return}
+  if(t.dataset.a==='mv'){UI.act.mv=t.value?+t.value:null;UI.act.dice=Object.fromEntries(Object.entries(UI.act.dice).filter(([k])=>k.startsWith('pre_')));const mv=MV(UI.act.mv);const att=U(UI.act.att);if(mv&&att&&!UI.act.tg.length){const foe=active().find(u=>u.side!==att.side&&u.hp>0);if(foe)UI.act.tg=[foe.uid]}render();return}
+  if(t.dataset.tg){const id=t.dataset.tg;UI.act.tg=t.checked?[...UI.act.tg,id]:UI.act.tg.filter(x=>x!==id);render();return}
+  if(t.dataset.opt){UI.act.opt[t.dataset.opt]=t.type==='checkbox'?t.checked:t.value;render();return}
+  if(t.dataset.uf){const[id,k]=t.dataset.uf.split('.');const u=U(id);u[k]=t.type==='checkbox'?t.checked:t.value;if(k==='status'){u.toxN=1;u.slpN=0}addLog(`${uname(u)}：${k==='status'?'状態 '+STATUS[u.status]:({conf:'混乱',attract:'メロメロ',leech:'やどりぎ'}[k])+(t.checked?' ON':' OFF')}`);save();render();return}
+  if(t.dataset.wall){const[sd,k]=t.dataset.wall.split('.');S.walls[sd][k]=t.checked;save();render();return}
+  if(t.dataset.item){const u=U(t.dataset.item);useItem(u,t.value);save();render();return}
+  if(t.dataset.ef){const u=U(UI.sel);const k=t.dataset.ef;
+    if(k.startsWith('B.'))u.B[k.slice(2)]=+t.value||0;
+    else if(k==='inBattle')u.inBattle=t.checked;
+    else if(k==='no'){const no=parseMon(t.value);if(no)u.no=no;else toast('ポケモンが見つかりません')}
+    else if(k==='canEvo')u.canEvo=t.value===''?null:t.value==='1';
+    else if(k==='maxHp'||k==='hp'){u[k]=+t.value||0;u.hp=Math.min(u.hp,u.maxHp)}
+    else u[k]=t.value;save();render();return}
+  if(t.dataset.mpp){const[i,k]=t.dataset.mpp.split('.');U(UI.sel).moves[+i][k]=+t.value||0;save();render();return}
+  if(t.dataset.lf){UI.lfilter=t.dataset.lf;render();return}
+  if(t.dataset.cap){UI.cap[t.dataset.cap]=t.value;if(t.dataset.cap==='tg')UI.cap.dice={};render();return}
+  if(t.dataset.cfg){const k=t.dataset.cfg;S.cfg[k]=t.type==='checkbox'?t.checked:(['div','minDmg'].includes(k)?(+t.value||0):t.value);if(k==='div'&&!S.cfg.div)S.cfg.div=10;save();render();return}
+});
+document.addEventListener('input',e=>{if(e.target.id==='refq'){UI.refq=e.target.value;render()}});
+function useItem(u,k){const it=ITEMS.find(i=>i.k===k);if(!it)return;const b=u.hp;
+  if(it.revive){if(u.hp>0){toast('瀕死ではありません');return}u.hp=Math.floor(u.maxHp/2)}
+  else if(it.heal){if(u.hp<=0){toast('瀕死のポケモンには使えません');return}u.hp=Math.min(u.maxHp,u.hp+it.heal)}
+  if(it.cure){if(it.cure==='all'||it.cure.includes(u.status)){u.status='';u.toxN=1;u.slpN=0}if(it.cure==='all')u.conf=false}
+  if(it.pp){const m=u.moves.reduce((a,x)=>(x.max-x.pp)>(a?a.max-a.pp:-1)?x:a,null);if(m){m.pp=Math.min(m.max,m.pp+10);addLog(`${uname(u)}に${it.n}：${MV(m.id).n}のPP+10`);return}}
+  addLog(`${uname(u)}に${it.n}を使った${u.hp!==b?` HP${b}→${u.hp}`:''}`)}
+render();
+</script>
+
+</body>
+</html>
