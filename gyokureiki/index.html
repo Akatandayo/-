@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>東方玉霊姫 対戦シミュレータ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== タイトル ===== -->
+  <section id="scr-title" class="screen active">
+    <div class="titlebar"><span id="t-name">名無し</span><span class="titlebar-right">対戦シミュレータ</span></div>
+    <div class="panel title-panel">
+      <h1 class="logo">東方玉霊姫<small>対戦シミュレータ</small></h1>
+      <p class="title-note">コダマを６体えらんで、ＮＰＣや他のプレイヤーと対戦しよう！</p>
+      <div class="menu">
+        <button class="btn big" data-go="party">パーティ編成</button>
+        <button class="btn big" data-go="npc">ＮＰＣ戦（テスト）</button>
+        <button class="btn big" data-go="online">対人戦（オンライン）</button>
+        <button class="btn big" data-go="zukan">コダマ図鑑</button>
+      </div>
+      <div class="name-row">
+        <label>プレイヤー名 <input id="in-name" maxlength="12" placeholder="悠姫"></label>
+      </div>
+      <p class="credit">データ出典：東方玉神楽「コダマデータ【玉霊姫版】」／本作は非公式ファンメイドのシミュレータです。</p>
+    </div>
+  </section>
+
+  <!-- ===== パーティ編成 ===== -->
+  <section id="scr-party" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>パーティ編成</span><span class="titlebar-right" id="party-count">0/6</span></div>
+    <div class="panel">
+      <div class="party-slots" id="party-slots"></div>
+      <div class="row-btns">
+        <button class="btn sm" id="pt-random">おまかせ</button>
+        <button class="btn sm" id="pt-lv50">全員Lv50</button>
+        <button class="btn sm" id="pt-clear">全消去</button>
+        <button class="btn sm" id="pt-export">コード出力</button>
+        <button class="btn sm" id="pt-import">コード読込</button>
+      </div>
+      <div id="slot-editor" class="slot-editor"></div>
+    </div>
+    <div class="panel">
+      <div class="picker-head">コダマを選ぶ<span class="small">（タップで追加／選択中の枠と入れ替え）</span></div>
+      <div class="filters" id="party-filters"></div>
+      <div class="klist" id="party-list"></div>
+    </div>
+  </section>
+
+  <!-- ===== 図鑑 ===== -->
+  <section id="scr-zukan" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>コダマ図鑑</span><span class="titlebar-right" id="zukan-count"></span></div>
+    <div class="panel">
+      <div class="filters" id="zukan-filters"></div>
+      <div class="klist" id="zukan-list"></div>
+    </div>
+  </section>
+
+  <!-- ===== NPC戦 ===== -->
+  <section id="scr-npc" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>ＮＰＣ戦（テスト）</span></div>
+    <div class="panel form">
+      <label>相手のつよさ
+        <select id="npc-level">
+          <option value="easy">よわい</option>
+          <option value="normal" selected>ふつう</option>
+          <option value="hard">つよい</option>
+        </select>
+      </label>
+      <label>相手のパーティ
+        <select id="npc-party">
+          <option value="random">ランダム</option>
+          <option value="mirror">自分と同じ（ミラー）</option>
+          <option value="starter">初期３コダマ</option>
+          <option value="strong">高種族値ランダム</option>
+        </select>
+      </label>
+      <label>レベル
+        <select id="npc-lvrule">
+          <option value="50">全員Lv50に統一</option>
+          <option value="100">全員Lv100に統一</option>
+          <option value="own">編成のまま（相手は自分の平均Lv）</option>
+        </select>
+      </label>
+      <div id="npc-mine" class="mini-party"></div>
+      <button class="btn big" id="npc-start">対戦開始！</button>
+    </div>
+  </section>
+
+  <!-- ===== オンライン ===== -->
+  <section id="scr-online" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>対人戦（オンライン）</span></div>
+    <div class="panel form">
+      <p class="small">ルームを作って表示されたコードを相手に伝えるか、相手のコードを入力して参加してください。（PeerJS による P2P 接続）</p>
+      <label>レベル（ホストの設定が適用）
+        <select id="on-lvrule">
+          <option value="50">全員Lv50に統一</option>
+          <option value="100">全員Lv100に統一</option>
+          <option value="own">編成のまま</option>
+        </select>
+      </label>
+      <div class="online-box">
+        <button class="btn" id="on-host">ルームを作る</button>
+        <div class="room-code" id="on-code">------</div>
+        <button class="btn sm" id="on-copy">コピー</button>
+      </div>
+      <div class="online-box">
+        <input id="on-join-code" placeholder="相手のルームコード" maxlength="12" autocomplete="off">
+        <button class="btn" id="on-join">参加する</button>
+      </div>
+      <div class="online-status" id="on-status">未接続</div>
+      <div id="on-opponent" class="mini-party"></div>
+      <button class="btn big" id="on-start" disabled>対戦開始！</button>
+      <button class="btn sm" id="on-leave">切断</button>
+    </div>
+  </section>
+
+  <!-- ===== バトル ===== -->
+  <section id="scr-battle" class="screen">
+    <div class="bt-top">
+      <div class="statbox foe" id="sb-foe"></div>
+      <div class="statbox me" id="sb-me"></div>
+    </div>
+    <div class="bt-balls">
+      <div class="balls" id="balls-foe"></div>
+      <div class="balls" id="balls-me"></div>
+    </div>
+    <div class="field" id="field">
+      <div class="stage foe"><div class="mon" id="mon-foe"></div></div>
+      <div class="stage me"><div class="mon" id="mon-me"></div></div>
+    </div>
+    <div class="msgbox" id="msgbox"><div id="msg"></div><div class="msg-next" id="msg-next">▼</div></div>
+    <div class="cmd-tabs">
+      <button class="tab active" data-tab="spell">スペル</button>
+      <button class="tab" data-tab="kodama">コダマ</button>
+      <button class="tab" data-tab="chart">属性表</button>
+      <button class="tab" data-tab="foe">敵能力</button>
+    </div>
+    <div class="cmd" id="cmd"></div>
+  </section>
+
+  <div class="modal" id="modal"><div class="modal-body"><div id="modal-content"></div><button class="btn" id="modal-close">閉じる</button></div></div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
