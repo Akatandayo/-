@@ -20,6 +20,10 @@ const Player = {
         gradedRaceCount: 0, g1RaceCount: 0, g1WinCount: 0, hofCount: 0
       },
       settings: { raceSpeed: 1 },
+      records: {},                                      // コースレコード { raceId: { time, name } }
+      pvp: { rating: 1000, best: 1000, matches: 0, wins: 0, leagueWins: {} },
+      ghosts: [],                                       // フレンドから受け取った対戦コードの馬
+      nicksFound: [],                                   // 発見した黄金配合
       tutorialDone: false,
       createdAt: Date.now()
     };

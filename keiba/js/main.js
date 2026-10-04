@@ -3,6 +3,7 @@
 
 const App = {
   pending: null,          // 出走準備中のレース
+  pendingMatch: null,     // 準備中の対戦（リーグ戦・フレンド対戦）
   notifiedMission: null,
 
   init() {
@@ -91,8 +92,14 @@ const App = {
     const fee = Player.data.stats.breedCount === 0 ? 0 : Breeding.fee(father, mother);
     if (!Player.canAfford(fee)) return UI.toast(`配合料（${Util.money(fee)}）が足りません`, 'error');
     Player.addMoney(-fee);
-    const { horse, inherited } = Breeding.breed(father, mother);
+    const { horse, inherited, specials } = Breeding.breed(father, mother);
     Player.data.horses.push(horse);
+    specials.filter(x => x.key === 'nick').forEach(x => {
+      if (!Player.data.nicksFound.includes(x.id)) {
+        Player.data.nicksFound.push(x.id);
+        UI.toast(`✨ 新しい黄金配合を発見！<br>${x.name}`, 'mission-toast');
+      }
+    });
     if (inherited) Player.addCard(inherited);
     Player.bump('breedCount');
     UI.state.breed = { father: null, mother: null };
@@ -110,6 +117,7 @@ const App = {
         ${UI.horseCard(h, { onclick: '' })}
         <label>名前をつけよう<input id="horse-name" maxlength="12" value="${Util.esc(h.name)}"></label>
         <p>素質：<b>${Util.grade(Horse.potential(h))}</b>${UI.help('potential')}・成長：<b>${GAME_DATA.growthTypes[h.growthType].label}</b>・おすすめ：<b>${rec.icon}${rec.name}</b></p>
+        ${h.specials && h.specials.length ? `<p class="special-tags">${h.specials.map(x => `<span class="special">✨ ${x}</span>`).join('')}</p>` : ''}
         ${sk ? `<p class="ok">🎴 親からスキル「${sk.name}」を受け継いだ！（スキルカードを入手）</p>` : ''}
         <button class="btn primary big" onclick="App.afterBirth('${h.id}')">次は調教！ ▶</button>
       </div>`, { noClose: true });
@@ -212,6 +220,7 @@ const App = {
     const h = Player.horse(hid);
     if (!h) return;
     UI.state.raceHorse = hid;
+    UI.state.raceMode = 'route';
     UI.state.raceRoute = route || h.route || Horse.recommendRoute(h);
     UI.show('race');
   },
@@ -254,6 +263,121 @@ const App = {
     Player.save();
     RaceView.start({ result, reward, race, horseId: h.id });
     this.checkMission();
+  },
+
+  // ── 対戦（リーグ戦・フレンド対戦） ──
+  matchModal(match, h) {
+    const r = match.race;
+    UI.modal(`
+      <h3>${UI.gradeBadge(r.grade)} ${Util.esc(r.name)}</h3>
+      <p>${r.surface === 'turf' ? '🌱芝' : '🟫ダート'} ${r.distance}m・馬場：<b>${GAME_DATA.grounds[match.ground].label}</b>
+        ${match.league && match.league.statCap ? `・能力上限 ${match.league.statCap}` : match.cap ? `・能力上限 ${match.cap}` : ''}</p>
+      <h4>対戦相手</h4>
+      <ol class="entry-list wide">${match.field.map(e => `<li class="${e.isPlayer ? 'me' : ''}">${GAME_DATA.styles[e.runningStyle].icon} ${Util.esc(e.name)}
+        <small class="muted">${e.isPlayer ? 'あなた' : Util.esc(e.owner || '')}${e.isGhost ? '（フレンド）' : ''}</small></li>`).join('')}</ol>
+      <div class="btn-row"><button class="btn" onclick="UI.closeModal()">やめる</button><button class="btn primary big" onclick="App.runMatch()">🏁 スタート！</button></div>`);
+  },
+
+  prepareLeague(hid) {
+    const h = Player.horse(hid);
+    const league = Pvp.league(UI.state.league);
+    if (!h || !league || !Pvp.isUnlocked(league)) return;
+    const can = Pvp.canEnter(h);
+    if (!can.ok) return UI.toast(can.reason, 'error');
+    this.pendingMatch = Object.assign(Pvp.buildLeagueMatch(h, league.id), { hid });
+    this.matchModal(this.pendingMatch, h);
+  },
+
+  prepareFriend(hid) {
+    const h = Player.horse(hid);
+    if (!h) return;
+    const can = Pvp.canEnter(h);
+    if (!can.ok) return UI.toast(can.reason, 'error');
+    const course = GAME_DATA.leagueCourses[UI.state.friendCourse] || GAME_DATA.leagueCourses[1];
+    this.pendingMatch = Object.assign(Pvp.buildFriendMatch(h, UI.state.friendPick, course, UI.state.friendCap || null), { hid });
+    this.matchModal(this.pendingMatch, h);
+  },
+
+  runMatch() {
+    const m = this.pendingMatch;
+    if (!m) return;
+    this.pendingMatch = null;
+    UI.closeModal();
+    const h = Player.horse(m.hid);
+    if (!h || !Pvp.canEnter(h).ok) return UI.toast('出走できません', 'error');
+    const result = Race.simulate(m.race, m.field, m.ground);
+    const reward = m.kind === 'league' ? Pvp.applyLeague(h, m, result) : Pvp.applyFriend(h, m, result);
+    Player.save();
+    RaceView.start({
+      result, reward, race: m.race, horseId: h.id,
+      resultHTML: v => {
+        const fin = result.finish;
+        const back = `<div class="btn-row"><button class="btn" onclick="UI.show('horse',{id:'${h.id}'})">🐎 馬の詳細へ</button>
+          <button class="btn primary" onclick="UI.show('race')">⚔ 対戦画面へ</button></div>`;
+        if (m.kind === 'league') {
+          const cards = v.cardsHTML(reward.cards);
+          return `${v.placeHead(reward.place, fin[0].name)}
+            <div class="rating-change ${reward.delta >= 0 ? 'up' : 'down'}">レーティング ${reward.rating} <b>${reward.delta >= 0 ? '+' : ''}${reward.delta}</b></div>
+            ${reward.unlocked.map(l => `<p class="center ok">🎉 ${l.icon}${l.name}が解放されました！</p>`).join('')}
+            ${v.resultTable(fin)}
+            <h3>🎁 報酬</h3>
+            <div class="rewards"><div>💰 賞金 <b>${Util.money(reward.prize)}</b></div>
+              <div>✨ 経験値 <b>+${reward.exp}</b>${reward.levelUps ? ' <span class="ok">レベルアップ！</span>' : ''}</div></div>
+            ${cards ? `<h3>🃏 カード獲得！</h3><div class="cgrid reveal-grid">${cards}</div>` : ''}
+            ${back}`;
+        }
+        return `${v.placeHead(reward.place, fin[0].name)}
+          ${reward.vs.length ? `<div class="vs-list">${reward.vs.map(x => `<div class="${x.won ? 'ok' : 'warn'}">${x.won ? '○ 勝ち' : '● 負け'}：${Util.esc(x.owner)}厩舎の${Util.esc(x.name)}</div>`).join('')}</div>` : ''}
+          ${v.resultTable(fin)}
+          <p class="muted small">フレンド対戦は報酬なし（経験値+${reward.exp}）。何度でも挑戦できます。</p>
+          ${back}`;
+      }
+    });
+  },
+
+  showCode(hid) {
+    const h = Player.horse(hid);
+    if (!h) return;
+    const code = Pvp.exportCode(h);
+    UI.modal(`<h3>📤 ${Util.esc(h.name)}の対戦コード</h3>
+      <p class="muted small">このコードをコピーしてフレンドに送ろう。フレンドは「レース → フレンド対戦」に貼り付けると対戦できます。<br>※ 今の能力・スキルが記録されます。成長したら作り直してね。</p>
+      <textarea id="my-code" class="code-box" rows="5" readonly onclick="this.select()">${code}</textarea>
+      <div class="btn-row"><button class="btn primary" onclick="App.copyCode()">📋 コピー</button><button class="btn" onclick="UI.closeModal()">閉じる</button></div>`, { cls: 'small' });
+  },
+
+  copyCode() {
+    const el = UI.el('my-code');
+    el.select();
+    const done = () => UI.toast('📋 コピーしました');
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(el.value).then(done, () => { document.execCommand('copy'); done(); });
+    else { document.execCommand('copy'); done(); }
+  },
+
+  addGhost() {
+    const el = UI.el('ghost-code');
+    try {
+      const g = Pvp.addGhost(el.value);
+      if (!UI.state.friendPick.includes(g.id) && UI.state.friendPick.length < 7) UI.state.friendPick.push(g.id);
+      UI.toast(`🤝 ${Util.esc(g.owner)}厩舎の「${Util.esc(g.name)}」を追加しました`);
+      this.commit();
+    } catch (e) {
+      UI.toast(e.message, 'error');
+    }
+  },
+
+  removeGhost(id) {
+    Player.data.ghosts = Player.data.ghosts.filter(g => g.id !== id);
+    UI.state.friendPick = UI.state.friendPick.filter(x => x !== id);
+    this.commit();
+  },
+
+  toggleGhost(id) {
+    const pick = UI.state.friendPick;
+    const i = pick.indexOf(id);
+    if (i >= 0) pick.splice(i, 1);
+    else if (pick.length < 7) pick.push(id);
+    else UI.toast('対戦できるのは最大7頭です', 'error');
+    UI.render();
   },
 
   // ── 引退・殿堂 ──
@@ -303,6 +427,24 @@ const App = {
     Player.addCard(id);
     UI.toast(`🛒 ${c.name} を購入しました`);
     this.commit();
+  },
+
+  buyPack(id) {
+    const pk = GAME_DATA.packs.find(x => x.id === id);
+    if (!pk || !Player.canAfford(pk.price)) return UI.toast('お金が足りません', 'error');
+    Player.addMoney(-pk.price);
+    const cards = Cards.openPack(pk).map(c => {
+      const isNew = !Player.data.seenCards.includes(c.id);
+      Player.addCard(c.id);
+      return { card: c, isNew };
+    });
+    this.commit();
+    const best = cards.reduce((a, b) => (Cards.rarityIndex(b.card.rarity) > Cards.rarityIndex(a.card.rarity) ? b : a)).card.rarity;
+    UI.modal(`<div class="birth"><div class="sparkle">${pk.icon}</div><h2>${pk.name}を開封！</h2>
+      ${['SSR', 'UR'].includes(best) ? `<p class="ok">🌈 ${best}が出た！</p>` : ''}
+      <div class="cgrid reveal-grid">${RaceView.cardsHTML(cards)}</div>
+      <div class="btn-row"><button class="btn" onclick="UI.closeModal()">OK</button>
+      <button class="btn primary" ${Player.canAfford(pk.price) ? '' : 'disabled'} onclick="App.buyPack('${pk.id}')">もう1パック（${Util.money(pk.price)}）</button></div></div>`);
   },
 
   cardDetail(id) {

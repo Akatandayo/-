@@ -96,5 +96,22 @@ const Cards = {
     const rarity = Util.weighted(GAME_DATA.dropTable[grade] || GAME_DATA.dropTable.cond);
     const type = Util.weighted(GAME_DATA.dropTypeWeights);
     return this.randomOf(type, rarity);
+  },
+
+  // カードパックを開ける（所持金の処理は呼び出し側）
+  openPack(pack) {
+    const cards = [];
+    for (let i = 0; i < pack.count; i++) {
+      const rarity = Util.weighted(GAME_DATA.dropTable[pack.table]);
+      const type = pack.types ? Util.pick(pack.types) : Util.weighted(GAME_DATA.dropTypeWeights);
+      cards.push(this.randomOf(type, rarity));
+    }
+    // レア度保証：最後の1枚を保証レア以上に差し替え
+    if (pack.guarantee && !cards.some(c => this.rarityIndex(c.rarity) >= this.rarityIndex(pack.guarantee))) {
+      const pool = GAME_DATA.rarities.slice(this.rarityIndex(pack.guarantee));
+      const type = pack.types ? Util.pick(pack.types) : Util.weighted(GAME_DATA.dropTypeWeights);
+      cards[cards.length - 1] = this.randomOf(type, Util.pick(pool));
+    }
+    return cards;
   }
 };

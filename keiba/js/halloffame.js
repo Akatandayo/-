@@ -34,6 +34,16 @@ const HallOfFame = {
       .map(x => `${x.name}（${GAME_DATA.grades[x.grade].label}）`);
   },
 
+  // 先祖ID（父母とその先祖）。インブリード判定に使う
+  ancestorsOf(h) {
+    const ids = [];
+    [h.fatherId, h.motherId].forEach(id => {
+      const c = Cards.get(id);
+      if (c) ids.push(c.id, ...(c.ancestors || []));
+    });
+    return [...new Set(ids)].slice(0, 30);
+  },
+
   // 引退馬から配合カードを作る（重賞を勝った馬のみ）
   makeBreedingCard(h, inHall) {
     const overall = Horse.overall(h);
@@ -50,6 +60,8 @@ const HallOfFame = {
       apt: Object.assign({}, h.aptitude),
       style: h.runningStyle, growth: h.growthType, trait,
       skill: h.skills[0] || null,
+      pedigree: { f: Horse.pedigree(h).f, m: Horse.pedigree(h).m },
+      ancestors: this.ancestorsOf(h),
       desc: `${inHall ? '🏛 殿堂馬。' : ''}${h.record.races}戦${h.record.wins}勝（GⅠ ${h.record.g1Wins}勝）`
     };
   },
@@ -72,6 +84,7 @@ const HallOfFame = {
       titles: this.titles(h), mainWins: this.mainWins(h),
       father: (Cards.get(h.fatherId) || {}).name || '不明',
       mother: (Cards.get(h.motherId) || {}).name || '不明',
+      pedigree: Horse.pedigree(h),
       overall: Horse.overall(h), retiredAge: h.age, retiredAt: Date.now(),
       cardId: card ? card.id : null
     };

@@ -438,3 +438,97 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   .entry-list { columns: 1; }
   .brand span { display: none; }
 }
+
+/* ── 2Dレース ── */
+.track {
+  position: relative; height: 230px; margin: 10px 0 6px; border-radius: 12px; overflow: hidden;
+  background: repeating-linear-gradient(90deg, #2f8a4e 0 40px, #2b8148 40px 80px);
+  border: 3px solid #f5f5f5; box-shadow: inset 0 0 0 2px #1d5c34;
+}
+.track.dirt { background: repeating-linear-gradient(90deg, #a87943 0 40px, #9d703d 40px 80px); box-shadow: inset 0 0 0 2px #6e4b25; }
+.lane { position: absolute; left: 0; right: 0; border-bottom: 1px dashed rgba(255,255,255,.18); }
+.lane.me { background: rgba(255, 213, 79, .22); }
+.runner {
+  position: absolute; top: 50%; transform: translate(-100%, -50%); display: flex; align-items: center; gap: 1px;
+  white-space: nowrap; will-change: left; font-size: 12px;
+}
+.runner .horse { display: inline-block; font-size: 15px; line-height: 1; filter: drop-shadow(0 1px 1px rgba(0,0,0,.4)); }
+.runner .gate { order: 2; display: inline-block; min-width: 14px; text-align: center; font-size: 9px; font-weight: 900; background: #fff; color: #222; border-radius: 3px; padding: 0 2px; }
+.lane.me .runner .gate { background: var(--accent); color: #fff; }
+.runner .me-tag { order: 3; margin-left: 3px; background: var(--accent); color: #fff; font-weight: 900; font-size: 10px; border-radius: 99px; padding: 0 6px; }
+.runner.behind { opacity: .45; }
+.runner.boost .horse { animation: boost 1.4s ease-out; }
+.runner.boost::after {
+  content: attr(data-skill); position: absolute; left: 100%; top: -2px; margin-left: 4px; font-size: 10px; font-weight: 900;
+  background: #ffe08a; color: #6b3d00; border-radius: 6px; padding: 0 4px; animation: skilltag 1.6s forwards;
+}
+@keyframes boost { 0%, 60% { filter: drop-shadow(0 0 6px #ffd54f) drop-shadow(0 0 10px #ff9800); } }
+@keyframes skilltag { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+.track-goal { position: absolute; top: 0; bottom: 0; width: 6px; margin-left: -3px; background: repeating-linear-gradient(0deg, #fff 0 6px, #c0262d 6px 12px); z-index: 1; }
+.track-post { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,.35); }
+.track-remain { position: absolute; z-index: 2; top: 4px; left: 6px; background: rgba(0,0,0,.6); color: #fff; font-weight: 900; font-size: 12px; border-radius: 6px; padding: 1px 8px; }
+.standings li.ghost { background: #e7f0ff; border-radius: 6px; }
+
+/* ── 血統表・特殊配合 ── */
+.ptree { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, auto); grid-auto-flow: column; gap: 4px; }
+.ptree .pt { border-radius: 8px; padding: 4px 8px; color: #fff; display: flex; flex-wrap: wrap; gap: 0 6px; align-items: center; font-size: 13px; }
+.ptree .pt small { width: 100%; opacity: .85; font-size: 10px; }
+.ptree .p1 { grid-row: span 2; font-size: 15px; }
+.ptree .p2 { opacity: .9; }
+.ptree .sire { background: var(--sire); }
+.ptree .mare { background: var(--mare); }
+.ptree .pt .muted { color: #fff; opacity: .6; }
+.special-tags { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+.special { display: inline-block; background: linear-gradient(90deg, #ffe08a, #ffc2d6); border-radius: 99px; padding: 2px 10px; font-weight: 800; font-size: 12px; }
+.specials { display: grid; gap: 6px; margin: 8px 0; }
+.special-box { background: linear-gradient(90deg, #fff4c2, #ffe3ef); border: 2px solid var(--accent2); border-radius: 10px; padding: 6px 10px; }
+.special-box small { display: block; color: var(--muted); }
+.nick-list summary { font-weight: 800; }
+.nick { padding: 5px 0; border-bottom: 1px dashed var(--line); font-size: 13px; }
+.nick.found { font-weight: 700; }
+
+/* ── ショップ（パック） ── */
+.sub-title { color: #fff; margin: 14px 2px 8px; }
+.packs { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.pack { background: linear-gradient(160deg, #fff, #fff1d0); border: 3px solid var(--accent2); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 4px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,.3); }
+.pack-icon { font-size: 40px; }
+.pack small { color: var(--muted); }
+
+/* ── ホームのリンク ── */
+.home-links { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.link-card { border: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; margin: 0; cursor: pointer; }
+.link-card span { font-size: 28px; }
+.link-card small { color: var(--muted); }
+
+/* ── 対戦 ── */
+.rating { font-size: 15px; }
+.rating b { font-size: 26px; color: var(--accent); }
+.rating small { color: var(--muted); margin-left: 6px; }
+.league-list { display: grid; gap: 8px; margin-bottom: 12px; }
+.league { display: flex; gap: 10px; align-items: center; background: var(--paper); border: 3px solid transparent; border-radius: 12px; padding: 10px 12px; cursor: pointer; box-shadow: 0 3px 8px rgba(0,0,0,.25); }
+.league small { display: block; font-size: 12px; color: var(--muted); }
+.league.active { border-color: var(--accent); background: #fff1e8; }
+.league.locked { opacity: .6; cursor: not-allowed; }
+.league-icon { font-size: 34px; }
+.code-box { width: 100%; border: 2px solid var(--line); border-radius: 10px; padding: 8px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px; word-break: break-all; resize: vertical; margin-bottom: 8px; }
+.ghost-list { display: grid; gap: 6px; }
+.ghost { display: flex; align-items: center; gap: 8px; background: #fff; border: 2px solid var(--line); border-radius: 10px; padding: 8px; cursor: pointer; }
+.ghost.on { border-color: var(--accent); background: #fff1e8; }
+.ghost-main { flex: 1; font-size: 13px; }
+.ghost-main small { color: var(--muted); }
+.rating-change { text-align: center; font-size: 18px; font-weight: 800; margin: 6px 0; }
+.rating-change.up b { color: var(--ok); }
+.rating-change.down b { color: var(--danger); }
+.vs-list { display: grid; gap: 2px; margin: 8px 0; text-align: center; }
+.entry-list.wide { columns: 1; }
+.entry-list small { margin-left: 6px; }
+
+/* ── 記録 ── */
+.hist td.num { text-align: right; font-weight: 800; white-space: nowrap; }
+.hist td.rank { font-weight: 900; text-align: center; width: 28px; }
+.hist td.r1 { color: #c98a00; } .hist td.r2 { color: #8a8a8a; } .hist td.r3 { color: #a0522d; }
+
+@media (max-width: 560px) {
+  .track { height: 200px; }
+  .packs { grid-template-columns: 1fr 1fr; }
+}

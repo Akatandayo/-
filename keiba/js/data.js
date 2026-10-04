@@ -373,3 +373,45 @@ GAME_DATA.starterCards = {
   k_rocket: 1, k_kick: 1, k_stamkeep: 1,
   i_refresh: 2, i_speedtr: 1
 };
+
+// ───────── 特殊配合 ─────────
+// 黄金配合（ニックス）：特定の組み合わせで全能力にボーナス。低レア同士の組み合わせもある。
+GAME_DATA.nicks = [
+  { sire: 's_hayate', mare: 'm_sakura', name: '春風の快速', bonus: 5 },
+  { sire: 's_daichi', mare: 'm_tsuchi', name: '大地の恵み', bonus: 5 },
+  { sire: 's_little', mare: 'm_lucky', name: '小さな奇跡', bonus: 6 },
+  { sire: 's_ocean', mare: 'm_silver', name: '銀の大海', bonus: 4 },
+  { sire: 's_goldrush', mare: 'm_crimson', name: '砂塵の炎', bonus: 4 },
+  { sire: 's_skyhigh', mare: 'm_star', name: '天空の一番星', bonus: 4 },
+  { sire: 's_thunder', mare: 'm_moon', name: '雷光と月光', bonus: 4 },
+  { sire: 's_king', mare: 'm_aurora', name: '王と極光', bonus: 4 },
+  { sire: 's_emperor', mare: 'm_goddess', name: '始祖の血統', bonus: 3 }
+];
+
+// ───────── カードパック ─────────
+GAME_DATA.packs = [
+  { id: 'p_basic', name: 'ベーシックパック', icon: '📦', price: 3000, count: 3, table: 'op',
+    desc: 'カード3枚入り。N〜SSRが出る。' },
+  { id: 'p_premium', name: 'プレミアムパック', icon: '🎁', price: 12000, count: 5, table: 'g2', guarantee: 'SR',
+    desc: 'カード5枚入り。SR以上1枚確定！URも出る。' },
+  { id: 'p_blood', name: '血統パック', icon: '🧬', price: 8000, count: 3, table: 'g3', types: ['sire', 'mare'],
+    desc: '種牡馬・繁殖牝馬カードだけが3枚入り。' }
+];
+
+// ───────── リーグ戦（CPU馬主との対戦） ─────────
+// statCap：出走馬の能力をこの値までに制限（レベル差だけで勝敗が決まらないように）
+GAME_DATA.leagues = [
+  { id: 'bronze', name: 'ブロンズリーグ', icon: '🥉', statCap: 70, npc: 55, minRating: 0, prize: 1500, grade: 'op',
+    desc: '初心者向け。能力は最大70に制限されます。' },
+  { id: 'silver', name: 'シルバーリーグ', icon: '🥈', statCap: 85, npc: 68, minRating: 1100, prize: 4000, grade: 'g2',
+    desc: '中級者向け。能力は最大85に制限されます。' },
+  { id: 'gold', name: 'ゴールドリーグ', icon: '🥇', statCap: null, npc: 82, minRating: 1250, prize: 10000, grade: 'g1',
+    desc: '上級者向け。制限なしの真剣勝負！' }
+];
+GAME_DATA.leagueCourses = [
+  { distance: 1200, surface: 'turf' }, { distance: 1600, surface: 'turf' }, { distance: 2000, surface: 'turf' },
+  { distance: 2400, surface: 'turf' }, { distance: 1400, surface: 'dirt' }, { distance: 1800, surface: 'dirt' }
+];
+GAME_DATA.ratingDelta = [30, 18, 8, 0, -4, -8, -12, -16];
+GAME_DATA.rivalOwners = ['タカハシ', 'サトウ', 'スズキ', 'ヤマモト', 'ナカムラ', 'コバヤシ', 'カトウ', 'ワタナベ',
+  'イトウ', 'キムラ', 'ハヤシ', 'シミズ', 'モリ', 'イケダ', 'ハシモト', 'アベ'];

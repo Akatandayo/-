@@ -5,7 +5,7 @@
 
 const Race = {
   DT: 0.5,             // シミュレーション刻み（秒）
-  FRAME_INTERVAL: 1,   // frames を記録する間隔（秒）
+  FRAME_INTERVAL: 0.5, // frames を記録する間隔（秒）
   NPC_VARIANCE: 4,
   SKILL_SCALE: 0.5,     // スキル効果（データ上の数値）を実際の速度補正に変換する係数
 
@@ -292,7 +292,7 @@ const Race = {
     return {
       raceId: race.id, name: race.name, grade: race.grade, distance: D, surface: race.surface,
       distCat, ground,
-      entrants: runners.map(r => ({ id: r.e.id, name: r.e.name, isPlayer: r.e.isPlayer, style: r.e.runningStyle, gate: r.gate + 1 })),
+      entrants: runners.map(r => ({ id: r.e.id, name: r.e.name, owner: r.e.owner || '', isPlayer: r.e.isPlayer, isGhost: !!r.e.isGhost, style: r.e.runningStyle, gate: r.gate + 1 })),
       finish, events: events.sort((a, b) => a.t - b.t), frames,
       phases: { startEnd, cornerStart, finalStart }
     };
@@ -365,6 +365,12 @@ const Race = {
     h.condition = Util.clamp(h.condition + (place === 1 ? 10 : place <= 3 ? 3 : -4), 0, 100);
     const levelUps = Horse.addExp(h, exp);
 
-    return { place, prize, exp, cards, levelUps, birthday, field: result.finish.length };
+    // コースレコード（自分の馬の最速タイム）
+    const records = Player.data.records;
+    const prevRec = records[race.id];
+    const newRecord = !prevRec || me.time < prevRec.time;
+    if (newRecord) records[race.id] = { time: me.time, name: h.name, place, at: Date.now() };
+
+    return { place, prize, exp, cards, levelUps, birthday, field: result.finish.length, newRecord: newRecord && !!prevRec };
   }
 };

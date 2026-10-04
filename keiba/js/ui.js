@@ -12,7 +12,12 @@ const UI = {
     cardRarity: 'all',
     cardQuery: '',
     raceHorse: null,
-    raceRoute: null
+    raceRoute: null,
+    raceMode: 'route',
+    league: 'bronze',
+    friendPick: [],
+    friendCourse: 1,
+    friendCap: 0
   },
 
   el(id) { return document.getElementById(id); },
@@ -36,10 +41,11 @@ const UI = {
       breed: () => this.breedView(),
       race: () => this.raceView(),
       hof: () => this.hofView(),
+      records: () => this.recordsView(),
       raceView: () => RaceView.view()
     };
     this.el('main').innerHTML = (views[s] || views.home)();
-    const navKey = { horse: 'stable', hof: 'home', raceView: 'race' }[s] || s;
+    const navKey = { horse: 'stable', hof: 'home', records: 'home', raceView: 'race' }[s] || s;
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.nav === navKey));
     if (s === 'raceView') RaceView.mount();
   },
@@ -223,15 +229,23 @@ const UI = {
       </section>` : ''}
 
       <section class="panel">
-        <h3>🏛 殿堂 <button class="link" onclick="UI.show('hof')">見る ▶</button></h3>
-        <p class="muted">GⅠ 3勝 or 通算10勝で引退した名馬が殿堂入りします。${this.help('hof')}</p>
+        <h3>⚔ 対戦 <button class="link" onclick="UI.state.raceMode='league';UI.show('race')">挑戦する ▶</button></h3>
+        <p class="muted">CPU馬主とのリーグ戦や、対戦コードでフレンドの馬と勝負！ レーティング：<b>${p.pvp.rating}</b></p>
       </section>
+
+      <div class="home-links">
+        <button class="panel link-card" onclick="UI.show('hof')"><span>🏛</span><b>殿堂</b><small>${p.hallOfFame.length}頭</small></button>
+        <button class="panel link-card" onclick="UI.show('records')"><span>📊</span><b>記録・ランキング</b><small>レコードと名馬</small></button>
+      </div>
 
       <section class="panel news">
         <h3>📢 お知らせ</h3>
         <ul>
           <li>競馬×カードゲーム「馬主カード」へようこそ！</li>
           <li>レースで勝つと新しい種牡馬・繁殖牝馬・スキルカードが手に入ります。</li>
+          <li>🆕 レースが2Dトラックで見られるようになりました！</li>
+          <li>🆕 ⚔ リーグ戦・🤝 対戦コードでフレンド対戦が登場！</li>
+          <li>🆕 黄金配合・インブリードなどの特殊配合、血統表、カードパック、記録・ランキングを追加。</li>
           <li>わからない言葉は <span class="help static">？</span> ボタンをタップ！</li>
         </ul>
       </section>`;
@@ -292,7 +306,6 @@ const UI = {
 
   horseStatus(h) {
     const rec = Horse.recommendRoute(h);
-    const father = Cards.get(h.fatherId), mother = Cards.get(h.motherId);
     const s = GAME_DATA.styles[h.runningStyle];
     return `
       <section class="panel"><h3>能力</h3>
@@ -307,12 +320,23 @@ const UI = {
         <p class="rec">💡 この馬は <b>${Horse.routeInfo(rec).icon}${Horse.routeInfo(rec).name}</b> 路線がおすすめ！</p>
         <div class="route-pick">${GAME_DATA.routes.map(r => `<button class="${h.route === r.id ? 'active' : ''}" onclick="App.setRoute('${h.id}','${r.id}')">${r.icon} ${r.name}</button>`).join('')}</div>
       </section>
-      <section class="panel"><h3>血統</h3>
-        <div class="pedigree">
-          <div class="ped sire">♂ 父<br><b>${father ? Util.esc(father.name) : '不明'}</b>${father ? this.rarity(father.rarity) : ''}</div>
-          <div class="ped mare">♀ 母<br><b>${mother ? Util.esc(mother.name) : '不明'}</b>${mother ? this.rarity(mother.rarity) : ''}</div>
-        </div>
+      <section class="panel"><h3>🌳 血統表</h3>
+        ${this.pedigreeTree(Horse.pedigree(h))}
+        ${h.specials && h.specials.length ? `<p class="special-tags">${h.specials.map(x => `<span class="special">✨ ${x}</span>`).join('')}</p>` : ''}
+      </section>
+      <section class="panel"><h3>📤 対戦コード</h3>
+        <p class="muted small">この馬の対戦コードをフレンドに送ると、フレンドの画面であなたの馬と対戦できます。</p>
+        <button class="btn" onclick="App.showCode('${h.id}')">対戦コードを表示</button>
       </section>`;
+  },
+
+  // 3代血統表（父・母とその両親）
+  pedigreeTree(pd) {
+    const cell = (n, cls, label) => `<div class="pt ${cls}"><small>${label}</small>${n ? `<b>${Util.esc(n.name)}</b>${this.rarity(n.rarity)}` : '<b class="muted">―</b>'}</div>`;
+    return `<div class="ptree">
+      ${cell(pd.f, 'sire p1', '父')}${cell(pd.m, 'mare p1', '母')}
+      ${cell(pd.ff, 'sire p2', '父の父')}${cell(pd.fm, 'mare p2', '父の母')}${cell(pd.mf, 'sire p2', '母の父')}${cell(pd.mm, 'mare p2', '母の母')}
+    </div>`;
   },
 
   horseTrain(h) {
@@ -433,7 +457,13 @@ const UI = {
 
   shopView() {
     const items = GAME_DATA.items.filter(i => i.price);
-    return `<p class="muted">アイテムカードを購入できます。所持金：<b>${Util.money(Player.data.money)}</b></p>
+    return `<p class="muted">所持金：<b>${Util.money(Player.data.money)}</b></p>
+      <h3 class="sub-title">🃏 カードパック</h3>
+      <div class="packs">${GAME_DATA.packs.map(pk => `<div class="pack">
+        <div class="pack-icon">${pk.icon}</div><b>${pk.name}</b><small>${pk.desc}</small>
+        <button class="btn primary" ${Player.canAfford(pk.price) ? '' : 'disabled'} onclick="App.buyPack('${pk.id}')">💰 ${Util.money(pk.price)}</button>
+      </div>`).join('')}</div>
+      <h3 class="sub-title">🎒 アイテム</h3>
       <div class="cgrid">${items.map(c => this.itemCard(c, {
         count: Player.count(c.id),
         extra: `<button class="btn small primary" ${Player.canAfford(c.price) ? '' : 'disabled'} onclick="App.buy('${c.id}')">💰 ${Util.money(c.price)}</button>`
@@ -462,6 +492,7 @@ const UI = {
         <h3>🔮 配合予想</h3>
         <div class="pv-score">おすすめ度：<b>${'★'.repeat(pv.score)}${'☆'.repeat(5 - pv.score)}</b></div>
         <p class="pv-comment">「${pv.comment}」</p>
+        ${pv.specials.length ? `<div class="specials">${pv.specials.map(x => `<div class="special-box"><b>✨ ${x.name}</b><small>${x.desc}</small></div>`).join('')}</div>` : ''}
         <div class="pv-grid">${GAME_DATA.stats.map(s => `<div>${s.icon} ${s.label}<b>${pv.arrows[s.key]}</b></div>`).join('')}</div>
         <p>得意：<b>${pv.surface}・${pv.distText}</b></p>
         <p class="muted small">※ 同じ配合でも、生まれる馬には個体差があります。</p>
@@ -475,7 +506,23 @@ const UI = {
       <div class="steps">${steps.map((s, i) => `<div class="${i + 1 === step ? 'active' : i + 1 < step ? 'done' : ''}">${i + 1}. ${s}</div>`).join('')}</div>
       <div class="breed-slots">${slot(father, '♂ 父', 'sire')}<div class="x">✕</div>${slot(mother, '♀ 母', 'mare')}</div>
       <p class="breed-hint">${step === 1 ? '👇 まず父カード（種牡馬）を選ぼう！' : step === 2 ? '👇 次に母カード（繁殖牝馬）を選ぼう！' : '準備OK！ 配合して新しい馬を誕生させよう！'}</p>
-      ${body}`;
+      ${body}
+      ${this.nickList()}`;
+  },
+
+  // 黄金配合リスト（発見すると名前と組み合わせが表示される）
+  nickList() {
+    const found = Player.data.nicksFound;
+    return `<details class="panel nick-list"><summary>✨ 黄金配合リスト（発見 ${found.length}/${GAME_DATA.nicks.length}）</summary>
+      <p class="muted small">特定の父と母を組み合わせると「黄金配合」になり、能力にボーナスがつきます。低レアの組み合わせもあるよ！</p>
+      ${GAME_DATA.nicks.map(n => {
+        const key = n.sire + '+' + n.mare;
+        const f = Cards.get(n.sire), m = Cards.get(n.mare);
+        return found.includes(key)
+          ? `<div class="nick found">✨ <b>${n.name}</b>：${f.name} × ${m.name}（全能力+${n.bonus}）</div>`
+          : `<div class="nick">❔ ？？？：${this.rarity(f.rarity)}の種牡馬 × ${this.rarity(m.rarity)}の繁殖牝馬</div>`;
+      }).join('')}
+    </details>`;
   },
 
   // ─────────── レース選択 ───────────
@@ -485,6 +532,12 @@ const UI = {
     const st = this.state;
     if (!st.raceHorse || !Player.horse(st.raceHorse)) st.raceHorse = p.horses[0].id;
     const h = Player.horse(st.raceHorse);
+    const modes = [['route', '🏇 路線レース'], ['league', '⚔ リーグ戦'], ['friend', '🤝 フレンド対戦']];
+    const head = `<h2 class="screen-title">🏇 レース</h2>
+      <div class="seg">${modes.map(([k, l]) => `<button class="${st.raceMode === k ? 'active' : ''}" onclick="UI.state.raceMode='${k}';UI.render()">${l}</button>`).join('')}</div>
+      <div class="chips horse-pick">${p.horses.map(x => `<button class="${x.id === h.id ? 'active' : ''}" onclick="UI.state.raceHorse='${x.id}';UI.state.raceRoute=null;UI.render()">${Util.esc(x.name)}</button>`).join('')}</div>`;
+    if (st.raceMode === 'league') return head + this.leagueView(h);
+    if (st.raceMode === 'friend') return head + this.friendView(h);
     const rec = Horse.recommendRoute(h);
     if (!st.raceRoute) st.raceRoute = h.route || rec;
     const route = Horse.routeInfo(st.raceRoute);
@@ -492,8 +545,7 @@ const UI = {
     const cond = Horse.conditionInfo(h);
     const fat = Horse.fatigueInfo(h);
 
-    return `<h2 class="screen-title">🏇 レース</h2>
-      <div class="chips horse-pick">${p.horses.map(x => `<button class="${x.id === h.id ? 'active' : ''}" onclick="UI.state.raceHorse='${x.id}';UI.state.raceRoute=null;UI.render()">${Util.esc(x.name)}</button>`).join('')}</div>
+    return `${head}
       <section class="panel race-horse">
         <div><b>${Util.esc(h.name)}</b> ${Horse.genderLabel(h)} ${h.age}歳 ${this.styleTag(h.runningStyle)}</div>
         <div class="muted small">${Horse.mainAptText(h)}・${h.record.wins}勝・<span class="${cond.cls}">${cond.icon}${cond.label}</span>・<span class="${fat.cls}">😓${fat.label}</span></div>
@@ -531,43 +583,158 @@ const UI = {
           <div class="lc-rec">GⅠ：${e.record.g1Wins}勝<br>通算：${e.record.races}戦${e.record.wins}勝</div>
           ${e.mainWins.length ? `<div class="lc-wins"><small>主な勝鞍</small>${e.mainWins.map(w => `<div>・${w}</div>`).join('')}</div>` : ''}
           ${e.titles.length ? `<div class="lc-title">称号：「${e.titles[0]}」${e.titles.length > 1 ? `<small>ほか ${e.titles.slice(1).join('・')}</small>` : ''}</div>` : ''}
-          <div class="lc-ped">父：${Util.esc(e.father)}<br>母：${Util.esc(e.mother)}</div>
+          <div class="lc-ped">父：${Util.esc(e.father)}${e.pedigree && e.pedigree.ff ? `<small>（父父 ${Util.esc(e.pedigree.ff.name)}）</small>` : ''}<br>母：${Util.esc(e.mother)}${e.pedigree && e.pedigree.mf ? `<small>（母父 ${Util.esc(e.pedigree.mf.name)}）</small>` : ''}</div>
         </div>`).join('')}</div>`
         : `<div class="empty">🏛<p>まだ殿堂馬はいません。<br>GⅠ 3勝、または通算10勝した馬を引退させると殿堂入り！</p></div>`}`;
+  },
+
+  // ─────────── リーグ戦 ───────────
+  leagueView(h) {
+    const pvp = Player.data.pvp;
+    const st = this.state;
+    const can = Pvp.canEnter(h);
+    return `<section class="panel pvp-head">
+        <div class="rating">レーティング <b>${pvp.rating}</b> <small>最高 ${pvp.best}・${pvp.matches}戦${pvp.wins}勝</small></div>
+        <p class="muted small">CPUのライバル馬主7人と8頭立てで対戦。順位でレーティングが上下し、上位リーグが解放されます。週は進みません（疲労+${Pvp.FATIGUE}）。</p>
+      </section>
+      <div class="league-list">${GAME_DATA.leagues.map(l => {
+        const open = Pvp.isUnlocked(l);
+        return `<div class="league ${st.league === l.id ? 'active' : ''} ${open ? '' : 'locked'}" onclick="${open ? `UI.state.league='${l.id}';UI.render()` : ''}">
+          <div class="league-icon">${l.icon}</div>
+          <div><b>${l.name}</b><small>${l.desc}</small>
+          <small>1着賞金 ${Util.money(l.prize)}${pvp.leagueWins[l.id] ? `・優勝 ${pvp.leagueWins[l.id]}回` : ''}</small>
+          ${open ? '' : `<small class="warn">🔒 レーティング ${l.minRating} で解放</small>`}</div>
+        </div>`;
+      }).join('')}</div>
+      <section class="panel">
+        <p>出走馬：<b>${Util.esc(h.name)}</b> ${this.styleTag(h.runningStyle)} 総合 ${Util.grade(Horse.overall(h))}${this.league_capNote(h)}</p>
+        ${can.ok ? `<button class="btn primary big" onclick="App.prepareLeague('${h.id}')">⚔ 対戦相手を探す</button>` : `<p class="lock">🔒 ${can.reason}</p>`}
+      </section>`;
+  },
+
+  league_capNote(h) {
+    const l = Pvp.league(this.state.league);
+    if (!l.statCap) return '';
+    const over = STAT_KEYS.filter(k => h.stats[k] > l.statCap);
+    return over.length ? `<br><small class="muted">※ ${over.map(k => GAME_DATA.stats.find(x => x.key === k).label).join('・')}は${l.statCap}に制限されます</small>` : '';
+  },
+
+  // ─────────── フレンド対戦 ───────────
+  friendView(h) {
+    const st = this.state;
+    const ghosts = Player.data.ghosts;
+    st.friendPick = st.friendPick.filter(id => ghosts.some(g => g.id === id));
+    const caps = [[0, '制限なし'], [70, '最大70'], [85, '最大85']];
+    const can = Pvp.canEnter(h);
+    return `<section class="panel">
+        <h3>📥 対戦コードを追加</h3>
+        <p class="muted small">フレンドの「対戦コード」（馬の詳細 → 能力タブ）を貼り付けると、その馬と対戦できます。</p>
+        <textarea id="ghost-code" class="code-box" rows="3" placeholder="UMA1.xxxxx..."></textarea>
+        <button class="btn primary" onclick="App.addGhost()">追加する</button>
+        <button class="btn" onclick="App.showCode('${h.id}')">📤 ${Util.esc(h.name)}のコード</button>
+      </section>
+      <section class="panel">
+        <h3>🤝 対戦する馬を選ぶ（最大7頭）</h3>
+        ${ghosts.length ? `<div class="ghost-list">${ghosts.map(g => {
+          const on = st.friendPick.includes(g.id);
+          return `<div class="ghost ${on ? 'on' : ''}" onclick="App.toggleGhost('${g.id}')">
+            <span class="check">${on ? '✅' : '⬜'}</span>
+            <div class="ghost-main">${this.rarity(g.rarity)} <b>${Util.esc(g.name)}</b> ${GAME_DATA.styles[g.runningStyle].icon}<br>
+              <small>${Util.esc(g.owner)}厩舎・${g.record.races}戦${g.record.wins}勝・総合 ${Util.grade(Math.round(STAT_KEYS.reduce((a, k) => a + g.stats[k], 0) / 5))}・対戦成績 ${g.vs.win}勝${g.vs.lose}敗</small></div>
+            <button class="link" onclick="event.stopPropagation();App.removeGhost('${g.id}')">削除</button>
+          </div>`;
+        }).join('')}</div>` : '<p class="muted">まだ対戦コードがありません。フレンドと交換しよう！ コードが無くても、CPUの馬とフリー対戦できます。</p>'}
+      </section>
+      <section class="panel">
+        <h3>⚙ ルール</h3>
+        <div class="chips">${GAME_DATA.leagueCourses.map((c, i) => `<button class="${st.friendCourse === i ? 'active' : ''}" onclick="UI.state.friendCourse=${i};UI.render()">${c.surface === 'turf' ? '芝' : 'ダ'}${c.distance}m</button>`).join('')}</div>
+        <div class="chips" style="margin-top:6px">${caps.map(([v, l]) => `<button class="${st.friendCap === v ? 'active' : ''}" onclick="UI.state.friendCap=${v};UI.render()">能力 ${l}</button>`).join('')}</div>
+        ${can.ok ? `<button class="btn primary big" onclick="App.prepareFriend('${h.id}')">🏁 対戦スタート（${Util.esc(h.name)}）</button>` : `<p class="lock">🔒 ${can.reason}</p>`}
+      </section>`;
+  },
+
+  // ─────────── 記録・ランキング ───────────
+  recordsView() {
+    const p = Player.data;
+    const all = [
+      ...p.horses.map(h => ({ name: h.name, rarity: h.rarity, record: h.record, tag: '現役' })),
+      ...p.hallOfFame.map(e => ({ name: e.name, rarity: e.rarity, record: e.record, tag: '🏛殿堂' })),
+      ...p.retired.map(e => ({ name: e.name, rarity: e.rarity, record: e.record, tag: '引退' }))
+    ];
+    const rank = (key, label, fmt) => {
+      const list = all.filter(x => x.record[key] > 0).sort((a, b) => b.record[key] - a.record[key]).slice(0, 10);
+      return `<section class="panel"><h3>${label}</h3>${list.length ? `<table class="hist">${list.map((x, i) => `<tr><td class="rank r${i + 1}">${i + 1}</td><td>${this.rarity(x.rarity)} ${Util.esc(x.name)} <small class="muted">${x.tag}</small></td><td class="num">${fmt(x.record[key])}</td></tr>`).join('')}</table>` : '<p class="muted">まだ記録がありません。</p>'}</section>`;
+    };
+    const recs = GAME_DATA.races.filter(r => p.records[r.id]);
+    return `<button class="back" onclick="UI.show('home')">◀ ホーム</button>
+      <h2 class="screen-title">📊 記録・ランキング</h2>
+      <section class="panel"><h3>👤 オーナー成績</h3>
+        <div class="hero-stats">
+          <div><small>通算出走</small><b>${p.stats.raceCount}</b></div>
+          <div><small>通算勝利</small><b>${p.stats.winCount}</b></div>
+          <div><small>GⅠ勝利</small><b>${p.stats.g1WinCount}</b></div>
+          <div><small>レーティング</small><b>${p.pvp.rating}</b></div>
+        </div>
+      </section>
+      ${rank('prizeMoney', '💰 獲得賞金ランキング', v => Util.money(v))}
+      ${rank('wins', '🏆 勝利数ランキング', v => v + '勝')}
+      ${rank('g1Wins', '👑 GⅠ勝利数ランキング', v => v + '勝')}
+      <section class="panel"><h3>⏱ コースレコード</h3>
+        ${recs.length ? `<table class="hist"><tr><th>レース</th><th>タイム</th><th>馬名</th></tr>${recs.map(r => `<tr><td>${this.gradeBadge(r.grade)}${r.name}<br><small class="muted">${r.surface === 'turf' ? '芝' : 'ダ'}${r.distance}m</small></td><td class="num">${Race.timeText(p.records[r.id].time)}</td><td>${Util.esc(p.records[r.id].name)}</td></tr>`).join('')}</table>` : '<p class="muted">レースに出るとタイムが記録されます。</p>'}
+      </section>`;
   }
 };
 
 // ─────────── レース再生（表示のみ） ───────────
-// Race.simulate() の結果を受け取り、実況ログと順位変動を時間差で表示する。
-// 将来の2Dアニメーションは result.frames を使ってここを差し替えればよい。
+// Race.simulate() の結果（frames = 0.5秒ごとの全馬の位置、events = 実況）を
+// 時計に合わせて再生する。2Dトラック・実況ログ・順位表を同じ時計で動かす。
 const RaceView = {
-  ctx: null,     // { result, reward, race, horseId }
-  timer: null,
-  idx: 0,
-  order: [],
+  ctx: null,       // { result, reward, race, horseId, resultHTML? }
+  raf: null,
+  clock: 0,        // レース内の経過秒
+  lastTs: null,
+  idx: 0,          // 次に表示するイベント
   done: false,
+  skipping: false,
+  lastOrderAt: 0,
+  RATE: 9,         // 実時間1秒あたりに進むレース秒（×1のとき）
+  WINDOW: 44,      // トラックに映す範囲（m）
 
   start(ctx) {
     this.stop();
     this.ctx = ctx;
+    this.clock = 0;
     this.idx = 0;
     this.done = false;
-    this.order = ctx.result.entrants.slice().sort((a, b) => a.gate - b.gate).map(e => e.id);
+    this.lastTs = null;
+    const fin = ctx.result.finish;
+    this.endTime = Math.min(fin[fin.length - 1].time || 0, fin[0].time + 6) + 0.6;
     UI.show('raceView');
   },
 
-  stop() { clearTimeout(this.timer); this.timer = null; },
+  stop() { if (this.raf) cancelAnimationFrame(this.raf); this.raf = null; },
 
   speed() { return Player.data.settings.raceSpeed || 1; },
+
+  entrant(id) { return this.ctx.result.entrants.find(e => e.id === id); },
 
   view() {
     if (!this.ctx) return '<div class="empty">レースがありません</div>';
     const { result, race } = this.ctx;
     const ground = GAME_DATA.grounds[result.ground].label;
     const sl = GAME_DATA.surfaces.find(s => s.key === result.surface);
+    const lanes = result.entrants.slice().sort((a, b) => a.gate - b.gate);
     return `<section class="race-live">
-        <div class="rl-title">🏇 ${UI.gradeBadge(race.grade)} ${race.name}</div>
+        <div class="rl-title">🏇 ${UI.gradeBadge(race.grade)} ${Util.esc(race.name)}</div>
         <div class="rl-info">${sl.icon}${sl.label} ${result.distance}m・馬場：${ground}${UI.help('ground')}・${result.finish.length}頭</div>
+        <div class="track ${result.surface}" id="rl-track">
+          <div class="track-remain" id="rl-remain">スタート</div>
+          <div class="track-goal" id="rl-goal"></div>
+          ${[0, 1, 2, 3, 4].map(i => `<div class="track-post" data-i="${i}"></div>`).join('')}
+          ${lanes.map((e, i) => `<div class="lane ${e.isPlayer ? 'me' : ''}" style="top:${i * (100 / lanes.length)}%;height:${100 / lanes.length}%">
+              <div class="runner" id="rn-${e.id}"><span class="gate">${e.gate}</span><span class="horse">🏇</span>${e.isPlayer ? `<span class="me-tag">${Util.esc(e.name)}</span>` : ''}</div>
+            </div>`).join('')}
+        </div>
         <div class="rl-progress"><div id="rl-bar" class="bar-fill" style="width:0%"></div></div>
         <div class="rl-controls">
           ${[1, 2, 4].map(s => `<button class="${this.speed() === s ? 'active' : ''}" onclick="RaceView.setSpeed(${s})">×${s}</button>`).join('')}
@@ -583,25 +750,97 @@ const RaceView = {
 
   mount() {
     this.stop();
-    this.renderOrder([]);
     const log = UI.el('rl-log');
     this.ctx.result.events.slice(0, this.idx).forEach(e => log.insertAdjacentHTML('afterbegin', this.eventHTML(e)));
-    if (this.done) this.showResult();
-    else this.next();
+    this.draw(true);
+    if (this.done) { this.showResult(); return; }
+    this.lastTs = null;
+    this.raf = requestAnimationFrame(ts => this.tick(ts));
   },
 
-  setSpeed(s) { Player.data.settings.raceSpeed = s; Player.save(); document.querySelectorAll('.rl-controls button').forEach(b => b.classList.toggle('active', b.textContent === '×' + s)); },
+  setSpeed(s) {
+    Player.data.settings.raceSpeed = s;
+    Player.save();
+    document.querySelectorAll('.rl-controls button').forEach(b => b.classList.toggle('active', b.textContent === '×' + s));
+  },
 
-  entrant(id) { return this.ctx.result.entrants.find(e => e.id === id); },
+  tick(ts) {
+    if (!UI.el('rl-track')) { this.stop(); return; }
+    if (this.lastTs !== null) this.clock += Math.min(0.1, (ts - this.lastTs) / 1000) * this.RATE * this.speed();
+    this.lastTs = ts;
+    const events = this.ctx.result.events;
+    while (this.idx < events.length && events[this.idx].t <= this.clock) { this.apply(events[this.idx]); this.idx++; }
+    this.draw(false);
+    if (this.clock >= this.endTime) { this.finish(); return; }
+    this.raf = requestAnimationFrame(t => this.tick(t));
+  },
 
-  renderOrder(gaps) {
+  // 時刻 t の各馬の位置（frames を線形補間）
+  positionsAt(t) {
+    const frames = this.ctx.result.frames;
+    const n = this.ctx.result.entrants.length;
+    if (!frames.length || t <= frames[0].t) {
+      const f0 = frames[0];
+      return f0 ? f0.pos.map(p => p * Math.max(0, t) / f0.t) : new Array(n).fill(0);
+    }
+    let i = frames.findIndex(f => f.t >= t);
+    if (i === -1) return frames[frames.length - 1].pos.slice();
+    const a = frames[i - 1], b = frames[i];
+    const k = (t - a.t) / (b.t - a.t);
+    return a.pos.map((p, j) => p + (b.pos[j] - p) * k);
+  },
+
+  draw(force) {
+    const result = this.ctx.result;
+    const D = result.distance;
+    const pos = this.positionsAt(this.done ? this.endTime : this.clock);
+    const leader = Math.max(...pos);
+    const right = Math.min(leader + this.WINDOW * 0.18, D + this.WINDOW * 0.25);
+    const left = right - this.WINDOW;
+    const toX = p => Util.clamp((p - left) / this.WINDOW * 100, 0, 100);
+    result.entrants.forEach((e, j) => {
+      const el = UI.el('rn-' + e.id);
+      if (el) {
+        el.style.left = toX(pos[j]) + '%';
+        el.classList.toggle('behind', pos[j] < left);
+      }
+    });
+    // 10mごとのハロン棒風マーカーで流れる感じを出す
+    document.querySelectorAll('.track-post').forEach(el => {
+      const i = Number(el.dataset.i);
+      const p = Math.floor(left / 10) * 10 + i * 10 + 10;
+      el.style.left = toX(p) + '%';
+      el.style.display = p > D ? 'none' : '';
+    });
+    const goal = UI.el('rl-goal');
+    if (goal) {
+      goal.style.display = D <= right ? '' : 'none';
+      goal.style.left = toX(D) + '%';
+    }
+    const remain = UI.el('rl-remain');
+    if (remain) remain.textContent = leader >= D ? 'ゴール！' : this.clock < 0.5 ? 'スタート' : `残り ${Math.ceil((D - leader) / 100) * 100}m`;
+    const bar = UI.el('rl-bar');
+    if (bar) bar.style.width = Math.min(100, leader / D * 100) + '%';
+
+    // 順位表は0.25秒ごとに更新（ゴール済みはゴール順）
+    const now = performance.now();
+    if (force || now - this.lastOrderAt > 250) {
+      this.lastOrderAt = now;
+      const t = this.done ? Infinity : this.clock;
+      const finishTime = id => { const f = result.finish.find(x => x.id === id); return f && f.time <= t ? f.time : null; };
+      const order = result.entrants.map((e, j) => ({ e, p: pos[j], ft: finishTime(e.id) }))
+        .sort((a, b) => (a.ft !== null && b.ft !== null ? a.ft - b.ft : a.ft !== null ? -1 : b.ft !== null ? 1 : b.p - a.p));
+      this.renderOrder(order, order[0] ? order[0].p : 0);
+    }
+  },
+
+  renderOrder(order, leadPos) {
     const ol = UI.el('rl-order');
     if (!ol) return;
-    ol.innerHTML = this.order.map((id, i) => {
-      const e = this.entrant(id);
-      const st = GAME_DATA.styles[e.style];
-      const gap = gaps[i] !== undefined && i > 0 ? `<small>${gaps[i].toFixed(1)}馬身</small>` : '';
-      return `<li class="${e.isPlayer ? 'me' : ''}"><span class="pos">${i + 1}</span><span title="${st.label}">${st.icon}</span> ${Util.esc(e.name)} ${gap}</li>`;
+    ol.innerHTML = order.map((o, i) => {
+      const st = GAME_DATA.styles[o.e.style];
+      const gap = i > 0 && o.ft === null ? `<small>${((leadPos - o.p) / 2.4).toFixed(1)}馬身</small>` : '';
+      return `<li class="${o.e.isPlayer ? 'me' : ''} ${o.e.isGhost ? 'ghost' : ''}"><span class="pos">${i + 1}</span><span title="${st.label}">${st.icon}</span> ${Util.esc(o.e.name)} ${gap}</li>`;
     }).join('');
   },
 
@@ -613,30 +852,20 @@ const RaceView = {
     return `<div class="ev ${e.isPlayer ? 'me' : ''}">${Util.esc(e.text)}</div>`;
   },
 
-  next() {
-    const events = this.ctx.result.events;
-    if (this.idx >= events.length) { this.finish(); return; }
-    const e = events[this.idx];
-    this.apply(e);
-    this.idx++;
-    const nextE = events[this.idx];
-    let delay = nextE ? Util.clamp((nextE.t - e.t) * 70, 350, 1400) : 600;
-    if (e.type === 'skill' && e.isPlayer) delay += 500;
-    this.timer = setTimeout(() => this.next(), delay / this.speed());
-  },
-
   apply(e) {
     const log = UI.el('rl-log');
     if (!log) return;
     log.insertAdjacentHTML('afterbegin', this.eventHTML(e));
-    if (e.type === 'checkpoint') {
-      this.order = e.order.slice();
-      this.renderOrder(e.gaps);
+    if (e.type === 'skill' && !this.skipping) {
+      const el = UI.el('rn-' + e.horseId);
+      if (el) {
+        el.classList.remove('boost');
+        void el.offsetWidth;
+        el.classList.add('boost');
+        el.setAttribute('data-skill', e.text.replace(/[「」]|発動！/g, ''));
+      }
+      if (e.isPlayer) UI.toast(`${e.text}<br>${Util.esc(e.sub)}`, 'skill-toast');
     }
-    if (e.type === 'skill' && e.isPlayer && !this.skipping) UI.toast(`${e.text}<br>${Util.esc(e.sub)}`, 'skill-toast');
-    const bar = UI.el('rl-bar');
-    const total = this.ctx.result.finish[0].time;
-    if (bar) bar.style.width = Math.min(100, e.t / total * 100) + '%';
   },
 
   skip() {
@@ -652,42 +881,57 @@ const RaceView = {
     this.stop();
     if (this.done) return;
     this.done = true;
-    const fin = this.ctx.result.finish;
-    this.order = fin.map(f => f.id);
-    this.renderOrder([]);
-    const bar = UI.el('rl-bar');
-    if (bar) bar.style.width = '100%';
+    this.clock = this.endTime;
+    this.draw(true);
     this.showResult();
+  },
+
+  resultTable(fin) {
+    return `<table class="hist">
+        <tr><th>着</th><th>馬名</th><th>タイム</th><th>着差</th></tr>
+        ${fin.map(f => {
+          const e = this.entrant(f.id) || {};
+          return `<tr class="${f.isPlayer ? 'me' : ''}"><td>${f.place}</td><td>${GAME_DATA.styles[f.style].icon} ${Util.esc(f.name)}${e.owner ? `<br><small class="muted">${Util.esc(e.owner)}</small>` : ''}</td><td>${Race.timeText(f.time)}</td><td>${f.margin}</td></tr>`;
+        }).join('')}
+      </table>`;
+  },
+
+  placeHead(place, winnerName) {
+    return place === 1 ? `<div class="result-big win">🏆 1着！</div><p class="center">${Util.esc(winnerName)}、見事な勝利！</p>`
+      : place <= 3 ? `<div class="result-big place">🥈 ${place}着</div><p class="center">あと少し！ 惜しいレースでした。</p>`
+      : `<div class="result-big">${place}着</div><p class="center">次は調教で鍛えて、リベンジしよう！</p>`;
+  },
+
+  cardsHTML(cards) {
+    return cards.map((x, i) => `<div class="reveal" style="animation-delay:${0.3 + i * 0.4}s">${x.isNew ? '<span class="new">NEW!</span>' : ''}${UI.anyCard(x.card, {})}</div>`).join('');
   },
 
   showResult() {
     const { result, reward, horseId } = this.ctx;
     const fin = result.finish;
-    const place = reward.place;
     const h = Player.horse(horseId);
-    const head = place === 1 ? `<div class="result-big win">🏆 1着！</div><p class="center">${Util.esc(fin[0].name)}、見事な勝利！</p>`
-      : place <= 3 ? `<div class="result-big place">🥈 ${place}着</div><p class="center">あと少し！ 惜しいレースでした。</p>`
-      : `<div class="result-big">${place}着</div><p class="center">次は調教で鍛えて、リベンジしよう！</p>`;
-    const cards = reward.cards.map((x, i) => `<div class="reveal" style="animation-delay:${0.3 + i * 0.4}s">${x.isNew ? '<span class="new">NEW!</span>' : ''}${UI.anyCard(x.card, {})}</div>`).join('');
-    UI.el('rl-result').innerHTML = `<section class="panel result">
-      ${head}
-      <table class="hist">
-        <tr><th>着</th><th>馬名</th><th>タイム</th><th>着差</th></tr>
-        ${fin.map(f => `<tr class="${f.isPlayer ? 'me' : ''}"><td>${f.place}</td><td>${GAME_DATA.styles[f.style].icon} ${Util.esc(f.name)}</td><td>${Race.timeText(f.time)}</td><td>${f.margin}</td></tr>`).join('')}
-      </table>
-      <h3>🎁 報酬</h3>
-      <div class="rewards">
-        <div>💰 賞金 <b>${Util.money(reward.prize)}</b></div>
-        <div>✨ 経験値 <b>+${reward.exp}</b>${reward.levelUps ? ` <span class="ok">レベルアップ！ Lv.${h ? h.level : ''}</span>` : ''}</div>
-        ${reward.birthday && h ? `<div>🎂 ${Util.esc(h.name)}は${h.age}歳になりました！</div>` : ''}
-      </div>
-      ${cards ? `<h3>🃏 カード獲得！</h3><div class="cgrid reveal-grid">${cards}</div>` : '<p class="muted">カードは獲得できませんでした（1着で確定、2〜3着で50%）。</p>'}
-      ${h && Horse.mustRetire(h) ? `<p class="notice">🎌 ${Util.esc(h.name)}は引退の時期を迎えました。</p>` : ''}
-      <div class="btn-row">
-        <button class="btn" onclick="UI.show('horse',{id:'${horseId}'})">🐎 馬の詳細へ</button>
-        <button class="btn primary" onclick="UI.show('race')">🏇 レース選択へ</button>
-      </div>
-    </section>`;
+    let body;
+    if (this.ctx.resultHTML) {
+      body = this.ctx.resultHTML(this);
+    } else {
+      const cards = this.cardsHTML(reward.cards);
+      body = `${this.placeHead(reward.place, fin[0].name)}
+        ${reward.newRecord ? '<p class="center ok">⏱ コースレコード更新！</p>' : ''}
+        ${this.resultTable(fin)}
+        <h3>🎁 報酬</h3>
+        <div class="rewards">
+          <div>💰 賞金 <b>${Util.money(reward.prize)}</b></div>
+          <div>✨ 経験値 <b>+${reward.exp}</b>${reward.levelUps ? ` <span class="ok">レベルアップ！ Lv.${h ? h.level : ''}</span>` : ''}</div>
+          ${reward.birthday && h ? `<div>🎂 ${Util.esc(h.name)}は${h.age}歳になりました！</div>` : ''}
+        </div>
+        ${cards ? `<h3>🃏 カード獲得！</h3><div class="cgrid reveal-grid">${cards}</div>` : '<p class="muted">カードは獲得できませんでした（1着で確定、2〜3着で50%）。</p>'}
+        ${h && Horse.mustRetire(h) ? `<p class="notice">🎌 ${Util.esc(h.name)}は引退の時期を迎えました。</p>` : ''}
+        <div class="btn-row">
+          <button class="btn" onclick="UI.show('horse',{id:'${horseId}'})">🐎 馬の詳細へ</button>
+          <button class="btn primary" onclick="UI.show('race')">🏇 レース選択へ</button>
+        </div>`;
+    }
+    UI.el('rl-result').innerHTML = `<section class="panel result">${body}</section>`;
     UI.el('rl-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 };

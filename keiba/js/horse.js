@@ -43,6 +43,13 @@ const Horse = {
     return Util.pick(GAME_DATA.namePrefix.filter(ok)) + Util.pick(GAME_DATA.nameSuffix.filter(ok));
   },
 
+  // 血統表（古いセーブには pedigree が無いので親カードから組み立てる）
+  pedigree(h) {
+    if (h.pedigree) return h.pedigree;
+    const f = Cards.get(h.fatherId), m = Cards.get(h.motherId);
+    return f && m ? Breeding.pedigreeOf(f, m) : { f: null, m: null, ff: null, fm: null, mf: null, mm: null };
+  },
+
   distCat(distance) {
     return GAME_DATA.distances.find(d => distance <= d.max).key;
   },

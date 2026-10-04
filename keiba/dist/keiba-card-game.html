@@ -1,0 +1,3888 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f3d2e">
+<title>馬主カード - 競馬×カードゲーム</title>
+<style>
+/* 馬主カード - 競馬×カードゲーム */
+:root {
+  --turf: #0f3d2e;
+  --turf2: #165c43;
+  --bg: #0b2a20;
+  --paper: #fffaf0;
+  --paper2: #f4ecd8;
+  --ink: #2a2118;
+  --muted: #7a6d5c;
+  --line: #e2d6bd;
+  --accent: #e8552d;
+  --accent2: #f5b301;
+  --ok: #1f8a4c;
+  --warn: #c2410c;
+  --danger: #c0262d;
+  --sire: #2f6fd1;
+  --mare: #d24a8a;
+  --skill: #7a4fd6;
+  --item: #2c9a7d;
+  --r-N: #8f8f8f;
+  --r-R: #3b82f6;
+  --r-SR: #a855f7;
+  --r-SSR: #e0a100;
+  --r-UR: #ff4f8b;
+  --radius: 14px;
+  --nav-h: 64px;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Yu Gothic", Meiryo, system-ui, sans-serif;
+  background: radial-gradient(ellipse at top, var(--turf2), var(--bg) 70%) fixed;
+  color: var(--ink);
+  line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 100vh;
+}
+button, input { font: inherit; }
+button { cursor: pointer; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ── レイアウト ── */
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 10px 14px; color: #fff;
+  background: rgba(10, 40, 30, .92); backdrop-filter: blur(6px);
+  border-bottom: 2px solid var(--accent2);
+}
+.brand { font-weight: 900; font-size: 18px; cursor: pointer; white-space: nowrap; }
+.brand span { color: var(--accent2); }
+.wallet { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.chip { background: rgba(255,255,255,.12); border-radius: 99px; padding: 3px 10px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+
+.main { max-width: 860px; margin: 0 auto; padding: 14px 12px calc(var(--nav-h) + 90px); }
+
+.bottom-nav {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  height: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: #0a241b; border-top: 2px solid var(--accent2);
+}
+.nav-btn {
+  background: none; border: 0; color: #cfe3d8; font-size: 11px; font-weight: 700;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+}
+.nav-btn span { font-size: 24px; line-height: 1; }
+.nav-btn.active { color: var(--accent2); background: rgba(245,179,1,.1); }
+
+.screen-title { color: #fff; margin: 4px 2px 12px; font-size: 22px; }
+.screen-title small { font-size: 14px; opacity: .8; }
+
+.panel {
+  background: var(--paper); border-radius: var(--radius); padding: 14px; margin-bottom: 12px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.25);
+}
+.panel h3 { margin: 0 0 10px; font-size: 16px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.panel h3 .link { margin-left: auto; }
+.panel summary { font-weight: 700; cursor: pointer; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.center { text-align: center; }
+.ok { color: var(--ok); font-weight: 700; }
+.warn { color: var(--warn); font-weight: 700; }
+.notice { background: #fff3c4; border: 2px solid var(--accent2); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 12px; font-weight: 700; }
+.empty { background: var(--paper); border-radius: var(--radius); padding: 28px 16px; text-align: center; font-size: 40px; }
+.empty p { font-size: 15px; }
+
+/* ── ボタン ── */
+.btn {
+  border: 2px solid var(--ink); background: #fff; color: var(--ink);
+  border-radius: 12px; padding: 8px 14px; font-weight: 800;
+  box-shadow: 0 3px 0 var(--ink); transition: transform .05s;
+}
+.btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+.btn.primary { background: var(--accent); color: #fff; }
+.btn.danger { background: var(--danger); color: #fff; }
+.btn.big { display: block; width: 100%; padding: 12px; font-size: 17px; margin: 8px 0; }
+.btn.small { padding: 4px 10px; font-size: 13px; box-shadow: 0 2px 0 var(--ink); }
+.btn.glow:not(:disabled) { animation: glow 1.4s infinite; }
+@keyframes glow { 50% { box-shadow: 0 3px 0 var(--ink), 0 0 18px var(--accent2); } }
+.btn-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+.btn-row .btn.big { width: auto; flex: 1; }
+.link { background: none; border: 0; color: var(--turf2); font-weight: 700; font-size: 13px; padding: 0 4px; }
+.back { background: none; border: 0; color: #fff; font-weight: 700; padding: 0 0 8px; }
+.help {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%; border: 0; padding: 0;
+  background: var(--turf2); color: #fff; font-size: 11px; font-weight: 900; margin-left: 4px; vertical-align: middle;
+}
+
+/* ── バッジ・タグ ── */
+.rar {
+  display: inline-block; min-width: 32px; text-align: center; font-weight: 900; font-size: 11px;
+  border-radius: 6px; padding: 1px 6px; color: #fff; letter-spacing: .5px;
+}
+.rar-N { background: var(--r-N); }
+.rar-R { background: var(--r-R); }
+.rar-SR { background: var(--r-SR); }
+.rar-SSR { background: linear-gradient(135deg, #f7c948, #c98a00); }
+.rar-UR { background: linear-gradient(135deg, #ff4f8b, #ffb84f, #4fd1ff, #a855f7); }
+.grade { display: inline-block; font-weight: 900; font-size: 11px; border-radius: 4px; padding: 1px 6px; color: #fff; background: #6b7280; margin-right: 4px; }
+.grade-op { background: #0f766e; }
+.grade-cond { background: #4b5563; }
+.grade-g3 { background: #15803d; }
+.grade-g2 { background: #b91c1c; }
+.grade-g1 { background: linear-gradient(135deg, #1d4ed8, #0b1f66); }
+.tag { display: inline-block; background: var(--paper2); border-radius: 99px; padding: 1px 9px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+
+/* ── バー ── */
+.bar { position: relative; height: 12px; background: #e9dfc8; border-radius: 99px; overflow: visible; }
+.bar.thin { height: 6px; margin-top: 4px; }
+.bar-fill { height: 100%; border-radius: 99px; background: var(--turf2); transition: width .4s; }
+.bar-cap { position: absolute; top: -3px; bottom: -3px; width: 3px; background: var(--ink); border-radius: 2px; }
+.stat-speed { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+.stat-stamina { background: linear-gradient(90deg, #fb7185, #e11d48); }
+.stat-power { background: linear-gradient(90deg, #fb923c, #c2410c); }
+.stat-guts { background: linear-gradient(90deg, #f87171, #b91c1c); }
+.stat-intelligence { background: linear-gradient(90deg, #60a5fa, #1d4ed8); }
+.bar-fill.exp { background: linear-gradient(90deg, #a78bfa, #7c3aed); }
+.bar-fill.fatigue { background: linear-gradient(90deg, #94a3b8, #475569); }
+.mission-fill { background: linear-gradient(90deg, var(--accent2), var(--accent)); }
+
+.stat-row { display: grid; grid-template-columns: 112px 1fr 92px; align-items: center; gap: 8px; margin: 9px 0; }
+.stat-label { font-weight: 700; font-size: 14px; white-space: nowrap; }
+.stat-val { text-align: right; font-size: 13px; }
+.stat-val b { font-size: 16px; }
+.stat-val .g { display: inline-block; min-width: 24px; text-align: center; font-weight: 900; background: var(--ink); color: #fff; border-radius: 4px; font-size: 11px; }
+
+.apt-title { font-weight: 700; font-size: 13px; margin: 8px 0 4px; }
+.apt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; }
+.apt { background: var(--paper2); border-radius: 10px; padding: 5px 8px; display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.apt span { flex: 1; font-weight: 700; }
+.apt b { color: var(--accent2); letter-spacing: -1px; text-shadow: 0 0 1px #7a5600; }
+.apt small { font-weight: 900; }
+
+/* ── カード ── */
+.cgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.hgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.gcard {
+  position: relative; background: #fff; border-radius: 14px; padding: 8px;
+  border: 4px solid var(--r-N); box-shadow: 0 4px 10px rgba(0,0,0,.3);
+  display: flex; flex-direction: column; gap: 4px; font-size: 12px; cursor: default;
+}
+.gcard[onclick] { cursor: pointer; }
+.gcard[onclick]:hover { transform: translateY(-2px); }
+.gcard.selected { outline: 4px solid var(--accent2); }
+.rcard-N { border-color: var(--r-N); }
+.rcard-R { border-color: var(--r-R); }
+.rcard-SR { border-color: var(--r-SR); }
+.rcard-SSR { border-color: var(--r-SSR); box-shadow: 0 0 14px rgba(224,161,0,.6); }
+.rcard-UR { border-color: transparent; background: linear-gradient(#fff, #fff) padding-box, linear-gradient(135deg, #ff4f8b, #ffb84f, #4fd1ff, #a855f7) border-box; box-shadow: 0 0 18px rgba(255,79,139,.6); }
+.gcard-head { display: flex; align-items: center; gap: 4px; }
+.gtype { font-weight: 800; font-size: 11px; }
+.count { margin-left: auto; font-weight: 900; background: var(--ink); color: #fff; border-radius: 99px; padding: 0 7px; }
+.gcard-art { position: relative; height: 66px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 42px; background: linear-gradient(135deg, #d9f2e4, #9bd3b4); }
+.gcard.sire .gcard-art { background: linear-gradient(135deg, #dbe8ff, #8db4f2); }
+.gcard.mare .gcard-art { background: linear-gradient(135deg, #ffe0ef, #f29dc6); }
+.gcard.skill .gcard-art { background: linear-gradient(135deg, #ece3ff, #b79cf2); }
+.gcard.item .gcard-art { background: linear-gradient(135deg, #d7f5ec, #84d5bd); }
+.gcard.silhouette { filter: grayscale(1); opacity: .55; }
+.legend { position: absolute; top: 2px; right: 6px; font-size: 18px; }
+.gcard-name { font-weight: 900; font-size: 14px; line-height: 1.25; }
+.gcard-desc { color: #4b4034; }
+.gcard-foot { color: var(--muted); font-size: 11px; margin-top: auto; }
+.mini-stats { display: grid; grid-template-columns: 1fr; gap: 0; }
+.mini-stat { display: flex; justify-content: space-between; font-size: 11px; }
+.mini-stat b { color: #c98a00; letter-spacing: -1px; }
+.apt-chips { display: flex; flex-wrap: wrap; gap: 2px; }
+.apt-chip { background: var(--paper2); border-radius: 4px; padding: 0 4px; font-size: 10px; font-weight: 700; }
+.gcard .btn { margin-top: 4px; }
+
+/* 競走馬カード */
+.hcard {
+  background: var(--paper); border-radius: 14px; padding: 10px; cursor: pointer;
+  border: 4px solid var(--r-N); box-shadow: 0 4px 10px rgba(0,0,0,.3); font-size: 12px;
+}
+.hcard:hover { transform: translateY(-2px); }
+.hcard-top { display: flex; align-items: center; gap: 5px; }
+.hname { font-weight: 900; font-size: 15px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ovr { font-weight: 900; font-size: 18px; background: var(--ink); color: var(--accent2); border-radius: 8px; padding: 0 7px; }
+.hcard-art { font-size: 44px; text-align: center; background: linear-gradient(180deg, #bfe3c9, #5fae7c); border-radius: 10px; margin: 6px 0; }
+.hcard-info { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; margin: 3px 0; font-weight: 700; }
+.hcard-rec { color: var(--muted); font-weight: 700; margin-top: 4px; }
+.c-best { color: #d9480f; } .c-good { color: var(--ok); } .c-normal { color: #5c5c5c; } .c-bad { color: #2563eb; } .c-worst { color: #6d28d9; }
+.f-low { color: var(--ok); } .f-mid { color: #a16207; } .f-high { color: var(--warn); } .f-max { color: var(--danger); }
+
+/* ── ホーム ── */
+.hero { background: linear-gradient(135deg, #fff6dc, #ffe7a8); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+.hero-name { font-weight: 900; font-size: 18px; display: flex; align-items: center; }
+.hero-name .link { margin-left: auto; }
+.hero-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin-top: 8px; }
+.hero-stats > div { background: rgba(255,255,255,.7); border-radius: 10px; padding: 6px 8px; }
+.hero-stats small { display: block; color: var(--muted); font-size: 11px; }
+.hero-stats b { font-size: 16px; }
+.guide {
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  background: var(--accent2); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px;
+  box-shadow: 0 4px 0 #a37700; animation: bob 2s infinite;
+}
+.guide p { margin: 2px 0 0; font-size: 13px; }
+.guide b { font-size: 16px; }
+.guide-icon { font-size: 30px; }
+.guide-go { margin-left: auto; font-size: 20px; }
+@keyframes bob { 50% { transform: translateY(-2px); } }
+.mission-title { font-weight: 900; font-size: 17px; margin-bottom: 6px; }
+.mission p { margin: 6px 0; font-size: 13px; }
+.mission-reward { font-size: 13px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.rec-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 8px; border-radius: 10px; background: var(--paper2); margin-bottom: 6px; cursor: pointer; }
+.rec-horse { font-weight: 900; }
+.news ul { margin: 0; padding-left: 18px; font-size: 13px; }
+.help.static { display: inline-flex; }
+.retired-row { padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 13px; }
+
+/* ── 馬詳細 ── */
+.horse-head {
+  display: flex; gap: 12px; background: var(--paper); border-radius: var(--radius); padding: 12px; margin-bottom: 12px;
+  border: 4px solid var(--r-N); box-shadow: 0 4px 14px rgba(0,0,0,.3);
+}
+.hh-art { font-size: 56px; background: linear-gradient(180deg, #bfe3c9, #5fae7c); border-radius: 12px; display: flex; align-items: center; justify-content: center; width: 86px; flex-shrink: 0; }
+.hh-main { flex: 1; min-width: 0; }
+.hh-name { font-size: 20px; font-weight: 900; }
+.hh-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0; }
+.hh-grades { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 6px; margin: 6px 0; }
+.hh-grades > div { background: var(--paper2); border-radius: 8px; padding: 3px 8px; }
+.hh-grades small { display: block; font-size: 11px; color: var(--muted); }
+.hh-grades b { font-size: 20px; }
+.hh-cond { display: flex; flex-wrap: wrap; gap: 4px 12px; font-weight: 700; font-size: 13px; }
+.seg { display: flex; background: rgba(0,0,0,.3); border-radius: 12px; padding: 4px; gap: 4px; margin-bottom: 12px; }
+.seg button { flex: 1; border: 0; background: none; color: #e5f3eb; padding: 8px 4px; border-radius: 9px; font-weight: 800; font-size: 13px; }
+.seg button.active { background: var(--paper); color: var(--ink); }
+.sticky-actions { position: sticky; bottom: calc(var(--nav-h) + 8px); z-index: 5; }
+.style-box { display: flex; gap: 12px; align-items: center; }
+.style-box p { margin: 2px 0 0; }
+.style-big { font-size: 36px; }
+.rec { background: #fff3c4; border-radius: 10px; padding: 8px 10px; margin: 6px 0; }
+.route-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.route-pick button, .chips button {
+  border: 2px solid var(--line); background: #fff; border-radius: 99px; padding: 5px 12px; font-weight: 700; font-size: 13px;
+}
+.route-pick button.active, .chips button.active { border-color: var(--accent); background: var(--accent); color: #fff; }
+.pedigree { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ped { border-radius: 10px; padding: 8px 10px; color: #fff; }
+.ped.sire { background: var(--sire); }
+.ped.mare { background: var(--mare); }
+.ped .rar { margin-left: 4px; }
+.auto-train p { margin: 4px 0; }
+.train-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.train-btn {
+  border: 2px solid var(--line); background: #fff; border-radius: 12px; padding: 8px; text-align: left;
+  display: grid; grid-template-columns: 34px 1fr; grid-template-rows: auto auto; column-gap: 6px; align-items: center;
+}
+.train-btn .ti { grid-row: span 2; font-size: 26px; text-align: center; }
+.train-btn small { color: var(--muted); font-size: 11px; }
+.train-btn.suggest { border-color: var(--accent2); background: #fff8e1; }
+.train-btn:active { transform: scale(.97); }
+.item-list { display: grid; gap: 6px; }
+.item-btn { border: 2px solid var(--line); background: #fff; border-radius: 10px; padding: 8px 10px; text-align: left; }
+.item-btn small { display: block; color: var(--muted); }
+.slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.slot { border: 3px solid var(--r-N); border-radius: 12px; padding: 8px; text-align: center; font-size: 12px; display: flex; flex-direction: column; gap: 2px; align-items: center; background: #fff; }
+.slot b { font-size: 13px; }
+.slot-icon { font-size: 26px; }
+.empty-slot { border-style: dashed; color: var(--muted); justify-content: center; min-height: 100px; background: var(--paper2); }
+.record-big { font-size: 22px; font-weight: 900; margin-bottom: 8px; }
+.record-big b { color: var(--accent); font-size: 28px; }
+.hist { width: 100%; border-collapse: collapse; font-size: 13px; }
+.hist th { text-align: left; font-size: 11px; color: var(--muted); border-bottom: 2px solid var(--line); padding: 4px; }
+.hist td { border-bottom: 1px solid var(--line); padding: 5px 4px; }
+.hist tr.win td { background: #fff3c4; font-weight: 700; }
+.hist tr.me td { background: #ffe1d6; font-weight: 900; }
+.danger-zone { border: 2px dashed #e7b4b4; }
+
+/* ── カード画面 ── */
+.filters { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.chips button { white-space: nowrap; }
+.search { border: 2px solid var(--line); border-radius: 12px; padding: 8px 12px; width: 100%; }
+.dex-progress { color: #fff; margin: 0 0 8px; }
+
+/* ── 配合 ── */
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 10px; }
+.steps div { background: rgba(255,255,255,.15); color: #cfe3d8; border-radius: 8px; padding: 6px; font-size: 12px; font-weight: 700; text-align: center; }
+.steps .active { background: var(--accent2); color: var(--ink); }
+.steps .done { background: var(--turf2); color: #fff; }
+.breed-slots { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; margin-bottom: 8px; }
+.breed-slot { border: 3px dashed rgba(255,255,255,.6); border-radius: 14px; padding: 12px 8px; text-align: center; color: #fff; font-weight: 900; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
+.breed-slot.filled { border-style: solid; cursor: pointer; color: #fff; }
+.breed-slot.filled.sire { background: var(--sire); }
+.breed-slot.filled.mare { background: var(--mare); }
+.breed-slot small { font-weight: 400; opacity: .85; }
+.breed-slot.pulse { animation: pulse 1.2s infinite; border-color: var(--accent2); }
+@keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(245,179,1,.35); } }
+.x { color: #fff; font-size: 22px; font-weight: 900; }
+.breed-hint { color: #fff; font-weight: 800; font-size: 16px; text-align: center; margin: 4px 0 12px; }
+.preview { border: 3px solid var(--accent2); }
+.pv-score b { color: #c98a00; font-size: 20px; }
+.pv-comment { font-weight: 700; }
+.pv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px; }
+.pv-grid div { background: var(--paper2); border-radius: 8px; padding: 6px 10px; display: flex; justify-content: space-between; font-weight: 700; }
+.pv-grid b { color: var(--accent); }
+.fee { font-size: 15px; margin-top: 8px; }
+
+/* ── レース選択 ── */
+.horse-pick { margin-bottom: 10px; }
+.race-horse p.rec { margin-bottom: 0; }
+.routes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 10px; }
+.route-btn {
+  position: relative; border: 3px solid transparent; background: var(--paper); border-radius: 12px; padding: 8px 2px; font-weight: 800; font-size: 11px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.route-btn .ri { font-size: 24px; }
+.route-btn.active { border-color: var(--accent); background: #fff1e8; }
+.route-btn em { position: absolute; top: -8px; right: -4px; background: var(--accent); color: #fff; font-style: normal; font-size: 9px; border-radius: 99px; padding: 1px 5px; }
+.route-desc p { margin: 4px 0 0; font-size: 13px; }
+.race-list { display: grid; gap: 8px; margin-bottom: 8px; }
+.race-row { background: var(--paper); border-radius: 12px; padding: 10px 12px; box-shadow: 0 3px 8px rgba(0,0,0,.25); display: grid; gap: 4px; }
+.race-row.locked { opacity: .65; }
+.rr-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 15px; }
+.rr-info, .rr-apt { font-size: 12px; color: var(--muted); }
+.rr-apt b { color: #c98a00; }
+.race-row .btn { justify-self: end; }
+.lock { font-size: 12px; font-weight: 700; color: var(--muted); }
+
+/* ── レース再生 ── */
+.race-live { background: #082018; color: #fff; border-radius: var(--radius); padding: 12px; margin-bottom: 12px; border: 2px solid var(--accent2); }
+.rl-title { font-size: 18px; font-weight: 900; }
+.rl-info { font-size: 13px; opacity: .85; }
+.rl-progress { height: 8px; background: rgba(255,255,255,.15); border-radius: 99px; margin: 8px 0; overflow: hidden; }
+.rl-progress .bar-fill { background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width .3s; }
+.rl-controls { display: flex; gap: 6px; }
+.rl-controls button { border: 1px solid rgba(255,255,255,.4); background: none; color: #fff; border-radius: 8px; padding: 3px 10px; font-weight: 700; }
+.rl-controls button.active { background: var(--accent2); color: var(--ink); }
+.race-split { display: grid; grid-template-columns: 1fr 1.3fr; gap: 10px; }
+.standings ol { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+.standings li { padding: 3px 4px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 4px; }
+.standings li small { margin-left: auto; color: var(--muted); font-size: 10px; }
+.standings li.me { background: #ffe1d6; font-weight: 900; border-radius: 6px; }
+.pos { display: inline-block; width: 20px; text-align: center; font-weight: 900; }
+.log #rl-log { max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.ev { padding: 6px 8px; background: var(--paper2); border-radius: 8px; font-size: 13px; animation: pop .25s; }
+.ev.cp { background: #e8f4ec; }
+.cp-label { font-weight: 900; color: var(--turf2); }
+.ev.skill { background: #efe7ff; font-weight: 800; }
+.ev.me { border-left: 5px solid var(--accent); background: #fff1e8; }
+.ev.skill.me { background: linear-gradient(90deg, #ffe08a, #fff1e8); font-size: 15px; }
+@keyframes pop { from { transform: scale(.95); opacity: 0; } }
+.result { border: 3px solid var(--accent2); }
+.result-big { font-size: 40px; font-weight: 900; text-align: center; }
+.result-big.win { color: #c98a00; text-shadow: 0 2px 0 #7a5600; animation: pop .5s; }
+.result-big.place { color: var(--r-R); }
+.rewards { display: grid; gap: 4px; font-size: 15px; }
+.reveal { position: relative; animation: flip .6s backwards; }
+@keyframes flip { from { transform: rotateY(90deg) scale(.8); opacity: 0; } }
+.new { position: absolute; z-index: 2; top: -8px; left: -6px; background: var(--accent); color: #fff; font-weight: 900; font-size: 11px; border-radius: 99px; padding: 1px 8px; }
+
+/* ── 殿堂 ── */
+.hof-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.legend-card {
+  background: linear-gradient(160deg, #2b2110, #4a3714); color: #fbe9b7; border-radius: 16px; padding: 14px;
+  border: 3px solid #e0a100; box-shadow: 0 0 18px rgba(224,161,0,.5); font-size: 13px;
+}
+.lc-top { font-weight: 900; letter-spacing: 2px; color: #ffd66b; border-bottom: 1px solid #e0a10066; padding-bottom: 4px; }
+.lc-name { font-size: 22px; font-weight: 900; margin: 6px 0; color: #fff; }
+.lc-rec, .lc-wins, .lc-title, .lc-ped { margin-top: 8px; }
+.lc-wins small, .lc-title small { display: block; opacity: .7; }
+.lc-title { color: #ffd66b; font-weight: 800; }
+
+/* ── モーダル・トースト ── */
+.modal { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.6); display: none; align-items: center; justify-content: center; padding: 16px; }
+.modal.open { display: flex; }
+.modal-box {
+  position: relative; background: var(--paper); border-radius: 18px; padding: 18px; width: 100%; max-width: 520px;
+  max-height: 88vh; overflow-y: auto; animation: pop .2s; box-shadow: 0 10px 40px rgba(0,0,0,.5);
+}
+.modal-box.small { max-width: 400px; }
+.modal-box h2, .modal-box h3 { margin-top: 0; }
+.modal-box label { display: block; font-weight: 700; margin: 10px 0; }
+.modal-box input { display: block; width: 100%; margin-top: 4px; border: 2px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+.modal-x { position: absolute; top: 8px; right: 10px; border: 0; background: none; font-size: 20px; }
+.help-body { font-size: 15px; }
+.welcome, .birth { text-align: center; }
+.welcome .flow { text-align: left; display: inline-block; margin: 6px auto; padding-left: 20px; }
+.big-emoji, .sparkle { font-size: 48px; }
+.birth .hcard { max-width: 240px; margin: 8px auto; cursor: default; }
+.birth .gcard { max-width: 200px; margin: 8px auto; }
+.birth .cgrid { justify-content: center; }
+.entry-list { columns: 2; font-size: 13px; padding-left: 22px; }
+.entry-list li.me { font-weight: 900; color: var(--accent); }
+.card-detail { display: grid; grid-template-columns: 180px 1fr; gap: 12px; }
+.card-detail .stat-row { grid-template-columns: 96px 1fr 70px; }
+
+.toasts { position: fixed; z-index: 60; left: 50%; transform: translateX(-50%); bottom: calc(var(--nav-h) + 16px); display: flex; flex-direction: column; gap: 6px; width: min(92vw, 420px); pointer-events: none; }
+.toast { background: rgba(20,20,20,.92); color: #fff; padding: 10px 14px; border-radius: 12px; font-weight: 700; font-size: 14px; animation: pop .2s; transition: opacity .4s, transform .4s; text-align: center; }
+.toast.out { opacity: 0; transform: translateY(10px); }
+.toast.error { background: rgba(176,30,30,.95); }
+.toast.ok { background: rgba(31,138,76,.95); }
+.toast.skill-toast { background: linear-gradient(90deg, #f59e0b, #e8552d); font-size: 18px; }
+.toast.mission-toast { background: linear-gradient(90deg, #7c3aed, #2563eb); }
+
+/* ── スマホ ── */
+@media (max-width: 560px) {
+  .race-split { grid-template-columns: 1fr; }
+  .log #rl-log { max-height: 260px; }
+  .routes { grid-template-columns: repeat(3, 1fr); }
+  .stat-row { grid-template-columns: 92px 1fr 78px; gap: 6px; }
+  .stat-label { font-size: 12px; }
+  .card-detail { grid-template-columns: 1fr; }
+  .card-detail .gcard { max-width: 220px; margin: 0 auto; }
+  .cgrid { grid-template-columns: repeat(2, 1fr); }
+  .hgrid { grid-template-columns: repeat(2, 1fr); }
+  .horse-head { flex-direction: column; }
+  .hh-art { width: 100%; height: 70px; }
+  .entry-list { columns: 1; }
+  .brand span { display: none; }
+}
+
+/* ── 2Dレース ── */
+.track {
+  position: relative; height: 230px; margin: 10px 0 6px; border-radius: 12px; overflow: hidden;
+  background: repeating-linear-gradient(90deg, #2f8a4e 0 40px, #2b8148 40px 80px);
+  border: 3px solid #f5f5f5; box-shadow: inset 0 0 0 2px #1d5c34;
+}
+.track.dirt { background: repeating-linear-gradient(90deg, #a87943 0 40px, #9d703d 40px 80px); box-shadow: inset 0 0 0 2px #6e4b25; }
+.lane { position: absolute; left: 0; right: 0; border-bottom: 1px dashed rgba(255,255,255,.18); }
+.lane.me { background: rgba(255, 213, 79, .22); }
+.runner {
+  position: absolute; top: 50%; transform: translate(-100%, -50%); display: flex; align-items: center; gap: 1px;
+  white-space: nowrap; will-change: left; font-size: 12px;
+}
+.runner .horse { display: inline-block; font-size: 15px; line-height: 1; filter: drop-shadow(0 1px 1px rgba(0,0,0,.4)); }
+.runner .gate { order: 2; display: inline-block; min-width: 14px; text-align: center; font-size: 9px; font-weight: 900; background: #fff; color: #222; border-radius: 3px; padding: 0 2px; }
+.lane.me .runner .gate { background: var(--accent); color: #fff; }
+.runner .me-tag { order: 3; margin-left: 3px; background: var(--accent); color: #fff; font-weight: 900; font-size: 10px; border-radius: 99px; padding: 0 6px; }
+.runner.behind { opacity: .45; }
+.runner.boost .horse { animation: boost 1.4s ease-out; }
+.runner.boost::after {
+  content: attr(data-skill); position: absolute; left: 100%; top: -2px; margin-left: 4px; font-size: 10px; font-weight: 900;
+  background: #ffe08a; color: #6b3d00; border-radius: 6px; padding: 0 4px; animation: skilltag 1.6s forwards;
+}
+@keyframes boost { 0%, 60% { filter: drop-shadow(0 0 6px #ffd54f) drop-shadow(0 0 10px #ff9800); } }
+@keyframes skilltag { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+.track-goal { position: absolute; top: 0; bottom: 0; width: 6px; margin-left: -3px; background: repeating-linear-gradient(0deg, #fff 0 6px, #c0262d 6px 12px); z-index: 1; }
+.track-post { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,.35); }
+.track-remain { position: absolute; z-index: 2; top: 4px; left: 6px; background: rgba(0,0,0,.6); color: #fff; font-weight: 900; font-size: 12px; border-radius: 6px; padding: 1px 8px; }
+.standings li.ghost { background: #e7f0ff; border-radius: 6px; }
+
+/* ── 血統表・特殊配合 ── */
+.ptree { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, auto); grid-auto-flow: column; gap: 4px; }
+.ptree .pt { border-radius: 8px; padding: 4px 8px; color: #fff; display: flex; flex-wrap: wrap; gap: 0 6px; align-items: center; font-size: 13px; }
+.ptree .pt small { width: 100%; opacity: .85; font-size: 10px; }
+.ptree .p1 { grid-row: span 2; font-size: 15px; }
+.ptree .p2 { opacity: .9; }
+.ptree .sire { background: var(--sire); }
+.ptree .mare { background: var(--mare); }
+.ptree .pt .muted { color: #fff; opacity: .6; }
+.special-tags { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+.special { display: inline-block; background: linear-gradient(90deg, #ffe08a, #ffc2d6); border-radius: 99px; padding: 2px 10px; font-weight: 800; font-size: 12px; }
+.specials { display: grid; gap: 6px; margin: 8px 0; }
+.special-box { background: linear-gradient(90deg, #fff4c2, #ffe3ef); border: 2px solid var(--accent2); border-radius: 10px; padding: 6px 10px; }
+.special-box small { display: block; color: var(--muted); }
+.nick-list summary { font-weight: 800; }
+.nick { padding: 5px 0; border-bottom: 1px dashed var(--line); font-size: 13px; }
+.nick.found { font-weight: 700; }
+
+/* ── ショップ（パック） ── */
+.sub-title { color: #fff; margin: 14px 2px 8px; }
+.packs { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.pack { background: linear-gradient(160deg, #fff, #fff1d0); border: 3px solid var(--accent2); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 4px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,.3); }
+.pack-icon { font-size: 40px; }
+.pack small { color: var(--muted); }
+
+/* ── ホームのリンク ── */
+.home-links { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.link-card { border: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; margin: 0; cursor: pointer; }
+.link-card span { font-size: 28px; }
+.link-card small { color: var(--muted); }
+
+/* ── 対戦 ── */
+.rating { font-size: 15px; }
+.rating b { font-size: 26px; color: var(--accent); }
+.rating small { color: var(--muted); margin-left: 6px; }
+.league-list { display: grid; gap: 8px; margin-bottom: 12px; }
+.league { display: flex; gap: 10px; align-items: center; background: var(--paper); border: 3px solid transparent; border-radius: 12px; padding: 10px 12px; cursor: pointer; box-shadow: 0 3px 8px rgba(0,0,0,.25); }
+.league small { display: block; font-size: 12px; color: var(--muted); }
+.league.active { border-color: var(--accent); background: #fff1e8; }
+.league.locked { opacity: .6; cursor: not-allowed; }
+.league-icon { font-size: 34px; }
+.code-box { width: 100%; border: 2px solid var(--line); border-radius: 10px; padding: 8px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px; word-break: break-all; resize: vertical; margin-bottom: 8px; }
+.ghost-list { display: grid; gap: 6px; }
+.ghost { display: flex; align-items: center; gap: 8px; background: #fff; border: 2px solid var(--line); border-radius: 10px; padding: 8px; cursor: pointer; }
+.ghost.on { border-color: var(--accent); background: #fff1e8; }
+.ghost-main { flex: 1; font-size: 13px; }
+.ghost-main small { color: var(--muted); }
+.rating-change { text-align: center; font-size: 18px; font-weight: 800; margin: 6px 0; }
+.rating-change.up b { color: var(--ok); }
+.rating-change.down b { color: var(--danger); }
+.vs-list { display: grid; gap: 2px; margin: 8px 0; text-align: center; }
+.entry-list.wide { columns: 1; }
+.entry-list small { margin-left: 6px; }
+
+/* ── 記録 ── */
+.hist td.num { text-align: right; font-weight: 800; white-space: nowrap; }
+.hist td.rank { font-weight: 900; text-align: center; width: 28px; }
+.hist td.r1 { color: #c98a00; } .hist td.r2 { color: #8a8a8a; } .hist td.r3 { color: #a0522d; }
+
+@media (max-width: 560px) {
+  .track { height: 200px; }
+  .packs { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<header id="topbar" class="topbar"></header>
+<main id="main" class="main"></main>
+
+<nav class="bottom-nav" aria-label="メインメニュー">
+  <button class="nav-btn" data-nav="home"><span>🏠</span>ホーム</button>
+  <button class="nav-btn" data-nav="stable"><span>🐎</span>厩舎</button>
+  <button class="nav-btn" data-nav="cards"><span>🃏</span>カード</button>
+  <button class="nav-btn" data-nav="breed"><span>🧬</span>配合</button>
+  <button class="nav-btn" data-nav="race"><span>🏇</span>レース</button>
+</nav>
+
+<div id="modal" class="modal"></div>
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<script>
+// ゲームの静的データ（カード・スキル・レース・ミッション・用語）
+// ロジックはここに書かず、データのみを置く。
+'use strict';
+
+const GAME_DATA = {};
+
+GAME_DATA.rarities = ['N', 'R', 'SR', 'SSR', 'UR'];
+
+// 配合料（親カードのレアリティごと）
+GAME_DATA.breedingFee = { N: 300, R: 600, SR: 1200, SSR: 2500, UR: 5000 };
+
+GAME_DATA.stats = [
+  { key: 'speed', label: 'スピード', icon: '⚡', desc: '最高速度。短い距離ほど大事。' },
+  { key: 'stamina', label: 'スタミナ', icon: '❤️', desc: '長い距離を走りきる体力。足りないと終盤にバテる。' },
+  { key: 'power', label: 'パワー', icon: '💪', desc: '加速力。坂や重い馬場（雨の日）に強くなる。' },
+  { key: 'guts', label: '根性', icon: '🔥', desc: '接戦やバテた時の粘り強さ。' },
+  { key: 'intelligence', label: '賢さ', icon: '🧠', desc: 'スキルが発動しやすくなり、走りが安定する。' }
+];
+
+GAME_DATA.distances = [
+  { key: 'sprint', label: 'スプリント', short: '短距離', range: '1000〜1400m', max: 1400 },
+  { key: 'mile', label: 'マイル', short: 'マイル', range: '1401〜1800m', max: 1800 },
+  { key: 'classic', label: 'クラシック', short: '中距離', range: '1801〜2400m', max: 2400 },
+  { key: 'long', label: 'ロング', short: '長距離', range: '2401m〜', max: 99999 }
+];
+
+GAME_DATA.surfaces = [
+  { key: 'turf', label: '芝', icon: '🌱' },
+  { key: 'dirt', label: 'ダート', icon: '🟫' }
+];
+
+// 馬場状態（powerが高いほど重い馬場で強い）
+GAME_DATA.grounds = [
+  { key: 0, label: '良', weight: 60 },
+  { key: 1, label: '稍重', weight: 20 },
+  { key: 2, label: '重', weight: 13 },
+  { key: 3, label: '不良', weight: 7 }
+];
+
+GAME_DATA.styles = {
+  nige: { label: '逃げ', icon: '🔴', desc: '最初から先頭を走り、そのまま逃げきるタイプ' },
+  senko: { label: '先行', icon: '🟠', desc: '前の方の位置をキープして、早めに抜け出すタイプ' },
+  sashi: { label: '差し', icon: '🔵', desc: '最後の方で一気に追い抜くタイプ' },
+  oikomi: { label: '追込', icon: '🟣', desc: '後ろでじっと力をため、最後に大外から追い込むタイプ' }
+};
+
+GAME_DATA.growthTypes = {
+  early: { label: '早熟', desc: '2〜3歳でぐんぐん伸びる。年をとると成長が止まりやすい。', mult: [1.35, 1.15, 0.75, 0.45, 0.3] },
+  normal: { label: '普通', desc: 'バランスよく成長する。3〜4歳がピーク。', mult: [1.0, 1.15, 1.0, 0.7, 0.4] },
+  late: { label: '晩成', desc: '若いうちはゆっくり。4歳以降に大きく伸びる。', mult: [0.7, 0.95, 1.25, 1.1, 0.7] }
+};
+
+// 1年あたりの週数（調教・レース・休養で1週進む）
+GAME_DATA.weeksPerYear = 12;
+GAME_DATA.retireAge = 7;
+GAME_DATA.maxStable = 6;
+
+// ───────── 種牡馬カード ─────────
+// stats/apt は 0〜100。trait = 遺伝傾向、skill = 子に受け継がれやすいスキル
+GAME_DATA.sires = [
+  { id: 's_hayate', name: 'ハヤテボーイ', rarity: 'N', stats: { speed: 62, stamina: 38, power: 52, guts: 48, intelligence: 42 },
+    apt: { turf: 75, dirt: 55, sprint: 85, mile: 55, classic: 30, long: 15 }, style: 'nige', growth: 'early', trait: 'speed', skill: 'k_rocket',
+    desc: 'スタートが自慢の快速馬。' },
+  { id: 's_daichi', name: 'ダイチノチカラ', rarity: 'N', stats: { speed: 48, stamina: 50, power: 66, guts: 55, intelligence: 40 },
+    apt: { turf: 40, dirt: 90, sprint: 70, mile: 70, classic: 40, long: 20 }, style: 'senko', growth: 'normal', trait: 'power', skill: 'k_mud',
+    desc: '砂の上なら負けない力自慢。' },
+  { id: 's_little', name: 'リトルミラクル', rarity: 'N', stats: { speed: 50, stamina: 52, power: 44, guts: 60, intelligence: 78 },
+    apt: { turf: 80, dirt: 50, sprint: 40, mile: 65, classic: 70, long: 55 }, style: 'oikomi', growth: 'late', trait: 'intelligence', skill: 'k_doto',
+    desc: '小さな体に奇跡の末脚。レア度以上の血を秘める。' },
+  { id: 's_iron', name: 'アイアンハート', rarity: 'R', stats: { speed: 60, stamina: 62, power: 68, guts: 76, intelligence: 52 },
+    apt: { turf: 55, dirt: 85, sprint: 50, mile: 85, classic: 60, long: 35 }, style: 'senko', growth: 'normal', trait: 'guts', skill: 'k_nebari',
+    desc: '絶対に諦めない鉄の心臓。' },
+  { id: 's_ocean', name: 'ブルーオーシャン', rarity: 'R', stats: { speed: 58, stamina: 80, power: 56, guts: 64, intelligence: 60 },
+    apt: { turf: 85, dirt: 40, sprint: 20, mile: 45, classic: 75, long: 90 }, style: 'sashi', growth: 'late', trait: 'stamina', skill: 'k_stamkeep',
+    desc: 'どこまでも走れる大海原のような体力。' },
+  { id: 's_green', name: 'グリーンウインド', rarity: 'R', stats: { speed: 70, stamina: 58, power: 60, guts: 56, intelligence: 62 },
+    apt: { turf: 88, dirt: 45, sprint: 55, mile: 88, classic: 60, long: 30 }, style: 'sashi', growth: 'normal', trait: 'speed', skill: 'k_kick',
+    desc: '芝のマイルを吹き抜ける風。' },
+  { id: 's_midnight', name: 'ミッドナイトラン', rarity: 'SR', stats: { speed: 72, stamina: 82, power: 66, guts: 70, intelligence: 70 },
+    apt: { turf: 90, dirt: 40, sprint: 25, mile: 60, classic: 92, long: 80 }, style: 'senko', growth: 'normal', trait: 'stamina', skill: 'k_breakout',
+    desc: '夜明けまで走り続けるクラシックの申し子。' },
+  { id: 's_goldrush', name: 'ゴールドラッシュ', rarity: 'SR', stats: { speed: 74, stamina: 64, power: 84, guts: 70, intelligence: 60 },
+    apt: { turf: 50, dirt: 95, sprint: 75, mile: 90, classic: 55, long: 25 }, style: 'nige', growth: 'early', trait: 'power', skill: 'k_keeplead',
+    desc: 'ダートの黄金時代を築いた豪腕。' },
+  { id: 's_skyhigh', name: 'スカイハイ', rarity: 'SR', stats: { speed: 84, stamina: 58, power: 70, guts: 60, intelligence: 66 },
+    apt: { turf: 90, dirt: 50, sprint: 85, mile: 85, classic: 45, long: 20 }, style: 'senko', growth: 'early', trait: 'speed', skill: 'k_senkoaccel',
+    desc: '空まで駆け上がるような加速力。' },
+  { id: 's_thunder', name: 'サンダーロード', rarity: 'SSR', stats: { speed: 94, stamina: 66, power: 82, guts: 72, intelligence: 70 },
+    apt: { turf: 95, dirt: 70, sprint: 92, mile: 90, classic: 50, long: 25 }, style: 'senko', growth: 'normal', trait: 'speed', skill: 'k_sprintking',
+    desc: '雷鳴のごとき快速。短距離〜マイルの王。' },
+  { id: 's_king', name: 'キングオブロード', rarity: 'SSR', stats: { speed: 80, stamina: 92, power: 80, guts: 82, intelligence: 76 },
+    apt: { turf: 95, dirt: 50, sprint: 30, mile: 65, classic: 95, long: 88 }, style: 'sashi', growth: 'late', trait: 'stamina', skill: 'k_sashikiri',
+    desc: 'クラシック三冠を制した王者の血。' },
+  { id: 's_emperor', name: 'エンペラーステラ', rarity: 'UR', stats: { speed: 92, stamina: 90, power: 88, guts: 86, intelligence: 90 },
+    apt: { turf: 95, dirt: 75, sprint: 60, mile: 90, classic: 95, long: 85 }, style: 'senko', growth: 'normal', trait: 'balance', skill: 'k_emperor',
+    desc: '星の名を持つ皇帝。全てを兼ね備えた伝説の種牡馬。' }
+];
+
+// ───────── 繁殖牝馬カード ─────────
+GAME_DATA.mares = [
+  { id: 'm_sakura', name: 'サクラコマチ', rarity: 'N', stats: { speed: 58, stamina: 46, power: 48, guts: 50, intelligence: 52 },
+    apt: { turf: 80, dirt: 45, sprint: 70, mile: 70, classic: 40, long: 20 }, style: 'senko', growth: 'early', trait: 'speed', skill: 'k_goodpos',
+    desc: '春風のように軽やかな走り。' },
+  { id: 'm_tsuchi', name: 'ツチノコヒメ', rarity: 'N', stats: { speed: 46, stamina: 58, power: 60, guts: 58, intelligence: 46 },
+    apt: { turf: 45, dirt: 85, sprint: 45, mile: 75, classic: 60, long: 35 }, style: 'sashi', growth: 'late', trait: 'power', skill: 'k_outside',
+    desc: '泥んこ馬場が大好きなお転婆娘。' },
+  { id: 'm_lucky', name: 'ラッキーリボン', rarity: 'N', stats: { speed: 52, stamina: 50, power: 46, guts: 72, intelligence: 60 },
+    apt: { turf: 70, dirt: 65, sprint: 55, mile: 65, classic: 60, long: 45 }, style: 'nige', growth: 'normal', trait: 'guts', skill: 'k_tataki',
+    desc: '勝負強さはG1級。幸運を運ぶリボン。' },
+  { id: 'm_rose', name: 'ローズガーデン', rarity: 'R', stats: { speed: 66, stamina: 64, power: 56, guts: 58, intelligence: 64 },
+    apt: { turf: 88, dirt: 40, sprint: 45, mile: 85, classic: 75, long: 45 }, style: 'sashi', growth: 'normal', trait: 'speed', skill: 'k_kick',
+    desc: 'バラ園を駆ける気品ある末脚。' },
+  { id: 'm_silver', name: 'シルバーベル', rarity: 'R', stats: { speed: 60, stamina: 74, power: 58, guts: 62, intelligence: 64 },
+    apt: { turf: 85, dirt: 50, sprint: 25, mile: 55, classic: 85, long: 80 }, style: 'senko', growth: 'late', trait: 'stamina', skill: 'k_calm',
+    desc: '銀の鈴のように澄んだ持久力。' },
+  { id: 'm_dune', name: 'デューンダンサー', rarity: 'R', stats: { speed: 64, stamina: 56, power: 72, guts: 60, intelligence: 54 },
+    apt: { turf: 45, dirt: 90, sprint: 80, mile: 75, classic: 40, long: 20 }, style: 'nige', growth: 'early', trait: 'power', skill: 'k_rocket',
+    desc: '砂丘を舞う踊り子。' },
+  { id: 'm_star', name: 'スターレディ', rarity: 'SR', stats: { speed: 80, stamina: 62, power: 66, guts: 64, intelligence: 70 },
+    apt: { turf: 90, dirt: 45, sprint: 80, mile: 90, classic: 50, long: 25 }, style: 'senko', growth: 'normal', trait: 'speed', skill: 'k_breakout',
+    desc: 'マイルの女王に輝いた一番星。' },
+  { id: 'm_aurora', name: 'オーロラヴェール', rarity: 'SR', stats: { speed: 70, stamina: 84, power: 62, guts: 70, intelligence: 74 },
+    apt: { turf: 90, dirt: 35, sprint: 20, mile: 55, classic: 90, long: 90 }, style: 'sashi', growth: 'late', trait: 'stamina', skill: 'k_stayer',
+    desc: '極光のように長く輝く持久力。' },
+  { id: 'm_crimson', name: 'クリムゾンフレア', rarity: 'SR', stats: { speed: 76, stamina: 60, power: 78, guts: 74, intelligence: 58 },
+    apt: { turf: 60, dirt: 88, sprint: 65, mile: 88, classic: 60, long: 30 }, style: 'oikomi', growth: 'normal', trait: 'power', skill: 'k_ooso',
+    desc: '燃えるような追い込みで砂を焦がす。' },
+  { id: 'm_moon', name: 'ムーンレディ', rarity: 'SSR', stats: { speed: 84, stamina: 82, power: 70, guts: 74, intelligence: 80 },
+    apt: { turf: 95, dirt: 50, sprint: 50, mile: 92, classic: 88, long: 60 }, style: 'sashi', growth: 'normal', trait: 'stamina', skill: 'k_kick',
+    desc: '月明かりの女王。数々の名馬の母。' },
+  { id: 'm_tiara', name: 'ティアラクイーン', rarity: 'SSR', stats: { speed: 90, stamina: 70, power: 76, guts: 70, intelligence: 78 },
+    apt: { turf: 95, dirt: 55, sprint: 75, mile: 95, classic: 70, long: 35 }, style: 'senko', growth: 'early', trait: 'speed', skill: 'k_escape',
+    desc: '牝馬三冠のティアラを戴いた女王。' },
+  { id: 'm_goddess', name: 'ヴィーナスオリジン', rarity: 'UR', stats: { speed: 90, stamina: 92, power: 84, guts: 88, intelligence: 92 },
+    apt: { turf: 95, dirt: 80, sprint: 55, mile: 90, classic: 95, long: 90 }, style: 'sashi', growth: 'late', trait: 'balance', skill: 'k_sashikiri',
+    desc: '全ての名牝の始まりと言われる伝説の牝馬。' }
+];
+
+// ───────── スキルカード ─────────
+// cond: phase(start/mid/corner/final), remainMax(残り距離m以下), rankMin/rankMax(順位),
+//       distCat, groundMin, close(接戦)
+// effect: speed(速度倍率+), hp(体力回復), duration(秒)
+GAME_DATA.skills = [
+  { id: 'k_rocket', name: 'ロケットスタート', rarity: 'R', style: 'nige', icon: '🚀',
+    desc: 'レース開始時、序盤の加速力アップ。', condText: 'レース開始時',
+    cond: { phase: 'start' }, effect: { speed: 0.08, duration: 6 } },
+  { id: 'k_keeplead', name: '先頭維持', rarity: 'R', style: 'nige', icon: '🏁',
+    desc: '中盤に1〜2位なら速度アップ。', condText: '中盤・1〜2位',
+    cond: { phase: 'mid', rankMax: 2 }, effect: { speed: 0.04, duration: 15 } },
+  { id: 'k_escape', name: '逃走本能', rarity: 'SR', style: 'nige', icon: '💨',
+    desc: '最終直線で先頭なら、さらに突き放す。', condText: '最終直線・1位',
+    cond: { phase: 'final', rankMax: 1 }, effect: { speed: 0.07, duration: 10 } },
+  { id: 'k_goodpos', name: '好位キープ', rarity: 'N', style: 'senko', icon: '🎯',
+    desc: '中盤に2〜5位なら体力を温存できる。', condText: '中盤・2〜5位',
+    cond: { phase: 'mid', rankMin: 2, rankMax: 5 }, effect: { speed: 0.02, hp: 90, duration: 10 } },
+  { id: 'k_senkoaccel', name: '先行加速', rarity: 'R', style: 'senko', icon: '⏩',
+    desc: '第4コーナーで2〜4位なら加速。', condText: 'コーナー・2〜4位',
+    cond: { phase: 'corner', rankMin: 2, rankMax: 4 }, effect: { speed: 0.05, duration: 10 } },
+  { id: 'k_breakout', name: '抜け出し', rarity: 'SR', style: 'senko', icon: '↗️',
+    desc: '最終直線で2〜3位なら一気に抜け出す。', condText: '最終直線・2〜3位',
+    cond: { phase: 'final', rankMin: 2, rankMax: 3 }, effect: { speed: 0.08, duration: 8 } },
+  { id: 'k_kick', name: '末脚', rarity: 'R', style: 'sashi', icon: '⚡',
+    desc: '残り400mで3〜6位なら終盤スピード大幅アップ。', condText: '残り400m・3〜6位',
+    cond: { remainMax: 400, rankMin: 3, rankMax: 6 }, effect: { speed: 0.08, duration: 10 } },
+  { id: 'k_sashikiri', name: '差し切り', rarity: 'SSR', style: 'sashi', icon: '🗡️',
+    desc: '残り250mで2〜4位なら前の馬をとらえる強烈な伸び。', condText: '残り250m・2〜4位',
+    cond: { remainMax: 250, rankMin: 2, rankMax: 4 }, effect: { speed: 0.12, duration: 8 } },
+  { id: 'k_outside', name: '外差し', rarity: 'R', style: 'sashi', icon: '↪️',
+    desc: 'コーナーで4位以下なら外から進出。', condText: 'コーナー・4位以下',
+    cond: { phase: 'corner', rankMin: 4 }, effect: { speed: 0.05, duration: 12 } },
+  { id: 'k_ooso', name: '大外一気', rarity: 'SR', style: 'oikomi', icon: '🌪️',
+    desc: '最終直線で5位以下なら追込性能アップ。', condText: '最終直線・5位以下',
+    cond: { phase: 'final', rankMin: 5 }, effect: { speed: 0.09, duration: 10 } },
+  { id: 'k_lastaccel', name: '最終加速', rarity: 'R', style: 'oikomi', icon: '🔺',
+    desc: '残り300mで3位以下なら加速。', condText: '残り300m・3位以下',
+    cond: { remainMax: 300, rankMin: 3 }, effect: { speed: 0.07, duration: 8 } },
+  { id: 'k_doto', name: '怒涛の追撃', rarity: 'SSR', style: 'oikomi', icon: '🌊',
+    desc: '最終直線で6位以下なら、怒涛の勢いで追い上げる。', condText: '最終直線・6位以下',
+    cond: { phase: 'final', rankMin: 6 }, effect: { speed: 0.13, duration: 10 } },
+  { id: 'k_nebari', name: '粘り腰', rarity: 'R', style: null, icon: '🛡️',
+    desc: '最終直線で1〜2位なら、後続に抜かれにくくなる。', condText: '最終直線・1〜2位',
+    cond: { phase: 'final', rankMax: 2 }, effect: { speed: 0.03, hp: 120, duration: 10 } },
+  { id: 'k_stamkeep', name: 'スタミナキープ', rarity: 'N', style: null, icon: '🍃',
+    desc: '中盤で体力を回復する。長い距離で役立つ。', condText: '中盤',
+    cond: { phase: 'mid' }, effect: { hp: 160, duration: 1 } },
+  { id: 'k_calm', name: '冷静沈着', rarity: 'N', style: null, icon: '🧘',
+    desc: 'スタート直後に落ち着いて体力を温存。', condText: 'レース開始時',
+    cond: { phase: 'start' }, effect: { speed: 0.02, hp: 70, duration: 5 } },
+  { id: 'k_tataki', name: '根性の叩き合い', rarity: 'SR', style: null, icon: '🔥',
+    desc: '最終直線で他の馬と並んだ時、根性で競り勝つ。', condText: '最終直線・接戦',
+    cond: { phase: 'final', close: true }, effect: { speed: 0.07, duration: 8 } },
+  { id: 'k_mud', name: '道悪巧者', rarity: 'R', style: null, icon: '🌧️',
+    desc: '重・不良馬場で速度アップ。', condText: '重・不良馬場',
+    cond: { phase: 'mid', groundMin: 2 }, effect: { speed: 0.05, duration: 20 } },
+  { id: 'k_sprintking', name: '短距離の鬼', rarity: 'SR', style: null, icon: '👹',
+    desc: 'スプリント戦のコーナーで速度アップ。', condText: 'スプリント・コーナー',
+    cond: { phase: 'corner', distCat: 'sprint' }, effect: { speed: 0.06, duration: 12 } },
+  { id: 'k_stayer', name: '長距離の鬼', rarity: 'SR', style: null, icon: '🏔️',
+    desc: 'ロング戦の終盤で体力回復＋速度アップ。', condText: 'ロング・最終直線',
+    cond: { phase: 'corner', distCat: 'long' }, effect: { speed: 0.03, hp: 260, duration: 12 } },
+  { id: 'k_emperor', name: '皇帝の威光', rarity: 'UR', style: null, icon: '👑',
+    desc: '残り600mから王者の走り。全脚質で効果大。', condText: '残り600m',
+    cond: { remainMax: 600 }, effect: { speed: 0.10, duration: 14 } }
+];
+
+// ───────── アイテムカード ─────────
+GAME_DATA.items = [
+  { id: 'i_speedtr', name: 'スピードトレーニング', rarity: 'N', icon: '⚡', price: 600,
+    desc: 'スピード調教の効果が2倍。', use: { train: 'speed', mult: 2 } },
+  { id: 'i_stamtr', name: 'スタミナトレーニング', rarity: 'N', icon: '❤️', price: 600,
+    desc: 'スタミナ調教の効果が2倍。', use: { train: 'stamina', mult: 2 } },
+  { id: 'i_powtr', name: 'パワートレーニング', rarity: 'N', icon: '💪', price: 600,
+    desc: 'パワー調教の効果が2倍。', use: { train: 'power', mult: 2 } },
+  { id: 'i_refresh', name: 'リフレッシュ', rarity: 'N', icon: '🛁', price: 500,
+    desc: '疲労を40回復し、調子を上げる。週は進まない。', use: { fatigue: -40, condition: 20 } },
+  { id: 'i_carrot', name: '特上にんじん', rarity: 'R', icon: '🥕', price: 1200,
+    desc: '調子が絶好調になる。', use: { condition: 100 } },
+  { id: 'i_exp', name: '経験値ブック', rarity: 'R', icon: '📘', price: 1500,
+    desc: '経験値+300。', use: { exp: 300 } },
+  { id: 'i_special', name: '特別調教', rarity: 'SR', icon: '🌟', price: 4000,
+    desc: '全能力+3（限界も+2）。', use: { allStats: 3, allCaps: 2 } },
+  { id: 'i_potential', name: '素質の霊薬', rarity: 'SSR', icon: '🧪', price: null,
+    desc: '全能力の限界値+6。秘められた力が目覚める。', use: { allCaps: 6 } }
+];
+
+// ───────── 路線 ─────────
+GAME_DATA.routes = [
+  { id: 'sprint', name: 'スプリンター', icon: '⚡', range: '1000〜1400m', key: 'スピード・パワー',
+    desc: '短い距離を一瞬で駆け抜ける。スピード自慢の馬向け。' },
+  { id: 'mile', name: 'マイラー', icon: '🌟', range: '1400〜1800m', key: 'スピード・スタミナ',
+    desc: '速さと体力のバランスが大事。いちばん人気の路線。' },
+  { id: 'classic', name: 'クラシック', icon: '👑', range: '1800〜3000m', key: 'スタミナ・スピード・パワー',
+    desc: '2〜3歳だけが挑める、一生に一度の大舞台。' },
+  { id: 'filly', name: '牝馬クラシック', icon: '🌸', range: '1600〜2400m', key: 'スピード・スタミナ',
+    desc: '2〜3歳の牝馬（女の子）だけのティアラ路線。' },
+  { id: 'senior', name: '王道古馬', icon: '🏆', range: '2000〜3200m', key: 'スタミナ・根性',
+    desc: '3歳秋〜の古馬が最強を競う王道。' }
+];
+
+// ───────── レース ─────────
+// grade: debut(新馬) maiden(未勝利) cond(条件) op(オープン) g3 g2 g1
+// minWins/maxWins で出走条件（勝利数）、ageMin/ageMax、female(牝馬限定)
+GAME_DATA.grades = {
+  debut: { label: '新馬', short: '新馬', npc: 46, prize: 700, exp: 60, order: 0 },
+  maiden: { label: '未勝利', short: '未勝利', npc: 48, prize: 600, exp: 60, order: 1 },
+  cond: { label: '1勝クラス', short: '条件', npc: 55, prize: 1000, exp: 80, order: 2 },
+  op: { label: 'オープン', short: 'OP', npc: 63, prize: 1800, exp: 100, order: 3 },
+  g3: { label: 'GⅢ', short: 'GⅢ', npc: 71, prize: 3500, exp: 130, order: 4 },
+  g2: { label: 'GⅡ', short: 'GⅡ', npc: 75, prize: 6000, exp: 160, order: 5 },
+  g1: { label: 'GⅠ', short: 'GⅠ', npc: 80, prize: 15000, exp: 220, order: 6 }
+};
+
+GAME_DATA.races = [
+  // ⚡ スプリンター
+  { id: 'sp_debut', route: 'sprint', name: 'ジュニア新馬戦', grade: 'debut', distance: 1000, surface: 'turf', ageMin: 2, ageMax: 2, maxWins: 0, field: 10 },
+  { id: 'sp_maiden', route: 'sprint', name: 'スプリント未勝利戦', grade: 'maiden', distance: 1200, surface: 'dirt', ageMin: 2, ageMax: 3, maxWins: 0, field: 10 },
+  { id: 'sp_cond', route: 'sprint', name: '若葉スプリント', grade: 'cond', distance: 1200, surface: 'turf', ageMin: 2, minWins: 1, maxWins: 2, field: 12 },
+  { id: 'sp_op', route: 'sprint', name: '韋駄天ステークス', grade: 'op', distance: 1400, surface: 'turf', ageMin: 2, minWins: 2, field: 12 },
+  { id: 'sp_g3', route: 'sprint', name: '春雷ステークス', grade: 'g3', distance: 1200, surface: 'turf', ageMin: 3, minWins: 2, field: 14 },
+  { id: 'sp_g2', route: 'sprint', name: '疾風ステークス', grade: 'g2', distance: 1400, surface: 'turf', ageMin: 3, minWins: 3, field: 14 },
+  { id: 'sp_g1', route: 'sprint', name: 'スプリント王決定戦', grade: 'g1', distance: 1200, surface: 'turf', ageMin: 3, minWins: 4, field: 16 },
+  { id: 'sp_g1d', route: 'sprint', name: 'ダートスプリントカップ', grade: 'g1', distance: 1200, surface: 'dirt', ageMin: 3, minWins: 4, field: 14 },
+  // 🌟 マイラー
+  { id: 'mi_debut', route: 'mile', name: 'メイクデビュー', grade: 'debut', distance: 1600, surface: 'turf', ageMin: 2, ageMax: 2, maxWins: 0, field: 10 },
+  { id: 'mi_maiden', route: 'mile', name: 'マイル未勝利戦', grade: 'maiden', distance: 1400, surface: 'dirt', ageMin: 2, ageMax: 3, maxWins: 0, field: 12 },
+  { id: 'mi_cond', route: 'mile', name: '若草マイル', grade: 'cond', distance: 1600, surface: 'turf', ageMin: 2, minWins: 1, maxWins: 2, field: 12 },
+  { id: 'mi_op', route: 'mile', name: 'ポラリスステークス', grade: 'op', distance: 1800, surface: 'turf', ageMin: 2, minWins: 2, field: 12 },
+  { id: 'mi_g3', route: 'mile', name: '流星ステークス', grade: 'g3', distance: 1600, surface: 'dirt', ageMin: 3, minWins: 2, field: 14 },
+  { id: 'mi_g2', route: 'mile', name: '蒼天マイラーズ', grade: 'g2', distance: 1600, surface: 'turf', ageMin: 3, minWins: 3, field: 14 },
+  { id: 'mi_g1', route: 'mile', name: 'マイルカップ', grade: 'g1', distance: 1600, surface: 'turf', ageMin: 3, ageMax: 3, minWins: 3, field: 16 },
+  { id: 'mi_g1b', route: 'mile', name: 'マイル王決定戦', grade: 'g1', distance: 1600, surface: 'turf', ageMin: 3, minWins: 4, field: 16 },
+  { id: 'mi_g1d', route: 'mile', name: 'ダートマイル王者決定戦', grade: 'g1', distance: 1600, surface: 'dirt', ageMin: 3, minWins: 4, field: 14 },
+  // 👑 クラシック
+  { id: 'cl_debut', route: 'classic', name: 'クラシック新馬戦', grade: 'debut', distance: 1800, surface: 'turf', ageMin: 2, ageMax: 2, maxWins: 0, field: 10 },
+  { id: 'cl_maiden', route: 'classic', name: '中距離未勝利戦', grade: 'maiden', distance: 2000, surface: 'turf', ageMin: 2, ageMax: 3, maxWins: 0, field: 12 },
+  { id: 'cl_op', route: 'classic', name: 'ジュニアステークス', grade: 'op', distance: 2000, surface: 'turf', ageMin: 2, ageMax: 2, minWins: 1, field: 12 },
+  { id: 'cl_cond', route: 'classic', name: '若駒ステークス', grade: 'cond', distance: 2000, surface: 'turf', ageMin: 3, ageMax: 3, minWins: 1, maxWins: 1, field: 12 },
+  { id: 'cl_g2', route: 'classic', name: 'クラシックトライアル', grade: 'g2', distance: 2000, surface: 'turf', ageMin: 3, ageMax: 3, minWins: 1, field: 14 },
+  { id: 'cl_g1a', route: 'classic', name: '王冠賞', grade: 'g1', distance: 2000, surface: 'turf', ageMin: 3, ageMax: 3, minWins: 2, field: 16, crown: 'classic' },
+  { id: 'cl_g1b', route: 'classic', name: 'グランドダービー', grade: 'g1', distance: 2400, surface: 'turf', ageMin: 3, ageMax: 3, minWins: 2, field: 16, crown: 'classic' },
+  { id: 'cl_g1c', route: 'classic', name: 'ロングクラウン', grade: 'g1', distance: 3000, surface: 'turf', ageMin: 3, ageMax: 3, minWins: 2, field: 16, crown: 'classic' },
+  // 🌸 牝馬クラシック
+  { id: 'fi_debut', route: 'filly', name: '牝馬新馬戦', grade: 'debut', distance: 1600, surface: 'turf', ageMin: 2, ageMax: 2, maxWins: 0, female: true, field: 10 },
+  { id: 'fi_maiden', route: 'filly', name: '牝馬未勝利戦', grade: 'maiden', distance: 1600, surface: 'turf', ageMin: 2, ageMax: 3, maxWins: 0, female: true, field: 12 },
+  { id: 'fi_op', route: 'filly', name: 'フェアリーステークス', grade: 'op', distance: 1600, surface: 'turf', ageMin: 2, minWins: 1, female: true, field: 12 },
+  { id: 'fi_g2', route: 'filly', name: 'ティアラトライアル', grade: 'g2', distance: 1600, surface: 'turf', ageMin: 3, ageMax: 3, minWins: 1, female: true, field: 14 },
+  { id: 'fi_g1a', route: 'filly', name: '桜冠賞', grade: 'g1', distance: 1600, surface: 'turf', ageMin: 3, ageMax: 3, minWins: 2, female: true, field: 16, crown: 'tiara' },
+  { id: 'fi_g1b', route: 'filly', name: '女王ティアラ', grade: 'g1', distance: 2400, surface: 'turf', ageMin: 3, ageMax: 3, minWins: 2, female: true, field: 16, crown: 'tiara' },
+  { id: 'fi_g1c', route: 'filly', name: 'ティアラファイナル', grade: 'g1', distance: 2000, surface: 'turf', ageMin: 3, ageMax: 3, minWins: 2, female: true, field: 16, crown: 'tiara' },
+  // 🏆 王道古馬
+  { id: 'se_cond', route: 'senior', name: '古馬条件戦', grade: 'cond', distance: 2000, surface: 'turf', ageMin: 3, maxWins: 2, field: 12 },
+  { id: 'se_op', route: 'senior', name: 'アンドロメダステークス', grade: 'op', distance: 2200, surface: 'turf', ageMin: 3, minWins: 2, field: 12 },
+  { id: 'se_g2', route: 'senior', name: '大阪城ステークス', grade: 'g2', distance: 2500, surface: 'turf', ageMin: 4, minWins: 3, field: 14 },
+  { id: 'se_g1a', route: 'senior', name: '王者決定戦', grade: 'g1', distance: 2000, surface: 'turf', ageMin: 4, minWins: 4, field: 16 },
+  { id: 'se_g1b', route: 'senior', name: '春の長距離王', grade: 'g1', distance: 3200, surface: 'turf', ageMin: 4, minWins: 4, field: 16 },
+  { id: 'se_g1c', route: 'senior', name: '年末王者決定戦', grade: 'g1', distance: 2500, surface: 'turf', ageMin: 3, minWins: 4, field: 16 },
+  { id: 'se_g1d', route: 'senior', name: 'ダート王者決定戦', grade: 'g1', distance: 2000, surface: 'dirt', ageMin: 4, minWins: 4, field: 14 }
+];
+
+// レース後に手に入るカードのレアリティ確率（%）
+GAME_DATA.dropTable = {
+  debut: { N: 60, R: 35, SR: 5, SSR: 0, UR: 0 },
+  maiden: { N: 60, R: 35, SR: 5, SSR: 0, UR: 0 },
+  cond: { N: 45, R: 40, SR: 13, SSR: 2, UR: 0 },
+  op: { N: 30, R: 45, SR: 20, SSR: 5, UR: 0 },
+  g3: { N: 10, R: 45, SR: 35, SSR: 9, UR: 1 },
+  g2: { N: 0, R: 40, SR: 40, SSR: 17, UR: 3 },
+  g1: { N: 0, R: 25, SR: 42, SSR: 27, UR: 6 }
+};
+GAME_DATA.dropTypeWeights = { sire: 25, mare: 25, skill: 32, item: 18 };
+
+// ───────── ミッション（初心者向けに順番に進む） ─────────
+// check は main.js の Missions.progress() で評価する key
+GAME_DATA.missions = [
+  { id: 'ms_breed', title: '最初の馬を配合しよう', hint: '🧬 配合 から父カードと母カードを選ぼう', check: 'breedCount', target: 1,
+    reward: { money: 2000, cards: ['i_refresh'] } },
+  { id: 'ms_train', title: '調教しよう', hint: '🐎 厩舎 → 馬を選んで調教', check: 'trainCount', target: 1,
+    reward: { money: 500, cards: ['k_goodpos'] } },
+  { id: 'ms_skill', title: 'スキルを装備しよう', hint: '馬の詳細画面の「スキル」から装備', check: 'equipCount', target: 1,
+    reward: { money: 500, cards: ['i_speedtr', 'i_stamtr'] } },
+  { id: 'ms_race', title: '初レースに出走しよう', hint: '🏇 レース から路線を選んで出走', check: 'raceCount', target: 1,
+    reward: { money: 1000, cards: ['i_carrot'] } },
+  { id: 'ms_win', title: '1勝しよう', hint: '調教で鍛えて、適性に合ったレースへ', check: 'winCount', target: 1,
+    reward: { money: 2000, cards: ['k_kick'] } },
+  { id: 'ms_sr', title: 'SR以上のカードを獲得しよう', hint: 'レースで勝つとカードがもらえる', check: 'srCount', target: 1,
+    reward: { money: 2000, cards: ['i_exp'] } },
+  { id: 'ms_graded', title: '重賞（GⅢ以上）に出走しよう', hint: '2勝以上すると重賞に挑戦できる', check: 'gradedRaceCount', target: 1,
+    reward: { money: 3000, cards: ['i_special'] } },
+  { id: 'ms_g1run', title: 'GⅠに挑戦しよう', hint: '勝ち星を重ねてGⅠの舞台へ', check: 'g1RaceCount', target: 1,
+    reward: { money: 5000, cards: ['i_potential'] } },
+  { id: 'ms_g1win', title: 'GⅠを勝とう', hint: '適性・スキル・調子をそろえよう', check: 'g1WinCount', target: 1,
+    reward: { money: 10000, cards: ['s_king'] } },
+  { id: 'ms_hof', title: '殿堂馬を作ろう', hint: 'GⅠ 3勝 or 通算10勝で引退すると殿堂入り', check: 'hofCount', target: 1,
+    reward: { money: 30000, cards: ['m_goddess'] } }
+];
+
+// ───────── 用語解説（？ボタン） ─────────
+GAME_DATA.glossary = {
+  speed: { title: '⚡ スピード', body: '最高速度に関係します。短い距離ほど大事な能力です。' },
+  stamina: { title: '❤️ スタミナ', body: 'レース中の体力。長い距離では、スタミナが足りないと最後にバテて失速します。' },
+  power: { title: '💪 パワー', body: '加速力に関係します。雨で馬場が重いときにも強くなります。' },
+  guts: { title: '🔥 根性', body: 'バテた時や、他の馬と競り合う最終直線で粘る力です。' },
+  intelligence: { title: '🧠 賢さ', body: 'スキルが発動しやすくなり、レースでの走りも安定します。' },
+  distance: { title: '📏 距離適性', body: 'その馬が得意な距離です。★が多い距離のレースに出ると力を発揮できます。<br>スプリント（〜1400m）／マイル（〜1800m）／クラシック（〜2400m）／ロング（2401m〜）' },
+  surface: { title: '🌱 馬場適性', body: '「芝」は草のコース、「ダート」は砂のコース。得意な方で走らせよう。' },
+  ground: { title: '🌧️ 馬場状態', body: '良 → 稍重 → 重 → 不良 の順に、雨で地面がぬかるみます。重い馬場ではパワーがある馬が有利です。' },
+  style: { title: '🏇 脚質', body: 'レースでの走り方のクセです。<br>🔴逃げ：最初から先頭<br>🟠先行：前の方をキープ<br>🔵差し：最後に追い抜く<br>🟣追込：最後方から一気に' },
+  growth: { title: '🌱 成長タイプ', body: '早熟は若いうちに伸び、晩成は年をとってから伸びます。普通はその中間です。' },
+  condition: { title: '😊 調子', body: '調子が良いほどレースで力を出せます。休養やアイテムで上がります。' },
+  fatigue: { title: '😓 疲労', body: '調教やレースでたまります。疲れていると調教の効果やレースの力が下がります。休養で回復！' },
+  potential: { title: '💎 素質', body: 'その馬がどこまで強くなれるかの目安です。配合で決まり、調教で限界まで伸ばせます。' },
+  rarity: { title: '🃏 レアリティ', body: 'N → R → SR → SSR → UR の順に珍しいカード。でも、低レアにも特別な血統を持つカードがあります。' },
+  skill: { title: '🎴 スキル', body: '1頭に3つまで装備できます。レース中に条件を満たすと自動で発動！脚質が合うスキルは効果が大きくなります。' },
+  grade: { title: '🏅 レースの格', body: '新馬 → 未勝利 → 条件 → オープン → GⅢ → GⅡ → GⅠ の順に格が高く、賞金やカード報酬も豪華になります。勝利数で出走できるレースが増えます。' },
+  hof: { title: '🏛 殿堂入り', body: 'GⅠ 3勝、または通算10勝した馬が引退すると殿堂入りします。殿堂馬は配合カードになって、血統を次の世代へつなげます。' }
+};
+
+// ───────── 馬名ジェネレーター用 ─────────
+GAME_DATA.namePrefix = ['サンダー', 'スター', 'ブルー', 'ナイト', 'ゴールド', 'シルバー', 'ミラクル', 'ホープ', 'ローズ', 'クイーン',
+  'キング', 'スカイ', 'ムーン', 'サン', 'ウインド', 'フレイム', 'ドリーム', 'グランド', 'ヴィクトリー', 'ライト', 'ダーク', 'アイス',
+  'ファイア', 'ブリリアント', 'エターナル', 'ルナ', 'ソレイユ', 'ハヤテ', 'サクラ', 'ヤマト', 'カゼノ', 'ホシノ', 'ユメノ', 'メイショウ', 'リュウ'];
+GAME_DATA.nameSuffix = ['ロード', 'レイン', 'フレイム', 'ハート', 'ボルト', 'スター', 'ダンサー', 'ランナー', 'ブレイブ', 'ソング', 'エース',
+  'クラウン', 'ウイング', 'ブリッツ', 'プリンセス', 'レディ', 'オー', 'マックス', 'ジェット', 'フラッシュ', 'ストーム', 'リーフ', 'テイオー',
+  'ヒメ', 'マル', 'ダッシュ', 'キセキ', 'ノヴァ', 'アロー', 'ブーケ'];
+
+GAME_DATA.nameFemaleOnly = ['クイーン', 'ローズ', 'プリンセス', 'レディ', 'ヒメ', 'ブーケ'];
+GAME_DATA.nameMaleOnly = ['キング', 'テイオー', 'オー', 'マックス'];
+
+// 新規プレイヤーの初期所持カード
+GAME_DATA.starterCards = {
+  s_hayate: 1, s_daichi: 1, s_green: 1,
+  m_sakura: 1, m_tsuchi: 1, m_rose: 1,
+  k_rocket: 1, k_kick: 1, k_stamkeep: 1,
+  i_refresh: 2, i_speedtr: 1
+};
+
+// ───────── 特殊配合 ─────────
+// 黄金配合（ニックス）：特定の組み合わせで全能力にボーナス。低レア同士の組み合わせもある。
+GAME_DATA.nicks = [
+  { sire: 's_hayate', mare: 'm_sakura', name: '春風の快速', bonus: 5 },
+  { sire: 's_daichi', mare: 'm_tsuchi', name: '大地の恵み', bonus: 5 },
+  { sire: 's_little', mare: 'm_lucky', name: '小さな奇跡', bonus: 6 },
+  { sire: 's_ocean', mare: 'm_silver', name: '銀の大海', bonus: 4 },
+  { sire: 's_goldrush', mare: 'm_crimson', name: '砂塵の炎', bonus: 4 },
+  { sire: 's_skyhigh', mare: 'm_star', name: '天空の一番星', bonus: 4 },
+  { sire: 's_thunder', mare: 'm_moon', name: '雷光と月光', bonus: 4 },
+  { sire: 's_king', mare: 'm_aurora', name: '王と極光', bonus: 4 },
+  { sire: 's_emperor', mare: 'm_goddess', name: '始祖の血統', bonus: 3 }
+];
+
+// ───────── カードパック ─────────
+GAME_DATA.packs = [
+  { id: 'p_basic', name: 'ベーシックパック', icon: '📦', price: 3000, count: 3, table: 'op',
+    desc: 'カード3枚入り。N〜SSRが出る。' },
+  { id: 'p_premium', name: 'プレミアムパック', icon: '🎁', price: 12000, count: 5, table: 'g2', guarantee: 'SR',
+    desc: 'カード5枚入り。SR以上1枚確定！URも出る。' },
+  { id: 'p_blood', name: '血統パック', icon: '🧬', price: 8000, count: 3, table: 'g3', types: ['sire', 'mare'],
+    desc: '種牡馬・繁殖牝馬カードだけが3枚入り。' }
+];
+
+// ───────── リーグ戦（CPU馬主との対戦） ─────────
+// statCap：出走馬の能力をこの値までに制限（レベル差だけで勝敗が決まらないように）
+GAME_DATA.leagues = [
+  { id: 'bronze', name: 'ブロンズリーグ', icon: '🥉', statCap: 70, npc: 55, minRating: 0, prize: 1500, grade: 'op',
+    desc: '初心者向け。能力は最大70に制限されます。' },
+  { id: 'silver', name: 'シルバーリーグ', icon: '🥈', statCap: 85, npc: 68, minRating: 1100, prize: 4000, grade: 'g2',
+    desc: '中級者向け。能力は最大85に制限されます。' },
+  { id: 'gold', name: 'ゴールドリーグ', icon: '🥇', statCap: null, npc: 82, minRating: 1250, prize: 10000, grade: 'g1',
+    desc: '上級者向け。制限なしの真剣勝負！' }
+];
+GAME_DATA.leagueCourses = [
+  { distance: 1200, surface: 'turf' }, { distance: 1600, surface: 'turf' }, { distance: 2000, surface: 'turf' },
+  { distance: 2400, surface: 'turf' }, { distance: 1400, surface: 'dirt' }, { distance: 1800, surface: 'dirt' }
+];
+GAME_DATA.ratingDelta = [30, 18, 8, 0, -4, -8, -12, -16];
+GAME_DATA.rivalOwners = ['タカハシ', 'サトウ', 'スズキ', 'ヤマモト', 'ナカムラ', 'コバヤシ', 'カトウ', 'ワタナベ',
+  'イトウ', 'キムラ', 'ハヤシ', 'シミズ', 'モリ', 'イケダ', 'ハシモト', 'アベ'];
+</script>
+<script>
+// セーブ処理。ゲームロジックから分離し、将来サーバー保存へ差し替えられるようにする。
+'use strict';
+
+const Save = {
+  KEY: 'keibaCardGame.save.v1',
+  VERSION: 1,
+
+  // ストレージ実装（差し替えポイント）
+  storage: {
+    get(key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } },
+    set(key, value) { try { window.localStorage.setItem(key, value); return true; } catch (e) { return false; } },
+    remove(key) { try { window.localStorage.removeItem(key); } catch (e) { /* noop */ } }
+  },
+
+  load() {
+    const raw = this.storage.get(this.KEY);
+    if (!raw) return null;
+    try {
+      const data = JSON.parse(raw);
+      return this.migrate(data);
+    } catch (e) {
+      console.warn('セーブデータの読み込みに失敗しました', e);
+      return null;
+    }
+  },
+
+  save(player) {
+    return this.storage.set(this.KEY, JSON.stringify({ version: this.VERSION, savedAt: Date.now(), player }));
+  },
+
+  reset() {
+    this.storage.remove(this.KEY);
+  },
+
+  // バージョン差分を吸収する
+  migrate(data) {
+    if (!data || !data.player) return null;
+    return data.player;
+  }
+};
+</script>
+<script>
+// カード定義の検索・抽選・表示用ヘルパー
+'use strict';
+
+const Util = {
+  rand(min, max) { return min + Math.random() * (max - min); },
+  randInt(min, max) { return Math.floor(min + Math.random() * (max - min + 1)); },
+  clamp(v, min, max) { return Math.max(min, Math.min(max, v)); },
+  pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; },
+  gauss() { // 標準正規分布（Box-Muller）
+    let u = 0, v = 0;
+    while (u === 0) u = Math.random();
+    while (v === 0) v = Math.random();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  },
+  weighted(table) { // { key: weight }
+    const entries = Object.entries(table).filter(([, w]) => w > 0);
+    const total = entries.reduce((s, [, w]) => s + w, 0);
+    let r = Math.random() * total;
+    for (const [k, w] of entries) { if ((r -= w) < 0) return k; }
+    return entries[entries.length - 1][0];
+  },
+  uid(prefix) { return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); },
+  esc(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  },
+  money(n) { return Math.round(n).toLocaleString('ja-JP') + ' G'; },
+  stars(v, max = 5) { // 0〜100 → ★1〜5
+    const n = Util.clamp(Math.round(v / 20), 1, max);
+    return '★'.repeat(n) + '☆'.repeat(max - n);
+  },
+  aptMark(v) { // 適性記号
+    if (v >= 85) return '◎';
+    if (v >= 65) return '○';
+    if (v >= 45) return '△';
+    return '×';
+  },
+  grade(v) { // 総合評価
+    const table = [[100, 'SS'], [92, 'S'], [85, 'A'], [78, 'B'], [71, 'C'], [64, 'D'], [57, 'E'], [50, 'F']];
+    for (const [min, g] of table) if (v >= min) return g;
+    return 'G';
+  }
+};
+
+const Cards = {
+  types: {
+    sire: { label: '種牡馬', icon: '♂', color: 'sire' },
+    mare: { label: '繁殖牝馬', icon: '♀', color: 'mare' },
+    skill: { label: 'スキル', icon: '🎴', color: 'skill' },
+    item: { label: 'アイテム', icon: '🎒', color: 'item' }
+  },
+
+  _index: null,
+  index() {
+    if (this._index) return this._index;
+    const idx = {};
+    GAME_DATA.sires.forEach(c => { idx[c.id] = Object.assign({ type: 'sire' }, c); });
+    GAME_DATA.mares.forEach(c => { idx[c.id] = Object.assign({ type: 'mare' }, c); });
+    GAME_DATA.skills.forEach(c => { idx[c.id] = Object.assign({ type: 'skill' }, c); });
+    GAME_DATA.items.forEach(c => { idx[c.id] = Object.assign({ type: 'item' }, c); });
+    this._index = idx;
+    return idx;
+  },
+
+  // 殿堂馬などプレイヤー固有のカードも含めて検索
+  get(id) {
+    const base = this.index()[id];
+    if (base) return base;
+    if (typeof Player !== 'undefined' && Player.data && Player.data.customCards) return Player.data.customCards[id] || null;
+    return null;
+  },
+
+  all(includeCustom = true) {
+    const list = Object.values(this.index());
+    if (includeCustom && Player.data && Player.data.customCards) list.push(...Object.values(Player.data.customCards));
+    return list;
+  },
+
+  rarityIndex(r) { return GAME_DATA.rarities.indexOf(r); },
+
+  // 指定タイプ・レアリティのカードをランダムに選ぶ。無ければ近いレアリティから。
+  randomOf(type, rarity) {
+    const pool = this.all(false).filter(c => c.type === type && !(c.type === 'item' && c.price === undefined));
+    const target = this.rarityIndex(rarity);
+    for (let d = 0; d < GAME_DATA.rarities.length; d++) {
+      for (const dir of [-1, 1]) {
+        const r = GAME_DATA.rarities[target + d * dir];
+        const cands = pool.filter(c => c.rarity === r);
+        if (cands.length) return Util.pick(cands);
+      }
+    }
+    return Util.pick(pool);
+  },
+
+  // レース報酬のカード抽選
+  drawReward(grade) {
+    const rarity = Util.weighted(GAME_DATA.dropTable[grade] || GAME_DATA.dropTable.cond);
+    const type = Util.weighted(GAME_DATA.dropTypeWeights);
+    return this.randomOf(type, rarity);
+  },
+
+  // カードパックを開ける（所持金の処理は呼び出し側）
+  openPack(pack) {
+    const cards = [];
+    for (let i = 0; i < pack.count; i++) {
+      const rarity = Util.weighted(GAME_DATA.dropTable[pack.table]);
+      const type = pack.types ? Util.pick(pack.types) : Util.weighted(GAME_DATA.dropTypeWeights);
+      cards.push(this.randomOf(type, rarity));
+    }
+    // レア度保証：最後の1枚を保証レア以上に差し替え
+    if (pack.guarantee && !cards.some(c => this.rarityIndex(c.rarity) >= this.rarityIndex(pack.guarantee))) {
+      const pool = GAME_DATA.rarities.slice(this.rarityIndex(pack.guarantee));
+      const type = pack.types ? Util.pick(pack.types) : Util.weighted(GAME_DATA.dropTypeWeights);
+      cards[cards.length - 1] = this.randomOf(type, Util.pick(pool));
+    }
+    return cards;
+  }
+};
+</script>
+<script>
+// プレイヤーデータ（所持金・カード・馬・ミッション進行）
+'use strict';
+
+const Player = {
+  data: null,
+
+  createNew(name) {
+    return {
+      name: name || 'オーナー',
+      money: 10000,
+      cards: Object.assign({}, GAME_DATA.starterCards), // { cardId: 枚数 }
+      seenCards: Object.keys(GAME_DATA.starterCards),   // 図鑑用（一度でも入手したカード）
+      customCards: {},                                  // 殿堂馬から生まれた配合カード
+      horses: [],
+      retired: [],
+      hallOfFame: [],
+      missions: { index: 0, claimable: false },
+      stats: {
+        breedCount: 0, trainCount: 0, equipCount: 0, raceCount: 0, winCount: 0,
+        gradedRaceCount: 0, g1RaceCount: 0, g1WinCount: 0, hofCount: 0
+      },
+      settings: { raceSpeed: 1 },
+      records: {},                                      // コースレコード { raceId: { time, name } }
+      pvp: { rating: 1000, best: 1000, matches: 0, wins: 0, leagueWins: {} },
+      ghosts: [],                                       // フレンドから受け取った対戦コードの馬
+      nicksFound: [],                                   // 発見した黄金配合
+      tutorialDone: false,
+      createdAt: Date.now()
+    };
+  },
+
+  init() {
+    this.data = Save.load() || this.createNew();
+    this.normalize();
+  },
+
+  // 古いセーブや欠損キーを補完
+  normalize() {
+    const fresh = this.createNew(this.data.name);
+    for (const k of Object.keys(fresh)) if (this.data[k] === undefined) this.data[k] = fresh[k];
+    for (const k of Object.keys(fresh.stats)) if (this.data.stats[k] === undefined) this.data.stats[k] = 0;
+  },
+
+  save() { Save.save(this.data); },
+
+  reset() {
+    Save.reset();
+    this.data = this.createNew();
+    this.save();
+  },
+
+  // ── お金 ──
+  canAfford(n) { return this.data.money >= n; },
+  addMoney(n) { this.data.money = Math.max(0, Math.round(this.data.money + n)); },
+
+  // ── カード ──
+  count(cardId) { return this.data.cards[cardId] || 0; },
+  addCard(cardId, n = 1) {
+    this.data.cards[cardId] = this.count(cardId) + n;
+    if (!this.data.seenCards.includes(cardId)) this.data.seenCards.push(cardId);
+  },
+  removeCard(cardId, n = 1) {
+    if (this.count(cardId) < n) return false;
+    this.data.cards[cardId] -= n;
+    if (this.data.cards[cardId] <= 0) delete this.data.cards[cardId];
+    return true;
+  },
+  ownedCards(type) {
+    return Object.keys(this.data.cards)
+      .map(id => Cards.get(id))
+      .filter(c => c && (!type || c.type === type));
+  },
+  hasRarityAtLeast(rarity) {
+    const min = Cards.rarityIndex(rarity);
+    return this.data.seenCards.some(id => { const c = Cards.get(id); return c && Cards.rarityIndex(c.rarity) >= min; });
+  },
+
+  // ── 馬 ──
+  horse(id) { return this.data.horses.find(h => h.id === id) || null; },
+  stableFull() { return this.data.horses.length >= GAME_DATA.maxStable; },
+
+  bump(stat, n = 1) { this.data.stats[stat] = (this.data.stats[stat] || 0) + n; }
+};
+
+// ミッション進行
+const Missions = {
+  current() { return GAME_DATA.missions[Player.data.missions.index] || null; },
+
+  progress(m) {
+    if (m.check === 'srCount') return Player.hasRarityAtLeast('SR') ? 1 : 0;
+    return Player.data.stats[m.check] || 0;
+  },
+
+  isComplete(m) { return m && this.progress(m) >= m.target; },
+
+  claim() {
+    const m = this.current();
+    if (!this.isComplete(m)) return null;
+    Player.addMoney(m.reward.money || 0);
+    (m.reward.cards || []).forEach(id => Player.addCard(id));
+    Player.data.missions.index++;
+    Player.save();
+    return m;
+  }
+};
+</script>
+<script>
+// 競走馬データと共通ロジック
+'use strict';
+
+const STAT_KEYS = ['speed', 'stamina', 'power', 'guts', 'intelligence'];
+const DIST_KEYS = ['sprint', 'mile', 'classic', 'long'];
+
+const Horse = {
+  // 競走馬オブジェクトを作成（配合・NPC共通）
+  create(opts) {
+    const gender = opts.gender || (Math.random() < 0.5 ? 'male' : 'female');
+    return {
+      id: opts.id || Util.uid('h_'),
+      name: opts.name || this.randomName(gender),
+      rarity: opts.rarity || 'N',
+      gender,
+      age: opts.age || 2,
+      week: 0,
+      level: 1,
+      exp: 0,
+      stats: Object.assign({ speed: 50, stamina: 50, power: 50, guts: 50, intelligence: 50 }, opts.stats),
+      caps: Object.assign({}, opts.caps || opts.stats),
+      aptitude: Object.assign({ sprint: 50, mile: 50, classic: 50, long: 50, turf: 50, dirt: 50 }, opts.aptitude),
+      runningStyle: opts.runningStyle || 'senko',
+      growthType: opts.growthType || 'normal',
+      condition: opts.condition !== undefined ? opts.condition : 70,
+      fatigue: opts.fatigue || 0,
+      skills: opts.skills || [],
+      route: opts.route || null,
+      fatherId: opts.fatherId || '',
+      motherId: opts.motherId || '',
+      record: { races: 0, wins: 0, seconds: 0, thirds: 0, prizeMoney: 0, g1Wins: 0, gradedWins: 0 },
+      history: [],
+      bornAt: Date.now(),
+      hallOfFame: false
+    };
+  },
+
+  // gender を渡すと、性別に合わない語（レディ・キングなど）を避ける
+  randomName(gender) {
+    const avoid = gender === 'male' ? GAME_DATA.nameFemaleOnly : gender === 'female' ? GAME_DATA.nameMaleOnly
+      : GAME_DATA.nameFemaleOnly.concat(GAME_DATA.nameMaleOnly);
+    const ok = w => !avoid.includes(w);
+    return Util.pick(GAME_DATA.namePrefix.filter(ok)) + Util.pick(GAME_DATA.nameSuffix.filter(ok));
+  },
+
+  // 血統表（古いセーブには pedigree が無いので親カードから組み立てる）
+  pedigree(h) {
+    if (h.pedigree) return h.pedigree;
+    const f = Cards.get(h.fatherId), m = Cards.get(h.motherId);
+    return f && m ? Breeding.pedigreeOf(f, m) : { f: null, m: null, ff: null, fm: null, mf: null, mm: null };
+  },
+
+  distCat(distance) {
+    return GAME_DATA.distances.find(d => distance <= d.max).key;
+  },
+
+  overall(h) {
+    return Math.round(STAT_KEYS.reduce((s, k) => s + h.stats[k], 0) / STAT_KEYS.length);
+  },
+  potential(h) {
+    return Math.round(STAT_KEYS.reduce((s, k) => s + h.caps[k], 0) / STAT_KEYS.length);
+  },
+
+  bestDistance(h) {
+    return DIST_KEYS.reduce((a, b) => (h.aptitude[b] > h.aptitude[a] ? b : a));
+  },
+  bestSurface(h) { return h.aptitude.turf >= h.aptitude.dirt ? 'turf' : 'dirt'; },
+
+  mainAptText(h) {
+    const d = GAME_DATA.distances.find(x => x.key === this.bestDistance(h));
+    const s = GAME_DATA.surfaces.find(x => x.key === this.bestSurface(h));
+    return `${s.icon}${s.label}・${d.label}`;
+  },
+
+  conditionInfo(h) {
+    const c = h.condition;
+    if (c >= 90) return { label: '絶好調', icon: '😆', cls: 'c-best' };
+    if (c >= 70) return { label: '好調', icon: '😊', cls: 'c-good' };
+    if (c >= 45) return { label: '普通', icon: '🙂', cls: 'c-normal' };
+    if (c >= 25) return { label: '不調', icon: '😟', cls: 'c-bad' };
+    return { label: '絶不調', icon: '😫', cls: 'c-worst' };
+  },
+
+  fatigueInfo(h) {
+    const f = h.fatigue;
+    if (f >= 80) return { label: 'ヘトヘト', cls: 'f-max' };
+    if (f >= 60) return { label: 'かなり疲れ', cls: 'f-high' };
+    if (f >= 35) return { label: '少し疲れ', cls: 'f-mid' };
+    return { label: '元気', cls: 'f-low' };
+  },
+
+  genderLabel(h) { return h.gender === 'male' ? '♂ 牡' : '♀ 牝'; },
+
+  // 年齢と成長タイプによる成長倍率
+  growthMult(h) {
+    const table = GAME_DATA.growthTypes[h.growthType].mult;
+    return table[Util.clamp(h.age - 2, 0, table.length - 1)];
+  },
+
+  expToNext(h) { return 80 + h.level * 40; },
+
+  // 経験値を加え、レベルアップ時は全能力+1（限界まで）
+  addExp(h, n) {
+    h.exp += n;
+    let ups = 0;
+    while (h.exp >= this.expToNext(h)) {
+      h.exp -= this.expToNext(h);
+      h.level++;
+      ups++;
+      STAT_KEYS.forEach(k => { h.stats[k] = Math.min(h.caps[k], h.stats[k] + 1); });
+    }
+    return ups;
+  },
+
+  // 1週進める（調教・レース・休養のたびに呼ぶ）。誕生日なら true
+  advanceWeek(h) {
+    h.week++;
+    // 調子は少しずつランダムに揺れる
+    h.condition = Util.clamp(h.condition + Util.randInt(-6, 5), 0, 100);
+    if (h.week >= GAME_DATA.weeksPerYear) {
+      h.week = 0;
+      h.age++;
+      return true;
+    }
+    return false;
+  },
+
+  mustRetire(h) { return h.age >= GAME_DATA.retireAge; },
+
+  // おすすめ路線
+  recommendRoute(h) {
+    const best = this.bestDistance(h);
+    if (best === 'sprint') return 'sprint';
+    if (best === 'mile') {
+      if (h.gender === 'female' && h.age <= 3 && h.aptitude.turf >= 60) return 'filly';
+      return 'mile';
+    }
+    if (h.age <= 3) return h.gender === 'female' && h.aptitude.mile >= 60 ? 'filly' : 'classic';
+    return 'senior';
+  },
+
+  routeInfo(id) { return GAME_DATA.routes.find(r => r.id === id); },
+
+  // 素質（限界値の平均）から競走馬のレアリティを決める
+  rarityFromPotential(p) {
+    if (p >= 90) return 'UR';
+    if (p >= 83) return 'SSR';
+    if (p >= 75) return 'SR';
+    if (p >= 66) return 'R';
+    return 'N';
+  }
+};
+</script>
+<script>
+// 配合システム：種牡馬カード＋繁殖牝馬カード → 競走馬
+'use strict';
+
+const Breeding = {
+  VARIANCE: 5,       // 個体差（標準偏差）
+  TRAIT_BONUS: 4,    // 遺伝傾向の能力ボーナス
+
+  fee(father, mother) {
+    return GAME_DATA.breedingFee[father.rarity] + GAME_DATA.breedingFee[mother.rarity];
+  },
+
+  // 親の得意距離が同じなら相性ボーナス
+  compatibility(father, mother) {
+    const best = c => DIST_KEYS.reduce((a, b) => (c.apt[b] > c.apt[a] ? b : a));
+    let bonus = 0;
+    if (best(father) === best(mother)) bonus += 2;
+    if ((father.apt.turf >= 80 && mother.apt.turf >= 80) || (father.apt.dirt >= 80 && mother.apt.dirt >= 80)) bonus += 1;
+    return bonus;
+  },
+
+  // 先祖（自分を含む）のID一覧。殿堂馬カードは先祖情報を持つ。
+  lineage(card) { return [card.id, ...(card.ancestors || [])]; },
+
+  // 特殊配合の判定
+  specials(father, mother) {
+    const list = [];
+    const nick = GAME_DATA.nicks.find(n => n.sire === father.id && n.mare === mother.id);
+    if (nick) list.push({ key: 'nick', id: nick.sire + '+' + nick.mare, name: `黄金配合「${nick.name}」`, desc: `全能力+${nick.bonus}`, bonus: nick.bonus });
+    const shared = this.lineage(father).filter(id => this.lineage(mother).includes(id));
+    if (shared.length) {
+      const anc = Cards.get(shared[0]);
+      list.push({ key: 'inbreed', name: '奇跡の血量（インブリード）', desc: `共通の先祖${anc ? `「${anc.name}」` : ''}の力が濃く出る。得意な能力+6・得意距離の適性アップ`, bonus: 0 });
+    }
+    if (father.style === mother.style) list.push({ key: 'style', name: '脚質一致', desc: `子は必ず${GAME_DATA.styles[father.style].label}に。スキルも受け継ぎやすい`, bonus: 0 });
+    if (father.custom && mother.custom) list.push({ key: 'legend', name: '名馬の結晶', desc: '自家生産の名馬同士。全能力+2', bonus: 2 });
+    return list;
+  },
+
+  // ランダムを含まない期待値
+  expected(father, mother) {
+    const specials = this.specials(father, mother);
+    const has = k => specials.some(x => x.key === k);
+    const specialBonus = specials.reduce((sum, x) => sum + x.bonus, 0);
+    const compat = this.compatibility(father, mother);
+    const rarityBonus = (Cards.rarityIndex(father.rarity) + Cards.rarityIndex(mother.rarity)) * 0.5;
+    const stats = {};
+    STAT_KEYS.forEach(k => {
+      let wf = 0.5, wm = 0.5, bonus = rarityBonus + compat + specialBonus;
+      if (father.trait === k) { wf += 0.1; wm -= 0.1; bonus += this.TRAIT_BONUS; }
+      if (mother.trait === k) { wm += 0.1; wf -= 0.1; bonus += this.TRAIT_BONUS; }
+      if (father.trait === 'balance') bonus += 2;
+      if (mother.trait === 'balance') bonus += 2;
+      // 親の高い方の能力が少し引き継がれやすい
+      const hi = Math.max(father.stats[k], mother.stats[k]);
+      stats[k] = (father.stats[k] * wf + mother.stats[k] * wm) * 0.85 + hi * 0.15 + bonus;
+    });
+    if (has('inbreed')) {
+      const top = STAT_KEYS.reduce((a, b) => (stats[b] > stats[a] ? b : a));
+      stats[top] += 6;
+    }
+    const aptitude = {};
+    [...DIST_KEYS, 'turf', 'dirt'].forEach(k => {
+      const a = father.apt[k], b = mother.apt[k];
+      aptitude[k] = Math.max(a, b) * 0.6 + Math.min(a, b) * 0.4;
+    });
+    if (has('inbreed')) {
+      const best = DIST_KEYS.reduce((a, b) => (aptitude[b] > aptitude[a] ? b : a));
+      aptitude[best] = Math.min(100, aptitude[best] + 8);
+    }
+    return { stats, aptitude, specials };
+  },
+
+  // 初心者向けの配合予想
+  preview(father, mother) {
+    const exp = this.expected(father, mother);
+    const avg = STAT_KEYS.reduce((s, k) => s + exp.stats[k], 0) / STAT_KEYS.length;
+    const arrows = {};
+    STAT_KEYS.forEach(k => {
+      const v = exp.stats[k];
+      arrows[k] = v >= 82 ? '↑↑↑' : v >= 72 ? '↑↑' : v >= 62 ? '↑' : '→';
+    });
+    const bestDist = DIST_KEYS.reduce((a, b) => (exp.aptitude[b] > exp.aptitude[a] ? b : a));
+    const distOrder = DIST_KEYS.filter(k => exp.aptitude[k] >= exp.aptitude[bestDist] - 8);
+    const distLabels = distOrder.map(k => GAME_DATA.distances.find(d => d.key === k).label);
+    const surface = exp.aptitude.turf >= exp.aptitude.dirt ? '芝' : 'ダート';
+    const compat = this.compatibility(father, mother);
+    const score = Util.clamp(Math.round((avg - 45) / 9) + (compat >= 2 ? 1 : 0) + (exp.specials.length ? 1 : 0), 1, 5);
+
+    const topStat = STAT_KEYS.reduce((a, b) => (exp.stats[b] > exp.stats[a] ? b : a));
+    const statInfo = GAME_DATA.stats.find(s => s.key === topStat);
+    let comment = `${statInfo.label}の高い子供が生まれやすい組み合わせです。`;
+    if (compat >= 2) comment += ' 得意距離が同じで相性バツグン！';
+
+    return {
+      score, arrows, comment, compat, specials: exp.specials,
+      distText: distLabels.length > 1 ? `${distLabels[0]}～${distLabels[distLabels.length - 1]}` : distLabels[0],
+      surface,
+      fee: this.fee(father, mother)
+    };
+  },
+
+  // 配合を実行して新しい競走馬を作る（所持金・カード消費は呼び出し側）
+  breed(father, mother) {
+    const exp = this.expected(father, mother);
+    const caps = {};
+    STAT_KEYS.forEach(k => {
+      caps[k] = Math.round(Util.clamp(exp.stats[k] + Util.gauss() * this.VARIANCE, 30, 110));
+    });
+    const stats = {};
+    const startRate = Util.rand(0.66, 0.74);
+    STAT_KEYS.forEach(k => { stats[k] = Math.round(caps[k] * (startRate + Util.rand(-0.03, 0.03))); });
+
+    const aptitude = {};
+    Object.keys(exp.aptitude).forEach(k => {
+      aptitude[k] = Math.round(Util.clamp(exp.aptitude[k] + Util.gauss() * 7, 10, 100));
+    });
+
+    const styleKeys = Object.keys(GAME_DATA.styles);
+    const r = Math.random();
+    const sameStyle = exp.specials.some(x => x.key === 'style');
+    const runningStyle = sameStyle ? father.style : r < 0.4 ? father.style : r < 0.8 ? mother.style : Util.pick(styleKeys);
+    const g = Math.random();
+    const growthKeys = Object.keys(GAME_DATA.growthTypes);
+    const growthType = g < 0.45 ? father.growth : g < 0.9 ? mother.growth : Util.pick(growthKeys);
+
+    const potential = STAT_KEYS.reduce((s, k) => s + caps[k], 0) / STAT_KEYS.length;
+    const horse = Horse.create({
+      stats, caps, aptitude, runningStyle, growthType,
+      rarity: Horse.rarityFromPotential(potential),
+      condition: Util.randInt(60, 85),
+      fatherId: father.id, motherId: mother.id
+    });
+    horse.route = Horse.recommendRoute(horse);
+    horse.pedigree = this.pedigreeOf(father, mother);
+    horse.specials = exp.specials.map(x => x.name);
+
+    // 親のスキルを受け継ぐことがある（スキルカードとして入手）
+    let inherited = null;
+    if (Math.random() < (sameStyle ? 0.85 : 0.6)) {
+      inherited = Math.random() < 0.5 ? father.skill : mother.skill;
+      if (!Cards.get(inherited)) inherited = null;
+    }
+    return { horse, inherited, specials: exp.specials };
+  },
+
+  // 3代血統表（父・母・祖父母）のスナップショット
+  pedigreeOf(father, mother) {
+    const node = c => (c ? { id: c.id, name: c.name, rarity: c.rarity } : null);
+    const pp = c => (c.pedigree || {});
+    return {
+      f: node(father), m: node(mother),
+      ff: pp(father).f || null, fm: pp(father).m || null,
+      mf: pp(mother).f || null, mm: pp(mother).m || null
+    };
+  }
+};
+</script>
+<script>
+// 調教・休養・アイテム使用
+'use strict';
+
+const Training = {
+  menus: {
+    speed: { label: 'スピード調教', icon: '⚡', gains: { speed: 4, power: 1 }, fatigue: 14, exp: 20 },
+    stamina: { label: 'スタミナ調教', icon: '❤️', gains: { stamina: 4, guts: 1 }, fatigue: 14, exp: 20 },
+    power: { label: 'パワー調教', icon: '💪', gains: { power: 4, speed: 1 }, fatigue: 14, exp: 20 },
+    guts: { label: '根性調教', icon: '🔥', gains: { guts: 4, stamina: 1 }, fatigue: 12, exp: 20 },
+    intelligence: { label: '賢さ調教', icon: '🧠', gains: { intelligence: 4, speed: 1 }, fatigue: 8, exp: 20 },
+    light: { label: '軽め調教', icon: '🚶', gains: { speed: 1, stamina: 1, power: 1 }, fatigue: 4, condition: 4, exp: 12,
+      desc: '少しだけ鍛える。疲れにくく調子をキープ。' },
+    rest: { label: '休養', icon: '💤', gains: {}, fatigue: -45, condition: 12, exp: 0, desc: '疲労を大きく回復する。' }
+  },
+
+  // 路線ごとに重視する能力
+  routeWeights: {
+    sprint: { speed: 3, power: 2.5, guts: 1, stamina: 0.6, intelligence: 1 },
+    mile: { speed: 3, stamina: 2, power: 1.5, guts: 1, intelligence: 1 },
+    classic: { stamina: 2.5, speed: 2.5, power: 1.8, guts: 1.2, intelligence: 1 },
+    filly: { speed: 2.8, stamina: 2.2, power: 1.5, guts: 1, intelligence: 1 },
+    senior: { stamina: 3, speed: 2.2, guts: 1.8, power: 1.5, intelligence: 1 }
+  },
+
+  canTrain(h) {
+    if (Horse.mustRetire(h)) return { ok: false, reason: '引退の時期です。' };
+    return { ok: true };
+  },
+
+  // 調教効果の倍率（成長タイプ・調子・疲労）
+  efficiency(h) {
+    const cond = 0.8 + 0.4 * h.condition / 100;
+    const fat = h.fatigue >= 80 ? 0.35 : h.fatigue >= 60 ? 0.6 : h.fatigue >= 35 ? 0.85 : 1;
+    return Horse.growthMult(h) * cond * fat;
+  },
+
+  // 確率的に丸める（小さな値でも成長の可能性を残す）
+  roundRandom(v) {
+    const f = Math.floor(v);
+    return f + (Math.random() < v - f ? 1 : 0);
+  },
+
+  train(h, menuKey, itemMult = 1) {
+    const menu = this.menus[menuKey];
+    const eff = this.efficiency(h);
+    const gains = {};
+    Object.entries(menu.gains).forEach(([k, base]) => {
+      const raw = base * eff * Util.rand(0.8, 1.2) * (k === menuKey ? itemMult : 1);
+      const add = Math.min(this.roundRandom(raw), h.caps[k] - h.stats[k]);
+      if (add > 0) { h.stats[k] += add; gains[k] = add; }
+    });
+
+    let conditionDelta = menu.condition || 0;
+    if (menu.fatigue > 0 && h.fatigue >= 70) conditionDelta -= 10; // 疲れているのに追い込むと調子が落ちる
+    h.fatigue = Util.clamp(h.fatigue + menu.fatigue, 0, 100);
+    const birthday = Horse.advanceWeek(h);
+    h.condition = Util.clamp(h.condition + conditionDelta, 0, 100);
+    const levelUps = Horse.addExp(h, menu.exp);
+    Player.bump('trainCount');
+    return { menu, gains, levelUps, birthday, capped: Object.keys(menu.gains).length > 0 && Object.keys(gains).length === 0 && eff > 0.5 };
+  },
+
+  // おまかせ調教：路線・次のレース・疲労から自動で決める
+  autoPlan(h) {
+    if (h.fatigue >= 60) return { menu: 'rest', reason: '疲れがたまっているので、休ませます。' };
+    if (h.fatigue >= 40 || h.condition < 30) return { menu: 'light', reason: '疲れ気味なので、軽めに調整します。' };
+
+    const route = h.route || Horse.recommendRoute(h);
+    const next = Race.nextRace(h, route);
+    let weights = Object.assign({}, this.routeWeights[route]);
+    let lead = `目標は${Horse.routeInfo(route).name}路線です。`;
+    if (next) {
+      const cat = Horse.distCat(next.distance);
+      const catLabel = GAME_DATA.distances.find(d => d.key === cat).label;
+      lead = `次のレースは「${next.name}」（${catLabel}・${next.distance}m）です。`;
+      if (cat === 'sprint') { weights.speed += 1; weights.power += 0.5; }
+      if (cat === 'long') { weights.stamina += 1.5; }
+      if (cat === 'classic') { weights.stamina += 0.7; }
+      if (next.surface === 'dirt') weights.power += 0.8;
+    }
+    // 伸びしろ（限界との差）× 重要度 が一番大きい能力を鍛える
+    let best = null, bestScore = -1;
+    STAT_KEYS.forEach(k => {
+      const room = h.caps[k] - h.stats[k];
+      const score = room > 0 ? weights[k] * (room + 3) : 0;
+      if (score > bestScore) { bestScore = score; best = k; }
+    });
+    if (bestScore <= 0) return { menu: 'light', reason: `${lead} 能力が限界に近いので、軽めに調整します。` };
+    const label = GAME_DATA.stats.find(s => s.key === best).label;
+    return { menu: best, reason: `${lead} ${label}中心に調整します。` };
+  },
+
+  // アイテム使用
+  useItem(h, itemId) {
+    const item = Cards.get(itemId);
+    if (!item || item.type !== 'item' || !Player.removeCard(itemId)) return null;
+    const u = item.use;
+    let result;
+    if (u.train) {
+      result = this.train(h, u.train, u.mult);
+    } else {
+      result = { gains: {}, levelUps: 0 };
+      if (u.fatigue) h.fatigue = Util.clamp(h.fatigue + u.fatigue, 0, 100);
+      if (u.condition) h.condition = Util.clamp(h.condition + u.condition, 0, 100);
+      if (u.exp) result.levelUps = Horse.addExp(h, u.exp);
+      if (u.allCaps) STAT_KEYS.forEach(k => { h.caps[k] += u.allCaps; });
+      if (u.allStats) STAT_KEYS.forEach(k => {
+        const add = Math.min(u.allStats, h.caps[k] - h.stats[k]);
+        if (add > 0) { h.stats[k] += add; result.gains[k] = add; }
+      });
+    }
+    result.item = item;
+    return result;
+  }
+};
+</script>
+<script>
+// スキル：装備と、レース中の自動発動判定
+'use strict';
+
+const Skills = {
+  MAX_SLOTS: 3,
+  STYLE_MISMATCH: 0.6, // 脚質が合わないスキルの効果倍率
+
+  get(id) { const c = Cards.get(id); return c && c.type === 'skill' ? c : null; },
+
+  // 優先順位：レアリティが高いほど先に判定
+  priority(skill) { return Cards.rarityIndex(skill.rarity); },
+
+  equip(h, skillId) {
+    if (h.skills.length >= this.MAX_SLOTS) return { ok: false, reason: 'スキル枠がいっぱいです（最大3つ）。' };
+    if (h.skills.includes(skillId)) return { ok: false, reason: '同じスキルは装備できません。' };
+    if (!Player.removeCard(skillId)) return { ok: false, reason: 'スキルカードを持っていません。' };
+    h.skills.push(skillId);
+    Player.bump('equipCount');
+    return { ok: true };
+  },
+
+  unequip(h, skillId) {
+    const i = h.skills.indexOf(skillId);
+    if (i < 0) return false;
+    h.skills.splice(i, 1);
+    Player.addCard(skillId);
+    return true;
+  },
+
+  isMatch(skill, style) { return !skill.style || skill.style === style; },
+
+  // レース中の状態 ctx がスキル条件を満たすか
+  // ctx: { phase, remain, rank, distCat, ground, close }
+  conditionMet(skill, ctx) {
+    const c = skill.cond;
+    if (c.phase && c.phase !== ctx.phase) return false;
+    if (c.remainMax !== undefined && !(ctx.remain <= c.remainMax && ctx.remain > 0)) return false;
+    if (c.rankMin !== undefined && ctx.rank < c.rankMin) return false;
+    if (c.rankMax !== undefined && ctx.rank > c.rankMax) return false;
+    if (c.distCat && c.distCat !== ctx.distCat) return false;
+    if (c.groundMin !== undefined && ctx.ground < c.groundMin) return false;
+    if (c.close && !ctx.close) return false;
+    return true;
+  },
+
+  // 条件を満たしている間、毎秒この確率で発動判定（賢さで上がる）
+  activationChance(intelligence) {
+    return Util.clamp(0.18 + intelligence * 0.003, 0.18, 0.6);
+  },
+
+  // 効果（脚質が合わなければ弱くなる）
+  effectFor(skill, style) {
+    const m = this.isMatch(skill, style) ? 1 : this.STYLE_MISMATCH;
+    return {
+      speed: (skill.effect.speed || 0) * m,
+      hp: (skill.effect.hp || 0) * m,
+      duration: skill.effect.duration || 1
+    };
+  }
+};
+</script>
+<script>
+// レースシステム
+// 「結果計算（simulate）」は表示から完全に分離した純粋な計算。
+// 返り値の events（実況）と frames（毎秒の位置）を使って、UI側がログ表示や将来の2Dアニメーションを行う。
+'use strict';
+
+const Race = {
+  DT: 0.5,             // シミュレーション刻み（秒）
+  FRAME_INTERVAL: 0.5, // frames を記録する間隔（秒）
+  NPC_VARIANCE: 4,
+  SKILL_SCALE: 0.5,     // スキル効果（データ上の数値）を実際の速度補正に変換する係数
+
+  // 脚質ごとの区間速度補正
+  styleMult: {
+    nige: { start: 1.025, mid: 1.01, corner: 0.998, final: 0.988 },
+    senko: { start: 1.015, mid: 1.005, corner: 1.002, final: 0.995 },
+    sashi: { start: 0.993, mid: 0.997, corner: 1.008, final: 1.018 },
+    oikomi: { start: 0.982, mid: 0.992, corner: 1.012, final: 1.03 }
+  },
+
+  // 脚質ごとの体力消費（前に行くほど消耗する）
+  styleCost: { nige: 1.05, senko: 1.02, sashi: 1.0, oikomi: 0.98 },
+
+  get(id) { return GAME_DATA.races.find(r => r.id === id); },
+  routeRaces(route) { return GAME_DATA.races.filter(r => r.route === route); },
+  gradeInfo(race) { return GAME_DATA.grades[race.grade]; },
+
+  // ── 出走条件 ──
+  eligibility(h, race) {
+    const w = h.record.wins;
+    if (Horse.mustRetire(h)) return { ok: false, reason: '引退の時期です' };
+    if (race.female && h.gender !== 'female') return { ok: false, reason: '牝馬限定' };
+    if (race.ageMin && h.age < race.ageMin) return { ok: false, reason: `${race.ageMin}歳から` };
+    if (race.ageMax && h.age > race.ageMax) return { ok: false, reason: `${race.ageMax}歳まで` };
+    if (race.minWins && w < race.minWins) return { ok: false, reason: `${race.minWins}勝以上で出走可（あと${race.minWins - w}勝）` };
+    if (race.maxWins !== undefined && w > race.maxWins) return { ok: false, reason: race.maxWins === 0 ? '勝ち上がり済み' : `${race.maxWins}勝以下限定` };
+    if (h.fatigue >= 80) return { ok: false, reason: '疲れすぎ。休ませよう' };
+    return { ok: true };
+  },
+
+  available(h, route) {
+    return this.routeRaces(route).map(race => ({ race, elig: this.eligibility(h, race) }));
+  },
+
+  // 適性の合うレースの中で、一番格の高いレースをすすめる
+  fit(h, race) { return h.aptitude[Horse.distCat(race.distance)] + h.aptitude[race.surface]; },
+
+  nextRace(h, route) {
+    const ok = this.available(h, route).filter(x => x.elig.ok || x.elig.reason === '疲れすぎ。休ませよう').map(x => x.race);
+    if (!ok.length) return null;
+    const bestFit = Math.max(...ok.map(r => this.fit(h, r)));
+    const suitable = ok.filter(r => this.fit(h, r) >= bestFit - 25);
+    return suitable.reduce((a, b) => {
+      const d = this.gradeInfo(b).order - this.gradeInfo(a).order;
+      return d > 0 || (d === 0 && this.fit(h, b) > this.fit(h, a)) ? b : a;
+    });
+  },
+
+  // ── 出走馬を作る ──
+  makeNpc(race) {
+    const base = this.gradeInfo(race).npc;
+    const cat = Horse.distCat(race.distance);
+    const stats = {};
+    STAT_KEYS.forEach(k => { stats[k] = base + Util.gauss() * this.NPC_VARIANCE; });
+    if (cat === 'sprint') { stats.speed += 3; stats.power += 3; stats.stamina -= 6; }
+    if (cat === 'long') { stats.stamina += 8; stats.speed -= 2; }
+    if (cat === 'classic') { stats.stamina += 4; }
+    STAT_KEYS.forEach(k => { stats[k] = Math.round(Util.clamp(stats[k], 25, 120)); });
+
+    const aptitude = {};
+    DIST_KEYS.forEach(k => { aptitude[k] = Util.randInt(20, 80); });
+    aptitude.turf = Util.randInt(20, 80);
+    aptitude.dirt = Util.randInt(20, 80);
+    aptitude[cat] = Util.randInt(70, 100);
+    aptitude[race.surface] = Util.randInt(70, 100);
+
+    const runningStyle = Util.weighted({ nige: 18, senko: 32, sashi: 32, oikomi: 18 });
+    const skillCount = { debut: 0, maiden: Math.random() < 0.4 ? 1 : 0, cond: 1, op: 1, g3: Util.randInt(1, 2), g2: 2, g1: Util.randInt(2, 3) }[race.grade];
+    const pool = GAME_DATA.skills.filter(s => (!s.style || s.style === runningStyle) && s.rarity !== 'UR');
+    const skills = [];
+    while (skills.length < skillCount && pool.length) {
+      const s = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+      skills.push(s.id);
+    }
+    return {
+      id: Util.uid('npc_'), name: Horse.randomName(), isPlayer: false,
+      stats, aptitude, runningStyle, skills,
+      condition: Util.randInt(55, 100), fatigue: Util.randInt(0, 20)
+    };
+  },
+
+  buildField(h, race) {
+    const entrants = [{
+      id: h.id, name: h.name, isPlayer: true,
+      stats: Object.assign({}, h.stats), aptitude: Object.assign({}, h.aptitude),
+      runningStyle: h.runningStyle, skills: h.skills.slice(),
+      condition: h.condition, fatigue: h.fatigue
+    }];
+    const used = new Set([h.name]);
+    while (entrants.length < race.field) {
+      const npc = this.makeNpc(race);
+      if (used.has(npc.name)) continue;
+      used.add(npc.name);
+      entrants.push(npc);
+    }
+    // 枠順をシャッフル
+    for (let i = entrants.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [entrants[i], entrants[j]] = [entrants[j], entrants[i]];
+    }
+    return entrants;
+  },
+
+  rollGround(race) {
+    const table = {};
+    GAME_DATA.grounds.forEach(g => { table[g.key] = race.surface === 'dirt' ? g.weight + (g.key ? 5 : 0) : g.weight; });
+    return Number(Util.weighted(table));
+  },
+
+  // ── レース計算（表示とは独立） ──
+  simulate(race, entrants, ground) {
+    const D = race.distance;
+    const distCat = Horse.distCat(D);
+    if (ground === undefined) ground = this.rollGround(race);
+    const finalStart = D - Math.min(400, D * 0.3);
+    const cornerStart = finalStart - Math.max(300, D * 0.15);
+    const startEnd = Math.max(200, D * 0.15);
+    const phaseAt = pos => (pos < startEnd ? 'start' : pos < cornerStart ? 'mid' : pos < finalStart ? 'corner' : 'final');
+    // 脚質補正は距離に依存しないよう、進んだ割合で区間を決める
+    const stylePhaseAt = pos => {
+      const p = pos / D;
+      return p < 0.15 ? 'start' : p < 0.6 ? 'mid' : p < 0.75 ? 'corner' : 'final';
+    };
+
+    const runners = entrants.map((e, gate) => {
+      const s = e.stats;
+      const aptMul = (0.93 + 0.07 * e.aptitude[distCat] / 100) * (0.96 + 0.04 * e.aptitude[race.surface] / 100);
+      const groundMul = 1 - ground * 0.006 * (1 - Math.min(s.power, 120) / 130);
+      const condMul = (0.98 + 0.02 * e.condition / 100) * (1 - 0.025 * e.fatigue / 100);
+      const form = 1 + Util.gauss() * 0.004 * (1.2 - s.intelligence / 250);
+      const skills = e.skills.map(id => Skills.get(id)).filter(Boolean)
+        .sort((a, b) => Skills.priority(b) - Skills.priority(a));
+      const maxHp = 300 + s.stamina * 22 + s.guts * 4;
+      return {
+        e, gate, pos: 0, v: 0, hp: maxHp, maxHp,
+        mul: aptMul * groundMul * condMul * form,
+        skills, usedSkills: new Set(), active: [],
+        finished: false, time: null, exhaustedLogged: false
+      };
+    });
+
+    const events = [];
+    const frames = [];
+    const say = (t, text, extra) => events.push(Object.assign({ t: Math.round(t * 10) / 10, type: 'text', text }, extra));
+    const order = () => runners.slice().sort((a, b) => (a.finished && b.finished ? a.time - b.time : b.pos - a.pos));
+    const snapshot = () => order().map(r => r.e.id);
+    const lengthsBehind = (lead, r) => Math.max(0, (lead.pos - r.pos) / 2.4);
+    const checkpointsDone = new Set();
+    const checkpoint = (key, label, t, text) => {
+      if (checkpointsDone.has(key)) return;
+      checkpointsDone.add(key);
+      const o = order();
+      events.push({
+        t: Math.round(t * 10) / 10, type: 'checkpoint', key, label, text,
+        order: o.map(r => r.e.id),
+        gaps: o.map(r => Math.round(lengthsBehind(o[0], r) * 10) / 10)
+      });
+    };
+    const name = r => r.e.name;
+
+    checkpoint('start', 'スタート', 0, `${race.name}、各馬いっせいにスタート！`);
+    let t = 0, lastLeader = null, nextFrame = 0;
+    const maxT = D / 8;
+    while (runners.some(r => !r.finished) && t < maxT) {
+      const ranked = order();
+      const leaderPos = ranked[0].pos;
+
+      // ── 実況のチェックポイント（先頭の位置で判定） ──
+      if (leaderPos >= Math.min(150, D * 0.1)) {
+        const r0 = ranked[0];
+        checkpoint('early', '序盤', t, `${name(r0)}がハナを切りました。2番手に${name(ranked[1])}。`);
+      }
+      if (leaderPos >= cornerStart * 0.6 && D >= 1400) {
+        checkpoint('mid', '中盤', t, `中盤に入って先頭は${name(ranked[0])}、2番手に${name(ranked[1])}。`);
+      }
+      if (D - leaderPos <= 800 && D >= 1400) {
+        checkpoint('r800', '残り800m', t, `残り800m！ 各馬が動き始めた！`);
+      }
+      if (leaderPos >= cornerStart) {
+        const movers = ranked.filter(r => (r.e.runningStyle === 'sashi' || r.e.runningStyle === 'oikomi')).slice(0, 2);
+        checkpoint('corner', '第4コーナー', t, movers.length
+          ? `第4コーナー！ ${movers.map(name).join('、')}が外から進出！`
+          : '第4コーナーを回って直線へ！');
+      }
+      if (D - leaderPos <= 400) checkpoint('r400', '残り400m', t, `残り400m！ 最後の直線！`);
+      if (D - leaderPos <= 200) {
+        const a = ranked[0], b = ranked[1];
+        const close = a.pos - b.pos < 2.4;
+        checkpoint('r200', '残り200m', t, close ? `残り200m！ ${name(a)}と${name(b)}の叩き合い！` : `残り200m！ ${name(a)}が抜け出した！`);
+      }
+
+      // 最終直線での先頭交代
+      if (lastLeader && ranked[0] !== lastLeader && phaseAt(leaderPos) === 'final' && !ranked[0].finished) {
+        say(t, `${name(ranked[0])}が先頭に立った！`, { horseId: ranked[0].e.id });
+      }
+      lastLeader = ranked[0];
+
+      // ── 各馬の移動 ──
+      ranked.forEach((r, idx) => {
+        if (r.finished) return;
+        const s = r.e.stats;
+        const phase = phaseAt(r.pos);
+        const rank = idx + 1;
+        const remain = D - r.pos;
+
+        // スキル判定（1刻みにつき1つまで、優先順位順）
+        const neighbor = ranked.some(o => o !== r && !o.finished && Math.abs(o.pos - r.pos) < 1.5);
+        const ctx = { phase, remain, rank, distCat, ground, close: phase === 'final' && neighbor };
+        for (const sk of r.skills) {
+          if (r.usedSkills.has(sk.id) || !Skills.conditionMet(sk, ctx)) continue;
+          if (Math.random() > Skills.activationChance(s.intelligence) * this.DT) continue;
+          r.usedSkills.add(sk.id);
+          const eff = Skills.effectFor(sk, r.e.runningStyle);
+          if (eff.hp) r.hp = Math.min(r.maxHp, r.hp + eff.hp);
+          if (eff.speed) r.active.push({ speed: eff.speed, until: t + eff.duration });
+          events.push({
+            t: Math.round(t * 10) / 10, type: 'skill', horseId: r.e.id, isPlayer: r.e.isPlayer,
+            skillId: sk.id, text: `${sk.icon}「${sk.name}」発動！`, sub: `${name(r)} ${eff.speed ? '加速！' : '体力回復！'}`,
+            matched: Skills.isMatch(sk, r.e.runningStyle)
+          });
+          break;
+        }
+        r.active = r.active.filter(a => a.until > t);
+        const skillMul = 1 + this.SKILL_SCALE * r.active.reduce((sum, a) => sum + a.speed, 0);
+
+        // 目標速度
+        let base = 16 + s.speed * 0.012;
+        if (phase === 'final') base = 16 + s.speed * 0.0135 + s.guts * 0.0015;
+        let target = base * this.styleMult[r.e.runningStyle][stylePhaseAt(r.pos)] * r.mul * skillMul;
+        target *= 1 + Util.gauss() * 0.002;
+        let costMul = 1;
+        if (phase === 'final' && r.hp > 0) {
+          target *= 1.02 + s.guts * 0.0001; // ラストスパート
+          costMul = 1.4;
+        }
+        if (r.hp <= 0) {
+          target *= 0.93 + s.guts * 0.0003; // バテた
+          if (!r.exhaustedLogged && phase !== 'start') {
+            r.exhaustedLogged = true;
+            if (r.e.isPlayer || rank <= 3) say(t, `${name(r)}、苦しくなった！`, { horseId: r.e.id, isPlayer: r.e.isPlayer });
+          }
+        }
+
+        // 加速（パワー）
+        const accel = Math.min(1, (0.3 + s.power * 0.004) * this.DT);
+        r.v += (target - r.v) * accel;
+        const move = r.v * this.DT;
+        r.hp -= move * 0.75 * Math.pow(r.v / 16.5, 2) * costMul * this.styleCost[r.e.runningStyle];
+        const prev = r.pos;
+        r.pos += move;
+        if (r.pos >= D) {
+          r.finished = true;
+          r.time = t + this.DT * ((D - prev) / (r.pos - prev));
+          r.pos = D;
+        }
+      });
+
+      t += this.DT;
+      if (t >= nextFrame) {
+        frames.push({ t, pos: runners.map(r => Math.round(r.pos * 10) / 10) });
+        nextFrame += this.FRAME_INTERVAL;
+      }
+    }
+
+    // ── 着順 ──
+    const final = runners.slice().sort((a, b) => (a.time ?? 1e9) - (b.time ?? 1e9));
+    const winner = final[0];
+    const finish = final.map((r, i) => {
+      const prev = final[i - 1];
+      return {
+        id: r.e.id, name: r.e.name, isPlayer: r.e.isPlayer, place: i + 1,
+        style: r.e.runningStyle,
+        time: r.time,
+        margin: prev ? this.marginText((r.time - prev.time) * r.v / 2.4) : ''
+      };
+    });
+    const second = final[1];
+    const goalText = second && second.time - winner.time < 0.08
+      ? `${name(winner)}、${name(second)}をわずかに抑えてゴール！`
+      : `${name(winner)}、先頭でゴールイン！`;
+    checkpoint('goal', 'ゴール', winner.time, goalText);
+
+    return {
+      raceId: race.id, name: race.name, grade: race.grade, distance: D, surface: race.surface,
+      distCat, ground,
+      entrants: runners.map(r => ({ id: r.e.id, name: r.e.name, owner: r.e.owner || '', isPlayer: r.e.isPlayer, isGhost: !!r.e.isGhost, style: r.e.runningStyle, gate: r.gate + 1 })),
+      finish, events: events.sort((a, b) => a.t - b.t), frames,
+      phases: { startEnd, cornerStart, finalStart }
+    };
+  },
+
+  marginText(lengths) {
+    if (lengths < 0.08) return 'ハナ';
+    if (lengths < 0.2) return 'アタマ';
+    if (lengths < 0.35) return 'クビ';
+    if (lengths > 10) return '大差';
+    const half = Math.round(lengths * 4) / 4;
+    const whole = Math.floor(half);
+    const frac = { 0: '', 0.25: '1/4', 0.5: '1/2', 0.75: '3/4' }[half - whole];
+    return whole ? `${whole}${frac ? ' ' + frac : ''}馬身` : `${frac}馬身`;
+  },
+
+  timeText(sec) {
+    const m = Math.floor(sec / 60);
+    const s = (sec - m * 60).toFixed(1);
+    return `${m}:${s.padStart(4, '0')}`;
+  },
+
+  // ── 報酬（結果をプレイヤーデータへ反映） ──
+  PRIZE_RATE: [1, 0.4, 0.25, 0.15, 0.1],
+
+  applyResult(h, race, result) {
+    const me = result.finish.find(f => f.isPlayer);
+    const place = me.place;
+    const g = this.gradeInfo(race);
+    const prize = Math.round(g.prize * (this.PRIZE_RATE[place - 1] || 0));
+    const exp = Math.round(g.exp * (place === 1 ? 1.5 : place <= 3 ? 1.1 : 0.7));
+
+    const rec = h.record;
+    rec.races++;
+    if (place === 1) rec.wins++;
+    if (place === 2) rec.seconds++;
+    if (place === 3) rec.thirds++;
+    rec.prizeMoney += prize;
+    const graded = ['g3', 'g2', 'g1'].includes(race.grade);
+    if (place === 1 && graded) rec.gradedWins++;
+    if (place === 1 && race.grade === 'g1') rec.g1Wins++;
+    h.history.unshift({
+      raceId: race.id, name: race.name, grade: race.grade, distance: race.distance, surface: race.surface,
+      place, field: result.finish.length, age: h.age, ground: result.ground
+    });
+    if (h.history.length > 40) h.history.length = 40;
+
+    Player.addMoney(prize);
+    Player.bump('raceCount');
+    if (place === 1) Player.bump('winCount');
+    if (graded) Player.bump('gradedRaceCount');
+    if (race.grade === 'g1') Player.bump('g1RaceCount');
+    if (race.grade === 'g1' && place === 1) Player.bump('g1WinCount');
+
+    // カード報酬：1着は確定（GⅠは2枚）、2〜3着は50%（ひとつ下の格の確率表）
+    const cards = [];
+    const drawCount = place === 1 ? (race.grade === 'g1' ? 2 : 1) : place <= 3 && Math.random() < 0.5 ? 1 : 0;
+    const gradeKeys = Object.keys(GAME_DATA.grades);
+    const dropGrade = place === 1 ? race.grade : gradeKeys[Math.max(0, gradeKeys.indexOf(race.grade) - 1)];
+    for (let i = 0; i < drawCount; i++) {
+      const c = Cards.drawReward(dropGrade);
+      const isNew = !Player.data.seenCards.includes(c.id);
+      Player.addCard(c.id);
+      cards.push({ card: c, isNew });
+    }
+
+    // 疲労・調子・成長
+    h.fatigue = Util.clamp(h.fatigue + 18 + race.distance / 200, 0, 100);
+    const birthday = Horse.advanceWeek(h);
+    h.condition = Util.clamp(h.condition + (place === 1 ? 10 : place <= 3 ? 3 : -4), 0, 100);
+    const levelUps = Horse.addExp(h, exp);
+
+    // コースレコード（自分の馬の最速タイム）
+    const records = Player.data.records;
+    const prevRec = records[race.id];
+    const newRecord = !prevRec || me.time < prevRec.time;
+    if (newRecord) records[race.id] = { time: me.time, name: h.name, place, at: Date.now() };
+
+    return { place, prize, exp, cards, levelUps, birthday, field: result.finish.length, newRecord: newRecord && !!prevRec };
+  }
+};
+</script>
+<script>
+// 対戦：リーグ戦（CPU馬主との対戦・レーティング）と、対戦コードによるフレンド対戦
+// どちらもレース計算は Race.simulate を使い、オートで決着する。
+'use strict';
+
+const Pvp = {
+  FIELD: 8,
+  FATIGUE: 10,
+
+  league(id) { return GAME_DATA.leagues.find(l => l.id === id); },
+
+  isUnlocked(league) { return Player.data.pvp.rating >= league.minRating; },
+
+  canEnter(h) {
+    if (Horse.mustRetire(h)) return { ok: false, reason: '引退の時期です' };
+    if (h.fatigue >= 80) return { ok: false, reason: '疲れすぎ。休ませよう' };
+    return { ok: true };
+  },
+
+  // リーグの能力上限を適用
+  capStats(stats, cap) {
+    const out = {};
+    STAT_KEYS.forEach(k => { out[k] = cap ? Math.min(stats[k], cap) : stats[k]; });
+    return out;
+  },
+
+  playerEntrant(h, cap) {
+    return {
+      id: h.id, name: h.name, owner: Player.data.name, isPlayer: true,
+      stats: this.capStats(h.stats, cap), aptitude: Object.assign({}, h.aptitude),
+      runningStyle: h.runningStyle, skills: h.skills.slice(),
+      condition: h.condition, fatigue: h.fatigue
+    };
+  },
+
+  // CPUのライバル馬主の馬（スキル3つ持ち）
+  makeRival(level, course, cap, usedNames, allowUR) {
+    const cat = Horse.distCat(course.distance);
+    const stats = {};
+    STAT_KEYS.forEach(k => { stats[k] = Math.round(Util.clamp(level + Util.gauss() * 5, 30, 125)); });
+    if (cat === 'long') stats.stamina += 6;
+    if (cat === 'sprint') stats.power += 4;
+    const aptitude = {};
+    DIST_KEYS.forEach(k => { aptitude[k] = Util.randInt(30, 85); });
+    aptitude.turf = Util.randInt(30, 85);
+    aptitude.dirt = Util.randInt(30, 85);
+    aptitude[cat] = Util.randInt(75, 100);
+    aptitude[course.surface] = Util.randInt(75, 100);
+    const runningStyle = Util.pick(Object.keys(GAME_DATA.styles));
+    const pool = GAME_DATA.skills.filter(s => (!s.style || s.style === runningStyle) && (allowUR || s.rarity !== 'UR'));
+    const skills = [];
+    while (skills.length < 3 && pool.length) skills.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0].id);
+    let name;
+    do { name = Horse.randomName(); } while (usedNames.has(name));
+    usedNames.add(name);
+    return {
+      id: Util.uid('rv_'), name, owner: Util.pick(GAME_DATA.rivalOwners) + '厩舎', isPlayer: false,
+      stats: this.capStats(stats, cap), aptitude, runningStyle, skills,
+      condition: Util.randInt(60, 100), fatigue: Util.randInt(0, 15)
+    };
+  },
+
+  makeRace(id, name, grade, course) {
+    return { id, name, grade, distance: course.distance, surface: course.surface, field: this.FIELD };
+  },
+
+  shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  },
+
+  // ── リーグ戦 ──
+  buildLeagueMatch(h, leagueId) {
+    const league = this.league(leagueId);
+    const course = Util.pick(GAME_DATA.leagueCourses);
+    const label = `${course.surface === 'turf' ? '芝' : 'ダート'}${course.distance}m`;
+    const race = this.makeRace('league_' + league.id, `${league.name}（${label}）`, league.grade, course);
+    const used = new Set([h.name]);
+    const field = [this.playerEntrant(h, league.statCap)];
+    while (field.length < this.FIELD) field.push(this.makeRival(league.npc, course, league.statCap, used, league.id === 'gold'));
+    return { kind: 'league', league, race, field: this.shuffle(field), ground: Race.rollGround(race) };
+  },
+
+  applyLeague(h, match, result) {
+    const me = result.finish.find(f => f.isPlayer);
+    const place = me.place;
+    const pvp = Player.data.pvp;
+    const delta = GAME_DATA.ratingDelta[place - 1] ?? -16;
+    const before = pvp.rating;
+    pvp.rating = Math.max(800, pvp.rating + delta);
+    pvp.best = Math.max(pvp.best, pvp.rating);
+    pvp.matches++;
+    if (place === 1) {
+      pvp.wins++;
+      pvp.leagueWins[match.league.id] = (pvp.leagueWins[match.league.id] || 0) + 1;
+    }
+    const prize = Math.round(match.league.prize * (Race.PRIZE_RATE[place - 1] || 0));
+    Player.addMoney(prize);
+    const cards = [];
+    if (place === 1) {
+      const c = Cards.drawReward(match.league.grade);
+      const isNew = !Player.data.seenCards.includes(c.id);
+      Player.addCard(c.id);
+      cards.push({ card: c, isNew });
+    }
+    const exp = place === 1 ? 60 : place <= 3 ? 40 : 25;
+    const levelUps = Horse.addExp(h, exp);
+    h.fatigue = Util.clamp(h.fatigue + this.FATIGUE, 0, 100);
+    // 新しいリーグ解放の判定
+    const unlocked = GAME_DATA.leagues.filter(l => before < l.minRating && pvp.rating >= l.minRating);
+    return { place, prize, exp, cards, levelUps, field: result.finish.length, rating: pvp.rating, delta, unlocked };
+  },
+
+  // ── 対戦コード（フレンド対戦） ──
+  PREFIX: 'UMA1.',
+
+  toB64(str) {
+    const bytes = new TextEncoder().encode(str);
+    let bin = '';
+    bytes.forEach(b => { bin += String.fromCharCode(b); });
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  },
+  fromB64(b64) {
+    const s = b64.replace(/-/g, '+').replace(/_/g, '/');
+    const bin = atob(s + '='.repeat((4 - s.length % 4) % 4));
+    return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
+  },
+  checksum(str) {
+    let h = 7;
+    for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 999983;
+    return h.toString(36);
+  },
+
+  exportCode(h) {
+    const data = {
+      n: h.name, o: Player.data.name, r: h.rarity, g: h.gender === 'male' ? 1 : 0,
+      s: STAT_KEYS.map(k => h.stats[k]),
+      a: [...DIST_KEYS, 'turf', 'dirt'].map(k => h.aptitude[k]),
+      st: h.runningStyle, k: h.skills.slice(0, 3),
+      w: h.record.wins, rc: h.record.races, g1: h.record.g1Wins
+    };
+    const body = this.toB64(JSON.stringify(data));
+    return this.PREFIX + body + '.' + this.checksum(body);
+  },
+
+  importCode(code) {
+    const text = String(code || '').trim().replace(/\s+/g, '');
+    if (!text.startsWith(this.PREFIX)) throw new Error('対戦コードの形式が違います（UMA1. で始まるコードを貼り付けてね）');
+    const rest = text.slice(this.PREFIX.length);
+    const dot = rest.lastIndexOf('.');
+    const body = rest.slice(0, dot), sum = rest.slice(dot + 1);
+    if (dot < 0 || this.checksum(body) !== sum) throw new Error('コードが壊れています。最後まで正しくコピーできているか確認してね');
+    let d;
+    try { d = JSON.parse(this.fromB64(body)); } catch (e) { throw new Error('コードを読み取れませんでした'); }
+    if (!Array.isArray(d.s) || d.s.length !== 5 || !Array.isArray(d.a) || d.a.length !== 6) throw new Error('コードの中身が正しくありません');
+    const num = (v, lo, hi) => Util.clamp(Math.round(Number(v) || 0), lo, hi);
+    const stats = {}, aptitude = {};
+    STAT_KEYS.forEach((k, i) => { stats[k] = num(d.s[i], 1, 140); });
+    [...DIST_KEYS, 'turf', 'dirt'].forEach((k, i) => { aptitude[k] = num(d.a[i], 0, 100); });
+    return {
+      id: Util.uid('gh_'),
+      name: String(d.n || '名無しの馬').slice(0, 12),
+      owner: String(d.o || 'フレンド').slice(0, 12),
+      rarity: GAME_DATA.rarities.includes(d.r) ? d.r : 'N',
+      gender: d.g ? 'male' : 'female',
+      stats, aptitude,
+      runningStyle: GAME_DATA.styles[d.st] ? d.st : 'senko',
+      skills: (Array.isArray(d.k) ? d.k : []).filter(id => Skills.get(id)).slice(0, 3),
+      record: { wins: num(d.w, 0, 999), races: num(d.rc, 0, 999), g1Wins: num(d.g1, 0, 999) },
+      vs: { win: 0, lose: 0 },
+      addedAt: Date.now()
+    };
+  },
+
+  addGhost(code) {
+    const g = this.importCode(code);
+    const list = Player.data.ghosts;
+    const dup = list.find(x => x.name === g.name && x.owner === g.owner);
+    if (dup) { Object.assign(dup, g, { id: dup.id, vs: dup.vs }); return dup; }
+    list.unshift(g);
+    if (list.length > 12) list.length = 12;
+    return g;
+  },
+
+  ghostEntrant(g, cap) {
+    return {
+      id: 'e_' + g.id, ghostId: g.id, name: g.name, owner: g.owner + '厩舎', isPlayer: false, isGhost: true,
+      stats: this.capStats(g.stats, cap), aptitude: Object.assign({}, g.aptitude),
+      runningStyle: g.runningStyle, skills: g.skills.slice(), condition: 85, fatigue: 0
+    };
+  },
+
+  buildFriendMatch(h, ghostIds, course, cap) {
+    const label = `${course.surface === 'turf' ? '芝' : 'ダート'}${course.distance}m`;
+    const race = this.makeRace('friend', `フレンド対戦（${label}）`, 'op', course);
+    const field = [this.playerEntrant(h, cap)];
+    const used = new Set([h.name]);
+    ghostIds.slice(0, this.FIELD - 1).forEach(id => {
+      const g = Player.data.ghosts.find(x => x.id === id);
+      if (g) { field.push(this.ghostEntrant(g, cap)); used.add(g.name); }
+    });
+    // 足りない枠はCPUで埋める（参加馬の平均くらいの強さ）
+    const avg = field.reduce((s, e) => s + STAT_KEYS.reduce((t, k) => t + e.stats[k], 0) / 5, 0) / field.length;
+    while (field.length < this.FIELD) field.push(this.makeRival(avg - 3, course, cap, used, false));
+    return { kind: 'friend', race, field: this.shuffle(field), ground: Race.rollGround(race), cap };
+  },
+
+  applyFriend(h, match, result) {
+    const me = result.finish.find(f => f.isPlayer);
+    const vs = [];
+    result.finish.forEach(f => {
+      const e = match.field.find(x => x.id === f.id);
+      if (!e || !e.isGhost) return;
+      const g = Player.data.ghosts.find(x => x.id === e.ghostId);
+      if (!g) return;
+      const won = me.place < f.place;
+      g.vs[won ? 'win' : 'lose']++;
+      vs.push({ name: g.name, owner: g.owner, won });
+    });
+    const exp = 20;
+    const levelUps = Horse.addExp(h, exp);
+    h.fatigue = Util.clamp(h.fatigue + this.FATIGUE, 0, 100);
+    return { place: me.place, prize: 0, exp, cards: [], levelUps, field: result.finish.length, vs };
+  }
+};
+</script>
+<script>
+// 引退・殿堂入り。名馬は配合カードになって血統を次の世代へつなぐ。
+'use strict';
+
+const HallOfFame = {
+  qualifies(h) { return h.record.g1Wins >= 3 || h.record.wins >= 10; },
+
+  wonAll(h, crown) {
+    const crownRaces = GAME_DATA.races.filter(r => r.crown === crown).map(r => r.id);
+    return crownRaces.every(id => h.history.some(x => x.raceId === id && x.place === 1));
+  },
+
+  titles(h) {
+    const t = [];
+    const g1Won = h.history.filter(x => x.place === 1 && x.grade === 'g1').map(x => Race.get(x.raceId)).filter(Boolean);
+    if (this.wonAll(h, 'classic')) t.push('三冠馬');
+    if (this.wonAll(h, 'tiara')) t.push('ティアラの女王');
+    if (h.record.g1Wins >= 5) t.push('伝説の王者');
+    if (h.record.wins >= 10) t.push(h.gender === 'female' ? '不屈の女王' : '不屈の名馬');
+    if (g1Won.some(r => r.route === 'sprint')) t.push('スプリント王');
+    if (g1Won.some(r => r.route === 'mile')) t.push('マイル王');
+    if (g1Won.some(r => r.route === 'senior')) t.push('古馬の王者');
+    if (g1Won.some(r => r.surface === 'dirt')) t.push('ダートの覇者');
+    if (g1Won.some(r => r.distance >= 3000)) t.push('最強ステイヤー');
+    return t;
+  },
+
+  mainWins(h) {
+    const seen = new Set();
+    return h.history
+      .filter(x => x.place === 1 && ['g1', 'g2', 'g3'].includes(x.grade))
+      .sort((a, b) => GAME_DATA.grades[b.grade].order - GAME_DATA.grades[a.grade].order)
+      .filter(x => (seen.has(x.raceId) ? false : seen.add(x.raceId)))
+      .slice(0, 4)
+      .map(x => `${x.name}（${GAME_DATA.grades[x.grade].label}）`);
+  },
+
+  // 先祖ID（父母とその先祖）。インブリード判定に使う
+  ancestorsOf(h) {
+    const ids = [];
+    [h.fatherId, h.motherId].forEach(id => {
+      const c = Cards.get(id);
+      if (c) ids.push(c.id, ...(c.ancestors || []));
+    });
+    return [...new Set(ids)].slice(0, 30);
+  },
+
+  // 引退馬から配合カードを作る（重賞を勝った馬のみ）
+  makeBreedingCard(h, inHall) {
+    const overall = Horse.overall(h);
+    let ri = Cards.rarityIndex(Horse.rarityFromPotential(overall));
+    if (h.record.g1Wins >= 1) ri++;
+    if (inHall) ri++;
+    const rarity = GAME_DATA.rarities[Util.clamp(ri, 0, 4)];
+    const stats = {};
+    STAT_KEYS.forEach(k => { stats[k] = Math.min(100, h.stats[k]); });
+    const trait = STAT_KEYS.reduce((a, b) => (stats[b] > stats[a] ? b : a));
+    return {
+      id: 'c_' + h.id, type: h.gender === 'male' ? 'sire' : 'mare', custom: true,
+      name: h.name, rarity, stats,
+      apt: Object.assign({}, h.aptitude),
+      style: h.runningStyle, growth: h.growthType, trait,
+      skill: h.skills[0] || null,
+      pedigree: { f: Horse.pedigree(h).f, m: Horse.pedigree(h).m },
+      ancestors: this.ancestorsOf(h),
+      desc: `${inHall ? '🏛 殿堂馬。' : ''}${h.record.races}戦${h.record.wins}勝（GⅠ ${h.record.g1Wins}勝）`
+    };
+  },
+
+  retire(h) {
+    const p = Player.data;
+    p.horses = p.horses.filter(x => x.id !== h.id);
+    h.skills.forEach(id => Player.addCard(id)); // 装備スキルは手元に戻る
+    const inHall = this.qualifies(h);
+    let card = null;
+    if (inHall || h.record.gradedWins >= 1) {
+      card = this.makeBreedingCard(h, inHall);
+      if (!card.skill) delete card.skill;
+      p.customCards[card.id] = card;
+      Player.addCard(card.id);
+    }
+    const entry = {
+      id: h.id, name: h.name, gender: h.gender, rarity: h.rarity,
+      record: Object.assign({}, h.record),
+      titles: this.titles(h), mainWins: this.mainWins(h),
+      father: (Cards.get(h.fatherId) || {}).name || '不明',
+      mother: (Cards.get(h.motherId) || {}).name || '不明',
+      pedigree: Horse.pedigree(h),
+      overall: Horse.overall(h), retiredAge: h.age, retiredAt: Date.now(),
+      cardId: card ? card.id : null
+    };
+    if (inHall) {
+      h.hallOfFame = true;
+      p.hallOfFame.unshift(entry);
+      Player.bump('hofCount');
+    } else {
+      p.retired.unshift(entry);
+      if (p.retired.length > 30) p.retired.length = 30;
+    }
+    return { inHall, card, entry };
+  }
+};
+</script>
+<script>
+// 画面描画（ゲームロジックは持たない。操作は App.* を呼ぶ）
+'use strict';
+
+const UI = {
+  state: {
+    screen: 'home',
+    params: {},
+    horseTab: 'status',
+    breed: { father: null, mother: null },
+    cardTab: 'owned',
+    cardType: 'all',
+    cardRarity: 'all',
+    cardQuery: '',
+    raceHorse: null,
+    raceRoute: null,
+    raceMode: 'route',
+    league: 'bronze',
+    friendPick: [],
+    friendCourse: 1,
+    friendCap: 0
+  },
+
+  el(id) { return document.getElementById(id); },
+
+  show(screen, params = {}) {
+    this.state.screen = screen;
+    this.state.params = params;
+    if (typeof RaceView !== 'undefined' && screen !== 'raceView') RaceView.stop();
+    this.render();
+    window.scrollTo(0, 0);
+  },
+
+  render() {
+    const s = this.state.screen;
+    this.renderHeader();
+    const views = {
+      home: () => this.homeView(),
+      stable: () => this.stableView(),
+      horse: () => this.horseView(this.state.params.id),
+      cards: () => this.cardsView(),
+      breed: () => this.breedView(),
+      race: () => this.raceView(),
+      hof: () => this.hofView(),
+      records: () => this.recordsView(),
+      raceView: () => RaceView.view()
+    };
+    this.el('main').innerHTML = (views[s] || views.home)();
+    const navKey = { horse: 'stable', hof: 'home', records: 'home', raceView: 'race' }[s] || s;
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.nav === navKey));
+    if (s === 'raceView') RaceView.mount();
+  },
+
+  renderHeader() {
+    const p = Player.data;
+    const cardCount = Object.values(p.cards).reduce((a, b) => a + b, 0);
+    this.el('topbar').innerHTML = `
+      <div class="brand" onclick="UI.show('home')">🐎🃏 <span>馬主カード</span></div>
+      <div class="wallet">
+        <span class="chip" title="所持金">💰 ${Util.money(p.money)}</span>
+        <span class="chip" title="所持カード">🃏 ${cardCount}</span>
+      </div>`;
+  },
+
+  // ─────────── 共通パーツ ───────────
+  help(key) { return `<button class="help" onclick="event.stopPropagation();App.help('${key}')" aria-label="用語解説">？</button>`; },
+
+  rarity(r) { return `<span class="rar rar-${r}">${r}</span>`; },
+
+  gradeBadge(grade) {
+    const g = GAME_DATA.grades[grade];
+    return `<span class="grade grade-${grade}">${g.short}</span>`;
+  },
+
+  styleTag(style) {
+    const s = GAME_DATA.styles[style];
+    return `<span class="tag">${s.icon} ${s.label}</span>`;
+  },
+
+  statRow(key, value, cap) {
+    const info = GAME_DATA.stats.find(s => s.key === key);
+    const pct = Util.clamp(value / 120 * 100, 0, 100);
+    const capPct = cap !== undefined ? Util.clamp(cap / 120 * 100, 0, 100) : null;
+    return `<div class="stat-row">
+      <div class="stat-label">${info.icon} ${info.label}${this.help(key)}</div>
+      <div class="bar"><div class="bar-fill stat-${key}" style="width:${pct}%"></div>
+        ${capPct !== null ? `<div class="bar-cap" style="left:${capPct}%" title="限界"></div>` : ''}</div>
+      <div class="stat-val"><b>${value}</b>${cap !== undefined ? `<small>/${cap}</small>` : ''} <span class="g">${Util.grade(value)}</span></div>
+    </div>`;
+  },
+
+  aptGrid(apt) {
+    const d = GAME_DATA.distances.map(x => `<div class="apt"><span>${x.label}</span><b>${Util.stars(apt[x.key])}</b><small>${Util.aptMark(apt[x.key])}</small></div>`).join('');
+    const s = GAME_DATA.surfaces.map(x => `<div class="apt"><span>${x.icon}${x.label}</span><b>${Util.stars(apt[x.key])}</b><small>${Util.aptMark(apt[x.key])}</small></div>`).join('');
+    return `<div class="apt-title">距離${this.help('distance')}</div><div class="apt-grid">${d}</div>
+      <div class="apt-title">馬場${this.help('surface')}</div><div class="apt-grid">${s}</div>`;
+  },
+
+  // 種牡馬・繁殖牝馬カード
+  breedCard(c, opts = {}) {
+    const t = Cards.types[c.type];
+    const st = GAME_DATA.stats.map(s => `<div class="mini-stat"><span>${s.icon}</span><b>${Util.stars(c.stats[s.key])}</b></div>`).join('');
+    const apt = [...GAME_DATA.surfaces, ...GAME_DATA.distances]
+      .map(x => `<span class="apt-chip">${x.label || x.key}${Util.aptMark(c.apt[x.key])}</span>`).join('');
+    const trait = c.trait === 'balance' ? 'バランス' : (GAME_DATA.stats.find(s => s.key === c.trait) || {}).label;
+    const skill = c.skill ? Cards.get(c.skill) : null;
+    return `<div class="gcard ${t.color} rcard-${c.rarity} ${opts.selected ? 'selected' : ''} ${opts.cls || ''}" ${opts.onclick ? `onclick="${opts.onclick}"` : ''}>
+      <div class="gcard-head">${this.rarity(c.rarity)}<span class="gtype">${t.icon} ${t.label}</span>${opts.count ? `<span class="count">×${opts.count}</span>` : ''}</div>
+      <div class="gcard-art">${c.type === 'sire' ? '🐎' : '🦄'}${c.custom ? '<span class="legend">🏛</span>' : ''}</div>
+      <div class="gcard-name">${Util.esc(c.name)}</div>
+      <div class="mini-stats">${st}</div>
+      <div class="apt-chips">${apt}</div>
+      <div class="gcard-foot">${GAME_DATA.styles[c.style].icon}${GAME_DATA.styles[c.style].label}・遺伝：${trait}${skill ? `<br>🎴 ${skill.name}` : ''}</div>
+    </div>`;
+  },
+
+  skillCard(c, opts = {}) {
+    const style = c.style ? `${GAME_DATA.styles[c.style].icon}${GAME_DATA.styles[c.style].label}向け` : '全脚質OK';
+    return `<div class="gcard skill rcard-${c.rarity} ${opts.cls || ''}" ${opts.onclick ? `onclick="${opts.onclick}"` : ''}>
+      <div class="gcard-head">${this.rarity(c.rarity)}<span class="gtype">🎴 スキル</span>${opts.count ? `<span class="count">×${opts.count}</span>` : ''}</div>
+      <div class="gcard-art">${c.icon}</div>
+      <div class="gcard-name">${Util.esc(c.name)}</div>
+      <div class="gcard-desc"><b>条件：</b>${c.condText}<br>${c.desc}</div>
+      <div class="gcard-foot">${style}</div>
+      ${opts.extra || ''}
+    </div>`;
+  },
+
+  itemCard(c, opts = {}) {
+    return `<div class="gcard item rcard-${c.rarity} ${opts.cls || ''}" ${opts.onclick ? `onclick="${opts.onclick}"` : ''}>
+      <div class="gcard-head">${this.rarity(c.rarity)}<span class="gtype">🎒 アイテム</span>${opts.count ? `<span class="count">×${opts.count}</span>` : ''}</div>
+      <div class="gcard-art">${c.icon}</div>
+      <div class="gcard-name">${Util.esc(c.name)}</div>
+      <div class="gcard-desc">${c.desc}</div>
+      ${opts.extra || ''}
+    </div>`;
+  },
+
+  anyCard(c, opts) {
+    if (c.type === 'skill') return this.skillCard(c, opts);
+    if (c.type === 'item') return this.itemCard(c, opts);
+    return this.breedCard(c, opts);
+  },
+
+  silhouette(c) {
+    return `<div class="gcard silhouette rcard-${c.rarity}"><div class="gcard-head">${this.rarity(c.rarity)}<span class="gtype">${Cards.types[c.type].label}</span></div>
+      <div class="gcard-art">❔</div><div class="gcard-name">？？？？</div><div class="gcard-desc">まだ見つけていないカード</div></div>`;
+  },
+
+  // 競走馬カード（厩舎一覧用）
+  horseCard(h, opts = {}) {
+    const cond = Horse.conditionInfo(h);
+    const fat = Horse.fatigueInfo(h);
+    const ov = Horse.overall(h);
+    return `<div class="hcard rcard-${h.rarity}" onclick="${opts.onclick !== undefined ? opts.onclick : `UI.show('horse',{id:'${h.id}'})`}">
+      <div class="hcard-top">${this.rarity(h.rarity)}<span class="hname">${Util.esc(h.name)}</span><span class="ovr" title="総合評価">${Util.grade(ov)}</span></div>
+      <div class="hcard-art">🏇</div>
+      <div class="hcard-info">
+        <span>${Horse.genderLabel(h)}</span><span>${h.age}歳</span><span>Lv.${h.level}</span>
+      </div>
+      <div class="hcard-info">
+        <span>${Horse.mainAptText(h)}</span>${this.styleTag(h.runningStyle)}
+      </div>
+      <div class="hcard-info">
+        <span class="${cond.cls}">${cond.icon} ${cond.label}</span><span class="${fat.cls}">😓 ${fat.label}</span>
+      </div>
+      <div class="hcard-rec">${h.record.races}戦${h.record.wins}勝${h.record.g1Wins ? `・GⅠ ${h.record.g1Wins}勝` : ''}</div>
+    </div>`;
+  },
+
+  modal(html, opts = {}) {
+    const m = this.el('modal');
+    m.innerHTML = `<div class="modal-box ${opts.cls || ''}" role="dialog">
+      ${opts.noClose ? '' : '<button class="modal-x" onclick="UI.closeModal()" aria-label="閉じる">✕</button>'}${html}</div>`;
+    m.classList.add('open');
+    m.onclick = e => { if (e.target === m && !opts.noClose) UI.closeModal(); };
+  },
+  closeModal() { this.el('modal').classList.remove('open'); this.el('modal').innerHTML = ''; },
+
+  toast(msg, type = '') {
+    const t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.innerHTML = msg;
+    const box = this.el('toasts');
+    while (box.children.length >= 3) box.firstChild.remove();
+    box.appendChild(t);
+    setTimeout(() => t.classList.add('out'), 2600);
+    setTimeout(() => t.remove(), 3100);
+  },
+
+  // ─────────── ホーム ───────────
+  homeView() {
+    const p = Player.data;
+    const m = Missions.current();
+    const guide = App.guide();
+    const recs = p.horses.map(h => ({ h, race: Race.nextRace(h, h.route || Horse.recommendRoute(h)) })).filter(x => x.race).slice(0, 3);
+    const totalCards = Object.values(p.cards).reduce((a, b) => a + b, 0);
+    return `
+      <section class="hero">
+        <div class="hero-name">🏇 ${Util.esc(p.name)} 厩舎 <button class="link" onclick="App.settings()">⚙ 設定</button></div>
+        <div class="hero-stats">
+          <div><small>所持金</small><b>${Util.money(p.money)}</b></div>
+          <div><small>カード</small><b>${totalCards}枚</b></div>
+          <div><small>厩舎</small><b>${p.horses.length}/${GAME_DATA.maxStable}頭</b></div>
+          <div><small>殿堂馬</small><b>${p.hallOfFame.length}頭</b></div>
+        </div>
+      </section>
+
+      ${guide ? `<section class="guide" onclick="${guide.action}"><div class="guide-icon">💡</div><div><b>${guide.title}</b><p>${guide.text}</p></div><span class="guide-go">▶</span></section>` : ''}
+
+      ${m ? `<section class="panel mission">
+        <h3>📋 今日のミッション</h3>
+        <div class="mission-title">${m.title}</div>
+        <div class="bar"><div class="bar-fill mission-fill" style="width:${Math.min(100, Missions.progress(m) / m.target * 100)}%"></div></div>
+        <p class="muted">${m.hint}</p>
+        <div class="mission-reward">報酬：💰${Util.money(m.reward.money)} ${(m.reward.cards || []).map(id => { const c = Cards.get(id); return `${this.rarity(c.rarity)}${c.name}`; }).join(' ')}</div>
+        ${Missions.isComplete(m) ? `<button class="btn primary big" onclick="App.claimMission()">🎁 報酬を受け取る</button>` : ''}
+      </section>` : `<section class="panel"><h3>📋 ミッション</h3><p>全てのミッションをクリアしました！🎉</p></section>`}
+
+      <section class="panel">
+        <h3>🐎 厩舎 <button class="link" onclick="UI.show('stable')">すべて見る ▶</button></h3>
+        ${p.horses.length ? `<div class="hgrid">${p.horses.slice(0, 4).map(h => this.horseCard(h)).join('')}</div>`
+          : `<p class="muted">まだ馬がいません。配合で最初の馬を作ろう！</p><button class="btn primary" onclick="UI.show('breed')">🧬 配合へ</button>`}
+      </section>
+
+      ${recs.length ? `<section class="panel"><h3>🏇 おすすめレース</h3>
+        ${recs.map(({ h, race }) => `<div class="rec-row" onclick="App.goRace('${h.id}','${race.route}')">
+          <span class="rec-horse">${Util.esc(h.name)}</span><span>→</span>${this.gradeBadge(race.grade)}<b>${race.name}</b>
+          <small>${race.surface === 'turf' ? '芝' : 'ダート'}${race.distance}m</small></div>`).join('')}
+      </section>` : ''}
+
+      <section class="panel">
+        <h3>⚔ 対戦 <button class="link" onclick="UI.state.raceMode='league';UI.show('race')">挑戦する ▶</button></h3>
+        <p class="muted">CPU馬主とのリーグ戦や、対戦コードでフレンドの馬と勝負！ レーティング：<b>${p.pvp.rating}</b></p>
+      </section>
+
+      <div class="home-links">
+        <button class="panel link-card" onclick="UI.show('hof')"><span>🏛</span><b>殿堂</b><small>${p.hallOfFame.length}頭</small></button>
+        <button class="panel link-card" onclick="UI.show('records')"><span>📊</span><b>記録・ランキング</b><small>レコードと名馬</small></button>
+      </div>
+
+      <section class="panel news">
+        <h3>📢 お知らせ</h3>
+        <ul>
+          <li>競馬×カードゲーム「馬主カード」へようこそ！</li>
+          <li>レースで勝つと新しい種牡馬・繁殖牝馬・スキルカードが手に入ります。</li>
+          <li>🆕 レースが2Dトラックで見られるようになりました！</li>
+          <li>🆕 ⚔ リーグ戦・🤝 対戦コードでフレンド対戦が登場！</li>
+          <li>🆕 黄金配合・インブリードなどの特殊配合、血統表、カードパック、記録・ランキングを追加。</li>
+          <li>わからない言葉は <span class="help static">？</span> ボタンをタップ！</li>
+        </ul>
+      </section>`;
+  },
+
+  // ─────────── 厩舎 ───────────
+  stableView() {
+    const p = Player.data;
+    return `<h2 class="screen-title">🐎 厩舎 <small>${p.horses.length}/${GAME_DATA.maxStable}頭</small></h2>
+      ${p.horses.length ? `<div class="hgrid">${p.horses.map(h => this.horseCard(h)).join('')}</div>`
+        : `<div class="empty">🐣<p>まだ馬がいません。<br>種牡馬カードと繁殖牝馬カードで配合しよう！</p><button class="btn primary big" onclick="UI.show('breed')">🧬 配合する</button></div>`}
+      ${p.retired.length ? `<details class="panel"><summary>引退馬（${p.retired.length}頭）</summary>
+        ${p.retired.map(r => `<div class="retired-row">${this.rarity(r.rarity)} <b>${Util.esc(r.name)}</b> ${r.record.races}戦${r.record.wins}勝 <small>父 ${Util.esc(r.father)}／母 ${Util.esc(r.mother)}</small></div>`).join('')}
+      </details>` : ''}`;
+  },
+
+  // ─────────── 馬詳細 ───────────
+  horseView(id) {
+    const h = Player.horse(id);
+    if (!h) return `<div class="empty">馬が見つかりません<br><button class="btn" onclick="UI.show('stable')">厩舎へ</button></div>`;
+    const tab = this.state.horseTab;
+    const cond = Horse.conditionInfo(h);
+    const fat = Horse.fatigueInfo(h);
+    const growth = GAME_DATA.growthTypes[h.growthType];
+    const tabs = [['status', '📊 能力'], ['train', '🏋️ 調教'], ['skill', '🎴 スキル'], ['record', '🏆 戦績']];
+    const body = { status: () => this.horseStatus(h), train: () => this.horseTrain(h), skill: () => this.horseSkills(h), record: () => this.horseRecord(h) }[tab]();
+    return `
+      <button class="back" onclick="UI.show('stable')">◀ 厩舎</button>
+      <section class="horse-head rcard-${h.rarity}">
+        <div class="hh-art">🏇</div>
+        <div class="hh-main">
+          <div class="hh-name">${this.rarity(h.rarity)} ${Util.esc(h.name)} <button class="link" onclick="App.rename('${h.id}')">✏</button></div>
+          <div class="hh-tags">
+            <span class="tag">${Horse.genderLabel(h)}</span>
+            <span class="tag">${h.age}歳（${h.week + 1}/${GAME_DATA.weeksPerYear}週）</span>
+            ${this.styleTag(h.runningStyle)}
+            <span class="tag">🌱 ${growth.label}${this.help('growth')}</span>
+          </div>
+          <div class="hh-grades">
+            <div><small>総合評価</small><b>${Util.grade(Horse.overall(h))}</b></div>
+            <div><small>素質${this.help('potential')}</small><b>${Util.grade(Horse.potential(h))}</b></div>
+            <div><small>Lv.${h.level}</small><div class="bar thin"><div class="bar-fill exp" style="width:${h.exp / Horse.expToNext(h) * 100}%"></div></div></div>
+          </div>
+          <div class="hh-cond">
+            <span class="${cond.cls}">${cond.icon} 調子：${cond.label}${this.help('condition')}</span>
+            <span class="${fat.cls}">😓 疲労：${fat.label}${this.help('fatigue')}</span>
+          </div>
+          <div class="bar thin"><div class="bar-fill fatigue" style="width:${h.fatigue}%"></div></div>
+        </div>
+      </section>
+      ${Horse.mustRetire(h) ? `<div class="notice">🎌 ${h.age}歳になり引退の時期です。お疲れさまでした！ <button class="btn primary" onclick="App.retire('${h.id}')">引退させる</button></div>` : ''}
+      <div class="seg">${tabs.map(([k, l]) => `<button class="${tab === k ? 'active' : ''}" onclick="UI.state.horseTab='${k}';UI.render()">${l}</button>`).join('')}</div>
+      ${body}
+      <div class="sticky-actions">
+        <button class="btn primary big" onclick="App.goRace('${h.id}')">🏇 レースへ</button>
+      </div>`;
+  },
+
+  horseStatus(h) {
+    const rec = Horse.recommendRoute(h);
+    const s = GAME_DATA.styles[h.runningStyle];
+    return `
+      <section class="panel"><h3>能力</h3>
+        ${STAT_KEYS.map(k => this.statRow(k, h.stats[k], h.caps[k])).join('')}
+        <p class="muted small">｜の位置がこの馬の限界（素質）。調教で限界まで伸ばせます。</p>
+      </section>
+      <section class="panel"><h3>適性</h3>${this.aptGrid(h.aptitude)}</section>
+      <section class="panel"><h3>脚質${this.help('style')}</h3>
+        <div class="style-box"><span class="style-big">${s.icon}</span><div><b>${s.label}</b><p>${s.desc}</p></div></div>
+      </section>
+      <section class="panel"><h3>目標路線</h3>
+        <p class="rec">💡 この馬は <b>${Horse.routeInfo(rec).icon}${Horse.routeInfo(rec).name}</b> 路線がおすすめ！</p>
+        <div class="route-pick">${GAME_DATA.routes.map(r => `<button class="${h.route === r.id ? 'active' : ''}" onclick="App.setRoute('${h.id}','${r.id}')">${r.icon} ${r.name}</button>`).join('')}</div>
+      </section>
+      <section class="panel"><h3>🌳 血統表</h3>
+        ${this.pedigreeTree(Horse.pedigree(h))}
+        ${h.specials && h.specials.length ? `<p class="special-tags">${h.specials.map(x => `<span class="special">✨ ${x}</span>`).join('')}</p>` : ''}
+      </section>
+      <section class="panel"><h3>📤 対戦コード</h3>
+        <p class="muted small">この馬の対戦コードをフレンドに送ると、フレンドの画面であなたの馬と対戦できます。</p>
+        <button class="btn" onclick="App.showCode('${h.id}')">対戦コードを表示</button>
+      </section>`;
+  },
+
+  // 3代血統表（父・母とその両親）
+  pedigreeTree(pd) {
+    const cell = (n, cls, label) => `<div class="pt ${cls}"><small>${label}</small>${n ? `<b>${Util.esc(n.name)}</b>${this.rarity(n.rarity)}` : '<b class="muted">―</b>'}</div>`;
+    return `<div class="ptree">
+      ${cell(pd.f, 'sire p1', '父')}${cell(pd.m, 'mare p1', '母')}
+      ${cell(pd.ff, 'sire p2', '父の父')}${cell(pd.fm, 'mare p2', '父の母')}${cell(pd.mf, 'sire p2', '母の父')}${cell(pd.mm, 'mare p2', '母の母')}
+    </div>`;
+  },
+
+  horseTrain(h) {
+    const plan = Training.autoPlan(h);
+    const eff = Training.efficiency(h);
+    const effLabel = eff >= 1.1 ? '◎ 絶好の伸び時' : eff >= 0.85 ? '○ よく伸びる' : eff >= 0.6 ? '△ 伸びにくい' : '× ほとんど伸びない';
+    const items = Player.ownedCards('item');
+    const menuBtn = (k, m) => {
+      const gains = Object.keys(m.gains).map(s => GAME_DATA.stats.find(x => x.key === s).icon).join('');
+      const fatTxt = m.fatigue > 0 ? `疲労+${m.fatigue}` : `疲労${m.fatigue}`;
+      return `<button class="train-btn ${k === plan.menu ? 'suggest' : ''}" onclick="App.train('${h.id}','${k}')">
+        <span class="ti">${m.icon}</span><b>${m.label}</b><small>${gains || '回復'}・${fatTxt}</small></button>`;
+    };
+    return `
+      <section class="panel auto-train">
+        <h3>🤖 おまかせ調教</h3>
+        <p>${plan.reason}</p>
+        <button class="btn primary big" onclick="App.autoTrain('${h.id}')">おまかせで1週すすめる</button>
+        <button class="btn" onclick="App.autoTrain('${h.id}',4)">おまかせ×4週</button>
+      </section>
+      <section class="panel">
+        <h3>🏋️ 調教メニュー <small class="muted">成長度：${effLabel}</small></h3>
+        <div class="train-grid">${Object.entries(Training.menus).map(([k, m]) => menuBtn(k, m)).join('')}</div>
+        ${h.fatigue >= 60 ? '<p class="warn">⚠ 疲れがたまっています。休養させよう！</p>' : ''}
+      </section>
+      <section class="panel">
+        <h3>🎒 アイテムを使う</h3>
+        ${items.length ? `<div class="item-list">${items.map(c => `<button class="item-btn" onclick="App.useItem('${h.id}','${c.id}')">
+          ${this.rarity(c.rarity)} ${c.icon} <b>${c.name}</b> ×${Player.count(c.id)}<small>${c.desc}</small></button>`).join('')}</div>`
+          : '<p class="muted">アイテムカードを持っていません。レースやショップで手に入ります。</p>'}
+      </section>`;
+  },
+
+  horseSkills(h) {
+    const owned = Player.ownedCards('skill').sort((a, b) => Number(Skills.isMatch(b, h.runningStyle)) - Number(Skills.isMatch(a, h.runningStyle)) || Cards.rarityIndex(b.rarity) - Cards.rarityIndex(a.rarity));
+    const slots = [0, 1, 2].map(i => {
+      const id = h.skills[i];
+      if (!id) return `<div class="slot empty-slot">スロット${i + 1}<br><small>空き</small></div>`;
+      const sk = Skills.get(id);
+      const match = Skills.isMatch(sk, h.runningStyle);
+      return `<div class="slot rcard-${sk.rarity}"><div class="slot-icon">${sk.icon}</div><b>${sk.name}</b>
+        <small>${sk.condText}</small>${match ? '' : '<small class="warn">脚質不一致：効果ダウン</small>'}
+        <button class="btn small" onclick="App.unequip('${h.id}','${id}')">外す</button></div>`;
+    }).join('');
+    return `
+      <section class="panel"><h3>🎴 装備スキル（${h.skills.length}/3）${this.help('skill')}</h3>
+        <div class="slots">${slots}</div>
+        <p class="muted small">レース中、条件を満たすと自動で発動します（1レース1回）。賢さが高いと発動しやすい！</p>
+      </section>
+      <section class="panel"><h3>所持スキルカード</h3>
+        ${owned.length ? `<div class="cgrid">${owned.map(c => {
+          const match = Skills.isMatch(c, h.runningStyle);
+          return this.skillCard(c, {
+            count: Player.count(c.id),
+            extra: `<div class="${match ? 'ok' : 'warn'} small">${match ? '✔ 脚質ぴったり' : '△ 脚質が違うので効果ダウン'}</div>
+              <button class="btn small primary" ${h.skills.length >= 3 || h.skills.includes(c.id) ? 'disabled' : ''} onclick="App.equip('${h.id}','${c.id}')">装備する</button>`
+          });
+        }).join('')}</div>` : '<p class="muted">スキルカードがありません。レースで勝って手に入れよう！</p>'}
+      </section>`;
+  },
+
+  horseRecord(h) {
+    const r = h.record;
+    return `
+      <section class="panel"><h3>🏆 戦績</h3>
+        <div class="record-big">${r.races}戦 <b>${r.wins}</b>勝 <small>[${r.wins}-${r.seconds}-${r.thirds}-${r.races - r.wins - r.seconds - r.thirds}]</small></div>
+        <div class="hero-stats">
+          <div><small>獲得賞金</small><b>${Util.money(r.prizeMoney)}</b></div>
+          <div><small>重賞勝利</small><b>${r.gradedWins}</b></div>
+          <div><small>GⅠ勝利</small><b>${r.g1Wins}</b></div>
+        </div>
+        ${HallOfFame.qualifies(h) ? '<p class="ok">🏛 殿堂入りの条件を満たしています！引退すると殿堂入りします。</p>' : `<p class="muted small">殿堂入り条件：GⅠ 3勝 or 通算10勝${this.help('hof')}</p>`}
+      </section>
+      <section class="panel"><h3>レース履歴</h3>
+        ${h.history.length ? `<table class="hist"><tr><th>着</th><th>レース</th><th>条件</th></tr>
+          ${h.history.map(x => `<tr class="${x.place === 1 ? 'win' : ''}"><td>${x.place}/${x.field}</td><td>${this.gradeBadge(x.grade)} ${x.name}</td><td>${x.surface === 'turf' ? '芝' : 'ダ'}${x.distance}・${x.age}歳</td></tr>`).join('')}
+        </table>` : '<p class="muted">まだレースに出ていません。</p>'}
+      </section>
+      <section class="panel danger-zone"><h3>引退</h3>
+        <p class="muted small">引退すると厩舎から外れます。重賞を勝った馬は配合カードになります。装備スキルは手元に戻ります。</p>
+        <button class="btn danger" onclick="App.retire('${h.id}')">引退させる</button>
+      </section>`;
+  },
+
+  // ─────────── カード ───────────
+  cardsView() {
+    const st = this.state;
+    const tabs = [['owned', '所持カード'], ['dex', '📖 図鑑'], ['shop', '🛒 ショップ']];
+    let body = '';
+    if (st.cardTab === 'shop') body = this.shopView();
+    else {
+      const types = [['all', 'すべて'], ['sire', '♂ 種牡馬'], ['mare', '♀ 繁殖牝馬'], ['skill', '🎴 スキル'], ['item', '🎒 アイテム']];
+      const rars = ['all', ...GAME_DATA.rarities];
+      const q = st.cardQuery.trim();
+      const match = c => (st.cardType === 'all' || c.type === st.cardType) && (st.cardRarity === 'all' || c.rarity === st.cardRarity)
+        && (!q || c.name.includes(q) || (c.desc || '').includes(q));
+      const filters = `<div class="filters">
+        <div class="chips">${types.map(([k, l]) => `<button class="${st.cardType === k ? 'active' : ''}" onclick="UI.state.cardType='${k}';UI.render()">${l}</button>`).join('')}</div>
+        <div class="chips">${rars.map(r => `<button class="${st.cardRarity === r ? 'active' : ''}" onclick="UI.state.cardRarity='${r}';UI.render()">${r === 'all' ? '全レア' : r}</button>`).join('')}</div>
+        <input class="search" type="search" placeholder="🔍 カード名で検索" value="${Util.esc(st.cardQuery)}" oninput="UI.state.cardQuery=this.value;clearTimeout(UI._q);UI._q=setTimeout(()=>{UI.render();const i=document.querySelector('.search');i.focus();i.setSelectionRange(i.value.length,i.value.length)},300)">
+      </div>`;
+      const sortFn = (a, b) => Object.keys(Cards.types).indexOf(a.type) - Object.keys(Cards.types).indexOf(b.type) || Cards.rarityIndex(b.rarity) - Cards.rarityIndex(a.rarity);
+      if (st.cardTab === 'owned') {
+        const list = Player.ownedCards().filter(match).sort(sortFn);
+        body = filters + (list.length ? `<div class="cgrid">${list.map(c => this.anyCard(c, { count: Player.count(c.id), onclick: `App.cardDetail('${c.id}')` })).join('')}</div>` : '<p class="muted">該当するカードがありません。</p>');
+      } else {
+        const all = Cards.all().filter(match).sort(sortFn);
+        const seen = new Set(Player.data.seenCards);
+        const got = Cards.all().filter(c => seen.has(c.id)).length;
+        body = `<p class="dex-progress">収集率：<b>${got}</b> / ${Cards.all().length}</p>` + filters +
+          `<div class="cgrid">${all.map(c => seen.has(c.id) ? this.anyCard(c, { onclick: `App.cardDetail('${c.id}')` }) : this.silhouette(c)).join('')}</div>`;
+      }
+    }
+    return `<h2 class="screen-title">🃏 カード</h2>
+      <div class="seg">${tabs.map(([k, l]) => `<button class="${st.cardTab === k ? 'active' : ''}" onclick="UI.state.cardTab='${k}';UI.render()">${l}</button>`).join('')}</div>
+      ${body}`;
+  },
+
+  shopView() {
+    const items = GAME_DATA.items.filter(i => i.price);
+    return `<p class="muted">所持金：<b>${Util.money(Player.data.money)}</b></p>
+      <h3 class="sub-title">🃏 カードパック</h3>
+      <div class="packs">${GAME_DATA.packs.map(pk => `<div class="pack">
+        <div class="pack-icon">${pk.icon}</div><b>${pk.name}</b><small>${pk.desc}</small>
+        <button class="btn primary" ${Player.canAfford(pk.price) ? '' : 'disabled'} onclick="App.buyPack('${pk.id}')">💰 ${Util.money(pk.price)}</button>
+      </div>`).join('')}</div>
+      <h3 class="sub-title">🎒 アイテム</h3>
+      <div class="cgrid">${items.map(c => this.itemCard(c, {
+        count: Player.count(c.id),
+        extra: `<button class="btn small primary" ${Player.canAfford(c.price) ? '' : 'disabled'} onclick="App.buy('${c.id}')">💰 ${Util.money(c.price)}</button>`
+      })).join('')}</div>`;
+  },
+
+  // ─────────── 配合 ───────────
+  breedView() {
+    const b = this.state.breed;
+    const father = b.father && Player.count(b.father) ? Cards.get(b.father) : null;
+    const mother = b.mother && Player.count(b.mother) ? Cards.get(b.mother) : null;
+    const step = !father ? 1 : !mother ? 2 : 3;
+    const steps = ['父カードを選ぼう！', '母カードを選ぼう！', '配合開始！'];
+    const slot = (c, label, kind) => c
+      ? `<div class="breed-slot filled ${kind}" onclick="UI.state.breed.${kind === 'sire' ? 'father' : 'mother'}=null;UI.render()">${this.rarity(c.rarity)}<b>${Util.esc(c.name)}</b><small>タップで変更</small></div>`
+      : `<div class="breed-slot ${kind} ${(step === 1 && kind === 'sire') || (step === 2 && kind === 'mare') ? 'pulse' : ''}">${label}<br><small>未選択</small></div>`;
+
+    let body = '';
+    if (step < 3) {
+      const type = step === 1 ? 'sire' : 'mare';
+      const list = Player.ownedCards(type).sort((a, b2) => Cards.rarityIndex(b2.rarity) - Cards.rarityIndex(a.rarity));
+      body = `<div class="cgrid">${list.map(c => this.breedCard(c, { onclick: `App.pickParent('${type}','${c.id}')`, count: Player.count(c.id) })).join('')}</div>`;
+    } else {
+      const pv = Breeding.preview(father, mother);
+      body = `<section class="panel preview">
+        <h3>🔮 配合予想</h3>
+        <div class="pv-score">おすすめ度：<b>${'★'.repeat(pv.score)}${'☆'.repeat(5 - pv.score)}</b></div>
+        <p class="pv-comment">「${pv.comment}」</p>
+        ${pv.specials.length ? `<div class="specials">${pv.specials.map(x => `<div class="special-box"><b>✨ ${x.name}</b><small>${x.desc}</small></div>`).join('')}</div>` : ''}
+        <div class="pv-grid">${GAME_DATA.stats.map(s => `<div>${s.icon} ${s.label}<b>${pv.arrows[s.key]}</b></div>`).join('')}</div>
+        <p>得意：<b>${pv.surface}・${pv.distText}</b></p>
+        <p class="muted small">※ 同じ配合でも、生まれる馬には個体差があります。</p>
+        <div class="fee">配合料：<b>${Util.money(pv.fee)}</b> ${Player.data.stats.breedCount === 0 ? '<span class="ok">（初回は無料！）</span>' : ''}</div>
+        ${Player.stableFull() ? `<p class="warn">⚠ 厩舎がいっぱいです（最大${GAME_DATA.maxStable}頭）。馬を引退させてください。</p>` : ''}
+        <button class="btn primary big glow" ${Player.stableFull() ? 'disabled' : ''} onclick="App.breed()">🧬 配合開始！</button>
+      </section>
+      <div class="cols2">${this.breedCard(father)}${this.breedCard(mother)}</div>`;
+    }
+    return `<h2 class="screen-title">🧬 配合</h2>
+      <div class="steps">${steps.map((s, i) => `<div class="${i + 1 === step ? 'active' : i + 1 < step ? 'done' : ''}">${i + 1}. ${s}</div>`).join('')}</div>
+      <div class="breed-slots">${slot(father, '♂ 父', 'sire')}<div class="x">✕</div>${slot(mother, '♀ 母', 'mare')}</div>
+      <p class="breed-hint">${step === 1 ? '👇 まず父カード（種牡馬）を選ぼう！' : step === 2 ? '👇 次に母カード（繁殖牝馬）を選ぼう！' : '準備OK！ 配合して新しい馬を誕生させよう！'}</p>
+      ${body}
+      ${this.nickList()}`;
+  },
+
+  // 黄金配合リスト（発見すると名前と組み合わせが表示される）
+  nickList() {
+    const found = Player.data.nicksFound;
+    return `<details class="panel nick-list"><summary>✨ 黄金配合リスト（発見 ${found.length}/${GAME_DATA.nicks.length}）</summary>
+      <p class="muted small">特定の父と母を組み合わせると「黄金配合」になり、能力にボーナスがつきます。低レアの組み合わせもあるよ！</p>
+      ${GAME_DATA.nicks.map(n => {
+        const key = n.sire + '+' + n.mare;
+        const f = Cards.get(n.sire), m = Cards.get(n.mare);
+        return found.includes(key)
+          ? `<div class="nick found">✨ <b>${n.name}</b>：${f.name} × ${m.name}（全能力+${n.bonus}）</div>`
+          : `<div class="nick">❔ ？？？：${this.rarity(f.rarity)}の種牡馬 × ${this.rarity(m.rarity)}の繁殖牝馬</div>`;
+      }).join('')}
+    </details>`;
+  },
+
+  // ─────────── レース選択 ───────────
+  raceView() {
+    const p = Player.data;
+    if (!p.horses.length) return `<h2 class="screen-title">🏇 レース</h2><div class="empty">🐣<p>出走できる馬がいません。<br>まずは配合で馬を作ろう！</p><button class="btn primary big" onclick="UI.show('breed')">🧬 配合へ</button></div>`;
+    const st = this.state;
+    if (!st.raceHorse || !Player.horse(st.raceHorse)) st.raceHorse = p.horses[0].id;
+    const h = Player.horse(st.raceHorse);
+    const modes = [['route', '🏇 路線レース'], ['league', '⚔ リーグ戦'], ['friend', '🤝 フレンド対戦']];
+    const head = `<h2 class="screen-title">🏇 レース</h2>
+      <div class="seg">${modes.map(([k, l]) => `<button class="${st.raceMode === k ? 'active' : ''}" onclick="UI.state.raceMode='${k}';UI.render()">${l}</button>`).join('')}</div>
+      <div class="chips horse-pick">${p.horses.map(x => `<button class="${x.id === h.id ? 'active' : ''}" onclick="UI.state.raceHorse='${x.id}';UI.state.raceRoute=null;UI.render()">${Util.esc(x.name)}</button>`).join('')}</div>`;
+    if (st.raceMode === 'league') return head + this.leagueView(h);
+    if (st.raceMode === 'friend') return head + this.friendView(h);
+    const rec = Horse.recommendRoute(h);
+    if (!st.raceRoute) st.raceRoute = h.route || rec;
+    const route = Horse.routeInfo(st.raceRoute);
+    const races = Race.available(h, st.raceRoute);
+    const cond = Horse.conditionInfo(h);
+    const fat = Horse.fatigueInfo(h);
+
+    return `${head}
+      <section class="panel race-horse">
+        <div><b>${Util.esc(h.name)}</b> ${Horse.genderLabel(h)} ${h.age}歳 ${this.styleTag(h.runningStyle)}</div>
+        <div class="muted small">${Horse.mainAptText(h)}・${h.record.wins}勝・<span class="${cond.cls}">${cond.icon}${cond.label}</span>・<span class="${fat.cls}">😓${fat.label}</span></div>
+        <p class="rec">💡 この馬は <b>${Horse.routeInfo(rec).icon}${Horse.routeInfo(rec).name}</b> 路線がおすすめ！</p>
+      </section>
+      <div class="routes">${GAME_DATA.routes.map(r => `<button class="route-btn ${r.id === st.raceRoute ? 'active' : ''}" onclick="UI.state.raceRoute='${r.id}';UI.render()">
+        <span class="ri">${r.icon}</span>${r.name}${r.id === rec ? '<em>おすすめ</em>' : ''}</button>`).join('')}</div>
+      <section class="panel route-desc"><b>${route.icon} ${route.name}</b>（${route.range}）<p class="muted">${route.desc}<br>重要能力：${route.key}</p></section>
+      <div class="race-list">${races.map(({ race, elig }) => this.raceRow(h, race, elig)).join('')}</div>
+      <p class="muted small">レースの格${this.help('grade')}：勝ち星を重ねると上のクラスに挑戦できます。</p>`;
+  },
+
+  raceRow(h, race, elig) {
+    const cat = Horse.distCat(race.distance);
+    const g = GAME_DATA.grades[race.grade];
+    const dl = GAME_DATA.distances.find(d => d.key === cat);
+    const sl = GAME_DATA.surfaces.find(s => s.key === race.surface);
+    return `<div class="race-row ${elig.ok ? '' : 'locked'}">
+      <div class="rr-head">${this.gradeBadge(race.grade)}<b>${race.name}</b>${race.female ? '<span class="tag">牝馬限定</span>' : ''}</div>
+      <div class="rr-info">${sl.icon}${sl.label} ${race.distance}m（${dl.label}）・${race.field}頭・1着賞金 ${Util.money(g.prize)}</div>
+      <div class="rr-apt">この馬の適性：距離 <b>${Util.stars(h.aptitude[cat])}</b> 馬場 <b>${Util.stars(h.aptitude[race.surface])}</b></div>
+      ${elig.ok ? `<button class="btn primary" onclick="App.prepareRace('${h.id}','${race.id}')">出走する</button>` : `<div class="lock">🔒 ${elig.reason}</div>`}
+    </div>`;
+  },
+
+  // ─────────── 殿堂 ───────────
+  hofView() {
+    const list = Player.data.hallOfFame;
+    return `<button class="back" onclick="UI.show('home')">◀ ホーム</button>
+      <h2 class="screen-title">🏛 殿堂</h2>
+      ${list.length ? `<div class="hof-list">${list.map(e => `
+        <div class="legend-card">
+          <div class="lc-top">🏛 LEGEND</div>
+          <div class="lc-name">${Util.esc(e.name)}</div>
+          <div class="lc-rec">GⅠ：${e.record.g1Wins}勝<br>通算：${e.record.races}戦${e.record.wins}勝</div>
+          ${e.mainWins.length ? `<div class="lc-wins"><small>主な勝鞍</small>${e.mainWins.map(w => `<div>・${w}</div>`).join('')}</div>` : ''}
+          ${e.titles.length ? `<div class="lc-title">称号：「${e.titles[0]}」${e.titles.length > 1 ? `<small>ほか ${e.titles.slice(1).join('・')}</small>` : ''}</div>` : ''}
+          <div class="lc-ped">父：${Util.esc(e.father)}${e.pedigree && e.pedigree.ff ? `<small>（父父 ${Util.esc(e.pedigree.ff.name)}）</small>` : ''}<br>母：${Util.esc(e.mother)}${e.pedigree && e.pedigree.mf ? `<small>（母父 ${Util.esc(e.pedigree.mf.name)}）</small>` : ''}</div>
+        </div>`).join('')}</div>`
+        : `<div class="empty">🏛<p>まだ殿堂馬はいません。<br>GⅠ 3勝、または通算10勝した馬を引退させると殿堂入り！</p></div>`}`;
+  },
+
+  // ─────────── リーグ戦 ───────────
+  leagueView(h) {
+    const pvp = Player.data.pvp;
+    const st = this.state;
+    const can = Pvp.canEnter(h);
+    return `<section class="panel pvp-head">
+        <div class="rating">レーティング <b>${pvp.rating}</b> <small>最高 ${pvp.best}・${pvp.matches}戦${pvp.wins}勝</small></div>
+        <p class="muted small">CPUのライバル馬主7人と8頭立てで対戦。順位でレーティングが上下し、上位リーグが解放されます。週は進みません（疲労+${Pvp.FATIGUE}）。</p>
+      </section>
+      <div class="league-list">${GAME_DATA.leagues.map(l => {
+        const open = Pvp.isUnlocked(l);
+        return `<div class="league ${st.league === l.id ? 'active' : ''} ${open ? '' : 'locked'}" onclick="${open ? `UI.state.league='${l.id}';UI.render()` : ''}">
+          <div class="league-icon">${l.icon}</div>
+          <div><b>${l.name}</b><small>${l.desc}</small>
+          <small>1着賞金 ${Util.money(l.prize)}${pvp.leagueWins[l.id] ? `・優勝 ${pvp.leagueWins[l.id]}回` : ''}</small>
+          ${open ? '' : `<small class="warn">🔒 レーティング ${l.minRating} で解放</small>`}</div>
+        </div>`;
+      }).join('')}</div>
+      <section class="panel">
+        <p>出走馬：<b>${Util.esc(h.name)}</b> ${this.styleTag(h.runningStyle)} 総合 ${Util.grade(Horse.overall(h))}${this.league_capNote(h)}</p>
+        ${can.ok ? `<button class="btn primary big" onclick="App.prepareLeague('${h.id}')">⚔ 対戦相手を探す</button>` : `<p class="lock">🔒 ${can.reason}</p>`}
+      </section>`;
+  },
+
+  league_capNote(h) {
+    const l = Pvp.league(this.state.league);
+    if (!l.statCap) return '';
+    const over = STAT_KEYS.filter(k => h.stats[k] > l.statCap);
+    return over.length ? `<br><small class="muted">※ ${over.map(k => GAME_DATA.stats.find(x => x.key === k).label).join('・')}は${l.statCap}に制限されます</small>` : '';
+  },
+
+  // ─────────── フレンド対戦 ───────────
+  friendView(h) {
+    const st = this.state;
+    const ghosts = Player.data.ghosts;
+    st.friendPick = st.friendPick.filter(id => ghosts.some(g => g.id === id));
+    const caps = [[0, '制限なし'], [70, '最大70'], [85, '最大85']];
+    const can = Pvp.canEnter(h);
+    return `<section class="panel">
+        <h3>📥 対戦コードを追加</h3>
+        <p class="muted small">フレンドの「対戦コード」（馬の詳細 → 能力タブ）を貼り付けると、その馬と対戦できます。</p>
+        <textarea id="ghost-code" class="code-box" rows="3" placeholder="UMA1.xxxxx..."></textarea>
+        <button class="btn primary" onclick="App.addGhost()">追加する</button>
+        <button class="btn" onclick="App.showCode('${h.id}')">📤 ${Util.esc(h.name)}のコード</button>
+      </section>
+      <section class="panel">
+        <h3>🤝 対戦する馬を選ぶ（最大7頭）</h3>
+        ${ghosts.length ? `<div class="ghost-list">${ghosts.map(g => {
+          const on = st.friendPick.includes(g.id);
+          return `<div class="ghost ${on ? 'on' : ''}" onclick="App.toggleGhost('${g.id}')">
+            <span class="check">${on ? '✅' : '⬜'}</span>
+            <div class="ghost-main">${this.rarity(g.rarity)} <b>${Util.esc(g.name)}</b> ${GAME_DATA.styles[g.runningStyle].icon}<br>
+              <small>${Util.esc(g.owner)}厩舎・${g.record.races}戦${g.record.wins}勝・総合 ${Util.grade(Math.round(STAT_KEYS.reduce((a, k) => a + g.stats[k], 0) / 5))}・対戦成績 ${g.vs.win}勝${g.vs.lose}敗</small></div>
+            <button class="link" onclick="event.stopPropagation();App.removeGhost('${g.id}')">削除</button>
+          </div>`;
+        }).join('')}</div>` : '<p class="muted">まだ対戦コードがありません。フレンドと交換しよう！ コードが無くても、CPUの馬とフリー対戦できます。</p>'}
+      </section>
+      <section class="panel">
+        <h3>⚙ ルール</h3>
+        <div class="chips">${GAME_DATA.leagueCourses.map((c, i) => `<button class="${st.friendCourse === i ? 'active' : ''}" onclick="UI.state.friendCourse=${i};UI.render()">${c.surface === 'turf' ? '芝' : 'ダ'}${c.distance}m</button>`).join('')}</div>
+        <div class="chips" style="margin-top:6px">${caps.map(([v, l]) => `<button class="${st.friendCap === v ? 'active' : ''}" onclick="UI.state.friendCap=${v};UI.render()">能力 ${l}</button>`).join('')}</div>
+        ${can.ok ? `<button class="btn primary big" onclick="App.prepareFriend('${h.id}')">🏁 対戦スタート（${Util.esc(h.name)}）</button>` : `<p class="lock">🔒 ${can.reason}</p>`}
+      </section>`;
+  },
+
+  // ─────────── 記録・ランキング ───────────
+  recordsView() {
+    const p = Player.data;
+    const all = [
+      ...p.horses.map(h => ({ name: h.name, rarity: h.rarity, record: h.record, tag: '現役' })),
+      ...p.hallOfFame.map(e => ({ name: e.name, rarity: e.rarity, record: e.record, tag: '🏛殿堂' })),
+      ...p.retired.map(e => ({ name: e.name, rarity: e.rarity, record: e.record, tag: '引退' }))
+    ];
+    const rank = (key, label, fmt) => {
+      const list = all.filter(x => x.record[key] > 0).sort((a, b) => b.record[key] - a.record[key]).slice(0, 10);
+      return `<section class="panel"><h3>${label}</h3>${list.length ? `<table class="hist">${list.map((x, i) => `<tr><td class="rank r${i + 1}">${i + 1}</td><td>${this.rarity(x.rarity)} ${Util.esc(x.name)} <small class="muted">${x.tag}</small></td><td class="num">${fmt(x.record[key])}</td></tr>`).join('')}</table>` : '<p class="muted">まだ記録がありません。</p>'}</section>`;
+    };
+    const recs = GAME_DATA.races.filter(r => p.records[r.id]);
+    return `<button class="back" onclick="UI.show('home')">◀ ホーム</button>
+      <h2 class="screen-title">📊 記録・ランキング</h2>
+      <section class="panel"><h3>👤 オーナー成績</h3>
+        <div class="hero-stats">
+          <div><small>通算出走</small><b>${p.stats.raceCount}</b></div>
+          <div><small>通算勝利</small><b>${p.stats.winCount}</b></div>
+          <div><small>GⅠ勝利</small><b>${p.stats.g1WinCount}</b></div>
+          <div><small>レーティング</small><b>${p.pvp.rating}</b></div>
+        </div>
+      </section>
+      ${rank('prizeMoney', '💰 獲得賞金ランキング', v => Util.money(v))}
+      ${rank('wins', '🏆 勝利数ランキング', v => v + '勝')}
+      ${rank('g1Wins', '👑 GⅠ勝利数ランキング', v => v + '勝')}
+      <section class="panel"><h3>⏱ コースレコード</h3>
+        ${recs.length ? `<table class="hist"><tr><th>レース</th><th>タイム</th><th>馬名</th></tr>${recs.map(r => `<tr><td>${this.gradeBadge(r.grade)}${r.name}<br><small class="muted">${r.surface === 'turf' ? '芝' : 'ダ'}${r.distance}m</small></td><td class="num">${Race.timeText(p.records[r.id].time)}</td><td>${Util.esc(p.records[r.id].name)}</td></tr>`).join('')}</table>` : '<p class="muted">レースに出るとタイムが記録されます。</p>'}
+      </section>`;
+  }
+};
+
+// ─────────── レース再生（表示のみ） ───────────
+// Race.simulate() の結果（frames = 0.5秒ごとの全馬の位置、events = 実況）を
+// 時計に合わせて再生する。2Dトラック・実況ログ・順位表を同じ時計で動かす。
+const RaceView = {
+  ctx: null,       // { result, reward, race, horseId, resultHTML? }
+  raf: null,
+  clock: 0,        // レース内の経過秒
+  lastTs: null,
+  idx: 0,          // 次に表示するイベント
+  done: false,
+  skipping: false,
+  lastOrderAt: 0,
+  RATE: 9,         // 実時間1秒あたりに進むレース秒（×1のとき）
+  WINDOW: 44,      // トラックに映す範囲（m）
+
+  start(ctx) {
+    this.stop();
+    this.ctx = ctx;
+    this.clock = 0;
+    this.idx = 0;
+    this.done = false;
+    this.lastTs = null;
+    const fin = ctx.result.finish;
+    this.endTime = Math.min(fin[fin.length - 1].time || 0, fin[0].time + 6) + 0.6;
+    UI.show('raceView');
+  },
+
+  stop() { if (this.raf) cancelAnimationFrame(this.raf); this.raf = null; },
+
+  speed() { return Player.data.settings.raceSpeed || 1; },
+
+  entrant(id) { return this.ctx.result.entrants.find(e => e.id === id); },
+
+  view() {
+    if (!this.ctx) return '<div class="empty">レースがありません</div>';
+    const { result, race } = this.ctx;
+    const ground = GAME_DATA.grounds[result.ground].label;
+    const sl = GAME_DATA.surfaces.find(s => s.key === result.surface);
+    const lanes = result.entrants.slice().sort((a, b) => a.gate - b.gate);
+    return `<section class="race-live">
+        <div class="rl-title">🏇 ${UI.gradeBadge(race.grade)} ${Util.esc(race.name)}</div>
+        <div class="rl-info">${sl.icon}${sl.label} ${result.distance}m・馬場：${ground}${UI.help('ground')}・${result.finish.length}頭</div>
+        <div class="track ${result.surface}" id="rl-track">
+          <div class="track-remain" id="rl-remain">スタート</div>
+          <div class="track-goal" id="rl-goal"></div>
+          ${[0, 1, 2, 3, 4].map(i => `<div class="track-post" data-i="${i}"></div>`).join('')}
+          ${lanes.map((e, i) => `<div class="lane ${e.isPlayer ? 'me' : ''}" style="top:${i * (100 / lanes.length)}%;height:${100 / lanes.length}%">
+              <div class="runner" id="rn-${e.id}"><span class="gate">${e.gate}</span><span class="horse">🏇</span>${e.isPlayer ? `<span class="me-tag">${Util.esc(e.name)}</span>` : ''}</div>
+            </div>`).join('')}
+        </div>
+        <div class="rl-progress"><div id="rl-bar" class="bar-fill" style="width:0%"></div></div>
+        <div class="rl-controls">
+          ${[1, 2, 4].map(s => `<button class="${this.speed() === s ? 'active' : ''}" onclick="RaceView.setSpeed(${s})">×${s}</button>`).join('')}
+          <button onclick="RaceView.skip()">⏭ スキップ</button>
+        </div>
+      </section>
+      <div class="race-split">
+        <section class="panel standings"><h3>順位</h3><ol id="rl-order"></ol></section>
+        <section class="panel log"><h3>実況</h3><div id="rl-log"></div></section>
+      </div>
+      <div id="rl-result"></div>`;
+  },
+
+  mount() {
+    this.stop();
+    const log = UI.el('rl-log');
+    this.ctx.result.events.slice(0, this.idx).forEach(e => log.insertAdjacentHTML('afterbegin', this.eventHTML(e)));
+    this.draw(true);
+    if (this.done) { this.showResult(); return; }
+    this.lastTs = null;
+    this.raf = requestAnimationFrame(ts => this.tick(ts));
+  },
+
+  setSpeed(s) {
+    Player.data.settings.raceSpeed = s;
+    Player.save();
+    document.querySelectorAll('.rl-controls button').forEach(b => b.classList.toggle('active', b.textContent === '×' + s));
+  },
+
+  tick(ts) {
+    if (!UI.el('rl-track')) { this.stop(); return; }
+    if (this.lastTs !== null) this.clock += Math.min(0.1, (ts - this.lastTs) / 1000) * this.RATE * this.speed();
+    this.lastTs = ts;
+    const events = this.ctx.result.events;
+    while (this.idx < events.length && events[this.idx].t <= this.clock) { this.apply(events[this.idx]); this.idx++; }
+    this.draw(false);
+    if (this.clock >= this.endTime) { this.finish(); return; }
+    this.raf = requestAnimationFrame(t => this.tick(t));
+  },
+
+  // 時刻 t の各馬の位置（frames を線形補間）
+  positionsAt(t) {
+    const frames = this.ctx.result.frames;
+    const n = this.ctx.result.entrants.length;
+    if (!frames.length || t <= frames[0].t) {
+      const f0 = frames[0];
+      return f0 ? f0.pos.map(p => p * Math.max(0, t) / f0.t) : new Array(n).fill(0);
+    }
+    let i = frames.findIndex(f => f.t >= t);
+    if (i === -1) return frames[frames.length - 1].pos.slice();
+    const a = frames[i - 1], b = frames[i];
+    const k = (t - a.t) / (b.t - a.t);
+    return a.pos.map((p, j) => p + (b.pos[j] - p) * k);
+  },
+
+  draw(force) {
+    const result = this.ctx.result;
+    const D = result.distance;
+    const pos = this.positionsAt(this.done ? this.endTime : this.clock);
+    const leader = Math.max(...pos);
+    const right = Math.min(leader + this.WINDOW * 0.18, D + this.WINDOW * 0.25);
+    const left = right - this.WINDOW;
+    const toX = p => Util.clamp((p - left) / this.WINDOW * 100, 0, 100);
+    result.entrants.forEach((e, j) => {
+      const el = UI.el('rn-' + e.id);
+      if (el) {
+        el.style.left = toX(pos[j]) + '%';
+        el.classList.toggle('behind', pos[j] < left);
+      }
+    });
+    // 10mごとのハロン棒風マーカーで流れる感じを出す
+    document.querySelectorAll('.track-post').forEach(el => {
+      const i = Number(el.dataset.i);
+      const p = Math.floor(left / 10) * 10 + i * 10 + 10;
+      el.style.left = toX(p) + '%';
+      el.style.display = p > D ? 'none' : '';
+    });
+    const goal = UI.el('rl-goal');
+    if (goal) {
+      goal.style.display = D <= right ? '' : 'none';
+      goal.style.left = toX(D) + '%';
+    }
+    const remain = UI.el('rl-remain');
+    if (remain) remain.textContent = leader >= D ? 'ゴール！' : this.clock < 0.5 ? 'スタート' : `残り ${Math.ceil((D - leader) / 100) * 100}m`;
+    const bar = UI.el('rl-bar');
+    if (bar) bar.style.width = Math.min(100, leader / D * 100) + '%';
+
+    // 順位表は0.25秒ごとに更新（ゴール済みはゴール順）
+    const now = performance.now();
+    if (force || now - this.lastOrderAt > 250) {
+      this.lastOrderAt = now;
+      const t = this.done ? Infinity : this.clock;
+      const finishTime = id => { const f = result.finish.find(x => x.id === id); return f && f.time <= t ? f.time : null; };
+      const order = result.entrants.map((e, j) => ({ e, p: pos[j], ft: finishTime(e.id) }))
+        .sort((a, b) => (a.ft !== null && b.ft !== null ? a.ft - b.ft : a.ft !== null ? -1 : b.ft !== null ? 1 : b.p - a.p));
+      this.renderOrder(order, order[0] ? order[0].p : 0);
+    }
+  },
+
+  renderOrder(order, leadPos) {
+    const ol = UI.el('rl-order');
+    if (!ol) return;
+    ol.innerHTML = order.map((o, i) => {
+      const st = GAME_DATA.styles[o.e.style];
+      const gap = i > 0 && o.ft === null ? `<small>${((leadPos - o.p) / 2.4).toFixed(1)}馬身</small>` : '';
+      return `<li class="${o.e.isPlayer ? 'me' : ''} ${o.e.isGhost ? 'ghost' : ''}"><span class="pos">${i + 1}</span><span title="${st.label}">${st.icon}</span> ${Util.esc(o.e.name)} ${gap}</li>`;
+    }).join('');
+  },
+
+  eventHTML(e) {
+    if (e.type === 'checkpoint') return `<div class="ev cp"><span class="cp-label">── ${e.label} ──</span><br>${Util.esc(e.text)}</div>`;
+    if (e.type === 'skill') {
+      return `<div class="ev skill ${e.isPlayer ? 'me' : ''}">${e.text}<br><small>${Util.esc(e.sub)}${e.isPlayer && !e.matched ? '（脚質不一致）' : ''}</small></div>`;
+    }
+    return `<div class="ev ${e.isPlayer ? 'me' : ''}">${Util.esc(e.text)}</div>`;
+  },
+
+  apply(e) {
+    const log = UI.el('rl-log');
+    if (!log) return;
+    log.insertAdjacentHTML('afterbegin', this.eventHTML(e));
+    if (e.type === 'skill' && !this.skipping) {
+      const el = UI.el('rn-' + e.horseId);
+      if (el) {
+        el.classList.remove('boost');
+        void el.offsetWidth;
+        el.classList.add('boost');
+        el.setAttribute('data-skill', e.text.replace(/[「」]|発動！/g, ''));
+      }
+      if (e.isPlayer) UI.toast(`${e.text}<br>${Util.esc(e.sub)}`, 'skill-toast');
+    }
+  },
+
+  skip() {
+    this.stop();
+    const events = this.ctx.result.events;
+    this.skipping = true;
+    while (this.idx < events.length) { this.apply(events[this.idx]); this.idx++; }
+    this.skipping = false;
+    this.finish();
+  },
+
+  finish() {
+    this.stop();
+    if (this.done) return;
+    this.done = true;
+    this.clock = this.endTime;
+    this.draw(true);
+    this.showResult();
+  },
+
+  resultTable(fin) {
+    return `<table class="hist">
+        <tr><th>着</th><th>馬名</th><th>タイム</th><th>着差</th></tr>
+        ${fin.map(f => {
+          const e = this.entrant(f.id) || {};
+          return `<tr class="${f.isPlayer ? 'me' : ''}"><td>${f.place}</td><td>${GAME_DATA.styles[f.style].icon} ${Util.esc(f.name)}${e.owner ? `<br><small class="muted">${Util.esc(e.owner)}</small>` : ''}</td><td>${Race.timeText(f.time)}</td><td>${f.margin}</td></tr>`;
+        }).join('')}
+      </table>`;
+  },
+
+  placeHead(place, winnerName) {
+    return place === 1 ? `<div class="result-big win">🏆 1着！</div><p class="center">${Util.esc(winnerName)}、見事な勝利！</p>`
+      : place <= 3 ? `<div class="result-big place">🥈 ${place}着</div><p class="center">あと少し！ 惜しいレースでした。</p>`
+      : `<div class="result-big">${place}着</div><p class="center">次は調教で鍛えて、リベンジしよう！</p>`;
+  },
+
+  cardsHTML(cards) {
+    return cards.map((x, i) => `<div class="reveal" style="animation-delay:${0.3 + i * 0.4}s">${x.isNew ? '<span class="new">NEW!</span>' : ''}${UI.anyCard(x.card, {})}</div>`).join('');
+  },
+
+  showResult() {
+    const { result, reward, horseId } = this.ctx;
+    const fin = result.finish;
+    const h = Player.horse(horseId);
+    let body;
+    if (this.ctx.resultHTML) {
+      body = this.ctx.resultHTML(this);
+    } else {
+      const cards = this.cardsHTML(reward.cards);
+      body = `${this.placeHead(reward.place, fin[0].name)}
+        ${reward.newRecord ? '<p class="center ok">⏱ コースレコード更新！</p>' : ''}
+        ${this.resultTable(fin)}
+        <h3>🎁 報酬</h3>
+        <div class="rewards">
+          <div>💰 賞金 <b>${Util.money(reward.prize)}</b></div>
+          <div>✨ 経験値 <b>+${reward.exp}</b>${reward.levelUps ? ` <span class="ok">レベルアップ！ Lv.${h ? h.level : ''}</span>` : ''}</div>
+          ${reward.birthday && h ? `<div>🎂 ${Util.esc(h.name)}は${h.age}歳になりました！</div>` : ''}
+        </div>
+        ${cards ? `<h3>🃏 カード獲得！</h3><div class="cgrid reveal-grid">${cards}</div>` : '<p class="muted">カードは獲得できませんでした（1着で確定、2〜3着で50%）。</p>'}
+        ${h && Horse.mustRetire(h) ? `<p class="notice">🎌 ${Util.esc(h.name)}は引退の時期を迎えました。</p>` : ''}
+        <div class="btn-row">
+          <button class="btn" onclick="UI.show('horse',{id:'${horseId}'})">🐎 馬の詳細へ</button>
+          <button class="btn primary" onclick="UI.show('race')">🏇 レース選択へ</button>
+        </div>`;
+    }
+    UI.el('rl-result').innerHTML = `<section class="panel result">${body}</section>`;
+    UI.el('rl-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+};
+</script>
+<script>
+// ゲームの起動と、プレイヤー操作（コントローラー）
+'use strict';
+
+const App = {
+  pending: null,          // 出走準備中のレース
+  pendingMatch: null,     // 準備中の対戦（リーグ戦・フレンド対戦）
+  notifiedMission: null,
+
+  init() {
+    Player.init();
+    document.querySelectorAll('.nav-btn').forEach(b => {
+      b.addEventListener('click', () => UI.show(b.dataset.nav));
+    });
+    UI.show('home');
+    if (!Player.data.tutorialDone) this.welcome();
+  },
+
+  // 変更を保存して再描画
+  commit() {
+    Player.save();
+    this.checkMission();
+    UI.render();
+  },
+
+  checkMission() {
+    const m = Missions.current();
+    if (m && Missions.isComplete(m) && this.notifiedMission !== m.id) {
+      this.notifiedMission = m.id;
+      UI.toast(`📋 ミッション達成！「${m.title}」<br><small>ホームで報酬を受け取ろう</small>`, 'mission-toast');
+    }
+  },
+
+  // 初心者ガイド：次にやることを1つだけ示す
+  guide() {
+    const p = Player.data;
+    const s = p.stats;
+    if (!p.horses.length && s.breedCount === 0) {
+      return { title: 'まず父カードを選ぼう！', text: '種牡馬（父）と繁殖牝馬（母）のカードを組み合わせて、最初の競走馬を作ります。', action: "UI.show('breed')" };
+    }
+    if (!p.horses.length) {
+      return { title: '新しい馬を作ろう！', text: '厩舎に馬がいません。配合で新しい馬を誕生させよう。', action: "UI.show('breed')" };
+    }
+    const h = p.horses[0];
+    if (s.trainCount === 0) {
+      return { title: '次は調教！', text: `${Util.esc(h.name)}を鍛えよう。迷ったら「おまかせ」でOK！`, action: `UI.state.horseTab='train';UI.show('horse',{id:'${h.id}'})` };
+    }
+    if (s.raceCount === 0) {
+      return { title: 'レースに出してみよう！', text: '新馬戦は勝利数0の馬だけが出られるデビュー戦です。', action: `App.goRace('${h.id}')` };
+    }
+    return null;
+  },
+
+  welcome() {
+    UI.modal(`
+      <div class="welcome">
+        <div class="big-emoji">🐎🃏</div>
+        <h2>馬主カードへようこそ！</h2>
+        <p>あなたは今日から<b>馬主</b>です。<br>カードを集めて馬を作り、育てて、レースで勝とう！</p>
+        <ol class="flow"><li>🧬 父と母のカードで配合</li><li>🏋️ 調教で鍛える</li><li>🎴 スキルを装備</li><li>🏇 レースはオートで進む</li><li>🃏 勝ってカードをゲット！</li></ol>
+        <label>あなたの厩舎の名前<input id="owner-name" maxlength="12" placeholder="オーナー" value=""></label>
+        <button class="btn primary big" onclick="App.finishWelcome()">はじめる！</button>
+      </div>`, { noClose: true });
+  },
+
+  finishWelcome() {
+    const v = (UI.el('owner-name').value || '').trim();
+    Player.data.name = v.slice(0, 12) || 'オーナー';
+    Player.data.tutorialDone = true;
+    Player.save();
+    UI.closeModal();
+    UI.show('breed');
+    UI.toast('まず父カード（種牡馬）を選ぼう！');
+  },
+
+  help(key) {
+    const g = GAME_DATA.glossary[key];
+    if (g) UI.modal(`<h3>${g.title}</h3><p class="help-body">${g.body}</p><button class="btn" onclick="UI.closeModal()">わかった！</button>`, { cls: 'small' });
+  },
+
+  // ── 配合 ──
+  pickParent(type, id) {
+    UI.state.breed[type === 'sire' ? 'father' : 'mother'] = id;
+    UI.render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  },
+
+  breed() {
+    const b = UI.state.breed;
+    const father = Cards.get(b.father), mother = Cards.get(b.mother);
+    if (!father || !mother || !Player.count(father.id) || !Player.count(mother.id)) return UI.toast('カードを選んでください', 'error');
+    if (Player.stableFull()) return UI.toast('厩舎がいっぱいです', 'error');
+    const fee = Player.data.stats.breedCount === 0 ? 0 : Breeding.fee(father, mother);
+    if (!Player.canAfford(fee)) return UI.toast(`配合料（${Util.money(fee)}）が足りません`, 'error');
+    Player.addMoney(-fee);
+    const { horse, inherited, specials } = Breeding.breed(father, mother);
+    Player.data.horses.push(horse);
+    specials.filter(x => x.key === 'nick').forEach(x => {
+      if (!Player.data.nicksFound.includes(x.id)) {
+        Player.data.nicksFound.push(x.id);
+        UI.toast(`✨ 新しい黄金配合を発見！<br>${x.name}`, 'mission-toast');
+      }
+    });
+    if (inherited) Player.addCard(inherited);
+    Player.bump('breedCount');
+    UI.state.breed = { father: null, mother: null };
+    this.commit();
+    this.birthModal(horse, inherited);
+  },
+
+  birthModal(h, inherited) {
+    const sk = inherited ? Cards.get(inherited) : null;
+    const rec = Horse.routeInfo(Horse.recommendRoute(h));
+    UI.modal(`
+      <div class="birth">
+        <div class="sparkle">✨🐣✨</div>
+        <h2>馬が生まれました！</h2>
+        ${UI.horseCard(h, { onclick: '' })}
+        <label>名前をつけよう<input id="horse-name" maxlength="12" value="${Util.esc(h.name)}"></label>
+        <p>素質：<b>${Util.grade(Horse.potential(h))}</b>${UI.help('potential')}・成長：<b>${GAME_DATA.growthTypes[h.growthType].label}</b>・おすすめ：<b>${rec.icon}${rec.name}</b></p>
+        ${h.specials && h.specials.length ? `<p class="special-tags">${h.specials.map(x => `<span class="special">✨ ${x}</span>`).join('')}</p>` : ''}
+        ${sk ? `<p class="ok">🎴 親からスキル「${sk.name}」を受け継いだ！（スキルカードを入手）</p>` : ''}
+        <button class="btn primary big" onclick="App.afterBirth('${h.id}')">次は調教！ ▶</button>
+      </div>`, { noClose: true });
+  },
+
+  afterBirth(id) {
+    const h = Player.horse(id);
+    const v = (UI.el('horse-name').value || '').trim().slice(0, 12);
+    if (h && v) h.name = v;
+    Player.save();
+    UI.closeModal();
+    UI.state.horseTab = 'train';
+    UI.show('horse', { id });
+  },
+
+  rename(id) {
+    const h = Player.horse(id);
+    if (!h) return;
+    const v = window.prompt('新しい馬名（12文字まで）', h.name);
+    if (v && v.trim()) { h.name = v.trim().slice(0, 12); this.commit(); }
+  },
+
+  setRoute(hid, route) {
+    const h = Player.horse(hid);
+    if (!h) return;
+    h.route = route;
+    UI.toast(`目標路線を「${Horse.routeInfo(route).name}」にしました`);
+    this.commit();
+  },
+
+  // ── 調教 ──
+  gainText(gains) {
+    const parts = Object.entries(gains).map(([k, v]) => `${GAME_DATA.stats.find(s => s.key === k).icon}+${v}`);
+    return parts.length ? parts.join(' ') : '';
+  },
+
+  afterWeek(h, res) {
+    if (res.levelUps) UI.toast(`⬆ レベルアップ！ Lv.${h.level}（全能力+1）`, 'ok');
+    if (res.birthday) UI.toast(`🎂 ${Util.esc(h.name)}は${h.age}歳になりました！`, 'ok');
+    if (Horse.mustRetire(h)) UI.toast(`🎌 ${Util.esc(h.name)}は引退の時期です`, 'error');
+  },
+
+  train(hid, menu) {
+    const h = Player.horse(hid);
+    if (!h) return;
+    const can = Training.canTrain(h);
+    if (!can.ok) return UI.toast(can.reason, 'error');
+    const res = Training.train(h, menu);
+    const g = this.gainText(res.gains);
+    UI.toast(`${res.menu.icon} ${res.menu.label}！ ${g || (menu === 'rest' ? '疲れがとれた！' : res.capped ? '限界に近い…' : '今回は伸びなかった…')}`);
+    this.afterWeek(h, res);
+    this.commit();
+  },
+
+  autoTrain(hid, weeks = 1) {
+    const h = Player.horse(hid);
+    if (!h) return;
+    const total = {};
+    const done = [];
+    let reason = '';
+    for (let i = 0; i < weeks; i++) {
+      if (!Training.canTrain(h).ok) break;
+      const plan = Training.autoPlan(h);
+      if (!reason) reason = plan.reason;
+      const res = Training.train(h, plan.menu);
+      done.push(res.menu.icon);
+      Object.entries(res.gains).forEach(([k, v]) => { total[k] = (total[k] || 0) + v; });
+      this.afterWeek(h, res);
+    }
+    const head = done.length > 1 ? `🤖 おまかせ${done.length}週：${done.join('→')}` : `🤖 ${reason}`;
+    UI.toast(`${head}<br>${this.gainText(total) || '体調を整えました'}`);
+    this.commit();
+  },
+
+  useItem(hid, itemId) {
+    const h = Player.horse(hid);
+    if (!h) return;
+    const res = Training.useItem(h, itemId);
+    if (!res) return UI.toast('アイテムを使えません', 'error');
+    UI.toast(`${res.item.icon} ${res.item.name} を使った！ ${this.gainText(res.gains)}`);
+    this.afterWeek(h, res);
+    this.commit();
+  },
+
+  equip(hid, skillId) {
+    const h = Player.horse(hid);
+    const r = Skills.equip(h, skillId);
+    if (!r.ok) return UI.toast(r.reason, 'error');
+    UI.toast(`🎴 ${Skills.get(skillId).name} を装備しました`);
+    this.commit();
+  },
+
+  unequip(hid, skillId) {
+    const h = Player.horse(hid);
+    if (Skills.unequip(h, skillId)) this.commit();
+  },
+
+  // ── レース ──
+  goRace(hid, route) {
+    const h = Player.horse(hid);
+    if (!h) return;
+    UI.state.raceHorse = hid;
+    UI.state.raceMode = 'route';
+    UI.state.raceRoute = route || h.route || Horse.recommendRoute(h);
+    UI.show('race');
+  },
+
+  prepareRace(hid, raceId) {
+    const h = Player.horse(hid);
+    const race = Race.get(raceId);
+    if (!h || !race) return;
+    const elig = Race.eligibility(h, race);
+    if (!elig.ok) return UI.toast(elig.reason, 'error');
+    const field = Race.buildField(h, race);
+    const ground = Race.rollGround(race);
+    this.pending = { hid, raceId, field, ground };
+    const cat = Horse.distCat(race.distance);
+    const warn = [];
+    if (h.aptitude[cat] < 45) warn.push('距離適性が低いレースです');
+    if (h.aptitude[race.surface] < 45) warn.push('馬場適性が低いレースです');
+    if (h.fatigue >= 50) warn.push('疲れがたまっています');
+    if (!h.skills.length) warn.push('スキルが装備されていません');
+    UI.modal(`
+      <h3>${UI.gradeBadge(race.grade)} ${race.name}</h3>
+      <p>${race.surface === 'turf' ? '🌱芝' : '🟫ダート'} ${race.distance}m・馬場：<b>${GAME_DATA.grounds[ground].label}</b>${UI.help('ground')}</p>
+      <h4>出走メンバー（${field.length}頭）</h4>
+      <ol class="entry-list">${field.map(e => `<li class="${e.isPlayer ? 'me' : ''}">${GAME_DATA.styles[e.runningStyle].icon} ${Util.esc(e.name)}${e.isPlayer ? ' ← あなたの馬' : ''}</li>`).join('')}</ol>
+      ${warn.length ? `<div class="warn">${warn.map(w => '⚠ ' + w).join('<br>')}</div>` : '<p class="ok">準備万端！</p>'}
+      <div class="btn-row"><button class="btn" onclick="UI.closeModal()">やめる</button><button class="btn primary big" onclick="App.runRace()">🏁 スタート！</button></div>`);
+  },
+
+  runRace() {
+    const pd = this.pending;
+    if (!pd) return;
+    this.pending = null;
+    UI.closeModal();
+    const h = Player.horse(pd.hid);
+    const race = Race.get(pd.raceId);
+    if (!h || !Race.eligibility(h, race).ok) return UI.toast('出走できません', 'error');
+    // 結果は先に計算・保存し、表示は後から再生する
+    const result = Race.simulate(race, pd.field, pd.ground);
+    const reward = Race.applyResult(h, race, result);
+    Player.save();
+    RaceView.start({ result, reward, race, horseId: h.id });
+    this.checkMission();
+  },
+
+  // ── 対戦（リーグ戦・フレンド対戦） ──
+  matchModal(match, h) {
+    const r = match.race;
+    UI.modal(`
+      <h3>${UI.gradeBadge(r.grade)} ${Util.esc(r.name)}</h3>
+      <p>${r.surface === 'turf' ? '🌱芝' : '🟫ダート'} ${r.distance}m・馬場：<b>${GAME_DATA.grounds[match.ground].label}</b>
+        ${match.league && match.league.statCap ? `・能力上限 ${match.league.statCap}` : match.cap ? `・能力上限 ${match.cap}` : ''}</p>
+      <h4>対戦相手</h4>
+      <ol class="entry-list wide">${match.field.map(e => `<li class="${e.isPlayer ? 'me' : ''}">${GAME_DATA.styles[e.runningStyle].icon} ${Util.esc(e.name)}
+        <small class="muted">${e.isPlayer ? 'あなた' : Util.esc(e.owner || '')}${e.isGhost ? '（フレンド）' : ''}</small></li>`).join('')}</ol>
+      <div class="btn-row"><button class="btn" onclick="UI.closeModal()">やめる</button><button class="btn primary big" onclick="App.runMatch()">🏁 スタート！</button></div>`);
+  },
+
+  prepareLeague(hid) {
+    const h = Player.horse(hid);
+    const league = Pvp.league(UI.state.league);
+    if (!h || !league || !Pvp.isUnlocked(league)) return;
+    const can = Pvp.canEnter(h);
+    if (!can.ok) return UI.toast(can.reason, 'error');
+    this.pendingMatch = Object.assign(Pvp.buildLeagueMatch(h, league.id), { hid });
+    this.matchModal(this.pendingMatch, h);
+  },
+
+  prepareFriend(hid) {
+    const h = Player.horse(hid);
+    if (!h) return;
+    const can = Pvp.canEnter(h);
+    if (!can.ok) return UI.toast(can.reason, 'error');
+    const course = GAME_DATA.leagueCourses[UI.state.friendCourse] || GAME_DATA.leagueCourses[1];
+    this.pendingMatch = Object.assign(Pvp.buildFriendMatch(h, UI.state.friendPick, course, UI.state.friendCap || null), { hid });
+    this.matchModal(this.pendingMatch, h);
+  },
+
+  runMatch() {
+    const m = this.pendingMatch;
+    if (!m) return;
+    this.pendingMatch = null;
+    UI.closeModal();
+    const h = Player.horse(m.hid);
+    if (!h || !Pvp.canEnter(h).ok) return UI.toast('出走できません', 'error');
+    const result = Race.simulate(m.race, m.field, m.ground);
+    const reward = m.kind === 'league' ? Pvp.applyLeague(h, m, result) : Pvp.applyFriend(h, m, result);
+    Player.save();
+    RaceView.start({
+      result, reward, race: m.race, horseId: h.id,
+      resultHTML: v => {
+        const fin = result.finish;
+        const back = `<div class="btn-row"><button class="btn" onclick="UI.show('horse',{id:'${h.id}'})">🐎 馬の詳細へ</button>
+          <button class="btn primary" onclick="UI.show('race')">⚔ 対戦画面へ</button></div>`;
+        if (m.kind === 'league') {
+          const cards = v.cardsHTML(reward.cards);
+          return `${v.placeHead(reward.place, fin[0].name)}
+            <div class="rating-change ${reward.delta >= 0 ? 'up' : 'down'}">レーティング ${reward.rating} <b>${reward.delta >= 0 ? '+' : ''}${reward.delta}</b></div>
+            ${reward.unlocked.map(l => `<p class="center ok">🎉 ${l.icon}${l.name}が解放されました！</p>`).join('')}
+            ${v.resultTable(fin)}
+            <h3>🎁 報酬</h3>
+            <div class="rewards"><div>💰 賞金 <b>${Util.money(reward.prize)}</b></div>
+              <div>✨ 経験値 <b>+${reward.exp}</b>${reward.levelUps ? ' <span class="ok">レベルアップ！</span>' : ''}</div></div>
+            ${cards ? `<h3>🃏 カード獲得！</h3><div class="cgrid reveal-grid">${cards}</div>` : ''}
+            ${back}`;
+        }
+        return `${v.placeHead(reward.place, fin[0].name)}
+          ${reward.vs.length ? `<div class="vs-list">${reward.vs.map(x => `<div class="${x.won ? 'ok' : 'warn'}">${x.won ? '○ 勝ち' : '● 負け'}：${Util.esc(x.owner)}厩舎の${Util.esc(x.name)}</div>`).join('')}</div>` : ''}
+          ${v.resultTable(fin)}
+          <p class="muted small">フレンド対戦は報酬なし（経験値+${reward.exp}）。何度でも挑戦できます。</p>
+          ${back}`;
+      }
+    });
+  },
+
+  showCode(hid) {
+    const h = Player.horse(hid);
+    if (!h) return;
+    const code = Pvp.exportCode(h);
+    UI.modal(`<h3>📤 ${Util.esc(h.name)}の対戦コード</h3>
+      <p class="muted small">このコードをコピーしてフレンドに送ろう。フレンドは「レース → フレンド対戦」に貼り付けると対戦できます。<br>※ 今の能力・スキルが記録されます。成長したら作り直してね。</p>
+      <textarea id="my-code" class="code-box" rows="5" readonly onclick="this.select()">${code}</textarea>
+      <div class="btn-row"><button class="btn primary" onclick="App.copyCode()">📋 コピー</button><button class="btn" onclick="UI.closeModal()">閉じる</button></div>`, { cls: 'small' });
+  },
+
+  copyCode() {
+    const el = UI.el('my-code');
+    el.select();
+    const done = () => UI.toast('📋 コピーしました');
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(el.value).then(done, () => { document.execCommand('copy'); done(); });
+    else { document.execCommand('copy'); done(); }
+  },
+
+  addGhost() {
+    const el = UI.el('ghost-code');
+    try {
+      const g = Pvp.addGhost(el.value);
+      if (!UI.state.friendPick.includes(g.id) && UI.state.friendPick.length < 7) UI.state.friendPick.push(g.id);
+      UI.toast(`🤝 ${Util.esc(g.owner)}厩舎の「${Util.esc(g.name)}」を追加しました`);
+      this.commit();
+    } catch (e) {
+      UI.toast(e.message, 'error');
+    }
+  },
+
+  removeGhost(id) {
+    Player.data.ghosts = Player.data.ghosts.filter(g => g.id !== id);
+    UI.state.friendPick = UI.state.friendPick.filter(x => x !== id);
+    this.commit();
+  },
+
+  toggleGhost(id) {
+    const pick = UI.state.friendPick;
+    const i = pick.indexOf(id);
+    if (i >= 0) pick.splice(i, 1);
+    else if (pick.length < 7) pick.push(id);
+    else UI.toast('対戦できるのは最大7頭です', 'error');
+    UI.render();
+  },
+
+  // ── 引退・殿堂 ──
+  retire(hid) {
+    const h = Player.horse(hid);
+    if (!h) return;
+    const hof = HallOfFame.qualifies(h);
+    UI.modal(`<h3>🎌 ${Util.esc(h.name)}を引退させますか？</h3>
+      <p>${h.record.races}戦${h.record.wins}勝（GⅠ ${h.record.g1Wins}勝）</p>
+      ${hof ? '<p class="ok">🏛 殿堂入りします！</p>' : h.record.gradedWins ? '<p class="ok">🃏 配合カードになります。</p>' : '<p class="muted">重賞未勝利のため、配合カードにはなりません。</p>'}
+      <div class="btn-row"><button class="btn" onclick="UI.closeModal()">やめる</button><button class="btn danger" onclick="App.doRetire('${hid}')">引退させる</button></div>`, { cls: 'small' });
+  },
+
+  doRetire(hid) {
+    const h = Player.horse(hid);
+    if (!h) return;
+    const res = HallOfFame.retire(h);
+    this.commit();
+    UI.show(res.inHall ? 'hof' : 'stable');
+    UI.modal(`<div class="birth">
+      <div class="sparkle">${res.inHall ? '🏛✨' : '🎌'}</div>
+      <h2>${res.inHall ? '殿堂入り！' : 'おつかれさま！'}</h2>
+      <p><b>${Util.esc(res.entry.name)}</b> は引退しました。</p>
+      ${res.entry.titles.length ? `<p>称号：「${res.entry.titles.join('」「')}」</p>` : ''}
+      ${res.card ? `<p class="ok">🃏 配合カード「${Util.esc(res.card.name)}」を手に入れた！血統を次の世代へ。</p>${UI.breedCard(res.card)}` : ''}
+      <button class="btn primary" onclick="UI.closeModal()">OK</button></div>`);
+  },
+
+  // ── ミッション ──
+  claimMission() {
+    const m = Missions.claim();
+    if (!m) return;
+    const cards = (m.reward.cards || []).map(id => Cards.get(id));
+    UI.modal(`<div class="birth"><div class="sparkle">🎁</div><h2>ミッション達成！</h2><p>「${m.title}」</p>
+      <p>💰 ${Util.money(m.reward.money)}</p>
+      <div class="cgrid">${cards.map(c => UI.anyCard(c, {})).join('')}</div>
+      <button class="btn primary" onclick="UI.closeModal()">OK</button></div>`);
+    this.notifiedMission = null;
+    this.commit();
+  },
+
+  // ── カード ──
+  buy(id) {
+    const c = Cards.get(id);
+    if (!c || !c.price || !Player.canAfford(c.price)) return UI.toast('お金が足りません', 'error');
+    Player.addMoney(-c.price);
+    Player.addCard(id);
+    UI.toast(`🛒 ${c.name} を購入しました`);
+    this.commit();
+  },
+
+  buyPack(id) {
+    const pk = GAME_DATA.packs.find(x => x.id === id);
+    if (!pk || !Player.canAfford(pk.price)) return UI.toast('お金が足りません', 'error');
+    Player.addMoney(-pk.price);
+    const cards = Cards.openPack(pk).map(c => {
+      const isNew = !Player.data.seenCards.includes(c.id);
+      Player.addCard(c.id);
+      return { card: c, isNew };
+    });
+    this.commit();
+    const best = cards.reduce((a, b) => (Cards.rarityIndex(b.card.rarity) > Cards.rarityIndex(a.card.rarity) ? b : a)).card.rarity;
+    UI.modal(`<div class="birth"><div class="sparkle">${pk.icon}</div><h2>${pk.name}を開封！</h2>
+      ${['SSR', 'UR'].includes(best) ? `<p class="ok">🌈 ${best}が出た！</p>` : ''}
+      <div class="cgrid reveal-grid">${RaceView.cardsHTML(cards)}</div>
+      <div class="btn-row"><button class="btn" onclick="UI.closeModal()">OK</button>
+      <button class="btn primary" ${Player.canAfford(pk.price) ? '' : 'disabled'} onclick="App.buyPack('${pk.id}')">もう1パック（${Util.money(pk.price)}）</button></div></div>`);
+  },
+
+  cardDetail(id) {
+    const c = Cards.get(id);
+    if (!c) return;
+    let detail = '';
+    if (c.type === 'sire' || c.type === 'mare') {
+      const sk = c.skill ? Cards.get(c.skill) : null;
+      detail = `<p>${Util.esc(c.desc || '')}</p>
+        ${STAT_KEYS.map(k => UI.statRow(k, c.stats[k])).join('')}
+        ${UI.aptGrid(c.apt)}
+        <p>脚質：${GAME_DATA.styles[c.style].icon}${GAME_DATA.styles[c.style].label}・成長：${GAME_DATA.growthTypes[c.growth].label}</p>
+        ${sk ? `<p>受け継ぎやすいスキル：🎴 ${sk.name}（${sk.desc}）</p>` : ''}
+        <button class="btn primary" onclick="UI.closeModal();UI.state.breed.${c.type === 'sire' ? 'father' : 'mother'}='${c.id}';UI.show('breed')">🧬 このカードで配合</button>`;
+    } else if (c.type === 'skill') {
+      detail = `<p>発動条件：<b>${c.condText}</b></p><p>${c.desc}</p>
+        <p class="muted small">${c.style ? `${GAME_DATA.styles[c.style].label}の馬が使うと効果が最大。それ以外は効果ダウン。` : 'どの脚質でも効果は同じ。'}</p>`;
+    } else {
+      detail = `<p>${c.desc}</p><p class="muted small">馬の詳細 →「調教」タブから使えます。</p>`;
+    }
+    UI.modal(`<div class="card-detail">${UI.anyCard(c, { count: Player.count(c.id) })}<div>${detail}</div></div>`);
+  },
+
+  // ── 設定 ──
+  settings() {
+    UI.modal(`<h3>⚙ 設定</h3>
+      <label>厩舎の名前<input id="set-name" maxlength="12" value="${Util.esc(Player.data.name)}"></label>
+      <button class="btn primary" onclick="App.saveSettings()">保存</button>
+      <hr>
+      <p class="muted small">データはこのブラウザ（localStorage）に自動保存されています。</p>
+      <button class="btn danger" onclick="App.confirmReset()">データを消去して最初から</button>`, { cls: 'small' });
+  },
+
+  saveSettings() {
+    const v = (UI.el('set-name').value || '').trim().slice(0, 12);
+    if (v) Player.data.name = v;
+    UI.closeModal();
+    this.commit();
+  },
+
+  confirmReset() {
+    if (!window.confirm('本当にすべてのデータを消去しますか？（元に戻せません）')) return;
+    Player.reset();
+    UI.state.breed = { father: null, mother: null };
+    UI.closeModal();
+    UI.show('home');
+    this.welcome();
+  }
+};
+
+window.addEventListener('DOMContentLoaded', () => App.init());
+</script>
+</body>
+</html>
