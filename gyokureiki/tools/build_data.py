@@ -40,7 +40,7 @@ for row in out:
     print(json.dumps(row, ensure_ascii=False, separators=(',', ':')) + ',')
 print('];')
 print('''window.GK_DATA={types:T,chart:C,kodama:K.map(function(r){return{
-id:r[0],name:r[1],types:Array.from(r[2]),hp:r[3],atk:r[4],df:r[5],spd:r[6],
+id:r[0],name:r[1],types:Array.from(r[2]),hp:r[3],atk:r[4],df:r[5],spd:r[6],total:r[3]+r[4]+r[5]+r[6],
 spells:r[7].map(function(s){return{name:s[0],type:s[1],pow:s[2],cost:s[3],price:s[4],desc:S[s[5]]}}),
 skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};''')
 print('})();')

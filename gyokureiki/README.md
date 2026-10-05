@@ -20,4 +20,9 @@
 - 実機の正確な計算式が判明したら `js/engine.js` を調整してください
 
 ## 立ち絵
-`img/kodama/` に画像を置き、`js/sprites.js` に `{コダマNo: 'パス'}` を登録すると表示されます。
+全 512 体のドット絵を `img/kodama/{コダマNo}.gif` に収録（取得元: http://www.tohofes.com/img/kakera/0/ ）。相手側は左右反転して表示します。
+差し替えたい場合は `img/kodama/{No}.png` を置いて `python3 tools/build_sprites.py` を実行（png優先）。
+
+## 単体HTML
+`dist/gyokureiki.html` は画像・データをすべて埋め込んだ1ファイル版です（ダブルクリックで起動可。対人戦のみネット接続が必要）。
+再生成: `python3 tools/build_standalone.py`

@@ -519,7 +519,7 @@ var K=[
 [558,"ちびヘカーテ","神",75,90,60,65,[["トレブルトライアル","神","80",20,"3000",1],["トリニタリアンラプソディ","神","100",30,"20000",1],["邪穢在身","水","80",20,"3000",1],["逢魔ガ刻","闇","100",30,"20000",1]],[]],
 ];
 window.GK_DATA={types:T,chart:C,kodama:K.map(function(r){return{
-id:r[0],name:r[1],types:Array.from(r[2]),hp:r[3],atk:r[4],df:r[5],spd:r[6],
+id:r[0],name:r[1],types:Array.from(r[2]),hp:r[3],atk:r[4],df:r[5],spd:r[6],total:r[3]+r[4]+r[5]+r[6],
 spells:r[7].map(function(s){return{name:s[0],type:s[1],pow:s[2],cost:s[3],price:s[4],desc:S[s[5]]}}),
 skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
 })();

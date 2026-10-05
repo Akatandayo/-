@@ -14,6 +14,8 @@
   const tb = (t, cls) => `<span class="tb t-${t} ${cls || ''}">${t}</span>`;
   const tbs = types => types.map(t => tb(t)).join('');
   const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const spriteOf = id => (window.GK_SPRITES && window.GK_SPRITES[id]) || null;
+  const icon = id => { const s = spriteOf(id); return s ? `<img class="kicon" src="${esc(s)}" alt="" loading="lazy">` : ''; };
 
   /* ================= 保存 ================= */
   const store = {
@@ -77,7 +79,7 @@
   }
   function krow(k, extra) {
     return `<div class="krow ${extra || ''}" data-id="${k.id}">
-      <span class="no">No.${k.id}</span>
+      <span class="no">${icon(k.id)}No.${k.id}</span>
       <span class="nm">${tbs(k.types)}${esc(k.name)}</span>
       <span class="st">H<b>${k.hp}</b> 攻<b>${k.atk}</b> 防<b>${k.df}</b> 速<b>${k.spd}</b><br>合計 <b>${k.total}</b></span>
     </div>`;
@@ -91,7 +93,7 @@
   function kodamaDetail(k, lv) {
     lv = lv || 50;
     const st = GK.calcStats(k, lv);
-    return `<div class="ed-head">${tbs(k.types.map(t => t))}<span class="nm">${esc(k.name)}</span><span class="small">No.${k.id}</span></div>
+    return `<div class="ed-head">${icon(k.id)}${tbs(k.types)}<span class="nm">${esc(k.name)}</span><span class="small">No.${k.id}</span></div>
       <div class="statgrid" style="margin-top:8px">
         <div>ＨＰ<b>${k.hp}</b></div><div>攻撃<b>${k.atk}</b></div><div>防御<b>${k.df}</b></div><div>速度<b>${k.spd}</b></div><div>合計<b>${k.total}</b></div>
       </div>
@@ -126,7 +128,7 @@
       const b = party[i];
       if (b) {
         const k = KD[b.id];
-        slots.push(`<button class="pslot ${i === selSlot ? 'sel' : ''}" data-slot="${i}"><span class="no">${i === 0 ? '先頭' : i + 1}</span>${tbs(k.types)}<span class="nm">${esc(k.name)}</span>Lv${b.lv}　S${b.slv}</button>`);
+        slots.push(`<button class="pslot ${i === selSlot ? 'sel' : ''}" data-slot="${i}"><span class="no">${i === 0 ? '先頭' : i + 1}</span>${icon(k.id)}${tbs(k.types)}<span class="nm">${esc(k.name)}</span>Lv${b.lv}　S${b.slv}</button>`);
       } else {
         slots.push(`<button class="pslot empty ${i === selSlot ? 'sel' : ''}" data-slot="${i}">＋ 空き</button>`);
       }
@@ -146,7 +148,7 @@
     const k = KD[b.id];
     const st = GK.calcStats(k, b.lv);
     ed.innerHTML = `
-      <div class="ed-head">${tbs(k.types)}<span class="nm">${esc(k.name)}</span><span class="small">No.${k.id}</span>
+      <div class="ed-head">${icon(k.id)}${tbs(k.types)}<span class="nm">${esc(k.name)}</span><span class="small">No.${k.id}</span>
         <button class="btn sm" data-ed="info" style="margin-left:auto">詳細</button></div>
       <div class="ed-controls">
         <label>Lv <input type="number" min="1" max="100" value="${b.lv}" data-ed="lv"></label>
@@ -472,7 +474,7 @@
         const en = valid.some(a => a.type === 'switch' && a.to === i);
         const cur = i === side.active;
         h += `<div class="cell kcell ${m.hp <= 0 ? 'disabled' : ''} ${cur ? 'picked' : ''}">
-          <div class="sname">${tbs(m.types)}<span>${esc(m.name)}</span></div>
+          <div class="sname">${icon(m.id)}${tbs(m.types)}<span>${esc(m.name)}</span></div>
           <div class="small">Lv${m.lv}${cur ? '（戦闘中）' : ''}</div>
           <div class="bars"><span>HP</span><div class="bar hp"><i style="width:${m.hp / m.maxhp * 100}%"></i></div><span>VP</span><div class="bar vp"><i style="width:${m.vp / m.maxvp * 100}%"></i></div></div>
           <div class="small">${m.hp}/${m.maxhp}・${m.vp}/${m.maxvp}</div>
