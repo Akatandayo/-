@@ -170,7 +170,8 @@
     lv = lv || 50;
     const st = GK.calcStats(k, lv);
     const evo = GKP.evolutions(k.id);
-    return `<div class="ed-head">${icon(k.id)}${tbs(k.types)}<span class="nm">${esc(k.name)}</span><span class="small">No.${k.id}</span></div>
+    return `<div class="ed-head">${icon(k.id)}${tbs(k.types)}<span class="nm">${esc(k.name)}</span><span class="small">No.${k.id}</span>${k.special ? '<span class="orig">オリジナル</span>' : ''}</div>
+      ${k.profile ? `<div class="profile">${esc(k.profile)}${k.special && GKP.isBase(k) ? '<br><span class="small">入手：クリア済みボスの再戦で、まれに契約書を落とす（Lv20で加入）</span>' : ''}</div>` : ''}
       <div class="statgrid" style="margin-top:8px">
         <div>ＨＰ<b>${k.hp}</b></div><div>攻撃<b>${k.atk}</b></div><div>防御<b>${k.df}</b></div><div>速度<b>${k.spd}</b></div><div>合計<b>${k.total}</b></div>
       </div>
@@ -304,6 +305,11 @@
         for (const [k, n] of Object.entries(ctx.firstClear.items || {})) res.items[k] = (res.items[k] || 0) + n;
         for (const c of ctx.firstClear.contracts || []) res.contracts.push(c);
       }
+      // 特別なコダマ（ボス周回のみ）
+      const sd = ctx.specialDrop;
+      if (sd && !GKP.ownsLine(save, sd.id) && !save.contracts.some(c => GKP.LINE_OF[c.id] === GKP.LINE_OF[sd.id]) && Math.random() < sd.rate) {
+        res.contracts.push({ id: sd.id, lv: sd.lv, special: true });
+      }
       // 契約書ドロップ（倒したコダマから）
       if (ctx.dropRate && Math.random() < ctx.dropRate) {
         const cands = foe.party.map(f => f.id).filter(id => !GKP.owns(save, id) && !save.contracts.some(c => c.id === id));
@@ -327,7 +333,7 @@
     for (const m of res.unlockedEvo) lines.push(`<div class="res-note">✨ ${esc(KD[m.id].name)}が進化できるようになった！（パーティ画面から）</div>`);
     const itemName = { chibi: 'ちび契約書', random: '玉霊契約書', book: '禁呪の書', scroll: '修行の書' };
     for (const [k, n] of Object.entries(res.items)) lines.push(`<div class="res-note">🎁 ${itemName[k]} ×${n} を手に入れた！</div>`);
-    for (const c of res.contracts) lines.push(`<div class="res-note">📜 ${c.drop ? `${esc(KD[c.id].name)}が契約書を落とした！` : `${esc(KD[c.id].name)}の契約書を手に入れた！`}<br><span class="small">「持ち物」から使うと契約できます。</span></div>`);
+    for (const c of res.contracts) lines.push(c.special ? `<div class="res-note special">${icon(c.id)}<div>⚡ どこからか、見知らぬ契約書が舞い込んできた……！<br><b>${esc(KD[c.id].name)}の契約書</b>を手に入れた！<br><span class="small">「持ち物」から使うと契約できます。</span></div></div>` : `<div class="res-note">📜 ${c.drop ? `${esc(KD[c.id].name)}が契約書を落とした！` : `${esc(KD[c.id].name)}の契約書を手に入れた！`}<br><span class="small">「持ち物」から使うと契約できます。</span></div>`);
     if (!win) lines.push('<div class="small">パーティを鍛えたり、属性相性を見直して再挑戦しよう。</div>');
     await modalP(`<div class="result-modal">${lines.join('')}</div>`);
     return res;
@@ -548,7 +554,7 @@
       const key = u.dataset.use;
       if (itemCount(key) < 1) return;
       if (key === 'scroll') return scrollMenu();
-      const pool = key === 'chibi' ? GKP.CHIBI_IDS : D.kodama.map(k => k.id);
+      const pool = key === 'chibi' ? GKP.CHIBI_IDS : GKP.NORMAL_IDS;
       const id = GKP.randomUnowned(save, pool);
       if (id == null) return toast('契約できるコダマがもういません！');
       save.items[key]--;
@@ -983,7 +989,8 @@
       if (o.kind === 'flat') return;
       if (o.kind === 'story') {
         const S = o.stage;
-        const first = win && !save.cleared[S.key];
+        this.wasFirstTry = !save.cleared[S.key];
+        const first = win && this.wasFirstTry;
         this.firstClear = first;
         if (win) save.cleared[S.key] = 1;
         await awardBattle(st, {
@@ -991,6 +998,7 @@
           money: first ? S.reward.money : Math.round(S.reward.money * 0.25 / 10) * 10,
           firstClear: first ? S.reward : null,
           dropRate: S.isBoss ? 0.25 : 0.15,
+          specialDrop: S.isBoss && !first && !this.wasFirstTry ? GKP.SPECIAL_DROP : null,
         });
       } else {
         const foeLv = o.foe.party.reduce((a, p) => a + p.lv, 0) / o.foe.party.length;

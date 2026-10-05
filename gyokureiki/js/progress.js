@@ -37,7 +37,7 @@
     'ちびのろいこ': ['呪い子'], 'ちびらいこ': ['雷鼓'], 'ちびせいじゃ': ['正邪'], 'ちびかげろう': ['影狼'],
     'ちびばんき': ['赤蛮奇'], 'ちびべんべん': ['弁々'], 'ちびやつはし': ['八橋'], 'ちびわかさぎ': ['わかさぎ姫'],
     'ちびすみれこ': ['菫子'], 'ちびせいらん': ['清蘭'], 'ちびりんご': ['鈴瑚'], 'ちびドレミー': ['ドレミー'],
-    'ちびサグメ': ['サグメ'], 'ちびクラウン': ['クラウン'], 'ちびじゅんこ': ['純狐'], 'ちびヘカーテ': ['ヘカーテ'],
+    'ちびサグメ': ['サグメ'], 'ちびひとり': ['ひとり'], 'ちびクラウン': ['クラウン'], 'ちびじゅんこ': ['純狐'], 'ちびヘカーテ': ['ヘカーテ'],
   };
   // ちび以外の幼体（契約書でのみ入手）
   const EXTRA_LINE = {
@@ -70,7 +70,11 @@
       LINE_OF[k.id] = line;
     }
   }
-  const CHIBI_IDS = D.kodama.filter(isChibi).map(k => k.id);
+  const CHIBI_IDS = D.kodama.filter(k => isChibi(k) && !k.special).map(k => k.id);
+  // 通常の入手手段（ランダム契約書など）の対象
+  const NORMAL_IDS = D.kodama.filter(k => !k.special).map(k => k.id);
+  // ボス周回でのみ落とす特別なコダマ
+  const SPECIAL_DROP = { id: 9001, lv: 20, rate: 0.1 };
 
   function evolutions(id) {
     const line = LINE_OF[id];
@@ -204,7 +208,7 @@
   ];
 
   global.GKP = {
-    CHIBI_IDS, LINES, LINE_OF, EVOLVE_LV, MAX_LV, SHOP, SAVE_VERSION,
+    CHIBI_IDS, NORMAL_IDS, SPECIAL_DROP, LINES, LINE_OF, EVOLVE_LV, MAX_LV, SHOP, SAVE_VERSION,
     isChibi, isBase, charKey, evolutions, expToNext, slvFor, expFrom, spellReq, basicSpells,
     newSave, owns, ownsLine, addKodama, findOwned, partyMembers, toBuild, gainExp, evolve,
     useContract, randomUnowned,

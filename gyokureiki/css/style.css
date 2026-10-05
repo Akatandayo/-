@@ -347,3 +347,7 @@ table.chart tr.hl td, table.chart td.hl { outline: 1px solid #ffb84d; }
 .evo-show .kicon { width: 96px; height: 96px; }
 .mini-party .chip .kicon { width: 24px; height: 24px; margin: -4px 0; }
 .talk-name[hidden] { display: none; }
+.orig { font-size: 11px; background: #23324a; color: #fff; padding: 1px 6px; border-radius: 3px; }
+.profile { background: #f0f3fa; border-left: 3px solid #3a62c8; padding: 5px 8px; margin-top: 6px; font-size: 13px; }
+.res-note.special { display: flex; align-items: center; gap: 8px; background: linear-gradient(90deg, #e9eeff, #fffbe9); border-color: #7f9cc6; }
+.res-note.special .kicon { width: 64px; height: 64px; }
