@@ -35,6 +35,7 @@
           <button class="btn" data-go="items">持ち物</button>
           <button class="btn" data-go="zukan">図鑑</button>
         </div>
+        <button class="btn big vs-btn" data-go="vs">Ｖｓ</button>
         <button class="btn sm" data-go="save">セーブ管理</button>
       </div>
       <p class="credit">データ・画像出典：東方玉神楽「コダマデータ【玉霊姫版】」／本作は非公式ファンメイドのシミュレータです。</p>
@@ -69,6 +70,15 @@
       <div class="msg-next">▼</div>
     </div>
     <button class="btn sm talk-skip" id="talk-skip">スキップ</button>
+  </section>
+
+  <!-- ===== Vs ===== -->
+  <section id="scr-vs" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>Ｖｓ</span><span class="titlebar-right money" id="vs-money"></span></div>
+    <div class="panel">
+      <p class="small">特殊コダマの一族（進化先を含む）だけを相手にする高レベル戦です。勝利すると一定確率でそのコダマの契約書を落とします（Lv20で加入）。</p>
+      <div id="vs-list" class="vs-list"></div>
+    </div>
   </section>
 
   <!-- ===== ショップ ===== -->

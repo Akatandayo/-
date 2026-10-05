@@ -351,3 +351,14 @@ table.chart tr.hl td, table.chart td.hl { outline: 1px solid #ffb84d; }
 .profile { background: #f0f3fa; border-left: 3px solid #3a62c8; padding: 5px 8px; margin-top: 6px; font-size: 13px; }
 .res-note.special { display: flex; align-items: center; gap: 8px; background: linear-gradient(90deg, #e9eeff, #fffbe9); border-color: #7f9cc6; }
 .res-note.special .kicon { width: 64px; height: 64px; }
+.vs-btn { background: linear-gradient(#2b3350, #12162a); color: #fff; border-color: #6f7fb8; letter-spacing: 8px; }
+.vs-btn::after { border-right-color: #6f7fb8; border-bottom-color: #6f7fb8; }
+.vs-list { display: grid; gap: 10px; margin-top: 8px; }
+.vs-card { background: linear-gradient(135deg, #1d2440, #34407a); color: #fff; border: 2px solid #6f7fb8; border-radius: 6px; padding: 8px; }
+.vs-card .small { color: #c9d3f5; }
+.vs-head { display: flex; align-items: center; gap: 6px; }
+.vs-head .kicon { width: 56px; height: 56px; }
+.vs-title { font-size: 22px; letter-spacing: 2px; }
+.vs-tiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 6px; }
+.vs-tier { display: flex; flex-direction: column; align-items: center; padding: 6px 2px; font-size: 15px; }
+.vs-tier .small { color: var(--ink-soft); font-size: 11px; }

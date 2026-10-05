@@ -73,8 +73,21 @@
   const CHIBI_IDS = D.kodama.filter(k => isChibi(k) && !k.special).map(k => k.id);
   // 通常の入手手段（ランダム契約書など）の対象
   const NORMAL_IDS = D.kodama.filter(k => !k.special).map(k => k.id);
-  // ボス周回でのみ落とす特別なコダマ
-  const SPECIAL_DROP = { id: 9001, lv: 20, rate: 0.1 };
+  // Vsモード：特殊コダマの系統（幼体）一覧と難易度
+  const VS_LIST = D.kodama.filter(k => k.special && k.vs && isBase(k)).map(k => k.id);
+  const VS_TIERS = [
+    { key: 'normal', name: 'ノーマル', lv: 50, rate: 0.10, money: 3000 },
+    { key: 'hard', name: 'ハード', lv: 75, rate: 0.20, money: 6000 },
+    { key: 'lunatic', name: 'ルナティック', lv: 100, rate: 0.35, money: 10000 },
+  ];
+  const VS_JOIN_LV = 20;
+  // Vsの相手パーティ：系統の進化形（強い順）＋幼体。スペルは全習得から最良の4つ
+  function vsParty(baseId, lv) {
+    const line = LINES[LINE_OF[baseId]] || [baseId];
+    const evo = line.filter(id => !isBase(KD[id])).sort((a, b) => KD[b].total - KD[a].total);
+    const base = line.filter(id => isBase(KD[id]));
+    return [...evo, ...base].map(id => ({ id, lv, slv: slvFor(lv) }));
+  }
 
   function evolutions(id) {
     const line = LINE_OF[id];
@@ -208,7 +221,7 @@
   ];
 
   global.GKP = {
-    CHIBI_IDS, NORMAL_IDS, SPECIAL_DROP, LINES, LINE_OF, EVOLVE_LV, MAX_LV, SHOP, SAVE_VERSION,
+    CHIBI_IDS, NORMAL_IDS, VS_LIST, VS_TIERS, VS_JOIN_LV, vsParty, LINES, LINE_OF, EVOLVE_LV, MAX_LV, SHOP, SAVE_VERSION,
     isChibi, isBase, charKey, evolutions, expToNext, slvFor, expFrom, spellReq, basicSpells,
     newSave, owns, ownsLine, addKodama, findOwned, partyMembers, toBuild, gainExp, evolve,
     useContract, randomUnowned,

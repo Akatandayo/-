@@ -361,6 +361,17 @@ table.chart tr.hl td, table.chart td.hl { outline: 1px solid #ffb84d; }
 .profile { background: #f0f3fa; border-left: 3px solid #3a62c8; padding: 5px 8px; margin-top: 6px; font-size: 13px; }
 .res-note.special { display: flex; align-items: center; gap: 8px; background: linear-gradient(90deg, #e9eeff, #fffbe9); border-color: #7f9cc6; }
 .res-note.special .kicon { width: 64px; height: 64px; }
+.vs-btn { background: linear-gradient(#2b3350, #12162a); color: #fff; border-color: #6f7fb8; letter-spacing: 8px; }
+.vs-btn::after { border-right-color: #6f7fb8; border-bottom-color: #6f7fb8; }
+.vs-list { display: grid; gap: 10px; margin-top: 8px; }
+.vs-card { background: linear-gradient(135deg, #1d2440, #34407a); color: #fff; border: 2px solid #6f7fb8; border-radius: 6px; padding: 8px; }
+.vs-card .small { color: #c9d3f5; }
+.vs-head { display: flex; align-items: center; gap: 6px; }
+.vs-head .kicon { width: 56px; height: 56px; }
+.vs-title { font-size: 22px; letter-spacing: 2px; }
+.vs-tiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 6px; }
+.vs-tier { display: flex; flex-direction: column; align-items: center; padding: 6px 2px; font-size: 15px; }
+.vs-tier .small { color: var(--ink-soft); font-size: 11px; }
 
 </style>
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
@@ -390,6 +401,7 @@ table.chart tr.hl td, table.chart td.hl { outline: 1px solid #ffb84d; }
           <button class="btn" data-go="items">持ち物</button>
           <button class="btn" data-go="zukan">図鑑</button>
         </div>
+        <button class="btn big vs-btn" data-go="vs">Ｖｓ</button>
         <button class="btn sm" data-go="save">セーブ管理</button>
       </div>
       <p class="credit">データ・画像出典：東方玉神楽「コダマデータ【玉霊姫版】」／本作は非公式ファンメイドのシミュレータです。</p>
@@ -424,6 +436,15 @@ table.chart tr.hl td, table.chart td.hl { outline: 1px solid #ffb84d; }
       <div class="msg-next">▼</div>
     </div>
     <button class="btn sm talk-skip" id="talk-skip">スキップ</button>
+  </section>
+
+  <!-- ===== Vs ===== -->
+  <section id="scr-vs" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>Ｖｓ</span><span class="titlebar-right money" id="vs-money"></span></div>
+    <div class="panel">
+      <p class="small">特殊コダマの一族（進化先を含む）だけを相手にする高レベル戦です。勝利すると一定確率でそのコダマの契約書を落とします（Lv20で加入）。</p>
+      <div id="vs-list" class="vs-list"></div>
+    </div>
   </section>
 
   <!-- ===== ショップ ===== -->
@@ -1102,7 +1123,17 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
       id: 9001, name: 'ちびひとり', types: ['雷'], hp: 55, atk: 110, df: 45, spd: 70,
       special: true,
       profile: '何でも屋スタッフの少年・電子 独のコダマ。小さな拳に、まだ名前のない力が眠っている。',
-      skills: [{ name: '失敗作少女', desc: '与えるダメージがSLv×2％増加します。' }],
+      // Vsモード：このキャラの系統（進化先含む）だけのNPCと戦い、勝つと一定確率で契約書をドロップ
+      vs: {
+        title: 'Vs.ひとり', who: 'ひとり',
+        pre: [
+          ['ひとり', '……何でも屋に用事？ それとも、喧嘩の依頼？'],
+          ['ひとり', 'どっちでもいいや。全部まとめて撃ち抜くから。'],
+        ],
+        win: [['ひとり', '……へえ。俺の拳、受け止められる奴がいるんだ。']],
+        lose: [['ひとり', 'DESTRUCTION、3、2、1――。……出直してきなよ。']],
+      },
+      skills: [{ name: '神の失敗作', desc: '与えるダメージがSLv×2％増加します。' }],
       spells: [
         sp('電子パンチ', '闘', 80, 20, 3000, '通常攻撃。'),
         sp('スパークショット', '雷', 80, 20, 3000, '通常攻撃。'),
@@ -2025,8 +2056,21 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
   const CHIBI_IDS = D.kodama.filter(k => isChibi(k) && !k.special).map(k => k.id);
   // 通常の入手手段（ランダム契約書など）の対象
   const NORMAL_IDS = D.kodama.filter(k => !k.special).map(k => k.id);
-  // ボス周回でのみ落とす特別なコダマ
-  const SPECIAL_DROP = { id: 9001, lv: 20, rate: 0.1 };
+  // Vsモード：特殊コダマの系統（幼体）一覧と難易度
+  const VS_LIST = D.kodama.filter(k => k.special && k.vs && isBase(k)).map(k => k.id);
+  const VS_TIERS = [
+    { key: 'normal', name: 'ノーマル', lv: 50, rate: 0.10, money: 3000 },
+    { key: 'hard', name: 'ハード', lv: 75, rate: 0.20, money: 6000 },
+    { key: 'lunatic', name: 'ルナティック', lv: 100, rate: 0.35, money: 10000 },
+  ];
+  const VS_JOIN_LV = 20;
+  // Vsの相手パーティ：系統の進化形（強い順）＋幼体。スペルは全習得から最良の4つ
+  function vsParty(baseId, lv) {
+    const line = LINES[LINE_OF[baseId]] || [baseId];
+    const evo = line.filter(id => !isBase(KD[id])).sort((a, b) => KD[b].total - KD[a].total);
+    const base = line.filter(id => isBase(KD[id]));
+    return [...evo, ...base].map(id => ({ id, lv, slv: slvFor(lv) }));
+  }
 
   function evolutions(id) {
     const line = LINE_OF[id];
@@ -2160,7 +2204,7 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
   ];
 
   global.GKP = {
-    CHIBI_IDS, NORMAL_IDS, SPECIAL_DROP, LINES, LINE_OF, EVOLVE_LV, MAX_LV, SHOP, SAVE_VERSION,
+    CHIBI_IDS, NORMAL_IDS, VS_LIST, VS_TIERS, VS_JOIN_LV, vsParty, LINES, LINE_OF, EVOLVE_LV, MAX_LV, SHOP, SAVE_VERSION,
     isChibi, isBase, charKey, evolutions, expToNext, slvFor, expFrom, spellReq, basicSpells,
     newSave, owns, ownsLine, addKodama, findOwned, partyMembers, toBuild, gainExp, evolve,
     useContract, randomUnowned,
@@ -2479,7 +2523,7 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
     $$('.screen').forEach(s => s.classList.toggle('active', s.id === 'scr-' + name));
     window.scrollTo(0, 0);
     refreshMoney();
-    const r = { title: renderTitle, start: renderStart, story: renderStory, party: renderParty, zukan: renderZukan, shop: renderShop, items: renderItems, save: renderSaveMgr, npc: renderNpc, online: () => renderOnline() }[name];
+    const r = { vs: renderVs, title: renderTitle, start: renderStart, story: renderStory, party: renderParty, zukan: renderZukan, shop: renderShop, items: renderItems, save: renderSaveMgr, npc: renderNpc, online: () => renderOnline() }[name];
     if (r) r();
   }
   document.addEventListener('click', e => {
@@ -2587,7 +2631,7 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
     const st = GK.calcStats(k, lv);
     const evo = GKP.evolutions(k.id);
     return `<div class="ed-head">${icon(k.id)}${tbs(k.types)}<span class="nm">${esc(k.name)}</span><span class="small">No.${k.id}</span>${k.special ? '<span class="orig">オリジナル</span>' : ''}</div>
-      ${k.profile ? `<div class="profile">${esc(k.profile)}${k.special && GKP.isBase(k) ? '<br><span class="small">入手：クリア済みボスの再戦で、まれに契約書を落とす（Lv20で加入）</span>' : ''}</div>` : ''}
+      ${k.profile ? `<div class="profile">${esc(k.profile)}${k.special && GKP.isBase(k) ? '<br><span class="small">入手：「Ｖｓ」モードで勝利すると一定確率で契約書を落とす（Lv20で加入）</span>' : ''}</div>` : ''}
       <div class="statgrid" style="margin-top:8px">
         <div>ＨＰ<b>${k.hp}</b></div><div>攻撃<b>${k.atk}</b></div><div>防御<b>${k.df}</b></div><div>速度<b>${k.spd}</b></div><div>合計<b>${k.total}</b></div>
       </div>
@@ -2749,7 +2793,7 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
     for (const m of res.unlockedEvo) lines.push(`<div class="res-note">✨ ${esc(KD[m.id].name)}が進化できるようになった！（パーティ画面から）</div>`);
     const itemName = { chibi: 'ちび契約書', random: '玉霊契約書', book: '禁呪の書', scroll: '修行の書' };
     for (const [k, n] of Object.entries(res.items)) lines.push(`<div class="res-note">🎁 ${itemName[k]} ×${n} を手に入れた！</div>`);
-    for (const c of res.contracts) lines.push(c.special ? `<div class="res-note special">${icon(c.id)}<div>⚡ どこからか、見知らぬ契約書が舞い込んできた……！<br><b>${esc(KD[c.id].name)}の契約書</b>を手に入れた！<br><span class="small">「持ち物」から使うと契約できます。</span></div></div>` : `<div class="res-note">📜 ${c.drop ? `${esc(KD[c.id].name)}が契約書を落とした！` : `${esc(KD[c.id].name)}の契約書を手に入れた！`}<br><span class="small">「持ち物」から使うと契約できます。</span></div>`);
+    for (const c of res.contracts) lines.push(c.special ? `<div class="res-note special">${icon(c.id)}<div>⚡ ${esc((KD[c.id].vs && KD[c.id].vs.who) || KD[c.id].name)}が契約書を落とした……！<br><b>${esc(KD[c.id].name)}の契約書</b>を手に入れた！<br><span class="small">「持ち物」から使うと契約できます。</span></div></div>` : `<div class="res-note">📜 ${c.drop ? `${esc(KD[c.id].name)}が契約書を落とした！` : `${esc(KD[c.id].name)}の契約書を手に入れた！`}<br><span class="small">「持ち物」から使うと契約できます。</span></div>`);
     if (!win) lines.push('<div class="small">パーティを鍛えたり、属性相性を見直して再挑戦しよう。</div>');
     await modalP(`<div class="result-modal">${lines.join('')}</div>`);
     return res;
@@ -3026,6 +3070,36 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
     if (!confirm('元に戻せません。よろしいですか？')) return;
     store.del('save'); save = null; go('title');
   };
+
+  /* ================= Ｖｓ ================= */
+  function renderVs() {
+    const wins = save.vsWins || {};
+    $('#vs-list').innerHTML = GKP.VS_LIST.map(id => {
+      const k = KD[id];
+      const line = GKP.LINES[GKP.LINE_OF[id]] || [id];
+      const owned = GKP.ownsLine(save, id) || save.contracts.some(c => GKP.LINE_OF[c.id] === GKP.LINE_OF[id]);
+      return `<div class="vs-card">
+        <div class="vs-head">${line.map(x => icon(x)).join('')}<div><div class="vs-title">${esc(k.vs.title)}</div>
+          <div class="small">${line.map(x => esc(KD[x].name)).join('・')}　${owned ? '<span class="clear">契約済み</span>' : '未契約'}</div></div></div>
+        <div class="vs-tiers">${GKP.VS_TIERS.map(t => `<button class="btn vs-tier" data-vs="${id}" data-tier="${t.key}">
+          <b>${t.name}</b><span class="small">Lv${t.lv}・${owned ? `報酬${yen(t.money * 2)}` : `ドロップ${Math.round(t.rate * 100)}%`}</span>
+          <span class="small">勝利 ${wins[id + ':' + t.key] || 0}回</span></button>`).join('')}</div>
+      </div>`;
+    }).join('') || '<p class="small">Ｖｓに挑戦できるコダマはまだいません。</p>';
+  }
+  $('#vs-list').addEventListener('click', async e => {
+    const b = e.target.closest('[data-vs]'); if (!b) return;
+    if (!myMembers().length) return toast('パーティにコダマがいません');
+    const id = +b.dataset.vs;
+    const tier = GKP.VS_TIERS.find(t => t.key === b.dataset.tier);
+    const v = KD[id].vs;
+    await talk(v.pre, `${v.title}（${tier.name}）`);
+    current = new LocalSession({
+      kind: 'vs', vsId: id, tier, level: 'hard',
+      foe: { name: v.who || KD[id].name, party: GKP.vsParty(id, tier.lv) },
+    });
+    current.start();
+  });
 
   /* ================= フリー対戦 ================= */
   function renderNpc() { $('#npc-mine').innerHTML = miniParty(myBuilds()); }
@@ -3414,8 +3488,16 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
           money: first ? S.reward.money : Math.round(S.reward.money * 0.25 / 10) * 10,
           firstClear: first ? S.reward : null,
           dropRate: S.isBoss ? 0.25 : 0.15,
-          specialDrop: S.isBoss && !first && !this.wasFirstTry ? GKP.SPECIAL_DROP : null,
         });
+      } else if (o.kind === 'vs') {
+        const owned = GKP.ownsLine(save, o.vsId) || save.contracts.some(c => GKP.LINE_OF[c.id] === GKP.LINE_OF[o.vsId]);
+        if (win) save.vsWins = Object.assign(save.vsWins || {}, { [o.vsId + ':' + o.tier.key]: ((save.vsWins || {})[o.vsId + ':' + o.tier.key] || 0) + 1 });
+        const r = await awardBattle(st, {
+          uids: this.uids, expMult: 1,
+          money: owned ? o.tier.money * 2 : o.tier.money,
+          specialDrop: owned ? null : { id: o.vsId, lv: GKP.VS_JOIN_LV, rate: o.tier.rate },
+        });
+        this.gotSpecial = r.contracts.some(c => c.special);
       } else {
         const foeLv = o.foe.party.reduce((a, p) => a + p.lv, 0) / o.foe.party.length;
         await awardBattle(st, {
@@ -3432,6 +3514,10 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
       if (o.kind === 'story') {
         if (this.won && this.firstClear) await talk(o.stage.post, o.stage.title);
         go('story');
+      } else if (o.kind === 'vs') {
+        const v = KD[o.vsId].vs;
+        await talk(this.won ? v.win : v.lose, v.title);
+        go('vs');
       } else go('npc');
     }
   }

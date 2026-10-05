@@ -63,7 +63,7 @@
     $$('.screen').forEach(s => s.classList.toggle('active', s.id === 'scr-' + name));
     window.scrollTo(0, 0);
     refreshMoney();
-    const r = { title: renderTitle, start: renderStart, story: renderStory, party: renderParty, zukan: renderZukan, shop: renderShop, items: renderItems, save: renderSaveMgr, npc: renderNpc, online: () => renderOnline() }[name];
+    const r = { vs: renderVs, title: renderTitle, start: renderStart, story: renderStory, party: renderParty, zukan: renderZukan, shop: renderShop, items: renderItems, save: renderSaveMgr, npc: renderNpc, online: () => renderOnline() }[name];
     if (r) r();
   }
   document.addEventListener('click', e => {
@@ -171,7 +171,7 @@
     const st = GK.calcStats(k, lv);
     const evo = GKP.evolutions(k.id);
     return `<div class="ed-head">${icon(k.id)}${tbs(k.types)}<span class="nm">${esc(k.name)}</span><span class="small">No.${k.id}</span>${k.special ? '<span class="orig">オリジナル</span>' : ''}</div>
-      ${k.profile ? `<div class="profile">${esc(k.profile)}${k.special && GKP.isBase(k) ? '<br><span class="small">入手：クリア済みボスの再戦で、まれに契約書を落とす（Lv20で加入）</span>' : ''}</div>` : ''}
+      ${k.profile ? `<div class="profile">${esc(k.profile)}${k.special && GKP.isBase(k) ? '<br><span class="small">入手：「Ｖｓ」モードで勝利すると一定確率で契約書を落とす（Lv20で加入）</span>' : ''}</div>` : ''}
       <div class="statgrid" style="margin-top:8px">
         <div>ＨＰ<b>${k.hp}</b></div><div>攻撃<b>${k.atk}</b></div><div>防御<b>${k.df}</b></div><div>速度<b>${k.spd}</b></div><div>合計<b>${k.total}</b></div>
       </div>
@@ -333,7 +333,7 @@
     for (const m of res.unlockedEvo) lines.push(`<div class="res-note">✨ ${esc(KD[m.id].name)}が進化できるようになった！（パーティ画面から）</div>`);
     const itemName = { chibi: 'ちび契約書', random: '玉霊契約書', book: '禁呪の書', scroll: '修行の書' };
     for (const [k, n] of Object.entries(res.items)) lines.push(`<div class="res-note">🎁 ${itemName[k]} ×${n} を手に入れた！</div>`);
-    for (const c of res.contracts) lines.push(c.special ? `<div class="res-note special">${icon(c.id)}<div>⚡ どこからか、見知らぬ契約書が舞い込んできた……！<br><b>${esc(KD[c.id].name)}の契約書</b>を手に入れた！<br><span class="small">「持ち物」から使うと契約できます。</span></div></div>` : `<div class="res-note">📜 ${c.drop ? `${esc(KD[c.id].name)}が契約書を落とした！` : `${esc(KD[c.id].name)}の契約書を手に入れた！`}<br><span class="small">「持ち物」から使うと契約できます。</span></div>`);
+    for (const c of res.contracts) lines.push(c.special ? `<div class="res-note special">${icon(c.id)}<div>⚡ ${esc((KD[c.id].vs && KD[c.id].vs.who) || KD[c.id].name)}が契約書を落とした……！<br><b>${esc(KD[c.id].name)}の契約書</b>を手に入れた！<br><span class="small">「持ち物」から使うと契約できます。</span></div></div>` : `<div class="res-note">📜 ${c.drop ? `${esc(KD[c.id].name)}が契約書を落とした！` : `${esc(KD[c.id].name)}の契約書を手に入れた！`}<br><span class="small">「持ち物」から使うと契約できます。</span></div>`);
     if (!win) lines.push('<div class="small">パーティを鍛えたり、属性相性を見直して再挑戦しよう。</div>');
     await modalP(`<div class="result-modal">${lines.join('')}</div>`);
     return res;
@@ -610,6 +610,36 @@
     if (!confirm('元に戻せません。よろしいですか？')) return;
     store.del('save'); save = null; go('title');
   };
+
+  /* ================= Ｖｓ ================= */
+  function renderVs() {
+    const wins = save.vsWins || {};
+    $('#vs-list').innerHTML = GKP.VS_LIST.map(id => {
+      const k = KD[id];
+      const line = GKP.LINES[GKP.LINE_OF[id]] || [id];
+      const owned = GKP.ownsLine(save, id) || save.contracts.some(c => GKP.LINE_OF[c.id] === GKP.LINE_OF[id]);
+      return `<div class="vs-card">
+        <div class="vs-head">${line.map(x => icon(x)).join('')}<div><div class="vs-title">${esc(k.vs.title)}</div>
+          <div class="small">${line.map(x => esc(KD[x].name)).join('・')}　${owned ? '<span class="clear">契約済み</span>' : '未契約'}</div></div></div>
+        <div class="vs-tiers">${GKP.VS_TIERS.map(t => `<button class="btn vs-tier" data-vs="${id}" data-tier="${t.key}">
+          <b>${t.name}</b><span class="small">Lv${t.lv}・${owned ? `報酬${yen(t.money * 2)}` : `ドロップ${Math.round(t.rate * 100)}%`}</span>
+          <span class="small">勝利 ${wins[id + ':' + t.key] || 0}回</span></button>`).join('')}</div>
+      </div>`;
+    }).join('') || '<p class="small">Ｖｓに挑戦できるコダマはまだいません。</p>';
+  }
+  $('#vs-list').addEventListener('click', async e => {
+    const b = e.target.closest('[data-vs]'); if (!b) return;
+    if (!myMembers().length) return toast('パーティにコダマがいません');
+    const id = +b.dataset.vs;
+    const tier = GKP.VS_TIERS.find(t => t.key === b.dataset.tier);
+    const v = KD[id].vs;
+    await talk(v.pre, `${v.title}（${tier.name}）`);
+    current = new LocalSession({
+      kind: 'vs', vsId: id, tier, level: 'hard',
+      foe: { name: v.who || KD[id].name, party: GKP.vsParty(id, tier.lv) },
+    });
+    current.start();
+  });
 
   /* ================= フリー対戦 ================= */
   function renderNpc() { $('#npc-mine').innerHTML = miniParty(myBuilds()); }
@@ -998,8 +1028,16 @@
           money: first ? S.reward.money : Math.round(S.reward.money * 0.25 / 10) * 10,
           firstClear: first ? S.reward : null,
           dropRate: S.isBoss ? 0.25 : 0.15,
-          specialDrop: S.isBoss && !first && !this.wasFirstTry ? GKP.SPECIAL_DROP : null,
         });
+      } else if (o.kind === 'vs') {
+        const owned = GKP.ownsLine(save, o.vsId) || save.contracts.some(c => GKP.LINE_OF[c.id] === GKP.LINE_OF[o.vsId]);
+        if (win) save.vsWins = Object.assign(save.vsWins || {}, { [o.vsId + ':' + o.tier.key]: ((save.vsWins || {})[o.vsId + ':' + o.tier.key] || 0) + 1 });
+        const r = await awardBattle(st, {
+          uids: this.uids, expMult: 1,
+          money: owned ? o.tier.money * 2 : o.tier.money,
+          specialDrop: owned ? null : { id: o.vsId, lv: GKP.VS_JOIN_LV, rate: o.tier.rate },
+        });
+        this.gotSpecial = r.contracts.some(c => c.special);
       } else {
         const foeLv = o.foe.party.reduce((a, p) => a + p.lv, 0) / o.foe.party.length;
         await awardBattle(st, {
@@ -1016,6 +1054,10 @@
       if (o.kind === 'story') {
         if (this.won && this.firstClear) await talk(o.stage.post, o.stage.title);
         go('story');
+      } else if (o.kind === 'vs') {
+        const v = KD[o.vsId].vs;
+        await talk(this.won ? v.win : v.lose, v.title);
+        go('vs');
       } else go('npc');
     }
   }
