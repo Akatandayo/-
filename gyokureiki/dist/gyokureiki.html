@@ -299,6 +299,65 @@ table.chart tr.hl td, table.chart td.hl { outline: 1px solid #ffb84d; }
   .msgbox { font-size: 16px; }
 }
 
+/* ---------- 進行・ストーリー ---------- */
+.money { font-size: 16px; color: #6b4a00; }
+.money::before { content: "◎ "; color: #c9a227; }
+.menu2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.menu2 .btn { font-size: 17px; padding: 10px; letter-spacing: 2px; }
+.title-status { background: #fff; border: 1px solid var(--grid); border-radius: 4px; padding: 6px 8px; font-size: 13px; text-align: left; display: grid; gap: 4px; }
+.start-note { font-size: 17px; line-height: 1.5; margin: 4px 0 14px; }
+.start-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.start-cell { background: #fff; border: 2px solid var(--panel-line); border-radius: 6px; padding: 4px; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 12px; position: relative; }
+.start-cell:hover { background: #f3f8ff; }
+.start-cell .kicon { width: 72px; height: 72px; }
+.start-cell .tbrow { position: absolute; left: 3px; top: 3px; display: flex; gap: 1px; }
+.area { padding: 0; overflow: hidden; }
+.area.locked { opacity: .55; }
+.area-head { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 10px 12px; background: linear-gradient(#fff, #e6eef9); border: 0; cursor: pointer; font-size: 17px; text-align: left; }
+.area-head:disabled { cursor: default; }
+.clear { color: #d2502a; margin-left: 4px; }
+.stages { display: grid; gap: 4px; padding: 6px; }
+.stage-btn { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 8px; background: #fff; border: 2px solid var(--panel-line); border-radius: 5px; padding: 3px 8px; cursor: pointer; text-align: left; font-size: 15px; }
+.stage-btn .kicon { width: 44px; height: 44px; display: inline-block; }
+.stage-btn:disabled { cursor: default; opacity: .6; }
+.stage-btn.boss { border-color: #c98a93; background: #fff6f6; }
+.stage-btn.cleared .stage-r { color: #e2a50c; font-size: 20px; }
+.stage-r { font-size: 14px; color: var(--btn-ink); }
+
+#scr-talk { padding: 0; }
+.talk-stage { height: 52vh; min-height: 260px; position: relative; display: flex; align-items: flex-end; justify-content: center; cursor: pointer;
+  background: linear-gradient(#cfe3f5 0%, #eaf3fb 55%, #a9c8bf 56%, #77a9a0 100%); }
+.talk-place { position: absolute; left: 8px; top: 8px; background: #23324acc; color: #fff; padding: 2px 10px; border-radius: 3px; font-size: 14px; }
+.talk-sprite img { width: 192px; height: 192px; image-rendering: pixelated; margin-bottom: 18px; animation: bob 1.8s ease-in-out infinite; }
+.talk-box { background: #fff; border: 4px solid var(--msg-line); border-left-color: #888; border-top-color: #888; min-height: 150px; padding: 10px 14px; position: relative; cursor: pointer; }
+.talk-box .msg-next { display: block; }
+.talk-name { display: inline-block; background: var(--me); color: #fff; padding: 1px 10px; border-radius: 3px; font-size: 15px; margin-bottom: 6px; }
+.talk-text { font-size: 19px; line-height: 1.5; white-space: pre-wrap; }
+.talk-skip { position: absolute; right: 8px; top: 8px; z-index: 3; }
+#scr-talk { position: relative; }
+
+.shop-list { display: grid; gap: 6px; }
+.shop-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--grid); border-radius: 4px; padding: 6px 8px; }
+.shop-row.locked { opacity: .6; }
+.shop-buy { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; white-space: nowrap; font-size: 14px; }
+.contract { display: flex; align-items: center; gap: 6px; }
+.ng { color: #c03; }
+.spell-row.unlearned { opacity: .55; background: #f4f4f4; }
+.expbar { flex: 1; min-width: 80px; height: 8px; background: #ddd; border: 1px solid #999; position: relative; }
+.expbar i { position: absolute; left: 0; top: 0; bottom: 0; background: #3aa3d8; }
+.btn.evo { color: #b0500c; border-color: #e2a35c; }
+.result-modal { display: grid; gap: 8px; }
+.res-head { font-size: 30px; text-align: center; letter-spacing: 6px; }
+.res-head.win { color: #d2502a; } .res-head.lose { color: #3a62c8; }
+.res-exp { display: grid; gap: 2px; }
+.res-row { display: grid; grid-template-columns: 40px 1fr auto auto; gap: 6px; align-items: center; background: #fff; border: 1px solid var(--grid); border-radius: 3px; padding: 2px 6px; font-size: 14px; }
+.lvup { color: #d2502a; }
+.res-note { background: #fffbe9; border: 1px solid #e3cf8a; border-radius: 4px; padding: 5px 8px; font-size: 14px; }
+.evo-show { display: flex; align-items: center; gap: 10px; font-size: 18px; }
+.evo-show .kicon { width: 96px; height: 96px; }
+.mini-party .chip .kicon { width: 24px; height: 24px; margin: -4px 0; }
+.talk-name[hidden] { display: none; }
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
 </head>
@@ -307,20 +366,88 @@ table.chart tr.hl td, table.chart td.hl { outline: 1px solid #ffb84d; }
 
   <!-- ===== タイトル ===== -->
   <section id="scr-title" class="screen active">
-    <div class="titlebar"><span id="t-name">名無し</span><span class="titlebar-right">対戦シミュレータ</span></div>
+    <div class="titlebar"><span id="t-name">玉霊姫</span><span class="titlebar-right money" id="t-money"></span></div>
     <div class="panel title-panel">
       <h1 class="logo">東方玉霊姫<small>対戦シミュレータ</small></h1>
-      <p class="title-note">コダマを６体えらんで、ＮＰＣや他のプレイヤーと対戦しよう！</p>
-      <div class="menu">
-        <button class="btn big" data-go="party">パーティ編成</button>
-        <button class="btn big" data-go="npc">ＮＰＣ戦（テスト）</button>
+      <div id="title-new">
+        <p class="title-note">コダマと契約して幻想郷を巡る旅に出よう！</p>
+        <div class="name-row"><label>あなたの名前 <input id="in-name" maxlength="12" placeholder="悠姫"></label></div>
+        <button class="btn big" id="btn-newgame" style="margin-top:14px">はじめから</button>
+        <button class="btn sm" id="btn-import0" style="margin-top:10px">セーブデータを読み込む</button>
+      </div>
+      <div id="title-menu" class="menu" hidden>
+        <div class="title-status" id="title-status"></div>
+        <button class="btn big" data-go="story">ストーリー</button>
+        <button class="btn big" data-go="npc">フリー対戦（ＮＰＣ）</button>
         <button class="btn big" data-go="online">対人戦（オンライン）</button>
-        <button class="btn big" data-go="zukan">コダマ図鑑</button>
+        <div class="menu2">
+          <button class="btn" data-go="party">パーティ</button>
+          <button class="btn" data-go="shop">ショップ</button>
+          <button class="btn" data-go="items">持ち物</button>
+          <button class="btn" data-go="zukan">図鑑</button>
+        </div>
+        <button class="btn sm" data-go="save">セーブ管理</button>
       </div>
-      <div class="name-row">
-        <label>プレイヤー名 <input id="in-name" maxlength="12" placeholder="悠姫"></label>
-      </div>
-      <p class="credit">データ出典：東方玉神楽「コダマデータ【玉霊姫版】」／本作は非公式ファンメイドのシミュレータです。</p>
+      <p class="credit">データ・画像出典：東方玉神楽「コダマデータ【玉霊姫版】」／本作は非公式ファンメイドのシミュレータです。</p>
+    </div>
+  </section>
+
+  <!-- ===== 最初のコダマ選択 ===== -->
+  <section id="scr-start" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>最初の契約</span></div>
+    <div class="panel">
+      <p class="start-note">最初に契約するコダマを選んでください。<br><br>特にこだわりがなければ、好みで選んでしまってＯＫです。<br><br>※ここで選ばなかったコダマも、後で入手することができます。</p>
+      <div class="filters"><select id="start-type"><option value="">全属性</option></select></div>
+      <div class="start-grid" id="start-grid"></div>
+    </div>
+  </section>
+
+  <!-- ===== ストーリー ===== -->
+  <section id="scr-story" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>ストーリー</span><span class="titlebar-right money" id="story-money"></span></div>
+    <div id="story-areas"></div>
+  </section>
+
+  <!-- ===== 会話 ===== -->
+  <section id="scr-talk" class="screen">
+    <div class="talk-stage" id="talk-stage">
+      <div class="talk-place" id="talk-place"></div>
+      <div class="talk-sprite" id="talk-sprite"></div>
+    </div>
+    <div class="talk-box" id="talk-box">
+      <div class="talk-name" id="talk-name"></div>
+      <div class="talk-text" id="talk-text"></div>
+      <div class="msg-next">▼</div>
+    </div>
+    <button class="btn sm talk-skip" id="talk-skip">スキップ</button>
+  </section>
+
+  <!-- ===== ショップ ===== -->
+  <section id="scr-shop" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>ショップ</span><span class="titlebar-right money" id="shop-money"></span></div>
+    <div class="panel"><div class="picker-head">道具</div><div id="shop-items" class="shop-list"></div></div>
+    <div class="panel"><div class="picker-head">スペル習得</div>
+      <div class="filters"><select id="shop-kodama"></select></div>
+      <div id="shop-spells" class="spell-list"></div>
+    </div>
+  </section>
+
+  <!-- ===== 持ち物 ===== -->
+  <section id="scr-items" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>持ち物</span><span class="titlebar-right money" id="items-money"></span></div>
+    <div class="panel"><div id="items-list" class="shop-list"></div></div>
+  </section>
+
+  <!-- ===== セーブ管理 ===== -->
+  <section id="scr-save" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>セーブ管理</span></div>
+    <div class="panel form">
+      <p class="small">進行状況はこのブラウザに自動保存されます。別の端末へ移すときや、念のためのバックアップに「書き出し」を使ってください。</p>
+      <label>名前 <input id="save-name" maxlength="12"></label>
+      <button class="btn" id="save-export">セーブデータを書き出す</button>
+      <button class="btn" id="save-import">セーブデータを読み込む</button>
+      <button class="btn danger" id="save-reset">最初からやり直す（データ削除）</button>
+      <div id="save-stats" class="small"></div>
     </div>
   </section>
 
@@ -329,17 +456,11 @@ table.chart tr.hl td, table.chart td.hl { outline: 1px solid #ffb84d; }
     <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>パーティ編成</span><span class="titlebar-right" id="party-count">0/6</span></div>
     <div class="panel">
       <div class="party-slots" id="party-slots"></div>
-      <div class="row-btns">
-        <button class="btn sm" id="pt-random">おまかせ</button>
-        <button class="btn sm" id="pt-lv50">全員Lv50</button>
-        <button class="btn sm" id="pt-clear">全消去</button>
-        <button class="btn sm" id="pt-export">コード出力</button>
-        <button class="btn sm" id="pt-import">コード読込</button>
-      </div>
+
       <div id="slot-editor" class="slot-editor"></div>
     </div>
     <div class="panel">
-      <div class="picker-head">コダマを選ぶ<span class="small">（タップで追加／選択中の枠と入れ替え）</span></div>
+      <div class="picker-head">契約中のコダマ <span class="small" id="box-count"></span><br><span class="small">（タップで選択中の枠に入れる／入れ替え）</span></div>
       <div class="filters" id="party-filters"></div>
       <div class="klist" id="party-list"></div>
     </div>
@@ -356,30 +477,22 @@ table.chart tr.hl td, table.chart td.hl { outline: 1px solid #ffb84d; }
 
   <!-- ===== NPC戦 ===== -->
   <section id="scr-npc" class="screen">
-    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>ＮＰＣ戦（テスト）</span></div>
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>フリー対戦（ＮＰＣ）</span></div>
     <div class="panel form">
+      <label>対戦の種類
+        <select id="npc-mode">
+          <option value="train">修行（経験値・銭あり／相手は自分の平均Lv）</option>
+          <option value="flat">練習（全員Lv50・報酬なし）</option>
+        </select>
+      </label>
       <label>相手のつよさ
         <select id="npc-level">
-          <option value="easy">よわい</option>
-          <option value="normal" selected>ふつう</option>
-          <option value="hard">つよい</option>
+          <option value="easy">よわい（報酬×0.7）</option>
+          <option value="normal" selected>ふつう（報酬×1.0）</option>
+          <option value="hard">つよい（報酬×1.4）</option>
         </select>
       </label>
-      <label>相手のパーティ
-        <select id="npc-party">
-          <option value="random">ランダム</option>
-          <option value="mirror">自分と同じ（ミラー）</option>
-          <option value="starter">初期３コダマ</option>
-          <option value="strong">高種族値ランダム</option>
-        </select>
-      </label>
-      <label>レベル
-        <select id="npc-lvrule">
-          <option value="50">全員Lv50に統一</option>
-          <option value="100">全員Lv100に統一</option>
-          <option value="own">編成のまま（相手は自分の平均Lv）</option>
-        </select>
-      </label>
+      <p class="small">相手のコダマは、ストーリーで訪れたエリアに出てくるコダマから選ばれます。</p>
       <div id="npc-mine" class="mini-party"></div>
       <button class="btn big" id="npc-start">対戦開始！</button>
     </div>
@@ -1261,6 +1374,7 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
     const st = ctx.state;
     const m = active(st, side);
     m.enteredTurn = st.turn;
+    m.appeared = true;
     const sk = skillOf(m);
     if (sk && sk.copy) {
       const foe = active(st, 1 - side);
@@ -1781,15 +1895,474 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
 
 </script>
 <script>
-/* 東方玉霊姫 対戦シミュレータ - 画面・NPC戦・オンライン対戦 */
+/* 東方玉霊姫 - 育成・所持・ショップ・進化などの進行ルール（UIに依存しない） */
+(function (global) {
+  'use strict';
+
+  const D = global.GK_DATA;
+  const KD = global.GK.KODAMA;
+
+  /* ---------- 系統（ちび → 進化形） ---------- */
+  // ちびコダマ名 → 進化形のキャラ名（名前先頭の英字記号を除いた部分）
+  const CHIBI_LINE = {
+    'ちびれいむ': ['霊夢'], 'ちびまりさ': ['魔理沙', 'マリサ'], 'ちびさくや': ['咲夜'], 'ちびようむ': ['妖夢'],
+    'ちびリグル': ['リグル'], 'ちびヤマメ': ['ヤマメ'], 'ちび大ちゃん': ['大妖精'], 'ちびときこ': ['朱鷺子'],
+    'ちびあや': ['文'], 'ちびれいせん': ['鈴仙'], 'ちびさなえ': ['早苗'], 'ちびパチェ': ['パチュリー'],
+    'ちびチルノ': ['チルノ'], 'ちびアリス': ['アリス'], 'ちびにとり': ['にとり'], 'ちびるーみゃ': ['ルーミア'],
+    'ちびレティ': ['レティ'], 'ちびちぇん': ['橙'], 'ちびルナサ': ['ルナサ'], 'ちびめるぽ': ['メルラン'],
+    'ちびリリカ': ['リリカ'], 'ちびてゐ': ['てゐ'], 'ちびみのりこ': ['穣子'], 'ちびしずは': ['静葉'],
+    'ちびひな': ['雛'], 'ちびもみじ': ['椛'], 'ちびメディ': ['メディスン'], 'ちびキスメ': ['キスメ'],
+    'ちびパルスィ': ['パルスィ'], 'ちびナズー': ['ナズーリン'], 'ちびむらさ': ['村紗'], 'ちびサニー': ['サニー'],
+    'ちびルナ': ['ルナ'], 'ちびスター': ['スター'], 'ちびめーりん': ['美鈴'], 'ちびらん': ['藍'],
+    'ちびけいね': ['慧音'], 'ちびえーりん': ['永琳'], 'ちびこまち': ['小町'], 'ちびりん': ['燐'],
+    'ちびいく': ['衣玖'], 'ちびしょう': ['星'], 'ちびはたて': ['はたて'], 'ちびさとり': ['さとり'],
+    'ちびこいし': ['こいし'], 'ちびレミィ': ['レミリア'], 'ちびフラン': ['フラン'], 'ちびゆゆこ': ['幽々子'],
+    'ちびゆかり': ['紫'], 'ちびかぐや': ['輝夜'], 'ちびもこう': ['妹紅'], 'ちびかなこ': ['神奈子'],
+    'ちびすわこ': ['諏訪子'], 'ちびゆうか': ['幽香'], 'ちびユウカ': ['ユウカ'], 'ちびえいき': ['映姫'],
+    'ちびすいか': ['萃香'], 'ちびゆうぎ': ['勇儀'], 'ちびうつほ': ['空'], 'ちびてんし': ['天子'],
+    'ちびひじり': ['聖'], 'ちびぬえ': ['ぬえ'], 'ちびよりひめ': ['依姫'], 'ちびとよひめ': ['豊姫'],
+    'ちび靈夢': ['靈夢'], 'ちびみま': ['魅魔'], 'ちびキクリ': ['キクリ'], 'ちびコンガラ': ['コンガラ'],
+    'ちびマガン': ['マガン'], 'ちびエリス': ['エリス'], 'ちびサリエル': ['サリエル'], 'ちびりか': ['里香'],
+    'ちびめいら': ['明羅'], 'ちび魔梨沙': ['魔梨沙'], 'ちびエレン': ['エレン'], 'ちびことひめ': ['小兎姫'],
+    'ちびカナ': ['カナ'], 'ちびりかこ': ['理香子'], 'ちびちゆり': ['ちゆり'], 'ちびゆめみ': ['夢美'],
+    'ちびオレンジ': ['オレンジ'], 'ちびくるみ': ['くるみ'], 'ちびエリー': ['エリー'], 'ちびむげつ': ['夢月'],
+    'ちびげんげつ': ['幻月'], 'ちびサラ': ['サラ'], 'ちびルイズ': ['ルイズ'], 'ちびありす': ['ありす'],
+    'ちびユキ': ['ユキ'], 'ちびマイ': ['マイ'], 'ちびゆめこ': ['夢子'], 'ちびしんき': ['神綺'],
+    'ちびレイラ': ['レイラ'], 'ちびきょうこ': ['響子'], 'ちびよしか': ['芳香'], 'ちびせいが': ['青娥'],
+    'ちびとじこ': ['屠自古'], 'ちびふと': ['布都'], 'ちびみこ': ['神子'], 'ちびマミゾウ': ['マミゾウ'],
+    'ちびレイセン': ['レイセン'], 'ちびかせん': ['華扇'], 'ちびこすず': ['小鈴'], 'ちびこころ': ['こころ'],
+    'ちびのろいこ': ['呪い子'], 'ちびらいこ': ['雷鼓'], 'ちびせいじゃ': ['正邪'], 'ちびかげろう': ['影狼'],
+    'ちびばんき': ['赤蛮奇'], 'ちびべんべん': ['弁々'], 'ちびやつはし': ['八橋'], 'ちびわかさぎ': ['わかさぎ姫'],
+    'ちびすみれこ': ['菫子'], 'ちびせいらん': ['清蘭'], 'ちびりんご': ['鈴瑚'], 'ちびドレミー': ['ドレミー'],
+    'ちびサグメ': ['サグメ'], 'ちびクラウン': ['クラウン'], 'ちびじゅんこ': ['純狐'], 'ちびヘカーテ': ['ヘカーテ'],
+  };
+  // ちび以外の幼体（契約書でのみ入手）
+  const EXTRA_LINE = {
+    'ここあ': ['小悪魔'], 'しろりりー': ['リリーＷ'], 'くろりりー': ['リリーＢ'], 'みすちー': ['ミスティア', 'ミスティ'],
+    'ここがさ': ['小傘'], 'こいちりん': ['一輪'], 'こしんみょう': ['針妙丸'], 'こしんぎょく': ['神玉'],
+  };
+  const EVOLVE_LV = 30;
+
+  const charKey = name => name.replace(/^[Ａ-Ｚ]+/, '');
+  const isChibi = k => k.name.startsWith('ちび');
+  const isBase = k => isChibi(k) || !!EXTRA_LINE[k.name];
+
+  // キャラ名 → 系統ID（ちびのコダマNo）
+  const LINE_OF_CHAR = {};
+  const CHIBI_BY_NAME = {};
+  for (const k of D.kodama) if (isBase(k)) CHIBI_BY_NAME[k.name] = k;
+  for (const [cn, chars] of Object.entries(Object.assign({}, CHIBI_LINE, EXTRA_LINE))) {
+    const c = CHIBI_BY_NAME[cn];
+    if (c) for (const ch of chars) LINE_OF_CHAR[ch] = c.id;
+  }
+  // 系統ID → [ちび, 進化形...]
+  const LINES = {};
+  const LINE_OF = {}; // コダマNo → 系統ID
+  for (const k of D.kodama) {
+    let line = null;
+    if (isBase(k)) line = k.id;
+    else if (LINE_OF_CHAR[charKey(k.name)]) line = LINE_OF_CHAR[charKey(k.name)];
+    if (line != null) {
+      (LINES[line] = LINES[line] || []).push(k.id);
+      LINE_OF[k.id] = line;
+    }
+  }
+  const CHIBI_IDS = D.kodama.filter(isChibi).map(k => k.id);
+
+  function evolutions(id) {
+    const line = LINE_OF[id];
+    if (line == null) return [];
+    return LINES[line].filter(x => x !== id && !isBase(KD[x]));
+  }
+
+  /* ---------- レベル・経験値 ---------- */
+  const MAX_LV = 100;
+  const expToNext = lv => lv >= MAX_LV ? Infinity : 5 + lv * lv;
+  const slvFor = lv => Math.min(5, 1 + Math.floor(lv / 20));
+  // 倒したコダマから得られる経験値
+  const expFrom = (k, lv) => Math.max(1, Math.floor(k.total * lv / 30));
+
+  /* ---------- スペル習得条件 ---------- */
+  function spellReq(sp) {
+    if (sp.price === '禁呪') return { money: 0, lv: 50, book: true };
+    const p = parseInt(sp.price) || 0;
+    let lv = 1;
+    if (p > 3000) lv = 15;
+    if (p > 20000) lv = 25;
+    if (p >= 100000) lv = 35;
+    if (p >= 200000) lv = 45;
+    if (p >= 300000) lv = 55;
+    return { money: p, lv, book: false };
+  }
+  // 最初から覚えているスペル（3000銭以下、無ければ最安のもの）
+  function basicSpells(k) {
+    let list = k.spells.filter(s => s.price !== '禁呪' && (parseInt(s.price) || 0) <= 3000).map(s => s.name);
+    if (!list.length) {
+      const sorted = k.spells.filter(s => s.price !== '禁呪').sort((a, b) => (parseInt(a.price) || 0) - (parseInt(b.price) || 0));
+      list = (sorted.length ? sorted : k.spells).slice(0, 1).map(s => s.name);
+    }
+    return [...new Set(list)];
+  }
+
+  /* ---------- セーブデータ ---------- */
+  const SAVE_VERSION = 1;
+  function newSave(name, starterId) {
+    const s = {
+      v: SAVE_VERSION, name: name || '悠姫', money: 10000,
+      owned: [], party: [], nextUid: 1,
+      items: { chibi: 1 }, contracts: [],
+      cleared: {}, seen: {}, intro: {}, stats: { win: 0, lose: 0 },
+      created: Date.now(),
+    };
+    const m = addKodama(s, starterId, 5);
+    s.party = [m.uid];
+    return s;
+  }
+  function owns(s, id) { return s.owned.some(m => m.id === id); }
+  function ownsLine(s, id) {
+    const line = LINE_OF[id];
+    return s.owned.some(m => m.id === id || (line != null && LINE_OF[m.id] === line));
+  }
+  function addKodama(s, id, lv) {
+    const k = KD[id];
+    const learned = basicSpells(k);
+    const m = { uid: s.nextUid++, id, lv: Math.max(1, Math.min(MAX_LV, lv || 5)), exp: 0, learned, equip: learned.slice(0, 4) };
+    s.owned.push(m);
+    s.seen[id] = 1;
+    if (s.party.length < 6) s.party.push(m.uid);
+    return m;
+  }
+  function findOwned(s, uid) { return s.owned.find(m => m.uid === uid); }
+  function partyMembers(s) { return s.party.map(uid => findOwned(s, uid)).filter(Boolean); }
+
+  function toBuild(m, forceLv) {
+    const k = KD[m.id];
+    const idx = [];
+    for (const name of m.equip) {
+      const i = k.spells.findIndex(sp => sp.name === name);
+      if (i >= 0 && !idx.includes(i)) idx.push(i);
+    }
+    const lv = forceLv || m.lv;
+    return { id: m.id, lv, spells: idx.slice(0, 4), slv: slvFor(lv) };
+  }
+
+  // 経験値付与 → レベルアップした回数を返す
+  function gainExp(m, exp) {
+    const before = m.lv;
+    m.exp += exp;
+    while (m.lv < MAX_LV && m.exp >= expToNext(m.lv)) {
+      m.exp -= expToNext(m.lv);
+      m.lv++;
+    }
+    if (m.lv >= MAX_LV) m.exp = 0;
+    return m.lv - before;
+  }
+
+  function evolve(s, m, toId) {
+    if (!evolutions(m.id).includes(toId)) return false;
+    if (isBase(KD[m.id]) && m.lv < EVOLVE_LV) return false;
+    const k = KD[toId];
+    m.id = toId;
+    s.seen[toId] = 1;
+    const names = new Set(k.spells.map(sp => sp.name));
+    m.learned = [...new Set([...m.learned.filter(n => names.has(n)), ...basicSpells(k)])];
+    m.equip = m.equip.filter(n => names.has(n));
+    for (const n of m.learned) if (m.equip.length < 4 && !m.equip.includes(n)) m.equip.push(n);
+    return true;
+  }
+
+  /* ---------- 契約書 ---------- */
+  // contract: {id, lv}  → 所持品から使用してコダマを入手
+  function useContract(s, index) {
+    const c = s.contracts[index];
+    if (!c) return null;
+    s.contracts.splice(index, 1);
+    if (owns(s, c.id)) {
+      const refund = 3000;
+      s.money += refund;
+      return { dup: true, refund, id: c.id };
+    }
+    const m = addKodama(s, c.id, c.lv || 5);
+    return { dup: false, m };
+  }
+  function randomUnowned(s, pool, rand) {
+    rand = rand || Math.random;
+    const list = pool.filter(id => !owns(s, id));
+    if (!list.length) return null;
+    return list[Math.floor(rand() * list.length)];
+  }
+
+  /* ---------- ショップ ---------- */
+  const SHOP = [
+    { key: 'chibi', name: 'ちび契約書', price: 8000, desc: 'まだ契約していない「ちび」コダマのどれかと契約できる。', unlock: 0 },
+    { key: 'random', name: '玉霊契約書', price: 40000, desc: 'まだ契約していないコダマのどれかと契約できる（進化形・特殊コダマ含む）。Lv20で加入。', unlock: 4 },
+    { key: 'book', name: '禁呪の書', price: 100000, desc: '★の付いた禁呪スペルを習得するのに必要。', unlock: 6 },
+    { key: 'scroll', name: '修行の書', price: 5000, desc: '使ったコダマが次のレベルまでの経験値を得る。', unlock: 2 },
+  ];
+
+  global.GKP = {
+    CHIBI_IDS, LINES, LINE_OF, EVOLVE_LV, MAX_LV, SHOP, SAVE_VERSION,
+    isChibi, isBase, charKey, evolutions, expToNext, slvFor, expFrom, spellReq, basicSpells,
+    newSave, owns, ownsLine, addKodama, findOwned, partyMembers, toBuild, gainExp, evolve,
+    useContract, randomUnowned,
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* 東方玉霊姫 - ストーリーデータとステージ生成 */
+(function (global) {
+  'use strict';
+
+  const D = global.GK_DATA;
+  const KD = global.GK.KODAMA;
+  const P = global.GKP;
+
+  // who: 話し手（キャラ名）。'' はナレーション、'@' はプレイヤー
+  const AREAS = [
+    {
+      name: '博麗神社', lv: [3, 8], ai: 'easy',
+      chars: ['霊夢', 'ルーミア', '大妖精', 'リグル', 'サニー', 'ルナ', 'スター'],
+      intro: [
+        ['', '幻想郷の各地で、コダマたちが騒ぎ始めた――。'],
+        ['霊夢', 'あら、あんたが新しい玉霊姫？ 契約したてのコダマを連れてるわね。'],
+        ['霊夢', '最近、妖精やら妖怪やらがコダマを連れて暴れてるのよ。腕試しにちょうどいいわ。'],
+        ['霊夢', '勝負に勝つとコダマが経験を積むわ。それから「契約書」を手に入れたら、持ち物から使ってみなさい。'],
+      ],
+      boss: {
+        char: '霊夢', name: '博麗霊夢',
+        pre: [['霊夢', 'ここまで来たなら一人前ね。最後は私が相手してあげる。'], ['霊夢', '手加減はしないわよ！']],
+        post: [['霊夢', '……やるじゃない。異変の気配は魔法の森の方からするわ。'], ['霊夢', 'これ、持っていきなさい。私のコダマの契約書よ。']],
+      },
+    },
+    {
+      name: '魔法の森', lv: [8, 15], ai: 'easy',
+      chars: ['魔理沙', 'アリス', '朱鷺子', 'メディスン', '穣子', '静葉', 'ミスティア'],
+      intro: [['魔理沙', 'よう！ 霊夢から聞いたぜ。森のキノコよりコダマ集めのほうが面白いって？'], ['魔理沙', '森の連中は手強いぜ。私に勝てたら認めてやるよ。']],
+      boss: {
+        char: '魔理沙', name: '霧雨魔理沙',
+        pre: [['魔理沙', '弾幕はパワーだぜ！ コダマ勝負もな！']],
+        post: [['魔理沙', 'ちぇっ、負けたぜ。湖のほうで妖精たちが騒いでたぞ。'], ['魔理沙', '借りは返す主義だ。これをやるよ！']],
+      },
+    },
+    {
+      name: '霧の湖', lv: [14, 22], ai: 'easy',
+      chars: ['チルノ', '大妖精', 'レティ', 'わかさぎ姫', '影狼', '赤蛮奇', 'リリーＷ'],
+      intro: [['', '霧の湖。冷たい風と一緒に、元気な声が聞こえてくる。'], ['チルノ', 'あたいったら最強ね！ コダマ勝負でも最強なんだから！']],
+      boss: {
+        char: 'チルノ', name: 'チルノ',
+        pre: [['チルノ', 'あたいの最強コダマで凍らせてやる！']],
+        post: [['チルノ', 'う、うそだ……あたいが負けるなんて！'], ['大妖精', 'チルノちゃん、紅いお屋敷の人たちも最近コダマを集めてるみたいだよ。']],
+      },
+    },
+    {
+      name: '紅魔館', lv: [20, 30], ai: 'normal',
+      chars: ['美鈴', '小悪魔', 'パチュリー', '咲夜', 'レミリア', 'フラン'],
+      intro: [['美鈴', 'ここは紅魔館！ ……えっ、お嬢様に挑戦？ まずは門番の私を倒してからですよ！']],
+      boss: {
+        char: 'レミリア', name: 'レミリア・スカーレット',
+        pre: [['咲夜', 'お嬢様、例の玉霊姫が参りました。'], ['レミリア', '運命は既に見えているわ。あなたの負けよ。']],
+        post: [['レミリア', 'ふふ、運命を覆すなんてね。気に入ったわ。'], ['レミリア', '冥界のお嬢様もコダマを集めているそうよ。']],
+      },
+    },
+    {
+      name: '白玉楼', lv: [28, 38], ai: 'normal',
+      chars: ['橙', '藍', 'ルナサ', 'メルラン', 'リリカ', '妖夢', '幽々子', 'レイラ'],
+      intro: [['', '長い長い階段の先、冥界の庭園・白玉楼。'], ['妖夢', '生きた人間がここへ何の用です？ コダマ勝負なら、受けて立ちます！'], ['', '※Lv30を超えたちびコダマは「パーティ」画面で進化できるようになります。']],
+      boss: {
+        char: '幽々子', name: '西行寺幽々子',
+        pre: [['幽々子', 'あら、可愛いコダマたち。食べちゃいたいくらい。'], ['妖夢', '幽々子様、それは比喩ですよね……？']],
+        post: [['幽々子', 'お腹いっぱい楽しんだわ。竹林のお姫様にも会ってみるといいわよ。']],
+      },
+    },
+    {
+      name: '永遠亭', lv: [36, 46], ai: 'normal',
+      chars: ['てゐ', '鈴仙', '永琳', '輝夜', '妹紅', '慧音', 'レイセン'],
+      intro: [['てゐ', '迷いの竹林で迷子かい？ 案内してあげてもいいよ、コダマ勝負に勝てたらね！']],
+      boss: {
+        char: '輝夜', name: '蓬莱山輝夜',
+        pre: [['輝夜', '永遠の退屈しのぎに、あなたと遊んであげる。'], ['輝夜', '私の難題、解けるかしら？']],
+        post: [['輝夜', '見事ね。山の神様たちも何か企んでいるみたいよ。']],
+      },
+    },
+    {
+      name: '妖怪の山', lv: [44, 54], ai: 'normal',
+      chars: ['椛', '文', 'はたて', 'にとり', '雛', '早苗', '神奈子', '諏訪子'],
+      intro: [['文', 'どうも、清く正しい射命丸です！ 噂の玉霊姫さん、取材させてください！'], ['椛', '侵入者！ ……と言いたいところですが、勝負で決めましょう。']],
+      boss: {
+        char: '神奈子', name: '八坂神奈子',
+        pre: [['早苗', '神奈子様、この方が噂の！'], ['神奈子', '信仰は力。コダマとの絆もまた力だ。見せてもらおう！']],
+        post: [['神奈子', '天晴れだ。地底の連中も騒いでいる、気をつけて行け。']],
+      },
+    },
+    {
+      name: '地底', lv: [52, 62], ai: 'normal',
+      chars: ['キスメ', 'ヤマメ', 'パルスィ', '勇儀', 'さとり', '燐', '空', 'こいし'],
+      intro: [['パルスィ', '地上の人間が地底に何の用？ 妬ましいわね……そのコダマたち。']],
+      boss: {
+        char: 'さとり', name: '古明地さとり',
+        pre: [['さとり', '……あなたの次の一手、もう読めていますよ。'], ['さとり', '心を読まれても勝てるかしら？']],
+        post: [['さとり', '読めていても止められない……面白いですね。'], ['さとり', '地上の寺と霊廟でも、コダマが集まっているようです。']],
+      },
+    },
+    {
+      name: '命蓮寺・神霊廟', lv: [60, 70], ai: 'hard',
+      chars: ['ナズーリン', '小傘', '一輪', '村紗', '星', '聖', 'ぬえ', '響子', '芳香', '青娥', '屠自古', '布都', '神子', 'マミゾウ'],
+      intro: [['響子', 'おはよーございます！！'], ['ナズーリン', 'お宝の気配……と思ったら玉霊姫か。聖様が会いたがっていたよ。']],
+      boss: {
+        char: '聖', name: '聖白蓮',
+        pre: [['聖', '人も妖怪もコダマも、みな平等。いざ、南無三――！']],
+        post: [['聖', '素晴らしい絆です。月の都から不穏な気配が……どうかお気をつけて。']],
+      },
+    },
+    {
+      name: '天界・月の都', lv: [68, 80], ai: 'hard',
+      chars: ['衣玖', '天子', '依姫', '豊姫', '鈴瑚', '清蘭', 'ドレミー', 'サグメ'],
+      intro: [['衣玖', '空気を読むと、あなたは月へ向かう運命のようですね。'], ['天子', '退屈してたのよ！ 天人の私と勝負しなさい！']],
+      boss: {
+        char: '依姫', name: '綿月依姫',
+        pre: [['依姫', '地上の者よ。神々の力を借りた私のコダマに勝てますか？']],
+        post: [['依姫', '……見事です。異変の源は、さらに向こう――魔界にあるようです。'], ['', '★ メインストーリー クリア！ 以降はEXエリアが解放されます。']],
+      },
+    },
+    {
+      name: 'EX：魔界', lv: [78, 88], ai: 'hard',
+      chars: ['サラ', 'ルイズ', 'ユキ', 'マイ', '夢子', '神綺', 'ありす', 'エリス', 'サリエル', 'キクリ', 'コンガラ', 'マガン'],
+      intro: [['サラ', 'ようこそ魔界へ！ ここから先はちょっと手強いよ？']],
+      boss: {
+        char: '神綺', name: '神綺',
+        pre: [['夢子', '神綺様、侵入者です。'], ['神綺', 'あらあら、可愛いお客さん。魔界の神が相手をしてあげる♪']],
+        post: [['神綺', '強い子ね〜。夢と幻の世界にも、強いコダマ使いがいるわよ。']],
+      },
+    },
+    {
+      name: 'EX：夢幻世界', lv: [86, 96], ai: 'hard',
+      chars: ['靈夢', '魅魔', '幽香', 'ユウカ', 'エリー', 'くるみ', '幻月', '夢月', 'オレンジ', '純狐', 'ヘカーテ', 'クラウン'],
+      intro: [['魅魔', 'ふふ、ここまで辿り着くとはね。最後の試練を始めようか。']],
+      boss: {
+        char: 'ヘカーテ', name: 'ヘカーティア・ラピスラズリ',
+        pre: [['ヘカーテ', 'あたいは地獄の女神。三つの身体、三倍の力で相手してあげる！'], ['純狐', '純粋な力、見せてもらいましょう。']],
+        post: [['ヘカーテ', 'やるじゃない！ あなたこそ真の玉霊姫ね。'], ['', '★ 全ストーリー クリア！ おめでとうございます！']],
+      },
+    },
+  ];
+
+  const STAGES_PER_AREA = 5;
+  const STAGE_NAMES = ['その１', 'その２', 'その３', 'その４', 'ボス'];
+  const GENERIC_PRE = [
+    '{c}「コダマ勝負よ！ 負けないんだから！」',
+    '{c}「見ない顔ね。ちょっと腕試しさせてもらうわ」',
+    '{c}「ここを通りたければ、私のコダマを倒していきなさい！」',
+    '{c}「ふふん、私のコダマは強いわよ？」',
+  ];
+  const GENERIC_POST = ['{c}「くっ……やるわね」', '{c}「負けちゃった……次は負けないから！」', '{c}「強いのね、あなた」'];
+
+  /* ---------- プール ---------- */
+  const charKey = P.charKey;
+  function lineIdsForChar(ch) {
+    // その名前のキャラが属する系統（無ければキャラ名一致のコダマ）
+    const ids = D.kodama.filter(k => charKey(k.name) === ch).map(k => k.id);
+    const lines = new Set(ids.map(id => P.LINE_OF[id]).filter(x => x != null));
+    if (lines.size) return [...lines].map(l => P.LINES[l]);
+    return ids.length ? [ids] : [];
+  }
+  function formFor(lineIds, lv, rand, strongest) {
+    const base = lineIds.filter(id => P.isBase(KD[id]));
+    const evo = lineIds.filter(id => !P.isBase(KD[id]));
+    let list = lv >= P.EVOLVE_LV && evo.length ? evo : (base.length ? base : evo);
+    if (strongest) list = list.slice().sort((a, b) => KD[b].total - KD[a].total).slice(0, 2);
+    return list[Math.floor(rand() * list.length)];
+  }
+
+  function makeRng(seed) {
+    let s = seed >>> 0;
+    return () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+
+  const stageKey = (a, j) => `${a}-${j}`;
+
+  /* ---------- ステージ生成 ---------- */
+  function stage(a, j) {
+    const A = AREAS[a];
+    const rand = makeRng(9173 + a * 131 + j * 17);
+    const isBoss = j === STAGES_PER_AREA - 1;
+    const [lo, hi] = A.lv;
+    const baseLv = Math.round(lo + (hi - lo) * j / (STAGES_PER_AREA - 1));
+    const size = Math.max(1, Math.min(6, 1 + Math.floor(a * 0.6) + (j >= 2 ? 1 : 0) + (isBoss ? 1 : 0)));
+    let lines = A.chars.flatMap(lineIdsForChar);
+    let leaderChar = isBoss ? A.boss.char : A.chars[(j + a) % A.chars.length];
+    if (!isBoss && leaderChar === A.boss.char) leaderChar = A.chars[(j + a + 1) % A.chars.length];
+    const leaderLines = lineIdsForChar(leaderChar);
+    if (leaderLines.length) lines = lines.filter(l => l !== leaderLines[0]);
+    const party = [];
+    const used = new Set();
+    for (let i = 0; i < size; i++) {
+      const last = i === size - 1;
+      let line;
+      if (last && leaderLines.length) line = leaderLines[0];
+      else line = lines[Math.floor(rand() * lines.length)];
+      let lv = Math.max(1, Math.min(100, baseLv + Math.floor(rand() * 3) - 1 + (last && isBoss ? 2 : 0)));
+      let id = formFor(line, lv, rand, last && isBoss);
+      let tries = 0;
+      while (!last && used.has(id) && tries++ < 10) { line = lines[Math.floor(rand() * lines.length)]; id = formFor(line, lv, rand, false); }
+      used.add(id);
+      party.push({ id, lv, slv: P.slvFor(lv) });
+    }
+    party.reverse(); // リーダーを先頭に
+    const trainer = isBoss ? A.boss.name : leaderChar;
+    const pre = isBoss ? A.boss.pre : [['', GENERIC_PRE[(a + j) % GENERIC_PRE.length].replace('{c}', leaderChar)]];
+    const post = isBoss ? A.boss.post : [['', GENERIC_POST[(a * 3 + j) % GENERIC_POST.length].replace('{c}', leaderChar)]];
+    // 初回クリア報酬
+    const reward = { money: Math.round((800 + 700 * a) * (1 + j * 0.3) * (isBoss ? 2 : 1) / 10) * 10, items: {}, contracts: [] };
+    if (j === 1 || j === 3) reward.items.chibi = 1;
+    if (j === 2) reward.items.scroll = 1;
+    if (isBoss) {
+      const bl = lineIdsForChar(A.boss.char)[0];
+      if (bl) {
+        const base = bl.find(id => P.isBase(KD[id])) || bl[0];
+        reward.contracts.push({ id: base, lv: 5 });
+      }
+      if (a >= 4) reward.items.book = 1;
+    }
+    return {
+      a, j, key: stageKey(a, j), isBoss, area: A, title: `${A.name} ${STAGE_NAMES[j]}`,
+      trainer, party, pre, post, reward, ai: isBoss && A.ai === 'easy' ? 'normal' : A.ai,
+      speaker: leaderChar,
+    };
+  }
+
+  function charSprite(ch) {
+    const lines = lineIdsForChar(ch);
+    if (!lines.length) return null;
+    const base = lines[0].find(id => P.isBase(KD[id])) || lines[0][0];
+    return base;
+  }
+
+  function isUnlocked(save, a, j) {
+    if (a === 0 && j === 0) return true;
+    if (j > 0) return !!save.cleared[stageKey(a, j - 1)];
+    return !!save.cleared[stageKey(a - 1, STAGES_PER_AREA - 1)];
+  }
+  function areaCleared(save, a) { return !!save.cleared[stageKey(a, STAGES_PER_AREA - 1)]; }
+  function progressArea(save) {
+    let n = 0;
+    while (n < AREAS.length && areaCleared(save, n)) n++;
+    return n; // クリア済みエリア数
+  }
+
+  global.GKS = { AREAS, STAGES_PER_AREA, stage, stageKey, isUnlocked, areaCleared, progressArea, charSprite, lineIdsForChar };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* 東方玉霊姫 対戦シミュレータ - 画面・ストーリー・ショップ・NPC戦・オンライン対戦 */
 (function () {
   'use strict';
 
   const D = window.GK_DATA;
   const KD = GK.KODAMA;
-  const VERSION = 1;
-  const STARTERS = [110, 194, 73]; // ちびみのりこ・ちびりん・ちびにとり
-  const PEER_PREFIX = 'gyokureiki-v1-';
+  const VERSION = 2;
+  const PEER_PREFIX = 'gyokureiki-v2-';
 
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -1799,27 +2372,56 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const spriteOf = id => (window.GK_SPRITES && window.GK_SPRITES[id]) || null;
   const icon = id => { const s = spriteOf(id); return s ? `<img class="kicon" src="${esc(s)}" alt="" loading="lazy">` : ''; };
+  const yen = n => `${Number(n).toLocaleString('ja-JP')}銭`;
 
   /* ================= 保存 ================= */
   const store = {
     get(k, d) { try { const v = localStorage.getItem('gk_' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem('gk_' + k, JSON.stringify(v)); } catch (e) { /* 保存不可でも続行 */ } },
+    del(k) { try { localStorage.removeItem('gk_' + k); } catch (e) { /* noop */ } },
   };
-  let party = (store.get('party', null) || STARTERS.map(id => ({ id, lv: 50 })))
-    .map(b => GK.sanitizeBuild(b)).filter(Boolean);
-  let playerName = store.get('name', '悠姫');
-  const saveParty = () => store.set('party', party);
+  let save = validateSave(store.get('save', null));
+  let playerName = save ? save.name : store.get('name', '悠姫');
+  function persist() { if (save) store.set('save', save); refreshMoney(); }
+
+  function validateSave(s) {
+    if (!s || typeof s !== 'object' || !Array.isArray(s.owned)) return null;
+    s.owned = s.owned.filter(m => m && KD[m.id]);
+    if (!s.owned.length) return null;
+    s.items = s.items || {}; s.contracts = s.contracts || []; s.cleared = s.cleared || {}; s.seen = s.seen || {};
+    s.stats = s.stats || { win: 0, lose: 0 }; s.intro = s.intro || {};
+    s.money = Math.max(0, Math.floor(+s.money || 0));
+    s.party = (s.party || []).filter(uid => s.owned.some(m => m.uid === uid)).slice(0, GK.MAX_PARTY);
+    if (!s.party.length) s.party = [s.owned[0].uid];
+    s.nextUid = Math.max(s.nextUid || 1, ...s.owned.map(m => m.uid + 1));
+    for (const m of s.owned) {
+      const names = new Set(KD[m.id].spells.map(sp => sp.name));
+      m.learned = (m.learned || []).filter(n => names.has(n));
+      if (!m.learned.length) m.learned = GKP.basicSpells(KD[m.id]);
+      m.equip = (m.equip || []).filter(n => m.learned.includes(n)).slice(0, 4);
+      if (!m.equip.length) m.equip = m.learned.slice(0, 4);
+      m.lv = Math.max(1, Math.min(100, Math.floor(+m.lv || 1)));
+      m.exp = Math.max(0, Math.floor(+m.exp || 0));
+    }
+    return s;
+  }
+  const myMembers = () => GKP.partyMembers(save);
+  const myBuilds = forceLv => myMembers().map(m => GKP.toBuild(m, forceLv));
+  const itemCount = k => save.items[k] || 0;
+
+  function refreshMoney() {
+    const t = save ? yen(save.money) : '';
+    $$('.money').forEach(el => { el.textContent = t; });
+  }
 
   /* ================= 画面遷移 ================= */
   function go(name) {
-    if (name !== 'battle' && current && current.leaveBattle) current.leaveBattle();
+    if (!save && !['title', 'start', 'zukan'].includes(name)) name = 'title';
     $$('.screen').forEach(s => s.classList.toggle('active', s.id === 'scr-' + name));
     window.scrollTo(0, 0);
-    if (name === 'party') renderParty();
-    if (name === 'zukan') renderZukan();
-    if (name === 'npc') $('#npc-mine').innerHTML = miniParty(party);
-    if (name === 'online') renderOnline();
-    if (name === 'title') $('#t-name').textContent = playerName;
+    refreshMoney();
+    const r = { title: renderTitle, start: renderStart, story: renderStory, party: renderParty, zukan: renderZukan, shop: renderShop, items: renderItems, save: renderSaveMgr, npc: renderNpc, online: () => renderOnline() }[name];
+    if (r) r();
   }
   document.addEventListener('click', e => {
     const g = e.target.closest('[data-go]');
@@ -1829,60 +2431,110 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
   function toast(msg) {
     const t = $('#toast');
     t.textContent = msg; t.classList.add('show');
-    clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2200);
+    clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2400);
   }
-  function modal(html) { $('#modal-content').innerHTML = html; $('#modal').classList.add('open'); }
-  $('#modal-close').onclick = () => $('#modal').classList.remove('open');
-  $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') $('#modal').classList.remove('open'); });
-
-  $('#in-name').value = playerName;
-  $('#in-name').addEventListener('change', e => { playerName = e.target.value.trim().slice(0, 12) || '名無し'; store.set('name', playerName); $('#t-name').textContent = playerName; });
-  $('#t-name').textContent = playerName;
+  let modalDone = null;
+  function modal(html, onClose) {
+    $('#modal-content').innerHTML = html; $('#modal').classList.add('open');
+    modalDone = onClose || null;
+  }
+  function closeModal() {
+    $('#modal').classList.remove('open');
+    const f = modalDone; modalDone = null;
+    if (f) f();
+  }
+  const modalP = html => new Promise(res => modal(html, res));
+  $('#modal-close').onclick = closeModal;
+  $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
 
   function miniParty(list) {
-    return list.map(b => { const k = KD[b.id]; return k ? `<span class="chip">${tbs(k.types)}${esc(k.name)} Lv${b.lv}</span>` : ''; }).join('');
+    return list.map(b => { const k = KD[b.id]; return k ? `<span class="chip">${icon(k.id)}${tbs(k.types)}${esc(k.name)} Lv${b.lv}</span>` : ''; }).join('');
   }
+
+  /* ================= タイトル ================= */
+  function renderTitle() {
+    $('#title-new').hidden = !!save;
+    $('#title-menu').hidden = !save;
+    $('#t-name').textContent = save ? save.name : '東方玉霊姫';
+    $('#in-name').value = playerName;
+    if (save) {
+      const cleared = GKS.progressArea(save);
+      const next = cleared < GKS.AREAS.length ? `次の目的地：${GKS.AREAS[cleared].name}` : '全エリアクリア！';
+      $('#title-status').innerHTML = `<div>契約コダマ <b>${save.owned.length}</b> / ${D.kodama.length}　　${esc(next)}</div>
+        <div class="mini-party">${miniParty(myMembers().map(m => ({ id: m.id, lv: m.lv })))}</div>`;
+    }
+  }
+  $('#btn-newgame').onclick = () => {
+    playerName = $('#in-name').value.trim().slice(0, 12) || '悠姫';
+    store.set('name', playerName);
+    go('start');
+  };
+
+  /* ================= 最初のコダマ選択 ================= */
+  $('#start-type').innerHTML += GK.TYPES.map(t => `<option>${t}</option>`).join('');
+  $('#start-type').onchange = renderStart;
+  function renderStart() {
+    const t = $('#start-type').value;
+    const list = GKP.CHIBI_IDS.map(id => KD[id]).filter(k => !t || k.types.includes(t));
+    $('#start-grid').innerHTML = list.map(k => `<button class="start-cell" data-id="${k.id}">
+      <span class="tbrow">${tbs(k.types)}</span>${icon(k.id)}<span class="nm">${esc(k.name)}</span></button>`).join('');
+  }
+  $('#start-grid').addEventListener('click', e => {
+    const c = e.target.closest('.start-cell'); if (!c) return;
+    const k = KD[c.dataset.id];
+    modal(`${kodamaDetail(k, 5)}<button class="btn big" id="start-ok">${esc(k.name)}と契約する！</button>`);
+    $('#start-ok').onclick = () => {
+      save = GKP.newSave(playerName, k.id);
+      persist();
+      closeModal();
+      toast(`${k.name}と契約した！`);
+      go('story');
+    };
+  });
 
   /* ================= コダマ一覧（共通） ================= */
   const SORTS = { no: 'No.順', total: '合計', hp: 'ＨＰ', atk: '攻撃', df: '防御', spd: '速度' };
-  function filterUI(root, onChange) {
+  function filterUI(root, onChange, extra) {
     root.innerHTML = `
       <input type="search" placeholder="名前で検索" data-f="q">
       <select data-f="type"><option value="">全属性</option>${GK.TYPES.map(t => `<option>${t}</option>`).join('')}</select>
-      <select data-f="sort">${Object.entries(SORTS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>`;
+      <select data-f="sort">${Object.entries(SORTS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}${extra || ''}</select>`;
     const st = { q: '', type: '', sort: 'no' };
     root.addEventListener('input', e => { const f = e.target.dataset.f; if (f) { st[f] = e.target.value; onChange(st); } });
     return st;
   }
-  function filterList(st) {
+  function filterKodama(list, st, key) {
+    key = key || (x => x);
     const q = st.q.trim();
-    let list = D.kodama.filter(k => (!q || k.name.includes(q) || String(k.id) === q) && (!st.type || k.types.includes(st.type)));
-    if (st.sort !== 'no') list = list.slice().sort((a, b) => b[st.sort] - a[st.sort] || a.id - b.id);
-    return list;
+    let out = list.filter(x => { const k = key(x); return (!q || k.name.includes(q) || String(k.id) === q) && (!st.type || k.types.includes(st.type)); });
+    if (st.sort === 'lv') out = out.slice().sort((a, b) => b.lv - a.lv);
+    else if (st.sort !== 'no') out = out.slice().sort((a, b) => key(b)[st.sort] - key(a)[st.sort] || key(a).id - key(b).id);
+    else out = out.slice().sort((a, b) => key(a).id - key(b).id);
+    return out;
   }
-  function krow(k, extra) {
+  function krow(k, extra, right) {
     return `<div class="krow ${extra || ''}" data-id="${k.id}">
       <span class="no">${icon(k.id)}No.${k.id}</span>
       <span class="nm">${tbs(k.types)}${esc(k.name)}</span>
-      <span class="st">H<b>${k.hp}</b> 攻<b>${k.atk}</b> 防<b>${k.df}</b> 速<b>${k.spd}</b><br>合計 <b>${k.total}</b></span>
+      <span class="st">${right || `H<b>${k.hp}</b> 攻<b>${k.atk}</b> 防<b>${k.df}</b> 速<b>${k.spd}</b><br>合計 <b>${k.total}</b>`}</span>
     </div>`;
   }
-
   function spellLine(s) {
     const pow = parseInt(s.pow) ? `威力${s.pow}` : '威力―';
     return `${tb(s.type)} <span>${esc(s.name)}</span> <span class="pw">${pow}／消費${s.cost}</span>`;
   }
-
   function kodamaDetail(k, lv) {
     lv = lv || 50;
     const st = GK.calcStats(k, lv);
+    const evo = GKP.evolutions(k.id);
     return `<div class="ed-head">${icon(k.id)}${tbs(k.types)}<span class="nm">${esc(k.name)}</span><span class="small">No.${k.id}</span></div>
       <div class="statgrid" style="margin-top:8px">
         <div>ＨＰ<b>${k.hp}</b></div><div>攻撃<b>${k.atk}</b></div><div>防御<b>${k.df}</b></div><div>速度<b>${k.spd}</b></div><div>合計<b>${k.total}</b></div>
       </div>
       <div class="small" style="margin-top:4px">Lv${lv}時：ＨＰ${st.maxhp} ＶＰ${st.maxvp} 攻撃${st.atk} 防御${st.df} 速度${st.spd}</div>
       ${k.skills.length ? k.skills.map(s => `<div class="skillbox">スキル【${esc(s.name)}】<br>${esc(s.desc)}</div>`).join('') : '<div class="skillbox">スキルなし</div>'}
-      <div class="spell-list">${k.spells.map(s => `<div class="spell-row" style="cursor:default"><span></span>${spellLine(s)}<span class="desc">${esc(s.desc)}（${esc(s.price)}${/^\d+$/.test(s.price) ? '銭' : ''}）</span></div>`).join('')}</div>`;
+      ${evo.length ? `<div class="small">${GKP.isBase(k) ? `進化先（Lv${GKP.EVOLVE_LV}〜）` : '同系統'}：${evo.map(id => esc(KD[id].name)).join('、')}</div>` : ''}
+      <div class="spell-list">${k.spells.map(s => { const r = GKP.spellReq(s); return `<div class="spell-row" style="cursor:default"><span></span>${spellLine(s)}<span class="desc">${esc(s.desc)}<br>習得：${r.book ? '禁呪の書' : yen(r.money)}・Lv${r.lv}〜</span></div>`; }).join('')}</div>`;
   }
 
   /* ================= 図鑑 ================= */
@@ -1892,154 +2544,461 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
     drawZukan(zukanState);
   }
   function drawZukan(st) {
-    const list = filterList(st);
-    $('#zukan-count').textContent = `${list.length}体`;
-    $('#zukan-list').innerHTML = list.map(k => krow(k)).join('');
+    const list = filterKodama(D.kodama, st);
+    const owned = save ? new Set(save.owned.map(m => m.id)) : new Set();
+    $('#zukan-count').textContent = save ? `契約 ${owned.size}/${D.kodama.length}` : `${list.length}体`;
+    $('#zukan-list').innerHTML = list.map(k => krow(k, owned.has(k.id) ? 'inparty' : '')).join('');
   }
   $('#zukan-list').addEventListener('click', e => {
     const r = e.target.closest('.krow');
     if (r) modal(kodamaDetail(KD[r.dataset.id], 50));
   });
 
-  /* ================= パーティ編成 ================= */
-  let selSlot = 0, partyFilter;
+  /* ================= 会話 ================= */
+  let talkResolve = null, talkSkip = false;
+  async function talk(lines, place) {
+    if (!lines || !lines.length) return;
+    $$('.screen').forEach(s => s.classList.toggle('active', s.id === 'scr-talk'));
+    $('#talk-place').textContent = place || '';
+    talkSkip = false;
+    for (const [who0, text] of lines) {
+      if (talkSkip) break;
+      const who = who0 === '@' ? save.name : who0;
+      const sid = who0 && who0 !== '@' ? GKS.charSprite(who0) : null;
+      $('#talk-sprite').innerHTML = sid && spriteOf(sid) ? `<img src="${esc(spriteOf(sid))}" alt="">` : '';
+      $('#talk-name').textContent = who || '';
+      $('#talk-name').hidden = !who;
+      $('#talk-text').textContent = text.replace(/悠姫/g, save.name);
+      await new Promise(res => { talkResolve = res; });
+    }
+  }
+  $('#talk-box').addEventListener('click', () => { if (talkResolve) { const r = talkResolve; talkResolve = null; r(); } });
+  $('#talk-stage').addEventListener('click', () => { if (talkResolve) { const r = talkResolve; talkResolve = null; r(); } });
+  $('#talk-skip').onclick = () => { talkSkip = true; if (talkResolve) { const r = talkResolve; talkResolve = null; r(); } };
+
+  /* ================= ストーリー ================= */
+  const openAreas = {};
+  function renderStory() {
+    const cleared = GKS.progressArea(save);
+    let h = '';
+    GKS.AREAS.forEach((A, a) => {
+      const unlocked = GKS.isUnlocked(save, a, 0);
+      const done = GKS.areaCleared(save, a);
+      const isOpen = openAreas[a] != null ? openAreas[a] : (a === Math.min(cleared, GKS.AREAS.length - 1));
+      h += `<div class="panel area ${unlocked ? '' : 'locked'}">
+        <button class="area-head" data-area="${a}" ${unlocked ? '' : 'disabled'}>
+          <span>${unlocked ? '' : '🔒 '}エリア${a + 1}　${esc(A.name)}</span>
+          <span class="small">Lv${A.lv[0]}〜${A.lv[1]} ${done ? '<span class="clear">CLEAR</span>' : ''}</span>
+        </button>`;
+      if (unlocked && isOpen) {
+        h += '<div class="stages">';
+        for (let j = 0; j < GKS.STAGES_PER_AREA; j++) {
+          const st = GKS.stage(a, j);
+          const ok = GKS.isUnlocked(save, a, j);
+          const c = !!save.cleared[st.key];
+          const sp = spriteOf(st.party[0].id);
+          h += `<button class="stage-btn ${c ? 'cleared' : ''} ${st.isBoss ? 'boss' : ''}" data-stage="${a}-${j}" ${ok ? '' : 'disabled'}>
+            ${sp && ok ? `<img class="kicon" src="${esc(sp)}" alt="">` : '<span class="kicon"></span>'}
+            <span class="stage-t">${st.isBoss ? 'ＢＯＳＳ' : `ステージ${j + 1}`}<br><span class="small">${ok ? esc(st.trainer) + `（${st.party.length}体・Lv${Math.min(...st.party.map(p => p.lv))}〜）` : '？？？'}</span></span>
+            <span class="stage-r">${c ? '★' : ok ? '挑戦' : '🔒'}</span>
+          </button>`;
+        }
+        h += '</div>';
+      }
+      h += '</div>';
+    });
+    $('#story-areas').innerHTML = h;
+  }
+  $('#story-areas').addEventListener('click', e => {
+    const ah = e.target.closest('[data-area]');
+    if (ah) { const a = +ah.dataset.area; const el = ah.parentElement.querySelector('.stages'); openAreas[a] = !el; renderStory(); return; }
+    const sb = e.target.closest('[data-stage]');
+    if (sb && !sb.disabled) { const [a, j] = sb.dataset.stage.split('-').map(Number); playStage(a, j); }
+  });
+
+  async function playStage(a, j) {
+    if (!myMembers().length) return toast('パーティにコダマがいません');
+    const st = GKS.stage(a, j);
+    if (j === 0 && !save.intro[a]) {
+      await talk(st.area.intro, st.area.name);
+      save.intro[a] = 1; persist();
+    }
+    await talk(st.pre, st.title);
+    current = new LocalSession({
+      kind: 'story', stage: st, level: st.ai,
+      foe: { name: st.trainer, party: st.party },
+    });
+    current.start();
+  }
+
+  /* ================= 戦闘後の報酬 ================= */
+  async function awardBattle(state, ctx) {
+    const win = state.winner === 0;
+    const me = state.sides[0], foe = state.sides[1];
+    const lines = [];
+    const res = { win, money: 0, exp: [], items: {}, contracts: [], unlockedEvo: [] };
+    // 経験値
+    let mult = ctx.expMult || 1;
+    if (!win) mult *= 0.5;
+    let total = 0;
+    for (const f of foe.party) if (f.hp <= 0) total += GKP.expFrom(KD[f.id], f.lv);
+    total = Math.floor(total * mult);
+    ctx.uids.forEach((uid, i) => {
+      const m = GKP.findOwned(save, uid);
+      if (!m) return;
+      const b = me.party[i];
+      const share = b && b.appeared ? 1 : 0.5;
+      const gain = Math.floor(total * share);
+      const beforeLv = m.lv;
+      const ups = GKP.gainExp(m, gain);
+      res.exp.push({ m, gain, ups, beforeLv });
+      if (ups && GKP.isBase(KD[m.id]) && beforeLv < GKP.EVOLVE_LV && m.lv >= GKP.EVOLVE_LV && GKP.evolutions(m.id).length) res.unlockedEvo.push(m);
+    });
+    if (win) {
+      save.stats.win++;
+      res.money = ctx.money || 0;
+      if (ctx.firstClear) {
+        for (const [k, n] of Object.entries(ctx.firstClear.items || {})) res.items[k] = (res.items[k] || 0) + n;
+        for (const c of ctx.firstClear.contracts || []) res.contracts.push(c);
+      }
+      // 契約書ドロップ（倒したコダマから）
+      if (ctx.dropRate && Math.random() < ctx.dropRate) {
+        const cands = foe.party.map(f => f.id).filter(id => !GKP.owns(save, id) && !save.contracts.some(c => c.id === id));
+        if (cands.length) {
+          const id = cands[Math.floor(Math.random() * cands.length)];
+          const f = foe.party.find(x => x.id === id);
+          res.contracts.push({ id, lv: Math.max(5, f.lv - 5), drop: true });
+        }
+      }
+    } else save.stats.lose++;
+    save.money += res.money;
+    for (const [k, n] of Object.entries(res.items)) save.items[k] = (save.items[k] || 0) + n;
+    for (const c of res.contracts) save.contracts.push({ id: c.id, lv: c.lv });
+    persist();
+
+    // 表示
+    lines.push(`<div class="res-head ${win ? 'win' : 'lose'}">${win ? '勝利！' : '敗北…'}</div>`);
+    if (res.money) lines.push(`<div>獲得：<b>${yen(res.money)}</b>（所持 ${yen(save.money)}）</div>`);
+    lines.push('<div class="res-exp">' + res.exp.map(x => `<div class="res-row">${icon(x.m.id)}<span>${esc(KD[x.m.id].name)}</span>
+      <span class="small">+${x.gain}EXP</span><span>${x.ups ? `<b class="lvup">Lv${x.beforeLv}→${x.m.lv}！</b>` : `Lv${x.m.lv}`}</span></div>`).join('') + '</div>');
+    for (const m of res.unlockedEvo) lines.push(`<div class="res-note">✨ ${esc(KD[m.id].name)}が進化できるようになった！（パーティ画面から）</div>`);
+    const itemName = { chibi: 'ちび契約書', random: '玉霊契約書', book: '禁呪の書', scroll: '修行の書' };
+    for (const [k, n] of Object.entries(res.items)) lines.push(`<div class="res-note">🎁 ${itemName[k]} ×${n} を手に入れた！</div>`);
+    for (const c of res.contracts) lines.push(`<div class="res-note">📜 ${c.drop ? `${esc(KD[c.id].name)}が契約書を落とした！` : `${esc(KD[c.id].name)}の契約書を手に入れた！`}<br><span class="small">「持ち物」から使うと契約できます。</span></div>`);
+    if (!win) lines.push('<div class="small">パーティを鍛えたり、属性相性を見直して再挑戦しよう。</div>');
+    await modalP(`<div class="result-modal">${lines.join('')}</div>`);
+    return res;
+  }
+
+  /* ================= パーティ編成（契約中コダマ） ================= */
+  let selSlot = 0, boxFilter;
   function renderParty() {
-    if (!partyFilter) partyFilter = filterUI($('#party-filters'), drawPartyList);
-    $('#party-count').textContent = `${party.length}/${GK.MAX_PARTY}`;
+    if (!boxFilter) boxFilter = filterUI($('#party-filters'), drawBox, '<option value="lv">レベル</option>');
+    const mem = myMembers();
+    if (selSlot > mem.length) selSlot = mem.length;
+    $('#party-count').textContent = `${mem.length}/${GK.MAX_PARTY}`;
     const slots = [];
     for (let i = 0; i < GK.MAX_PARTY; i++) {
-      const b = party[i];
-      if (b) {
-        const k = KD[b.id];
-        slots.push(`<button class="pslot ${i === selSlot ? 'sel' : ''}" data-slot="${i}"><span class="no">${i === 0 ? '先頭' : i + 1}</span>${icon(k.id)}${tbs(k.types)}<span class="nm">${esc(k.name)}</span>Lv${b.lv}　S${b.slv}</button>`);
+      const m = mem[i];
+      if (m) {
+        const k = KD[m.id];
+        slots.push(`<button class="pslot ${i === selSlot ? 'sel' : ''}" data-slot="${i}"><span class="no">${i === 0 ? '先頭' : i + 1}</span>${icon(k.id)}${tbs(k.types)}<span class="nm">${esc(k.name)}</span>Lv${m.lv}</button>`);
       } else {
         slots.push(`<button class="pslot empty ${i === selSlot ? 'sel' : ''}" data-slot="${i}">＋ 空き</button>`);
       }
     }
     $('#party-slots').innerHTML = slots.join('');
     renderEditor();
-    drawPartyList(partyFilter);
+    drawBox(boxFilter);
   }
-  function drawPartyList(st) {
-    const ids = new Set(party.map(b => b.id));
-    $('#party-list').innerHTML = filterList(st).map(k => krow(k, ids.has(k.id) ? 'inparty' : '')).join('');
+  function drawBox(st) {
+    const inParty = new Set(save.party);
+    const list = filterKodama(save.owned, st, m => KD[m.id]);
+    $('#box-count').textContent = `${save.owned.length}体`;
+    $('#party-list').innerHTML = list.map(m => {
+      const k = KD[m.id];
+      return krow(k, inParty.has(m.uid) ? 'inparty' : '', `<b>Lv${m.lv}</b>${inParty.has(m.uid) ? '<br>パーティ' : ''}`).replace(`data-id="${k.id}"`, `data-uid="${m.uid}"`);
+    }).join('');
   }
   function renderEditor() {
-    const b = party[selSlot];
+    const m = myMembers()[selSlot];
     const ed = $('#slot-editor');
-    if (!b) { ed.innerHTML = '<p class="small">下の一覧からコダマを選んでください。</p>'; return; }
-    const k = KD[b.id];
-    const st = GK.calcStats(k, b.lv);
+    if (!m) { ed.innerHTML = '<p class="small">下の一覧から、この枠に入れるコダマを選んでください。</p>'; return; }
+    const k = KD[m.id];
+    const st = GK.calcStats(k, m.lv);
+    const next = GKP.expToNext(m.lv);
+    const slv = GKP.slvFor(m.lv);
+    const evo = GKP.evolutions(m.id);
+    const canEvo = evo.length && (!GKP.isBase(k) || m.lv >= GKP.EVOLVE_LV);
     ed.innerHTML = `
       <div class="ed-head">${icon(k.id)}${tbs(k.types)}<span class="nm">${esc(k.name)}</span><span class="small">No.${k.id}</span>
         <button class="btn sm" data-ed="info" style="margin-left:auto">詳細</button></div>
       <div class="ed-controls">
-        <label>Lv <input type="number" min="1" max="100" value="${b.lv}" data-ed="lv"></label>
-        <label>スキルLv <select data-ed="slv">${[1, 2, 3, 4, 5].map(n => `<option ${n === b.slv ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
-        <button class="btn sm" data-ed="up">◀</button><button class="btn sm" data-ed="down">▶</button>
+        <b>Lv${m.lv}</b>
+        <div class="expbar"><i style="width:${m.lv >= 100 ? 100 : Math.floor(m.exp / next * 100)}%"></i></div>
+        <span class="small">${m.lv >= 100 ? 'MAX' : `次まで ${next - m.exp}EXP`}</span>
+      </div>
+      <div class="ed-controls">
+        <button class="btn sm" data-ed="up">◀ 前へ</button><button class="btn sm" data-ed="down">後へ ▶</button>
         <button class="btn sm danger" data-ed="remove">外す</button>
+        ${evo.length ? `<button class="btn sm evo" data-ed="evolve" ${canEvo ? '' : 'disabled'}>${GKP.isBase(k) ? (canEvo ? '進化する！' : `進化（Lv${GKP.EVOLVE_LV}〜）`) : '別の姿に変える'}</button>` : ''}
       </div>
       <div class="statgrid">
         <div>ＨＰ<b>${st.maxhp}</b></div><div>ＶＰ<b>${st.maxvp}</b></div><div>攻撃<b>${st.atk}</b></div><div>防御<b>${st.df}</b></div><div>速度<b>${st.spd}</b></div>
       </div>
-      ${k.skills.length ? `<div class="skillbox">スキル【${esc(k.skills[0].name)}】 SLv${b.slv}<br>${esc(k.skills[0].desc)}</div>` : ''}
-      <div class="small">スペル（最大${GK.MAX_SPELLS}つ選択：${b.spells.length}/${GK.MAX_SPELLS}）</div>
-      <div class="spell-list">${k.spells.map((s, i) => `
-        <label class="spell-row ${b.spells.includes(i) ? 'on' : ''}">
-          <input type="checkbox" data-sp="${i}" ${b.spells.includes(i) ? 'checked' : ''}>${spellLine(s)}
-          <span class="desc">${esc(s.desc)}</span>
-        </label>`).join('')}</div>`;
+      ${k.skills.length ? `<div class="skillbox">スキル【${esc(k.skills[0].name)}】 SLv${slv}<span class="small">（Lvで上昇）</span><br>${esc(k.skills[0].desc)}</div>` : ''}
+      <div class="small">装備スペル（最大${GK.MAX_SPELLS}つ：${m.equip.length}/${GK.MAX_SPELLS}）　未習得のスペルは「ショップ」で習得できます</div>
+      <div class="spell-list">${k.spells.map(s => {
+        const learned = m.learned.includes(s.name);
+        const on = m.equip.includes(s.name);
+        const r = GKP.spellReq(s);
+        return `<label class="spell-row ${on ? 'on' : ''} ${learned ? '' : 'unlearned'}">
+          <input type="checkbox" data-sp="${esc(s.name)}" ${on ? 'checked' : ''} ${learned ? '' : 'disabled'}>${spellLine(s)}
+          <span class="desc">${esc(s.desc)}${learned ? '' : `<br>🔒 未習得（${r.book ? '禁呪の書' : yen(r.money)}・Lv${r.lv}〜）`}</span>
+        </label>`;
+      }).join('')}</div>`;
   }
   $('#party-slots').addEventListener('click', e => {
     const s = e.target.closest('[data-slot]');
     if (!s) return;
-    selSlot = Math.min(+s.dataset.slot, party.length);
+    selSlot = Math.min(+s.dataset.slot, save.party.length);
     renderParty();
   });
   $('#party-list').addEventListener('click', e => {
     const r = e.target.closest('.krow');
     if (!r) return;
-    const id = +r.dataset.id;
-    const nb = GK.sanitizeBuild({ id, lv: party[selSlot] ? party[selSlot].lv : (party[0] ? party[0].lv : 50), slv: 5 });
-    if (party[selSlot]) party[selSlot] = nb;
-    else if (party.length < GK.MAX_PARTY) { party.push(nb); selSlot = party.length - 1; }
-    else { toast('パーティがいっぱいです。入れ替える枠を選んでください'); return; }
-    saveParty(); renderParty();
-    toast(`${KD[id].name}をパーティに入れた！`);
+    const uid = +r.dataset.uid;
+    const at = save.party.indexOf(uid);
+    if (at >= 0) {
+      if (at === selSlot) return;
+      if (selSlot < save.party.length) [save.party[at], save.party[selSlot]] = [save.party[selSlot], save.party[at]];
+      else { selSlot = at; renderParty(); return; }
+    } else if (selSlot < save.party.length) save.party[selSlot] = uid;
+    else if (save.party.length < GK.MAX_PARTY) { save.party.push(uid); selSlot = save.party.length - 1; }
+    else return toast('パーティがいっぱいです');
+    persist(); renderParty();
+    toast(`${KD[GKP.findOwned(save, uid).id].name}をパーティに入れた！`);
     $('#scr-party .panel').scrollIntoView({ behavior: 'smooth' });
   });
   $('#slot-editor').addEventListener('change', e => {
-    const b = party[selSlot]; if (!b) return;
+    const m = myMembers()[selSlot]; if (!m) return;
     const t = e.target;
-    if (t.dataset.ed === 'lv') b.lv = Math.max(1, Math.min(100, Math.round(+t.value || 1)));
-    if (t.dataset.ed === 'slv') b.slv = +t.value;
     if (t.dataset.sp != null) {
-      const i = +t.dataset.sp;
+      const n = t.dataset.sp;
       if (t.checked) {
-        if (b.spells.length >= GK.MAX_SPELLS) { t.checked = false; toast(`スペルは${GK.MAX_SPELLS}つまでです`); return; }
-        b.spells.push(i);
+        if (m.equip.length >= GK.MAX_SPELLS) { t.checked = false; return toast(`スペルは${GK.MAX_SPELLS}つまでです`); }
+        m.equip.push(n);
       } else {
-        if (b.spells.length <= 1) { t.checked = true; toast('スペルは１つ以上必要です'); return; }
-        b.spells = b.spells.filter(x => x !== i);
+        if (m.equip.length <= 1) { t.checked = true; return toast('スペルは１つ以上必要です'); }
+        m.equip = m.equip.filter(x => x !== n);
       }
     }
-    saveParty(); renderParty();
+    persist(); renderParty();
   });
   $('#slot-editor').addEventListener('click', e => {
     const a = e.target.closest('[data-ed]'); if (!a || a.tagName !== 'BUTTON') return;
-    const b = party[selSlot]; if (!b) return;
+    const m = myMembers()[selSlot]; if (!m) return;
     const act = a.dataset.ed;
-    if (act === 'info') return modal(kodamaDetail(KD[b.id], b.lv));
-    if (act === 'remove') { party.splice(selSlot, 1); selSlot = Math.min(selSlot, party.length); }
-    if (act === 'up' && selSlot > 0) { [party[selSlot - 1], party[selSlot]] = [party[selSlot], party[selSlot - 1]]; selSlot--; }
-    if (act === 'down' && selSlot < party.length - 1) { [party[selSlot + 1], party[selSlot]] = [party[selSlot], party[selSlot + 1]]; selSlot++; }
-    saveParty(); renderParty();
-  });
-  $('#pt-random').onclick = () => { party = randomParty('random', 50); selSlot = 0; saveParty(); renderParty(); };
-  $('#pt-lv50').onclick = () => { party.forEach(b => b.lv = 50); saveParty(); renderParty(); };
-  $('#pt-clear').onclick = () => { if (confirm('パーティを空にしますか？')) { party = []; selSlot = 0; saveParty(); renderParty(); } };
-  $('#pt-export').onclick = () => {
-    const code = encodeParty(party);
-    modal(`<div>パーティコード（コピーして共有できます）</div><textarea readonly onclick="this.select()">${code}</textarea>`);
-  };
-  $('#pt-import').onclick = () => {
-    modal(`<div>パーティコードを貼り付けてください</div><textarea id="imp-code"></textarea><button class="btn" id="imp-ok">読み込む</button>`);
-    $('#imp-ok').onclick = () => {
-      const p = decodeParty($('#imp-code').value);
-      if (!p || !p.length) return toast('コードが正しくありません');
-      party = p; selSlot = 0; saveParty(); renderParty(); $('#modal').classList.remove('open'); toast('読み込みました');
-    };
-  };
-  function encodeParty(p) {
-    return 'GK1:' + p.map(b => [b.id, b.lv, b.slv, b.spells.join('.')].join('-')).join('_');
-  }
-  function decodeParty(code) {
-    code = String(code || '').trim();
-    if (!code.startsWith('GK1:')) return null;
-    return code.slice(4).split('_').slice(0, GK.MAX_PARTY).map(s => {
-      const [id, lv, slv, sp] = s.split('-');
-      return GK.sanitizeBuild({ id: +id, lv: +lv, slv: +slv, spells: (sp || '').split('.').filter(x => x !== '').map(Number) });
-    }).filter(Boolean);
-  }
-
-  function randomParty(mode, lv) {
-    let pool = D.kodama;
-    if (mode === 'strong') pool = D.kodama.filter(k => k.total >= 400);
-    if (mode === 'starter') return STARTERS.map(id => GK.sanitizeBuild({ id, lv }));
-    const out = [], used = new Set();
-    while (out.length < GK.MAX_PARTY && used.size < pool.length) {
-      const k = pool[Math.floor(Math.random() * pool.length)];
-      if (used.has(k.id)) continue;
-      used.add(k.id);
-      out.push(GK.sanitizeBuild({ id: k.id, lv, slv: 5 }));
+    if (act === 'info') return modal(kodamaDetail(KD[m.id], m.lv));
+    if (act === 'evolve') return evolveMenu(m);
+    if (act === 'remove') {
+      if (save.party.length <= 1) return toast('パーティには１体以上必要です');
+      save.party.splice(selSlot, 1); selSlot = Math.min(selSlot, save.party.length - 1);
     }
-    return out;
+    if (act === 'up' && selSlot > 0) { [save.party[selSlot - 1], save.party[selSlot]] = [save.party[selSlot], save.party[selSlot - 1]]; selSlot--; }
+    if (act === 'down' && selSlot < save.party.length - 1) { [save.party[selSlot + 1], save.party[selSlot]] = [save.party[selSlot], save.party[selSlot + 1]]; selSlot++; }
+    persist(); renderParty();
+  });
+  function evolveMenu(m) {
+    const evo = GKP.evolutions(m.id);
+    modal(`<div class="picker-head">${esc(KD[m.id].name)}の${GKP.isBase(KD[m.id]) ? '進化先' : '別の姿'}を選んでください</div>
+      <p class="small">Lv・覚えたスペルは引き継がれます（新しい姿に無いスペルは外れます）。</p>
+      <div class="klist">${evo.map(id => krow(KD[id], 'evo-pick')).join('')}</div>`);
+    $$('.evo-pick', $('#modal')).forEach(r => r.onclick = () => {
+      const to = +r.dataset.id;
+      const before = KD[m.id].name;
+      if (GKP.evolve(save, m, to)) {
+        persist(); closeModal(); renderParty();
+        modal(`<div class="evo-show">${icon(to)}<div>${esc(before)}は<br><b>${esc(KD[to].name)}</b>に${GKP.isBase(KD[GKP.LINE_OF[to]] || KD[to]) ? '進化した！' : 'なった！'}</div></div>`);
+      }
+    });
   }
 
-  function checkParty() {
-    if (!party.length) { toast('先にパーティを編成してください'); go('party'); return false; }
-    return true;
+  /* ================= ショップ ================= */
+  const ITEM_NAME = { chibi: 'ちび契約書', random: '玉霊契約書', book: '禁呪の書', scroll: '修行の書' };
+  let shopUid = null;
+  function renderShop() {
+    const prog = GKS.progressArea(save);
+    $('#shop-items').innerHTML = GKP.SHOP.map(it => {
+      const locked = prog < it.unlock;
+      return `<div class="shop-row ${locked ? 'locked' : ''}">
+        <div><b>${it.name}</b> <span class="small">（所持 ${itemCount(it.key)}）</span><div class="small">${locked ? `🔒 エリア${it.unlock}クリアで入荷` : esc(it.desc)}</div></div>
+        <div class="shop-buy"><span>${yen(it.price)}</span><button class="btn sm" data-buy="${it.key}" ${locked || save.money < it.price ? 'disabled' : ''}>買う</button></div>
+      </div>`;
+    }).join('');
+    const sel = $('#shop-kodama');
+    if (!save.owned.some(m => m.uid === shopUid)) shopUid = save.party[0];
+    sel.innerHTML = save.owned.slice().sort((a, b) => b.lv - a.lv).map(m => `<option value="${m.uid}" ${m.uid === shopUid ? 'selected' : ''}>${esc(KD[m.id].name)} Lv${m.lv}</option>`).join('');
+    renderShopSpells();
   }
+  function renderShopSpells() {
+    const m = GKP.findOwned(save, shopUid);
+    if (!m) return;
+    const k = KD[m.id];
+    const rows = k.spells.filter(s => !m.learned.includes(s.name));
+    $('#shop-spells').innerHTML = rows.length ? rows.map(s => {
+      const r = GKP.spellReq(s);
+      const okLv = m.lv >= r.lv, okMoney = save.money >= r.money, okBook = !r.book || itemCount('book') > 0;
+      return `<div class="spell-row" style="cursor:default"><span></span>${spellLine(s)}
+        <span class="desc">${esc(s.desc)}<br><span class="${okLv ? '' : 'ng'}">Lv${r.lv}〜</span>　${r.book ? `<span class="${okBook ? '' : 'ng'}">禁呪の書×1</span>` : `<span class="${okMoney ? '' : 'ng'}">${yen(r.money)}</span>`}
+        <button class="btn sm" data-learn="${esc(s.name)}" ${okLv && okMoney && okBook ? '' : 'disabled'} style="float:right">習得</button></span></div>`;
+    }).join('') : '<p class="small">このコダマのスペルはすべて習得済みです。</p>';
+  }
+  $('#shop-kodama').onchange = e => { shopUid = +e.target.value; renderShopSpells(); };
+  $('#shop-items').addEventListener('click', e => {
+    const b = e.target.closest('[data-buy]'); if (!b || b.disabled) return;
+    const it = GKP.SHOP.find(x => x.key === b.dataset.buy);
+    if (save.money < it.price) return toast('銭が足りません');
+    save.money -= it.price;
+    save.items[it.key] = itemCount(it.key) + 1;
+    persist(); renderShop();
+    toast(`${it.name}を買った！（持ち物から使えます）`);
+  });
+  $('#shop-spells').addEventListener('click', e => {
+    const b = e.target.closest('[data-learn]'); if (!b || b.disabled) return;
+    const m = GKP.findOwned(save, shopUid);
+    const sp = KD[m.id].spells.find(s => s.name === b.dataset.learn);
+    const r = GKP.spellReq(sp);
+    if (m.lv < r.lv) return;
+    if (r.book) { if (itemCount('book') < 1) return; save.items.book--; } else { if (save.money < r.money) return; save.money -= r.money; }
+    m.learned.push(sp.name);
+    if (m.equip.length < GK.MAX_SPELLS) m.equip.push(sp.name);
+    persist(); renderShop();
+    toast(`${KD[m.id].name}は【${sp.name}】を習得した！`);
+  });
+
+  /* ================= 持ち物 ================= */
+  function renderItems() {
+    let h = '';
+    const desc = { chibi: 'まだ契約していないちびコダマと契約できる。', random: 'まだ契約していないコダマと契約できる。', book: '禁呪スペルの習得に使う（ショップのスペル習得から）。', scroll: '選んだコダマが次のレベルまでの経験値を得る。' };
+    for (const key of ['chibi', 'random', 'scroll', 'book']) {
+      const n = itemCount(key);
+      if (!n) continue;
+      h += `<div class="shop-row"><div><b>${ITEM_NAME[key]}</b> ×${n}<div class="small">${desc[key]}</div></div>
+        ${key === 'book' ? '' : `<div class="shop-buy"><button class="btn sm" data-use="${key}">使う</button></div>`}</div>`;
+    }
+    save.contracts.forEach((c, i) => {
+      const k = KD[c.id];
+      h += `<div class="shop-row"><div class="contract">${icon(k.id)}<div><b>${esc(k.name)}の契約書</b>${tbs(k.types)}<div class="small">使うとLv${c.lv}で契約${GKP.owns(save, c.id) ? '（契約済みのため3,000銭に換金）' : ''}</div></div></div>
+        <div class="shop-buy"><button class="btn sm" data-contract="${i}">使う</button></div></div>`;
+    });
+    $('#items-list').innerHTML = h || '<p class="small">持ち物はありません。ストーリーやショップで手に入ります。</p>';
+  }
+  function showJoin(m) {
+    const k = KD[m.id];
+    return modalP(`<div class="evo-show">${icon(k.id)}<div><b>${esc(k.name)}</b>（Lv${m.lv}）と契約した！${save.party.includes(m.uid) ? '<br><span class="small">パーティに加わりました。</span>' : '<br><span class="small">パーティ画面で編成できます。</span>'}</div></div>${kodamaDetail(k, m.lv)}`);
+  }
+  $('#items-list').addEventListener('click', async e => {
+    const u = e.target.closest('[data-use]');
+    const c = e.target.closest('[data-contract]');
+    if (u) {
+      const key = u.dataset.use;
+      if (itemCount(key) < 1) return;
+      if (key === 'scroll') return scrollMenu();
+      const pool = key === 'chibi' ? GKP.CHIBI_IDS : D.kodama.map(k => k.id);
+      const id = GKP.randomUnowned(save, pool);
+      if (id == null) return toast('契約できるコダマがもういません！');
+      save.items[key]--;
+      const m = GKP.addKodama(save, id, key === 'chibi' ? 5 : 20);
+      persist(); renderItems();
+      await showJoin(m);
+    } else if (c) {
+      const r = GKP.useContract(save, +c.dataset.contract);
+      persist(); renderItems();
+      if (!r) return;
+      if (r.dup) toast(`契約済みのため${yen(r.refund)}に換金した`);
+      else await showJoin(r.m);
+    }
+  });
+  function scrollMenu() {
+    modal(`<div class="picker-head">修行の書を使うコダマを選んでください</div><div class="klist">${save.owned.filter(m => m.lv < 100).sort((a, b) => b.lv - a.lv).map(m => krow(KD[m.id], 'scroll-pick', `<b>Lv${m.lv}</b>`).replace(`data-id="${m.id}"`, `data-uid="${m.uid}"`)).join('')}</div>`);
+    $$('.scroll-pick', $('#modal')).forEach(r => r.onclick = () => {
+      const m = GKP.findOwned(save, +r.dataset.uid);
+      if (!m || itemCount('scroll') < 1) return;
+      save.items.scroll--;
+      GKP.gainExp(m, GKP.expToNext(m.lv) - m.exp);
+      persist(); closeModal(); renderItems();
+      toast(`${KD[m.id].name}はLv${m.lv}になった！`);
+    });
+  }
+
+  /* ================= セーブ管理 ================= */
+  function renderSaveMgr() {
+    $('#save-name').value = save.name;
+    const cl = Object.keys(save.cleared).length;
+    $('#save-stats').innerHTML = `契約コダマ：${save.owned.length}体　クリアステージ：${cl}/${GKS.AREAS.length * GKS.STAGES_PER_AREA}<br>戦績：${save.stats.win}勝 ${save.stats.lose}敗`;
+  }
+  $('#save-name').addEventListener('change', e => { save.name = playerName = e.target.value.trim().slice(0, 12) || '悠姫'; persist(); });
+  const encodeSave = s => 'GKSAVE1:' + btoa(unescape(encodeURIComponent(JSON.stringify(s))));
+  function decodeSave(code) {
+    code = String(code || '').trim();
+    if (!code.startsWith('GKSAVE1:')) return null;
+    try { return validateSave(JSON.parse(decodeURIComponent(escape(atob(code.slice(8)))))); } catch (e) { return null; }
+  }
+  $('#save-export').onclick = () => modal(`<div>セーブデータ（コピーして保管してください）</div><textarea readonly onclick="this.select()">${encodeSave(save)}</textarea>`);
+  function importDialog() {
+    modal(`<div>セーブデータを貼り付けてください（今のデータは上書きされます）</div><textarea id="imp-code"></textarea><button class="btn" id="imp-ok">読み込む</button>`);
+    $('#imp-ok').onclick = () => {
+      const s = decodeSave($('#imp-code').value);
+      if (!s) return toast('データが正しくありません');
+      save = s; playerName = s.name; persist(); closeModal(); toast('読み込みました'); go('title');
+    };
+  }
+  $('#save-import').onclick = importDialog;
+  $('#btn-import0').onclick = importDialog;
+  $('#save-reset').onclick = () => {
+    if (!confirm('本当にすべてのデータを消して最初からやり直しますか？')) return;
+    if (!confirm('元に戻せません。よろしいですか？')) return;
+    store.del('save'); save = null; go('title');
+  };
+
+  /* ================= フリー対戦 ================= */
+  function renderNpc() { $('#npc-mine').innerHTML = miniParty(myBuilds()); }
+  function npcPool() {
+    const n = Math.min(GKS.AREAS.length, GKS.progressArea(save) + 1);
+    const ids = new Set();
+    for (let a = 0; a < n; a++) for (const ch of GKS.AREAS[a].chars) for (const l of GKS.lineIdsForChar(ch)) l.forEach(id => ids.add(id));
+    return [...ids];
+  }
+  $('#npc-start').onclick = () => {
+    const mode = $('#npc-mode').value, level = $('#npc-level').value;
+    const mine = myBuilds();
+    const avg = Math.round(mine.reduce((a, b) => a + b.lv, 0) / mine.length);
+    const lv = mode === 'flat' ? 50 : avg;
+    const pool = npcPool();
+    const party = [];
+    while (party.length < mine.length) {
+      let id = pool[Math.floor(Math.random() * pool.length)];
+      // レベルに見合った姿を選ぶ
+      const line = GKP.LINES[GKP.LINE_OF[id]];
+      if (line) {
+        const evo = line.filter(x => !GKP.isBase(KD[x]));
+        const base = line.filter(x => GKP.isBase(KD[x]));
+        const lst = lv >= GKP.EVOLVE_LV && evo.length ? evo : base.length ? base : evo;
+        id = lst[Math.floor(Math.random() * lst.length)];
+      }
+      if (party.some(p => p.id === id)) continue;
+      const plv = Math.max(1, Math.min(100, lv + Math.floor(Math.random() * 5) - 2));
+      party.push({ id, lv: plv, slv: GKP.slvFor(plv) });
+    }
+    const names = { easy: '迷子の妖精', normal: '修行中の妖怪', hard: '腕利きの玉霊姫' };
+    const rate = { easy: 0.7, normal: 1, hard: 1.4 }[level];
+    current = new LocalSession({
+      kind: mode === 'flat' ? 'flat' : 'free', level, forceLv: mode === 'flat' ? 50 : 0,
+      foe: { name: names[level], party }, rate,
+    });
+    current.start();
+  };
 
   /* ================= バトル画面 ================= */
   let current = null; // 現在のバトルセッション
@@ -2340,7 +3299,8 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
     current.view.onAction(JSON.parse(b.dataset.act));
   });
 
-  /* ================= NPC戦 ================= */
+
+  /* ================= NPC戦・ストーリー戦 ================= */
   class LocalSession {
     constructor(opts) {
       this.opts = opts;
@@ -2350,19 +3310,15 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
     }
     start() {
       const o = this.opts;
-      const avg = Math.round(party.reduce((a, b) => a + b.lv, 0) / party.length) || 50;
-      const forceLv = o.lvrule === 'own' ? 0 : +o.lvrule;
-      let npc;
-      if (o.npcParty === 'mirror') npc = party.map(b => Object.assign({}, b, { spells: b.spells.slice() }));
-      else npc = randomParty(o.npcParty, forceLv || avg);
-      const npcName = { easy: 'ようせい', normal: 'みこ見習い', hard: '玉霊使い' }[o.level] || 'ＮＰＣ';
-      this.state = GK.createBattle([{ name: playerName, party }, { name: npcName, party: npc }], { forceLv });
+      this.uids = save.party.slice();
+      this.ended = false;
+      this.won = false;
+      this.state = GK.createBattle([{ name: save.name, party: myBuilds(o.forceLv) }, { name: o.foe.name, party: o.foe.party }], { forceLv: o.forceLv || 0 });
       this.view.show(this.state);
     }
     async submit(act) {
       const st = this.state;
-      const acts = [null, null];
-      acts[0] = act;
+      const acts = [act, null];
       if (act.type !== 'surrender' && st.need[1]) acts[1] = GK.chooseAI(st, 1, this.opts.level);
       await sleep(250);
       this.state = GK.resolve(st, acts);
@@ -2372,16 +3328,46 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
         this.state = GK.resolve(this.state, [null, GK.chooseAI(this.state, 1, this.opts.level)]);
       }
       await this.view.update(this.state);
+      if (this.state.phase === 'end' && !this.ended) {
+        this.ended = true;
+        await this.finish();
+      }
+    }
+    async finish() {
+      const o = this.opts, st = this.state;
+      const win = st.winner === 0;
+      this.won = win;
+      if (o.kind === 'flat') return;
+      if (o.kind === 'story') {
+        const S = o.stage;
+        const first = win && !save.cleared[S.key];
+        this.firstClear = first;
+        if (win) save.cleared[S.key] = 1;
+        await awardBattle(st, {
+          uids: this.uids, expMult: S.isBoss ? 1.5 : 1,
+          money: first ? S.reward.money : Math.round(S.reward.money * 0.25 / 10) * 10,
+          firstClear: first ? S.reward : null,
+          dropRate: S.isBoss ? 0.25 : 0.15,
+        });
+      } else {
+        const foeLv = o.foe.party.reduce((a, p) => a + p.lv, 0) / o.foe.party.length;
+        await awardBattle(st, {
+          uids: this.uids, expMult: 0.7 * o.rate,
+          money: Math.round(foeLv * 60 * o.rate / 10) * 10,
+          dropRate: 0.05 * o.rate,
+        });
+      }
     }
     rematch() { this.start(); }
-    exit() { current = null; go('npc'); }
+    async exit() {
+      current = null;
+      const o = this.opts;
+      if (o.kind === 'story') {
+        if (this.won && this.firstClear) await talk(o.stage.post, o.stage.title);
+        go('story');
+      } else go('npc');
+    }
   }
-
-  $('#npc-start').onclick = () => {
-    if (!checkParty()) return;
-    current = new LocalSession({ level: $('#npc-level').value, npcParty: $('#npc-party').value, lvrule: $('#npc-lvrule').value });
-    current.start();
-  };
 
   /* ================= オンライン対戦（PeerJS） =================
    * ホストが権威を持ち、両者の行動を受け取ってターンを解決し、結果を送り返す。
@@ -2455,7 +3441,7 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
     net.conn = c;
     c.on('open', () => {
       if (!net.opp) setStatus('接続しました！ 相手の情報を待っています…');
-      c.send({ t: 'hello', name: playerName, party, ver: VERSION });
+      c.send({ t: 'hello', name: save.name, party: myBuilds(), ver: VERSION });
       renderOnline();
     });
     c.on('data', onNetData);
@@ -2498,7 +3484,7 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
     if (!net.opp || !net.opp.party.length) return toast('相手のパーティがありません');
     const rule = $('#on-lvrule').value;
     const forceLv = rule === 'own' ? 0 : +rule;
-    const st = GK.createBattle([{ name: playerName, party }, { name: net.opp.name, party: net.opp.party }], { forceLv });
+    const st = GK.createBattle([{ name: save.name, party: myBuilds() }, { name: net.opp.name, party: net.opp.party }], { forceLv });
     net.session = current = new HostSession(st);
     net.conn.send({ t: 'start', state: st });
     current.view.show(st);
@@ -2569,7 +3555,10 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
   }
 
   // デバッグ・テスト用
-  window.GK_APP = { go, get party() { return party; }, get current() { return current; } };
+  function checkParty() { if (!save) { go('title'); return false; } return true; }
+
+  go('title');
+  window.GK_APP = { go, get save() { return save; }, get current() { return current; }, persist };
 })();
 
 </script>

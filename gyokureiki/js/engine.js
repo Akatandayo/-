@@ -288,6 +288,7 @@
     const st = ctx.state;
     const m = active(st, side);
     m.enteredTurn = st.turn;
+    m.appeared = true;
     const sk = skillOf(m);
     if (sk && sk.copy) {
       const foe = active(st, 1 - side);
