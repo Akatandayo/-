@@ -96,7 +96,8 @@
     const d = hankaku(desc);
     const s = {};
     let m;
-    if ((m = d.match(/^パーティーに「(.+?)」がいると、与えるダメージがSLv×(\d+)％増加し、受けるダメージがSLv×(\d+)％減少/))) s.partner = { name: m[1], power: +m[2], guard: +m[3], rage: /倒れると.*2倍/.test(d) };
+    if (/^自分の速度が相手の2倍以上のとき、1ターンに2回行動します/.test(d)) s.doubleAct = true;
+    else if ((m = d.match(/^パーティーに「(.+?)」がいると、与えるダメージがSLv×(\d+)％増加し、受けるダメージがSLv×(\d+)％減少/))) s.partner = { name: m[1], power: +m[2], guard: +m[3], rage: /倒れると.*2倍/.test(d) };
     else if ((m = d.match(/^交代で登場したターンのみ、受けるダメージをSLv×(\d+)％減少/))) s.switchInGuard = +m[1];
     else if ((m = d.match(/^ＨＰ最大時、受けるダメージをSLv×(\d+)％減少/))) s.fullHpGuard = +m[1];
     else if ((m = d.match(/^効果抜群の攻撃を受けた時、受けるダメージをSLv×(\d+)％減少/))) s.seGuard = +m[1];
@@ -714,6 +715,13 @@
         continue;
       }
       execute(ctx, o.side, o.action);
+      // 2回行動（速度が相手の2倍以上）
+      const um = active(st, o.side), fm = active(st, 1 - o.side);
+      const usk2 = skillOf(um);
+      if (usk2 && usk2.doubleAct && alive(um) && alive(fm) && !anySideWiped(st) && eff(um, 'spd') >= 2 * eff(fm, 'spd')) {
+        ctx.say(`${um.name}の【${um.skill.name}】！ 速すぎてもう一度行動できる！`);
+        execute(ctx, o.side, o.action);
+      }
     }
     if (!anySideWiped(st)) endOfTurn(ctx);
     return afterTurn(ctx, st, true);
@@ -810,8 +818,14 @@
         if (e.timeStop) score = state.sides[1 - side].frozen ? -100 : 5000;
         if (e.impulse) score = me.impulse ? -100 : 4500;
         if (e.counter) score = me.hp > me.maxhp * 0.5 ? 45 : 10;
+        const msk = skillOf(me);
+        const stacker = msk && msk.doubleAct; // 2回行動持ちはバフを積んでから殴る
+        const needSpd = stacker && eff(me, 'spd') < 2 * eff(foe, 'spd');
         for (const s of e.stats || []) {
-          if (s.who === 'self' && s.pct > 0 && me.mods[s.stat] < 2.5) score += s.pct * 0.4;
+          if (s.who === 'self' && s.pct > 0 && me.mods[s.stat] < 2.5) {
+            score += s.pct * (stacker ? 1.6 : 0.4) * (stacker ? me.hp / me.maxhp : 1);
+            if (needSpd && s.stat === 'spd') score += 120;
+          }
           if (s.who === 'foe' && s.pct < 0 && foe.mods[s.stat] > 0.5) score += -s.pct * 0.3;
         }
         if (e.vpDrain) score += 5;
