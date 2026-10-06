@@ -19,10 +19,12 @@
   const yen = n => `${Number(n).toLocaleString('ja-JP')}銭`;
 
   /* ================= 保存 ================= */
+  const PREFIX = window.GK_STORAGE_PREFIX || 'gk_';
   const store = {
-    get(k, d) { try { const v = localStorage.getItem('gk_' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
-    set(k, v) { try { localStorage.setItem('gk_' + k, JSON.stringify(v)); } catch (e) { /* 保存不可でも続行 */ } },
-    del(k) { try { localStorage.removeItem('gk_' + k); } catch (e) { /* noop */ } },
+    // デバッグ版は別のセーブ領域（GK_STORAGE_PREFIX）を使う
+    get(k, d) { try { const v = localStorage.getItem(PREFIX + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(PREFIX + k, JSON.stringify(v)); } catch (e) { /* 保存不可でも続行 */ } },
+    del(k) { try { localStorage.removeItem(PREFIX + k); } catch (e) { /* noop */ } },
   };
   let save = validateSave(store.get('save', null));
   let playerName = save ? save.name : store.get('name', '悠姫');
@@ -815,7 +817,8 @@
         const box = $('#msgbox');
         let done = false;
         const fin = () => { if (done) return; done = true; box.removeEventListener('click', fin); clearTimeout(t); res(); };
-        const t = setTimeout(fin, this.skip ? 120 : ms);
+        const speed = window.GK_DEBUG ? window.GK_DEBUG.speed : 1;
+        const t = setTimeout(fin, this.skip ? 120 : ms * speed);
         box.addEventListener('click', fin);
       });
     }
@@ -1000,10 +1003,10 @@
     }
     start() {
       const o = this.opts;
-      this.uids = save.party.slice();
+      this.uids = o.mine ? [] : save.party.slice();
       this.ended = false;
       this.won = false;
-      this.state = GK.createBattle([{ name: save.name, party: myBuilds(o.forceLv) }, { name: o.foe.name, party: o.foe.party }], { forceLv: o.forceLv || 0, boost: o.boost || null });
+      this.state = GK.createBattle([{ name: o.myName || save.name, party: o.mine || myBuilds(o.forceLv) }, { name: o.foe.name, party: o.foe.party }], { forceLv: o.forceLv || 0, boost: o.boost || null, seed: o.seed });
       this.view.show(this.state);
     }
     async submit(act) {
@@ -1062,6 +1065,7 @@
     async exit() {
       current = null;
       const o = this.opts;
+      if (o.onExit) return o.onExit();
       if (o.kind === 'story') {
         if (this.won && this.firstClear) await talk(o.stage.post, o.stage.title);
         go('story');
@@ -1262,5 +1266,18 @@
   function checkParty() { if (!save) { go('title'); return false; } return true; }
 
   go('title');
-  window.GK_APP = { go, get save() { return save; }, get current() { return current; }, persist };
+  window.GK_APP = {
+    go, get save() { return save; }, get current() { return current; }, persist, validateSave, store, PREFIX,
+    // デバッグ用：セーブ差し替え・任意バトル開始・再描画
+    setSave(s) { const v = validateSave(s); if (!v) return false; save = v; playerName = v.name; persist(); return true; },
+    clearSave() { store.del('save'); save = null; },
+    startBattle(opts) { current = new LocalSession(Object.assign({ kind: 'flat', level: 'normal' }, opts)); current.start(); return current; },
+    refresh() {
+      if (current && current.view && current.view.state) {
+        current.view.state = current.state;
+        current.view.renderStatic(); current.view.renderCmd();
+      }
+      refreshMoney();
+    },
+  };
 })();

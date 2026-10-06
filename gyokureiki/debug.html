@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>【DEBUG】東方玉霊姫 対戦シミュレータ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== タイトル ===== -->
+  <section id="scr-title" class="screen active">
+    <div class="titlebar"><span id="t-name">玉霊姫</span><span class="titlebar-right money" id="t-money"></span></div>
+    <div class="panel title-panel">
+      <h1 class="logo">東方玉霊姫<small>対戦シミュレータ</small></h1>
+      <div id="title-new">
+        <p class="title-note">コダマと契約して幻想郷を巡る旅に出よう！</p>
+        <div class="name-row"><label>あなたの名前 <input id="in-name" maxlength="12" placeholder="悠姫"></label></div>
+        <button class="btn big" id="btn-newgame" style="margin-top:14px">はじめから</button>
+        <button class="btn sm" id="btn-import0" style="margin-top:10px">セーブデータを読み込む</button>
+      </div>
+      <div id="title-menu" class="menu" hidden>
+        <div class="title-status" id="title-status"></div>
+        <button class="btn big" data-go="story">ストーリー</button>
+        <button class="btn big" data-go="npc">フリー対戦（ＮＰＣ）</button>
+        <button class="btn big" data-go="online">対人戦（オンライン）</button>
+        <div class="menu2">
+          <button class="btn" data-go="party">パーティ</button>
+          <button class="btn" data-go="shop">ショップ</button>
+          <button class="btn" data-go="items">持ち物</button>
+          <button class="btn" data-go="zukan">図鑑</button>
+        </div>
+        <button class="btn big vs-btn" data-go="vs">Ｖｓ</button>
+        <button class="btn sm" data-go="save">セーブ管理</button>
+      </div>
+      <p class="credit">データ・画像出典：東方玉神楽「コダマデータ【玉霊姫版】」／本作は非公式ファンメイドのシミュレータです。</p>
+    </div>
+  </section>
+
+  <!-- ===== 最初のコダマ選択 ===== -->
+  <section id="scr-start" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>最初の契約</span></div>
+    <div class="panel">
+      <p class="start-note">最初に契約するコダマを選んでください。<br><br>特にこだわりがなければ、好みで選んでしまってＯＫです。<br><br>※ここで選ばなかったコダマも、後で入手することができます。</p>
+      <div class="filters"><select id="start-type"><option value="">全属性</option></select></div>
+      <div class="start-grid" id="start-grid"></div>
+    </div>
+  </section>
+
+  <!-- ===== ストーリー ===== -->
+  <section id="scr-story" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>ストーリー</span><span class="titlebar-right money" id="story-money"></span></div>
+    <div id="story-areas"></div>
+  </section>
+
+  <!-- ===== 会話 ===== -->
+  <section id="scr-talk" class="screen">
+    <div class="talk-stage" id="talk-stage">
+      <div class="talk-place" id="talk-place"></div>
+      <div class="talk-sprite" id="talk-sprite"></div>
+    </div>
+    <div class="talk-box" id="talk-box">
+      <div class="talk-name" id="talk-name"></div>
+      <div class="talk-text" id="talk-text"></div>
+      <div class="msg-next">▼</div>
+    </div>
+    <button class="btn sm talk-skip" id="talk-skip">スキップ</button>
+  </section>
+
+  <!-- ===== Vs ===== -->
+  <section id="scr-vs" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>Ｖｓ</span><span class="titlebar-right money" id="vs-money"></span></div>
+    <div class="panel">
+      <p class="small">特殊コダマの一族（進化先を含む）だけを相手にする高レベル戦です。勝利すると一定確率でそのコダマの契約書を落とします（Lv20で加入）。</p>
+      <div id="vs-list" class="vs-list"></div>
+    </div>
+  </section>
+
+  <!-- ===== ショップ ===== -->
+  <section id="scr-shop" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>ショップ</span><span class="titlebar-right money" id="shop-money"></span></div>
+    <div class="panel"><div class="picker-head">道具</div><div id="shop-items" class="shop-list"></div></div>
+    <div class="panel"><div class="picker-head">スペル習得</div>
+      <div class="filters"><select id="shop-kodama"></select></div>
+      <div id="shop-spells" class="spell-list"></div>
+    </div>
+  </section>
+
+  <!-- ===== 持ち物 ===== -->
+  <section id="scr-items" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>持ち物</span><span class="titlebar-right money" id="items-money"></span></div>
+    <div class="panel"><div id="items-list" class="shop-list"></div></div>
+  </section>
+
+  <!-- ===== セーブ管理 ===== -->
+  <section id="scr-save" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>セーブ管理</span></div>
+    <div class="panel form">
+      <p class="small">進行状況はこのブラウザに自動保存されます。別の端末へ移すときや、念のためのバックアップに「書き出し」を使ってください。</p>
+      <label>名前 <input id="save-name" maxlength="12"></label>
+      <button class="btn" id="save-export">セーブデータを書き出す</button>
+      <button class="btn" id="save-import">セーブデータを読み込む</button>
+      <button class="btn danger" id="save-reset">最初からやり直す（データ削除）</button>
+      <div id="save-stats" class="small"></div>
+    </div>
+  </section>
+
+  <!-- ===== パーティ編成 ===== -->
+  <section id="scr-party" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>パーティ編成</span><span class="titlebar-right" id="party-count">0/6</span></div>
+    <div class="panel">
+      <div class="party-slots" id="party-slots"></div>
+
+      <div id="slot-editor" class="slot-editor"></div>
+    </div>
+    <div class="panel">
+      <div class="picker-head">契約中のコダマ <span class="small" id="box-count"></span><br><span class="small">（タップで選択中の枠に入れる／入れ替え）</span></div>
+      <div class="filters" id="party-filters"></div>
+      <div class="klist" id="party-list"></div>
+    </div>
+  </section>
+
+  <!-- ===== 図鑑 ===== -->
+  <section id="scr-zukan" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>コダマ図鑑</span><span class="titlebar-right" id="zukan-count"></span></div>
+    <div class="panel">
+      <div class="filters" id="zukan-filters"></div>
+      <div class="klist" id="zukan-list"></div>
+    </div>
+  </section>
+
+  <!-- ===== NPC戦 ===== -->
+  <section id="scr-npc" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>フリー対戦（ＮＰＣ）</span></div>
+    <div class="panel form">
+      <label>対戦の種類
+        <select id="npc-mode">
+          <option value="train">修行（経験値・銭あり／相手は自分の平均Lv）</option>
+          <option value="flat">練習（全員Lv50・報酬なし）</option>
+        </select>
+      </label>
+      <label>相手のつよさ
+        <select id="npc-level">
+          <option value="easy">よわい（報酬×0.7）</option>
+          <option value="normal" selected>ふつう（報酬×1.0）</option>
+          <option value="hard">つよい（報酬×1.4）</option>
+        </select>
+      </label>
+      <p class="small">相手のコダマは、ストーリーで訪れたエリアに出てくるコダマから選ばれます。</p>
+      <div id="npc-mine" class="mini-party"></div>
+      <button class="btn big" id="npc-start">対戦開始！</button>
+    </div>
+  </section>
+
+  <!-- ===== オンライン ===== -->
+  <section id="scr-online" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>対人戦（オンライン）</span></div>
+    <div class="panel form">
+      <p class="small">ルームを作って表示されたコードを相手に伝えるか、相手のコードを入力して参加してください。（PeerJS による P2P 接続）</p>
+      <label>レベル（ホストの設定が適用）
+        <select id="on-lvrule">
+          <option value="50">全員Lv50に統一</option>
+          <option value="100">全員Lv100に統一</option>
+          <option value="own">編成のまま</option>
+        </select>
+      </label>
+      <div class="online-box">
+        <button class="btn" id="on-host">ルームを作る</button>
+        <div class="room-code" id="on-code">------</div>
+        <button class="btn sm" id="on-copy">コピー</button>
+      </div>
+      <div class="online-box">
+        <input id="on-join-code" placeholder="相手のルームコード" maxlength="12" autocomplete="off">
+        <button class="btn" id="on-join">参加する</button>
+      </div>
+      <div class="online-status" id="on-status">未接続</div>
+      <div id="on-opponent" class="mini-party"></div>
+      <button class="btn big" id="on-start" disabled>対戦開始！</button>
+      <button class="btn sm" id="on-leave">切断</button>
+    </div>
+  </section>
+
+  <!-- ===== バトル ===== -->
+  <section id="scr-battle" class="screen">
+    <div class="bt-top">
+      <div class="statbox foe" id="sb-foe"></div>
+      <div class="statbox me" id="sb-me"></div>
+    </div>
+    <div class="bt-balls">
+      <div class="balls" id="balls-foe"></div>
+      <div class="balls" id="balls-me"></div>
+    </div>
+    <div class="field" id="field">
+      <div class="stage foe"><div class="mon" id="mon-foe"></div></div>
+      <div class="stage me"><div class="mon" id="mon-me"></div></div>
+    </div>
+    <div class="msgbox" id="msgbox"><div id="msg"></div><div class="msg-next" id="msg-next">▼</div></div>
+    <div class="cmd-tabs">
+      <button class="tab active" data-tab="spell">スペル</button>
+      <button class="tab" data-tab="kodama">コダマ</button>
+      <button class="tab" data-tab="chart">属性表</button>
+      <button class="tab" data-tab="foe">敵能力</button>
+    </div>
+    <div class="cmd" id="cmd"></div>
+  </section>
+
+  <div class="modal" id="modal"><div class="modal-body"><div id="modal-content"></div><button class="btn" id="modal-close">閉じる</button></div></div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>window.GK_STORAGE_PREFIX = "gkdbg_";</script>
+<script src="js/data.js"></script>
+<script src="js/custom.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/progress.js"></script>
+<script src="js/story.js"></script>
+<script src="js/app.js"></script>
+<script src="js/debug.js"></script>
+</body>
+</html>
