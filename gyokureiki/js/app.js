@@ -759,6 +759,7 @@
       if (side.shield > 0) mods += `<span class="up">半減${side.shield}</span>`;
       if (side.frozen > 0) mods += `<span class="down">⏸時停止</span>`;
       if (mon && mon.raid) mods += '<span class="up">BOSS</span> ';
+      if (mon && mon.impulse) mods += '<span class="up">｛impulse｝</span> ';
       $('.mods', el).innerHTML = mods;
     }
     renderBalls(el, sn) {

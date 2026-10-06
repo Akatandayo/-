@@ -76,6 +76,7 @@
     if ((m = d.match(/自分の(攻撃\/防御\/速度)のいずれかを(\d+)％上げ/))) e.randomBuff = +m[2] / 100;
     if ((m = d.match(/このターンと次の(\d)ターン、相手は行動できません/))) e.timeStop = +m[1] + 1;
     if (/戦闘中1回のみ/.test(d)) e.once = true;
+    if (/相手のスペルやスキルの効果を一切受け付けません/.test(d)) e.impulse = true;
     e.stats = [];
     const re = /(相手|自分)の([攻撃防御速度と]+)(?:を|が)(\d+)％(上げ|下げ|下が)/g;
     while ((m = re.exec(d))) {
@@ -267,6 +268,7 @@
 
   const STAT_NAME = { atk: '攻撃', df: '防御', spd: '速度' };
   function changeStat(ctx, side, m, stat, pct, fromFoe) {
+    if (fromFoe && m.impulse) { ctx.say(`${m.name}は効果を受け付けない！`); return; }
     const sk = skillOf(m);
     if (fromFoe && pct < 0 && sk && sk.mirrorDown && ctx.rand() * 100 < sk.mirrorDown * m.slv) {
       const foe = active(ctx.state, 1 - side);
@@ -278,7 +280,7 @@
       ctx.say(`${m.name}の【${m.skill.name}】！ 能力減少を反転した！`);
       pct = -pct;
     }
-    if (pct > 0) {
+    if (pct > 0 && !m.impulse) {
       const foe = active(ctx.state, 1 - side);
       const fsk = alive(foe) ? skillOf(foe) : null;
       if (fsk && fsk.invertFoeUp && ctx.rand() * 100 < fsk.invertFoeUp * foe.slv) {
@@ -497,7 +499,8 @@
         ctx.say('しかし うまく決まらなかった！');
       }
     } else if (e.halfHp) {
-      if (alive(target)) {
+      if (alive(target) && target.impulse) ctx.say(`${target.name}は効果を受け付けない！`);
+      else if (alive(target)) {
         const tm = typeMult(spell.type, target.types);
         if (tm === 0) ctx.say(`${target.name}には効果がないようだ…`);
         else {
@@ -521,10 +524,10 @@
 
     // ダメージ依存の副次効果
     if (dealt > 0) {
-      if (e.vpDrain) drainVp(ctx, target, Math.floor(dealt * e.vpDrain));
+      if (e.vpDrain && !target.impulse) drainVp(ctx, target, Math.floor(dealt * e.vpDrain));
       if (e.hpAbsorb) healHp(ctx, user, Math.floor(dealt * e.hpAbsorb));
       if (e.vpAbsorb) healVp(ctx, user, Math.floor(dealt * e.vpAbsorb));
-      if (usk && usk.vpDrain) {
+      if (usk && usk.vpDrain && !target.impulse) {
         const v = Math.floor(dealt * usk.vpDrain * user.slv / 100);
         if (v > 0) { ctx.say(`${user.name}の【${user.skill.name}】！`); drainVp(ctx, target, v); }
       }
@@ -540,24 +543,28 @@
       if (s.who === 'self') changeStat(ctx, side, user, s.stat, s.pct, false);
       else if (targetUp) changeStat(ctx, foeSide, target, s.stat, s.pct, true);
     }
+    if (e.impulse && !user.impulse) {
+      user.impulse = true;
+      ctx.say(`${user.name}の衝動が解き放たれた――！ 以降、相手の効果を一切受け付けない！`, { impulse: true });
+    }
     if (e.randomBuff) {
       const keys = ['atk', 'df', 'spd'];
       changeStat(ctx, side, user, keys[Math.floor(ctx.rand() * 3)], e.randomBuff * 100, false);
     }
-    if (e.halfVp && targetUp) {
+    if (e.halfVp && targetUp && !target.impulse) {
       const v = Math.floor(target.vp / 2);
       target.vp -= v;
       ctx.say(`${target.name}のＶＰが半減した！（-${v}）`);
     }
-    if (e.nullSkill && targetUp && target.skill && !target.skillNull) {
+    if (e.nullSkill && targetUp && !target.impulse && target.skill && !target.skillNull) {
       target.skillNull = true;
       ctx.say(`${target.name}のスキル【${target.skill.name}】が無効化された！`);
     }
-    if (e.dropFoeType2 && targetUp && target.types.length > 1) {
+    if (e.dropFoeType2 && targetUp && !target.impulse && target.types.length > 1) {
       target.types = [target.types[0]];
       ctx.say(`${target.name}の属性２が無効化された！`);
     }
-    if (e.setFoeType && targetUp) {
+    if (e.setFoeType && targetUp && !target.impulse) {
       target.types = [e.setFoeType];
       ctx.say(`${target.name}は${e.setFoeType}属性になった！`);
     }
@@ -623,7 +630,7 @@
         if (ok) { ctx.say(tag); changeStat(ctx, side, m, 'atk', sk.endSynergyAtk * L, false); }
       }
       if (sk.endFoeStat && alive(foe)) { ctx.say(tag); changeStat(ctx, 1 - side, foe, sk.endFoeStat.stat, -sk.endFoeStat.pct * L, true); }
-      if (sk.endFoeVp && alive(foe) && foe.vp > 0) { ctx.say(tag); drainVp(ctx, foe, sk.endFoeVp * L); }
+      if (sk.endFoeVp && alive(foe) && !foe.impulse && foe.vp > 0) { ctx.say(tag); drainVp(ctx, foe, sk.endFoeVp * L); }
       if (sk.endPartyVp) {
         let any = false;
         for (const p of st.sides[side].party) if (alive(p) && p.vp < p.maxvp) { p.vp = Math.min(p.maxvp, p.vp + sk.endPartyVp * L); any = true; }
@@ -631,11 +638,11 @@
       }
       if (sk.endSelfVp && m.vp < m.maxvp) { ctx.say(tag); healVp(ctx, m, sk.endSelfVp * L); }
       if (sk.endRegen && m.hp < m.maxhp) { ctx.say(tag); healHp(ctx, m, Math.max(1, Math.floor(m.maxhp * sk.endRegen * L / 100))); }
-      if (sk.endNull && alive(foe) && foe.skill && !foe.skillNull && ctx.rand() * 100 < sk.endNull * L) {
+      if (sk.endNull && alive(foe) && !foe.impulse && foe.skill && !foe.skillNull && ctx.rand() * 100 < sk.endNull * L) {
         foe.skillNull = true;
         ctx.say(`${tag} ${foe.name}のスキル【${foe.skill.name}】を無効化した！`);
       }
-      if (sk.endClear && alive(foe) && ctx.rand() * 100 < sk.endClear * L) {
+      if (sk.endClear && alive(foe) && !foe.impulse && ctx.rand() * 100 < sk.endClear * L) {
         let any = false;
         for (const k of ['atk', 'df', 'spd']) if (foe.mods[k] > 1) { foe.mods[k] = 1; any = true; }
         if (any) ctx.say(`${tag} ${foe.name}の能力上昇を打ち消した！`);
@@ -699,7 +706,9 @@
     for (const o of order) {
       if (o.action.type === 'switch') continue;
       if (anySideWiped(st)) break;
-      if (st.sides[o.side].frozen > 0) {
+      if (st.sides[o.side].frozen > 0 && active(st, o.side).impulse) {
+        ctx.say(`${active(st, o.side).name}は止まった時の中でも動ける！`);
+      } else if (st.sides[o.side].frozen > 0) {
         const m = active(st, o.side);
         if (alive(m)) ctx.say(`${m.name}は止まった時の中で動けない！`);
         continue;
@@ -799,6 +808,7 @@
         if (e.halfHp) score = foe.hp / 2;
         if (e.shield) score = state.sides[side].shield ? -50 : 40;
         if (e.timeStop) score = state.sides[1 - side].frozen ? -100 : 5000;
+        if (e.impulse) score = me.impulse ? -100 : 4500;
         if (e.counter) score = me.hp > me.maxhp * 0.5 ? 45 : 10;
         for (const s of e.stats || []) {
           if (s.who === 'self' && s.pct > 0 && me.mods[s.stat] < 2.5) score += s.pct * 0.4;
