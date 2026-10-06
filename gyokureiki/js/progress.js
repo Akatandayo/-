@@ -94,7 +94,10 @@
       const idx = (v.spells || []).map(n => k.spells.findIndex(s => s.name === n)).filter(i => i >= 0);
       return [{ id: baseId, lv, slv: slvFor(lv), spells: idx.length ? idx : undefined }];
     }
-    if (v.party) return v.party.filter(id => KD[id]).map(id => ({ id, lv, slv: slvFor(lv) }));
+    if (v.party) return v.party.filter(id => KD[id]).map(id => {
+      const idx = (v.spells || []).map(n => KD[id].spells.findIndex(s => s.name === n)).filter(i => i >= 0);
+      return { id, lv, slv: slvFor(lv), spells: idx.length ? idx : undefined };
+    });
     const line = LINES[LINE_OF[baseId]] || [baseId];
     const evo = line.filter(id => !isBase(KD[id])).sort((a, b) => KD[b].total - KD[a].total);
     const base = line.filter(id => isBase(KD[id]));

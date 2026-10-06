@@ -623,7 +623,7 @@
       const line = GKP.LINES[GKP.LINE_OF[id]] || [id];
       const owned = GKP.ownsLine(save, id) || save.contracts.some(c => GKP.sameLine(c.id, id));
       return `<div class="vs-card ${k.vs.raid ? 'raid' : ''}">
-        <div class="vs-head">${line.map(x => icon(x)).join('')}<div><div class="vs-title">${k.vs.raid ? '<span class="raid-tag">RAID</span>' : ''}${esc(k.vs.title)}</div>${k.vs.raid ? `<div class="small">レイドボス：ＨＰ${k.vs.boost.hp}倍の単体ボス</div>` : ''}
+        <div class="vs-head">${line.map(x => icon(x)).join('')}<div><div class="vs-title">${k.vs.raid ? '<span class="raid-tag">RAID</span>' : ''}${esc(k.vs.title)}</div>${k.vs.raid ? `<div class="small">レイドボス：ＨＰ${k.vs.boost.hp}倍の単体ボス</div>` : k.vs.boost ? `<div class="small">強化個体：ＨＰ${k.vs.boost.hp}倍</div>` : ''}
           <div class="small">${line.map(x => esc(KD[x].name)).join('・')}　${owned ? '<span class="clear">契約済み</span>' : '未契約'}</div></div></div>
         <div class="vs-tiers">${GKP.VS_TIERS.map((t, ti) => `<button class="btn vs-tier" data-vs="${id}" data-tier="${t.key}">
           <b>${t.name}</b><span class="small">Lv${t.lv}・${owned ? `報酬${yen(t.money * 2)}` : `ドロップ${Math.round(GKP.vsRate(id, ti) * 100)}%`}</span>
@@ -641,7 +641,7 @@
     current = new LocalSession({
       kind: 'vs', vsId: id, tier, level: 'hard',
       foe: { name: v.trainer || v.who || KD[id].name, party: GKP.vsParty(id, tier.lv) },
-      boost: v.raid ? [null, v.boost] : null,
+      boost: v.boost ? [null, v.boost] : null,
     });
     current.start();
   });
@@ -758,7 +758,7 @@
       const side = this.state.sides[el.id === 'sb-me' ? this.me : this.foe];
       if (side.shield > 0) mods += `<span class="up">半減${side.shield}</span>`;
       if (side.frozen > 0) mods += `<span class="down">⏸時停止</span>`;
-      if (mon && mon.raid) mods += '<span class="up">RAID</span> ';
+      if (mon && mon.raid) mods += '<span class="up">BOSS</span> ';
       $('.mods', el).innerHTML = mods;
     }
     renderBalls(el, sn) {
