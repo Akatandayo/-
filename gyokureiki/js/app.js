@@ -10,7 +10,8 @@
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const tb = (t, cls) => `<span class="tb t-${t} ${cls || ''}">${t}</span>`;
+  // 崩属性は ❌ で表示
+  const tb = (t, cls) => `<span class="tb t-${t} ${cls || ''}" title="${t}">${t === '崩' ? '❌' : t}</span>`;
   const tbs = types => types.map(t => tb(t)).join('');
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const spriteOf = id => (window.GK_SPRITES && window.GK_SPRITES[id]) || null;

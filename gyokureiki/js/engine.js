@@ -35,11 +35,15 @@
   }
 
   /* ---------- 相性 ---------- */
+  // 「崩」：特殊属性。崩の攻撃は相性なし（等倍）、崩の防御側は全属性から1.5倍
+  const BREAK = '崩';
   function typeMult(atkType, defTypes) {
     const row = D.chart[atkType];
-    if (!row) return 1;
     let m = 1;
-    for (const t of defTypes) m *= row[TYPE_INDEX[t]];
+    for (const t of defTypes) {
+      if (t === BREAK) m *= 1.5;
+      else if (row && TYPE_INDEX[t] != null) m *= row[TYPE_INDEX[t]];
+    }
     return m;
   }
 
@@ -96,7 +100,8 @@
     const d = hankaku(desc);
     const s = {};
     let m;
-    if (/^自分の速度が相手の2倍以上のとき、1ターンに2回行動します/.test(d)) s.doubleAct = true;
+    if ((m = d.match(/^ターン終了時、自分のＨＰが最大値のSLv×(\d+)％減り、攻撃がSLv×(\d+)％上昇/))) s.curse = { hp: +m[1], atk: +m[2] };
+    else if (/^自分の速度が相手の2倍以上のとき、1ターンに2回行動します/.test(d)) s.doubleAct = true;
     else if ((m = d.match(/^パーティーに「(.+?)」がいると、与えるダメージがSLv×(\d+)％増加し、受けるダメージがSLv×(\d+)％減少/))) s.partner = { name: m[1], power: +m[2], guard: +m[3], rage: /倒れると.*2倍/.test(d) };
     else if ((m = d.match(/^交代で登場したターンのみ、受けるダメージをSLv×(\d+)％減少/))) s.switchInGuard = +m[1];
     else if ((m = d.match(/^ＨＰ最大時、受けるダメージをSLv×(\d+)％減少/))) s.fullHpGuard = +m[1];
@@ -490,7 +495,7 @@
       ctx.say(`${user.name}の属性が${user.types.join('・')}になった！`);
     }
 
-    let dealt = 0;
+    let dealt = 0, usedType = spell.type;
     if (e.counter) {
       if (user.dmgTakenTurn > 0 && alive(target)) {
         let dmg = Math.floor(user.dmgTakenTurn * e.counter);
@@ -512,6 +517,7 @@
       }
     } else if (spell.power > 0 && alive(target)) {
       const r = calcDamage(ctx, side, user, target, spell, e);
+      usedType = r.type;
       if (r.tm === 0) {
         ctx.say(`${target.name}には効果がないようだ…`);
       } else {
@@ -524,6 +530,11 @@
       }
     }
 
+    // 崩属性の攻撃が当たると、相手の属性を「崩」に書き換える（交代で元に戻る）
+    if (dealt > 0 && usedType === BREAK && alive(target) && !target.impulse && !(target.types.length === 1 && target.types[0] === BREAK)) {
+      target.types = [BREAK];
+      ctx.say(`${target.name}の属性が❌（崩）に書き換えられた！ 全ての属性が弱点になった！`);
+    }
     // ダメージ依存の副次効果
     if (dealt > 0) {
       if (e.vpDrain && !target.impulse) drainVp(ctx, target, Math.floor(dealt * e.vpDrain));
@@ -626,6 +637,14 @@
       const sk = skillOf(m);
       if (!sk || sk.unknown) continue;
       const L = m.slv, tag = `${m.name}の【${m.skill.name}】！`;
+      if (sk.curse) {
+        // 呪い：HPを削る代わりに攻撃が上がる（削れて倒れることもある）
+        const loss = Math.max(1, Math.floor(m.maxhp * sk.curse.hp * L / 100));
+        m.hp = Math.max(0, m.hp - loss);
+        ctx.say(`${tag} 呪いが${m.name}を蝕む……（-${loss}）`, { hit: side });
+        if (m.hp <= 0) { faintCheck(ctx, side); continue; }
+        changeStat(ctx, side, m, 'atk', sk.curse.atk * L, false);
+      }
       if (sk.endSelfStat) { ctx.say(tag); changeStat(ctx, side, m, sk.endSelfStat.stat, sk.endSelfStat.pct * L, false); }
       if (sk.endSynergyAtk) {
         const ok = st.sides[side].party.some(p => p !== m && p.id !== m.id && p.baseSkill && p.baseSkill.name === m.skill.name);
@@ -815,6 +834,8 @@
         if (score >= foe.hp) score += 200 - sp.cost; // 倒せるなら最優先
         if (e.priority > 0 && score >= foe.hp) score += 100;
         if (e.halfHp) score = foe.hp / 2;
+        // 崩：まだ書き換えていない相手には優先して当てる
+        if (sp.type === BREAK && parseInt(sp.pow) && !(foe.types.length === 1 && foe.types[0] === BREAK)) score += 40;
         if (e.shield) score = state.sides[side].shield ? -50 : 40;
         if (e.timeStop) score = state.sides[1 - side].frozen ? -100 : 5000;
         if (e.impulse) score = me.impulse ? -100 : 4500;

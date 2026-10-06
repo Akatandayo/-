@@ -368,3 +368,4 @@ table.chart tr.hl td, table.chart td.hl { outline: 1px solid #ffb84d; }
 .ts-flash #field { animation: tsflash .6s; }
 @keyframes tsflash { 0% { filter: invert(1); } 40% { filter: invert(1) hue-rotate(90deg); } 100% { filter: grayscale(1); } }
 img.smooth { image-rendering: auto !important; }
+.t-崩 { color: #b0102a; background: #1c1c1c; font-size: .8em; }
