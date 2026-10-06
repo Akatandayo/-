@@ -138,7 +138,8 @@
       atk: f(k.atk) + 5,
       df: f(k.df) + 5,
       spd: f(k.spd) + 5,
-      maxvp: 50 + Math.floor(lv / 2),
+      // vpMult: コダマ個別のVP倍率（高VP型のキャラ用）
+      maxvp: Math.floor((50 + Math.floor(lv / 2)) * (k.vpMult || 1)),
     };
   }
 

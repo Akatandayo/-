@@ -522,4 +522,5 @@ window.GK_SPRITES = {
   9401: 'img/kodama/9401.png',
   9501: 'img/kodama/9501.png',
   9601: 'img/kodama/9601.png',
+  9701: 'img/kodama/9701.png',
 };
