@@ -74,6 +74,8 @@
     if (/相手の属性2を無効化/.test(d)) e.dropFoeType2 = true;
     if ((m = d.match(/相手を(.)属性に変化/))) e.setFoeType = m[1];
     if ((m = d.match(/自分の(攻撃\/防御\/速度)のいずれかを(\d+)％上げ/))) e.randomBuff = +m[2] / 100;
+    if ((m = d.match(/このターンと次の(\d)ターン、相手は行動できません/))) e.timeStop = +m[1] + 1;
+    if (/戦闘中1回のみ/.test(d)) e.once = true;
     e.stats = [];
     const re = /(相手|自分)の([攻撃防御速度と]+)(?:を|が)(\d+)％(上げ|下げ|下が)/g;
     while ((m = re.exec(d))) {
@@ -180,6 +182,7 @@
       skillNull: false,
       enteredTurn: 0,
       dmgTakenTurn: 0, hitThisTurn: false,
+      used: {},
     };
   }
 
@@ -205,6 +208,16 @@
       log: [],
     };
     for (const s of state.sides) if (!s.party.length) s.party.push(makeMon(sanitizeBuild({ id: D.kodama[0].id })));
+    // レイドボス用の能力倍率 boost: [side0, side1] = {hp, atk, df, spd}
+    (opts.boost || []).forEach((bo, i) => {
+      if (!bo || !state.sides[i]) return;
+      const c = (v, max) => Math.max(1, Math.min(max, +v || 1));
+      for (const m of state.sides[i].party) {
+        m.maxhp = m.hp = Math.floor(m.maxhp * c(bo.hp, 20));
+        for (const k of ['atk', 'df', 'spd']) m[k] = Math.floor(m[k] * c(bo[k], 3));
+        m.raid = true;
+      }
+    });
     const ctx = makeCtx(state);
     ctx.say(`${state.sides[0].name} と ${state.sides[1].name} の勝負が始まった！`);
     for (let i = 0; i < 2; i++) ctx.say(`${state.sides[i].name}は${active(state, i).name}を繰り出した！`);
@@ -331,7 +344,7 @@
     list.push({ type: 'normal' });
     m.spells.forEach((si, slot) => {
       const sp = KODAMA[m.id].spells[si];
-      if (m.vp >= sp.cost) list.push({ type: 'spell', slot });
+      if (m.vp >= sp.cost && !(m.used[si] && parseSpellEffect(sp.desc).once)) list.push({ type: 'spell', slot });
     });
     list.push({ type: 'rest' });
     for (const i of switches) list.push({ type: 'switch', to: i });
@@ -422,9 +435,10 @@
     let spell, e;
     if (action.type === 'spell') {
       const sp = k.spells[user.spells[action.slot]];
-      if (!sp || user.vp < sp.cost) {
+      if (!sp || user.vp < sp.cost || (user.used[user.spells[action.slot]] && parseSpellEffect(sp.desc).once)) {
         action = { type: 'normal' };
       } else {
+        user.used[user.spells[action.slot]] = 1;
         spell = { name: sp.name, type: sp.type, power: parseInt(sp.pow) || 0, cost: sp.cost };
         e = parseSpellEffect(sp.desc);
       }
@@ -444,6 +458,10 @@
       ctx.say(`${user.name}の【${user.skill.name}】！ 属性が${user.types.join('・')}になった！`);
     }
 
+    if (e.timeStop) {
+      st.sides[foeSide].frozen = e.timeStop;
+      ctx.say(`時は止まった……！ ${st.sides[foeSide].name}の陣営は${e.timeStop - 1 ? `このターンと次の${e.timeStop - 1}ターン` : 'このターン'}動けない！`, { timestop: true });
+    }
     if (e.shield) {
       st.sides[side].shield = e.shield;
       ctx.say(`${st.sides[side].name}の陣営は${e.shield}ターンの間、受けるダメージが半減する！`);
@@ -567,6 +585,10 @@
     const st = ctx.state;
     for (let side = 0; side < 2; side++) {
       const s = st.sides[side];
+      if (s.frozen > 0) {
+        s.frozen--;
+        if (s.frozen === 0) ctx.say('そして時は動き出す……。');
+      }
       if (s.shield > 0) {
         s.shield--;
         if (s.shield === 0) ctx.say(`${s.name}の陣営のダメージ半減効果が切れた。`);
@@ -662,6 +684,11 @@
     for (const o of order) {
       if (o.action.type === 'switch') continue;
       if (anySideWiped(st)) break;
+      if (st.sides[o.side].frozen > 0) {
+        const m = active(st, o.side);
+        if (alive(m)) ctx.say(`${m.name}は止まった時の中で動けない！`);
+        continue;
+      }
       execute(ctx, o.side, o.action);
     }
     if (!anySideWiped(st)) endOfTurn(ctx);
@@ -756,6 +783,7 @@
         if (e.priority > 0 && score >= foe.hp) score += 100;
         if (e.halfHp) score = foe.hp / 2;
         if (e.shield) score = state.sides[side].shield ? -50 : 40;
+        if (e.timeStop) score = state.sides[1 - side].frozen ? -100 : 5000;
         if (e.counter) score = me.hp > me.maxhp * 0.5 ? 45 : 10;
         for (const s of e.stats || []) {
           if (s.who === 'self' && s.pct > 0 && me.mods[s.stat] < 2.5) score += s.pct * 0.4;

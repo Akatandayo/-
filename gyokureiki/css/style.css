@@ -362,3 +362,8 @@ table.chart tr.hl td, table.chart td.hl { outline: 1px solid #ffb84d; }
 .vs-tiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 6px; }
 .vs-tier { display: flex; flex-direction: column; align-items: center; padding: 6px 2px; font-size: 15px; }
 .vs-tier .small { color: var(--ink-soft); font-size: 11px; }
+.vs-card.raid { background: linear-gradient(135deg, #3a1030, #7a2a14 60%, #b8860b); border-color: #e6b84a; }
+.raid-tag { font-size: 12px; background: #e6b84a; color: #3a1030; padding: 1px 6px; border-radius: 3px; margin-right: 6px; letter-spacing: 1px; vertical-align: middle; }
+.timestop #field { filter: grayscale(1) contrast(1.15) brightness(.9); transition: filter .3s; }
+.ts-flash #field { animation: tsflash .6s; }
+@keyframes tsflash { 0% { filter: invert(1); } 40% { filter: invert(1) hue-rotate(90deg); } 100% { filter: grayscale(1); } }

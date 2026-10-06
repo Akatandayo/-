@@ -74,15 +74,26 @@
   // 通常の入手手段（ランダム契約書など）の対象
   const NORMAL_IDS = D.kodama.filter(k => !k.special).map(k => k.id);
   // Vsモード：特殊コダマの系統（幼体）一覧と難易度
-  const VS_LIST = D.kodama.filter(k => k.special && k.vs && isBase(k)).map(k => k.id);
+  const VS_LIST = D.kodama.filter(k => k.special && k.vs).map(k => k.id);
   const VS_TIERS = [
     { key: 'normal', name: 'ノーマル', lv: 50, rate: 0.10, money: 3000 },
     { key: 'hard', name: 'ハード', lv: 75, rate: 0.20, money: 6000 },
     { key: 'lunatic', name: 'ルナティック', lv: 100, rate: 1, money: 10000 },
   ];
   const VS_JOIN_LV = 20;
+  // 難易度ごとのドロップ率（コダマ個別の設定があれば優先）
+  const vsRate = (id, ti) => { const r = (KD[id].vs || {}).rates; return r && r[ti] != null ? r[ti] : VS_TIERS[ti].rate; };
+  // 同じ系統か（系統を持たない単体コダマは同一IDのみ）
+  const sameLine = (a, b) => a === b || (LINE_OF[a] != null && LINE_OF[a] === LINE_OF[b]);
   // Vsの相手パーティ：系統の進化形（強い順）＋幼体。スペルは全習得から最良の4つ
   function vsParty(baseId, lv) {
+    const v = KD[baseId].vs || {};
+    if (v.raid) {
+      // レイドボス：単体。指定スペルを装備
+      const k = KD[baseId];
+      const idx = (v.spells || []).map(n => k.spells.findIndex(s => s.name === n)).filter(i => i >= 0);
+      return [{ id: baseId, lv, slv: slvFor(lv), spells: idx.length ? idx : undefined }];
+    }
     const line = LINES[LINE_OF[baseId]] || [baseId];
     const evo = line.filter(id => !isBase(KD[id])).sort((a, b) => KD[b].total - KD[a].total);
     const base = line.filter(id => isBase(KD[id]));
@@ -221,7 +232,7 @@
   ];
 
   global.GKP = {
-    CHIBI_IDS, NORMAL_IDS, VS_LIST, VS_TIERS, VS_JOIN_LV, vsParty, LINES, LINE_OF, EVOLVE_LV, MAX_LV, SHOP, SAVE_VERSION,
+    CHIBI_IDS, NORMAL_IDS, VS_LIST, VS_TIERS, VS_JOIN_LV, vsParty, vsRate, sameLine, LINES, LINE_OF, EVOLVE_LV, MAX_LV, SHOP, SAVE_VERSION,
     isChibi, isBase, charKey, evolutions, expToNext, slvFor, expFrom, spellReq, basicSpells,
     newSave, owns, ownsLine, addKodama, findOwned, partyMembers, toBuild, gainExp, evolve,
     useContract, randomUnowned,

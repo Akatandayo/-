@@ -174,7 +174,7 @@
     const st = GK.calcStats(k, lv);
     const evo = GKP.evolutions(k.id);
     return `<div class="ed-head">${icon(k.id)}${tbs(k.types)}<span class="nm">${esc(k.name)}</span><span class="small">No.${k.id}</span>${k.special ? '<span class="orig">オリジナル</span>' : ''}</div>
-      ${k.profile ? `<div class="profile">${esc(k.profile)}${k.special && GKP.isBase(k) ? '<br><span class="small">入手：「Ｖｓ」モードで勝利すると一定確率で契約書を落とす（Lv20で加入）</span>' : ''}</div>` : ''}
+      ${k.profile ? `<div class="profile">${esc(k.profile)}${k.special && k.vs ? `<br><span class="small">入手：「Ｖｓ」モード（${esc(k.vs.title)}${k.vs.raid ? '・レイド限定' : ''}）で勝利すると一定確率で契約書を落とす（Lv${GKP.VS_JOIN_LV}で加入）</span>` : ''}</div>` : ''}
       <div class="statgrid" style="margin-top:8px">
         <div>ＨＰ<b>${k.hp}</b></div><div>攻撃<b>${k.atk}</b></div><div>防御<b>${k.df}</b></div><div>速度<b>${k.spd}</b></div><div>合計<b>${k.total}</b></div>
       </div>
@@ -310,7 +310,7 @@
       }
       // 特別なコダマ（ボス周回のみ）
       const sd = ctx.specialDrop;
-      if (sd && !GKP.ownsLine(save, sd.id) && !save.contracts.some(c => GKP.LINE_OF[c.id] === GKP.LINE_OF[sd.id]) && Math.random() < sd.rate) {
+      if (sd && !GKP.ownsLine(save, sd.id) && !save.contracts.some(c => GKP.sameLine(c.id, sd.id)) && Math.random() < sd.rate) {
         res.contracts.push({ id: sd.id, lv: sd.lv, special: true });
       }
       // 契約書ドロップ（倒したコダマから）
@@ -620,12 +620,12 @@
     $('#vs-list').innerHTML = GKP.VS_LIST.map(id => {
       const k = KD[id];
       const line = GKP.LINES[GKP.LINE_OF[id]] || [id];
-      const owned = GKP.ownsLine(save, id) || save.contracts.some(c => GKP.LINE_OF[c.id] === GKP.LINE_OF[id]);
-      return `<div class="vs-card">
-        <div class="vs-head">${line.map(x => icon(x)).join('')}<div><div class="vs-title">${esc(k.vs.title)}</div>
+      const owned = GKP.ownsLine(save, id) || save.contracts.some(c => GKP.sameLine(c.id, id));
+      return `<div class="vs-card ${k.vs.raid ? 'raid' : ''}">
+        <div class="vs-head">${line.map(x => icon(x)).join('')}<div><div class="vs-title">${k.vs.raid ? '<span class="raid-tag">RAID</span>' : ''}${esc(k.vs.title)}</div>${k.vs.raid ? `<div class="small">レイドボス：ＨＰ${k.vs.boost.hp}倍の単体ボス</div>` : ''}
           <div class="small">${line.map(x => esc(KD[x].name)).join('・')}　${owned ? '<span class="clear">契約済み</span>' : '未契約'}</div></div></div>
-        <div class="vs-tiers">${GKP.VS_TIERS.map(t => `<button class="btn vs-tier" data-vs="${id}" data-tier="${t.key}">
-          <b>${t.name}</b><span class="small">Lv${t.lv}・${owned ? `報酬${yen(t.money * 2)}` : `ドロップ${Math.round(t.rate * 100)}%`}</span>
+        <div class="vs-tiers">${GKP.VS_TIERS.map((t, ti) => `<button class="btn vs-tier" data-vs="${id}" data-tier="${t.key}">
+          <b>${t.name}</b><span class="small">Lv${t.lv}・${owned ? `報酬${yen(t.money * 2)}` : `ドロップ${Math.round(GKP.vsRate(id, ti) * 100)}%`}</span>
           <span class="small">勝利 ${wins[id + ':' + t.key] || 0}回</span></button>`).join('')}</div>
       </div>`;
     }).join('') || '<p class="small">Ｖｓに挑戦できるコダマはまだいません。</p>';
@@ -640,6 +640,7 @@
     current = new LocalSession({
       kind: 'vs', vsId: id, tier, level: 'hard',
       foe: { name: v.who || KD[id].name, party: GKP.vsParty(id, tier.lv) },
+      boost: v.raid ? [null, v.boost] : null,
     });
     current.start();
   });
@@ -755,6 +756,8 @@
       }
       const side = this.state.sides[el.id === 'sb-me' ? this.me : this.foe];
       if (side.shield > 0) mods += `<span class="up">半減${side.shield}</span>`;
+      if (side.frozen > 0) mods += `<span class="down">⏸時停止</span>`;
+      if (mon && mon.raid) mods += '<span class="up">RAID</span> ';
       $('.mods', el).innerHTML = mods;
     }
     renderBalls(el, sn) {
@@ -786,6 +789,8 @@
         $('#msg').textContent = entry.text;
         this.renderStatic(entry.snap);
         if (entry.anim) this.animAttack(entry.anim);
+        if (entry.timestop) { const f = $('#scr-battle'); f.classList.remove('ts-flash'); void f.offsetWidth; f.classList.add('timestop', 'ts-flash'); }
+        if (/時は動き出す/.test(entry.text)) $('#scr-battle').classList.remove('timestop');
         if (entry.hit != null) this.animHit(entry.hit, entry.text);
         if (entry.faint != null) {
           const el = entry.faint === this.me ? $('#mon-me') : $('#mon-foe');
@@ -796,6 +801,7 @@
         box.classList.remove('waiting');
       }
       this.busy = false;
+      $('#scr-battle').classList.toggle('timestop', this.state.sides.some(x => x.frozen > 0) && this.state.phase !== 'end');
       this.renderStatic();
       if (this.state.phase === 'end') this.showResult();
       else if (this.state.phase === 'switch' && this.state.need[this.me]) $('#msg').textContent = '次に繰り出すコダマを選んでください。';
@@ -995,7 +1001,7 @@
       this.uids = save.party.slice();
       this.ended = false;
       this.won = false;
-      this.state = GK.createBattle([{ name: save.name, party: myBuilds(o.forceLv) }, { name: o.foe.name, party: o.foe.party }], { forceLv: o.forceLv || 0 });
+      this.state = GK.createBattle([{ name: save.name, party: myBuilds(o.forceLv) }, { name: o.foe.name, party: o.foe.party }], { forceLv: o.forceLv || 0, boost: o.boost || null });
       this.view.show(this.state);
     }
     async submit(act) {
@@ -1033,12 +1039,12 @@
           dropRate: S.isBoss ? 0.25 : 0.15,
         });
       } else if (o.kind === 'vs') {
-        const owned = GKP.ownsLine(save, o.vsId) || save.contracts.some(c => GKP.LINE_OF[c.id] === GKP.LINE_OF[o.vsId]);
+        const owned = GKP.ownsLine(save, o.vsId) || save.contracts.some(c => GKP.sameLine(c.id, o.vsId));
         if (win) save.vsWins = Object.assign(save.vsWins || {}, { [o.vsId + ':' + o.tier.key]: ((save.vsWins || {})[o.vsId + ':' + o.tier.key] || 0) + 1 });
         const r = await awardBattle(st, {
           uids: this.uids, expMult: 1,
           money: owned ? o.tier.money * 2 : o.tier.money,
-          specialDrop: owned ? null : { id: o.vsId, lv: GKP.VS_JOIN_LV, rate: o.tier.rate },
+          specialDrop: owned ? null : { id: o.vsId, lv: GKP.VS_JOIN_LV, rate: GKP.vsRate(o.vsId, GKP.VS_TIERS.indexOf(o.tier)) },
         });
         this.gotSpecial = r.contracts.some(c => c.special);
       } else {
