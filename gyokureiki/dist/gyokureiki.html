@@ -408,7 +408,7 @@ img.smooth { image-rendering: auto !important; }
           <button class="btn" data-go="zukan">図鑑</button>
         </div>
         <button class="btn big vs-btn" data-go="vs">Ｖｓ</button>
-        <button class="btn sm" data-go="save">セーブ管理</button>
+        <div class="menu2"><button class="btn sm" data-go="gift">🎁 ギフトコード</button><button class="btn sm" data-go="save">セーブ管理</button></div>
       </div>
       <p class="credit">データ・画像出典：東方玉神楽「コダマデータ【玉霊姫版】」／本作は非公式ファンメイドのシミュレータです。</p>
     </div>
@@ -467,6 +467,17 @@ img.smooth { image-rendering: auto !important; }
   <section id="scr-items" class="screen">
     <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>持ち物</span><span class="titlebar-right money" id="items-money"></span></div>
     <div class="panel"><div id="items-list" class="shop-list"></div></div>
+  </section>
+
+  <!-- ===== ギフトコード ===== -->
+  <section id="scr-gift" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>ギフトコード</span><span class="titlebar-right money" id="gift-money"></span></div>
+    <div class="panel form">
+      <p class="small">配布されたギフトコードを入力すると、銭や道具、限定コダマなどを受け取れます。各コードは１つのセーブにつき１回まで。</p>
+      <div class="online-box"><input id="gift-code" placeholder="ギフトコードを入力" autocomplete="off" maxlength="40"><button class="btn" id="gift-ok">受け取る</button></div>
+      <div class="picker-head" style="margin-top:6px">受け取り履歴</div>
+      <div id="gift-history" class="shop-list"></div>
+    </div>
   </section>
 
   <!-- ===== セーブ管理 ===== -->
@@ -2761,6 +2772,118 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
 
 </script>
 <script>
+/* 東方玉霊姫 - ギフトコード（判定・付与ロジック）
+ * コード本体は js/gifts.js に「ハッシュ」で登録するので、ソースを見てもコード文字列は分からない。
+ * 新しいコードはデバッグ版の開発者パネル、または tools/make_gift.py で作成できる。
+ */
+(function (global) {
+  'use strict';
+
+  const SALT = 'gyokureiki-gift-v1:';
+
+  // 入力ゆれを吸収：全角→半角、英字は大文字、空白・ハイフン類は無視
+  function normalize(code) {
+    return String(code || '')
+      .replace(/[！-～]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+      .replace(/[\s\-‐－ー_　]/g, '')
+      .toUpperCase();
+  }
+
+  /* ---------- SHA-256（file:// でも動くよう自前実装） ---------- */
+  function sha256(str) {
+    const bytes = new TextEncoder().encode(str);
+    const K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
+    const H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+    const l = bytes.length, withOne = l + 1, total = Math.ceil((withOne + 8) / 64) * 64;
+    const buf = new Uint8Array(total);
+    buf.set(bytes); buf[l] = 0x80;
+    const bits = l * 8;
+    const dv = new DataView(buf.buffer);
+    dv.setUint32(total - 8, Math.floor(bits / 0x100000000));
+    dv.setUint32(total - 4, bits >>> 0);
+    const w = new Uint32Array(64);
+    const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+    for (let off = 0; off < total; off += 64) {
+      for (let i = 0; i < 16; i++) w[i] = dv.getUint32(off + i * 4);
+      for (let i = 16; i < 64; i++) {
+        const s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >>> 3);
+        const s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+        w[i] = (w[i - 16] + s0 + w[i - 7] + s1) >>> 0;
+      }
+      let [a, b, c, d, e, f, g, h] = H;
+      for (let i = 0; i < 64; i++) {
+        const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+        const ch = (e & f) ^ (~e & g);
+        const t1 = (h + S1 + ch + K[i] + w[i]) >>> 0;
+        const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+        const mj = (a & b) ^ (a & c) ^ (b & c);
+        const t2 = (S0 + mj) >>> 0;
+        h = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+      }
+      H[0] = (H[0] + a) >>> 0; H[1] = (H[1] + b) >>> 0; H[2] = (H[2] + c) >>> 0; H[3] = (H[3] + d) >>> 0;
+      H[4] = (H[4] + e) >>> 0; H[5] = (H[5] + f) >>> 0; H[6] = (H[6] + g) >>> 0; H[7] = (H[7] + h) >>> 0;
+    }
+    return H.map(x => x.toString(16).padStart(8, '0')).join('');
+  }
+
+  const hashCode = code => sha256(SALT + normalize(code));
+  const list = () => global.GK_GIFTS || [];
+  const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+
+  // 結果: {ok, gift, reason}
+  function check(save, code) {
+    const n = normalize(code);
+    if (!n) return { ok: false, reason: 'コードを入力してください' };
+    const h = hashCode(n);
+    const gift = list().find(g => g.h === h);
+    if (!gift) return { ok: false, reason: 'コードが正しくありません' };
+    const t = today();
+    if (gift.from && t < gift.from) return { ok: false, gift, reason: `このコードは ${gift.from} から使えます` };
+    if (gift.until && t > gift.until) return { ok: false, gift, reason: `このコードの有効期限（${gift.until}まで）が切れています` };
+    if (save.gifts && save.gifts[h]) return { ok: false, gift, reason: 'このコードはすでに受け取り済みです' };
+    return { ok: true, gift, h };
+  }
+
+  // 報酬を付与し、内容を返す
+  function redeem(save, code) {
+    const r = check(save, code);
+    if (!r.ok) return r;
+    const KD = global.GK.KODAMA, P = global.GKP;
+    const rw = r.gift.rewards || {};
+    const got = { money: 0, items: {}, kodama: [], contracts: [], refund: 0 };
+    if (rw.money) { save.money += rw.money; got.money = rw.money; }
+    for (const [k, v] of Object.entries(rw.items || {})) { save.items[k] = (save.items[k] || 0) + v; got.items[k] = v; }
+    for (const c of rw.contracts || []) if (KD[c.id]) { save.contracts.push({ id: c.id, lv: c.lv || 20 }); got.contracts.push(c); }
+    for (const c of rw.kodama || []) {
+      if (!KD[c.id]) continue;
+      if (P.owns(save, c.id)) { save.money += 3000; got.refund += 3000; continue; }
+      got.kodama.push(P.addKodama(save, c.id, c.lv || 20));
+    }
+    save.gifts = save.gifts || {};
+    save.gifts[r.h] = { t: today(), title: r.gift.title || '' };
+    return { ok: true, gift: r.gift, got };
+  }
+
+  global.GKG = { normalize, sha256, hashCode, check, redeem, list, SALT };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ギフトコード一覧
+ * h はコードのハッシュ（SHA-256）。コード本体はここに書かないこと。
+ * 追加方法: デバッグ版の開発者パネル「ギフト」タブ、または tools/make_gift.py で登録行を作って下に貼る。
+ *   title   : 受け取り時に表示する名前
+ *   from    : この日から有効（YYYY-MM-DD、省略可）
+ *   until   : この日まで有効（YYYY-MM-DD、省略可）
+ *   rewards : money（銭）/ items {chibi, random, book, scroll} / contracts [{id, lv}]（契約書）/ kodama [{id, lv}]（直接加入）
+ * 限定キャラを配る場合は custom.js に special: true（vs なし）で追加し、kodama か contracts で配布する。
+ */
+window.GK_GIFTS = [
+  {"h": "c05ffc8c4add7a25cd0aa637a603fbde54a40418800a8dd9eb508f6896a691b8", "title": "リリース記念", "rewards": {"money": 10000, "items": {"chibi": 3, "scroll": 3}}},
+];
+
+</script>
+<script>
 /* 東方玉霊姫 対戦シミュレータ - 画面・ストーリー・ショップ・NPC戦・オンライン対戦 */
 (function () {
   'use strict';
@@ -2798,7 +2921,7 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
     s.owned = s.owned.filter(m => m && KD[m.id]);
     if (!s.owned.length) return null;
     s.items = s.items || {}; s.contracts = s.contracts || []; s.cleared = s.cleared || {}; s.seen = s.seen || {};
-    s.stats = s.stats || { win: 0, lose: 0 }; s.intro = s.intro || {};
+    s.stats = s.stats || { win: 0, lose: 0 }; s.intro = s.intro || {}; s.gifts = s.gifts || {};
     s.money = Math.max(0, Math.floor(+s.money || 0));
     s.party = (s.party || []).filter(uid => s.owned.some(m => m.uid === uid)).slice(0, GK.MAX_PARTY);
     if (!s.party.length) s.party = [s.owned[0].uid];
@@ -2832,7 +2955,7 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
     $$('.screen').forEach(s => s.classList.toggle('active', s.id === 'scr-' + name));
     window.scrollTo(0, 0);
     refreshMoney();
-    const r = { vs: renderVs, title: renderTitle, start: renderStart, story: renderStory, party: renderParty, zukan: renderZukan, shop: renderShop, items: renderItems, save: renderSaveMgr, npc: renderNpc, online: () => renderOnline() }[name];
+    const r = { gift: renderGift, vs: renderVs, title: renderTitle, start: renderStart, story: renderStory, party: renderParty, zukan: renderZukan, shop: renderShop, items: renderItems, save: renderSaveMgr, npc: renderNpc, online: () => renderOnline() }[name];
     if (r) r();
   }
   document.addEventListener('click', e => {
@@ -3349,6 +3472,31 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
       toast(`${KD[m.id].name}はLv${m.lv}になった！`);
     });
   }
+
+  /* ================= ギフトコード ================= */
+  function renderGift() {
+    const hist = Object.values(save.gifts || {});
+    $('#gift-history').innerHTML = hist.length
+      ? hist.slice().reverse().map(g => `<div class="shop-row"><div>🎁 <b>${esc(g.title || 'ギフト')}</b></div><span class="small">${esc(g.t)}</span></div>`).join('')
+      : '<p class="small">まだありません。</p>';
+  }
+  async function redeemGift() {
+    const code = $('#gift-code').value;
+    const r = GKG.redeem(save, code);
+    if (!r.ok) return toast(r.reason);
+    persist();
+    $('#gift-code').value = '';
+    renderGift();
+    const g = r.got, lines = [];
+    if (g.money) lines.push(`<div class="res-note">💰 ${yen(g.money)}</div>`);
+    for (const [k, n] of Object.entries(g.items)) lines.push(`<div class="res-note">🎁 ${ITEM_NAME[k] || k} ×${n}</div>`);
+    for (const c of g.contracts) lines.push(`<div class="res-note special">${icon(c.id)}<div>📜 <b>${esc(KD[c.id].name)}の契約書</b>（Lv${c.lv || 20}）<br><span class="small">「持ち物」から使うと契約できます。</span></div></div>`);
+    for (const m of g.kodama) lines.push(`<div class="res-note special">${icon(m.id)}<div>✨ <b>${esc(KD[m.id].name)}</b>（Lv${m.lv}）が仲間になった！</div></div>`);
+    if (g.refund) lines.push(`<div class="res-note">契約済みのコダマは ${yen(g.refund)} に換金しました</div>`);
+    await modalP(`<div class="result-modal"><div class="res-head win" style="font-size:22px">🎁 ${esc(r.gift.title || 'ギフト')}</div>${lines.join('') || '<div class="small">（報酬なし）</div>'}</div>`);
+  }
+  $('#gift-ok').onclick = redeemGift;
+  $('#gift-code').addEventListener('keydown', e => { if (e.key === 'Enter') redeemGift(); });
 
   /* ================= セーブ管理 ================= */
   function renderSaveMgr() {

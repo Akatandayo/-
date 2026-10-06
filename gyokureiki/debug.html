@@ -36,7 +36,7 @@
           <button class="btn" data-go="zukan">図鑑</button>
         </div>
         <button class="btn big vs-btn" data-go="vs">Ｖｓ</button>
-        <button class="btn sm" data-go="save">セーブ管理</button>
+        <div class="menu2"><button class="btn sm" data-go="gift">🎁 ギフトコード</button><button class="btn sm" data-go="save">セーブ管理</button></div>
       </div>
       <p class="credit">データ・画像出典：東方玉神楽「コダマデータ【玉霊姫版】」／本作は非公式ファンメイドのシミュレータです。</p>
     </div>
@@ -95,6 +95,17 @@
   <section id="scr-items" class="screen">
     <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>持ち物</span><span class="titlebar-right money" id="items-money"></span></div>
     <div class="panel"><div id="items-list" class="shop-list"></div></div>
+  </section>
+
+  <!-- ===== ギフトコード ===== -->
+  <section id="scr-gift" class="screen">
+    <div class="titlebar"><button class="back" data-go="title">◀ 戻る</button><span>ギフトコード</span><span class="titlebar-right money" id="gift-money"></span></div>
+    <div class="panel form">
+      <p class="small">配布されたギフトコードを入力すると、銭や道具、限定コダマなどを受け取れます。各コードは１つのセーブにつき１回まで。</p>
+      <div class="online-box"><input id="gift-code" placeholder="ギフトコードを入力" autocomplete="off" maxlength="40"><button class="btn" id="gift-ok">受け取る</button></div>
+      <div class="picker-head" style="margin-top:6px">受け取り履歴</div>
+      <div id="gift-history" class="shop-list"></div>
+    </div>
   </section>
 
   <!-- ===== セーブ管理 ===== -->
@@ -220,6 +231,8 @@
 <script src="js/engine.js"></script>
 <script src="js/progress.js"></script>
 <script src="js/story.js"></script>
+<script src="js/giftcore.js"></script>
+<script src="js/gifts.js"></script>
 <script src="js/app.js"></script>
 <script src="js/debug.js"></script>
 </body>

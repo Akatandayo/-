@@ -35,7 +35,7 @@
     s.owned = s.owned.filter(m => m && KD[m.id]);
     if (!s.owned.length) return null;
     s.items = s.items || {}; s.contracts = s.contracts || []; s.cleared = s.cleared || {}; s.seen = s.seen || {};
-    s.stats = s.stats || { win: 0, lose: 0 }; s.intro = s.intro || {};
+    s.stats = s.stats || { win: 0, lose: 0 }; s.intro = s.intro || {}; s.gifts = s.gifts || {};
     s.money = Math.max(0, Math.floor(+s.money || 0));
     s.party = (s.party || []).filter(uid => s.owned.some(m => m.uid === uid)).slice(0, GK.MAX_PARTY);
     if (!s.party.length) s.party = [s.owned[0].uid];
@@ -69,7 +69,7 @@
     $$('.screen').forEach(s => s.classList.toggle('active', s.id === 'scr-' + name));
     window.scrollTo(0, 0);
     refreshMoney();
-    const r = { vs: renderVs, title: renderTitle, start: renderStart, story: renderStory, party: renderParty, zukan: renderZukan, shop: renderShop, items: renderItems, save: renderSaveMgr, npc: renderNpc, online: () => renderOnline() }[name];
+    const r = { gift: renderGift, vs: renderVs, title: renderTitle, start: renderStart, story: renderStory, party: renderParty, zukan: renderZukan, shop: renderShop, items: renderItems, save: renderSaveMgr, npc: renderNpc, online: () => renderOnline() }[name];
     if (r) r();
   }
   document.addEventListener('click', e => {
@@ -586,6 +586,31 @@
       toast(`${KD[m.id].name}はLv${m.lv}になった！`);
     });
   }
+
+  /* ================= ギフトコード ================= */
+  function renderGift() {
+    const hist = Object.values(save.gifts || {});
+    $('#gift-history').innerHTML = hist.length
+      ? hist.slice().reverse().map(g => `<div class="shop-row"><div>🎁 <b>${esc(g.title || 'ギフト')}</b></div><span class="small">${esc(g.t)}</span></div>`).join('')
+      : '<p class="small">まだありません。</p>';
+  }
+  async function redeemGift() {
+    const code = $('#gift-code').value;
+    const r = GKG.redeem(save, code);
+    if (!r.ok) return toast(r.reason);
+    persist();
+    $('#gift-code').value = '';
+    renderGift();
+    const g = r.got, lines = [];
+    if (g.money) lines.push(`<div class="res-note">💰 ${yen(g.money)}</div>`);
+    for (const [k, n] of Object.entries(g.items)) lines.push(`<div class="res-note">🎁 ${ITEM_NAME[k] || k} ×${n}</div>`);
+    for (const c of g.contracts) lines.push(`<div class="res-note special">${icon(c.id)}<div>📜 <b>${esc(KD[c.id].name)}の契約書</b>（Lv${c.lv || 20}）<br><span class="small">「持ち物」から使うと契約できます。</span></div></div>`);
+    for (const m of g.kodama) lines.push(`<div class="res-note special">${icon(m.id)}<div>✨ <b>${esc(KD[m.id].name)}</b>（Lv${m.lv}）が仲間になった！</div></div>`);
+    if (g.refund) lines.push(`<div class="res-note">契約済みのコダマは ${yen(g.refund)} に換金しました</div>`);
+    await modalP(`<div class="result-modal"><div class="res-head win" style="font-size:22px">🎁 ${esc(r.gift.title || 'ギフト')}</div>${lines.join('') || '<div class="small">（報酬なし）</div>'}</div>`);
+  }
+  $('#gift-ok').onclick = redeemGift;
+  $('#gift-code').addEventListener('keydown', e => { if (e.key === 'Enter') redeemGift(); });
 
   /* ================= セーブ管理 ================= */
   function renderSaveMgr() {

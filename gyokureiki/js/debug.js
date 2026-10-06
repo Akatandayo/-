@@ -95,10 +95,10 @@
   function badge() { const n = $('#dbg-btn .n'); n.hidden = !DBG.errors.length; n.textContent = DBG.errors.length; }
   function toast(m) { const t = $('#toast'); if (!t) return; t.textContent = m; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2000); }
 
-  const TABS = { save: 'セーブ', battle: 'バトル', test: 'テスト対戦', sim: 'シミュ', data: 'データ', log: 'ログ', opt: '設定' };
+  const TABS = { save: 'セーブ', battle: 'バトル', test: 'テスト対戦', sim: 'シミュ', gift: 'ギフト', data: 'データ', log: 'ログ', opt: '設定' };
   function render() {
     let h = `<div class="tabs">${Object.entries(TABS).map(([k, v]) => `<button data-tab="${k}" class="${k === tab ? 'on' : ''}">${v}${k === 'log' && DBG.errors.length ? `(${DBG.errors.length})` : ''}</button>`).join('')}<button data-act="close">✕</button></div>`;
-    try { h += ({ save: tabSave, battle: tabBattle, test: tabTest, sim: tabSim, data: tabData, log: tabLog, opt: tabOpt })[tab](); }
+    try { h += ({ gift: tabGift, save: tabSave, battle: tabBattle, test: tabTest, sim: tabSim, data: tabData, log: tabLog, opt: tabOpt })[tab](); }
     catch (e) { h += `<div class="ng">描画エラー: ${esc(e.message)}</div>`; logError('debug-ui', e.message, e.stack); }
     box.innerHTML = h;
   }
@@ -250,6 +250,31 @@
     /* ログ */
     copyErrors() { copy(DBG.errors.map(e => `[${e.t}] ${e.kind}: ${e.msg}\n${e.stack}`).join('\n\n')); },
     clearErrors() { DBG.errors = []; badge(); render(); },
+
+    /* ギフト */
+    makeGift() {
+      const code = GKG.normalize(val('gf-code'));
+      if (!code) return toast('コードを入力してください');
+      const rewards = {};
+      const money = Math.floor(num('gf-money', 0)); if (money) rewards.money = money;
+      const items = {}; for (const k of ['chibi', 'random', 'book', 'scroll']) { const n = Math.floor(num('gf-' + k, 0)); if (n) items[k] = n; }
+      if (Object.keys(items).length) rewards.items = items;
+      const lv = num('gf-lv', 20);
+      const kd = ids(val('gf-kodama')); if (kd.length) rewards.kodama = kd.map(id => ({ id, lv }));
+      const ct = ids(val('gf-contract')); if (ct.length) rewards.contracts = ct.map(id => ({ id, lv }));
+      const entry = { h: GKG.hashCode(code), title: val('gf-title') || 'ギフト', rewards };
+      if (val('gf-from')) entry.from = val('gf-from');
+      if (val('gf-until')) entry.until = val('gf-until');
+      giftOut = { code, line: '  ' + JSON.stringify(entry) + ',', entry };
+      render();
+    },
+    copyGift() { if (giftOut) copy(giftOut.line); },
+    tryGift() {
+      if (!giftOut) return;
+      window.GK_GIFTS = (window.GK_GIFTS || []).filter(g => g.h !== giftOut.entry.h).concat([giftOut.entry]);
+      toast(`このページを開いている間だけ「${giftOut.code}」が使えます`); render();
+    },
+    resetGifts() { if (!APP.save) return; APP.save.gifts = {}; done('受け取り履歴をリセットしました'); },
 
     /* 設定 */
     applyOpt() {
@@ -446,6 +471,31 @@ Lv100: ${esc(JSON.stringify(GK.calcStats(k, 100)))}
   function tabLog() {
     return `<div class="row"><button class="b" data-act="copyErrors">全部コピー（バグ報告用）</button><button class="b" data-act="clearErrors">クリア</button></div>
       ${DBG.errors.length ? DBG.errors.slice().reverse().map(e => `<div class="card"><span class="ng">[${e.t}] ${esc(e.kind)}</span> ${esc(e.msg)}${e.stack ? `<div class="mono dim">${esc(e.stack)}</div>` : ''}</div>`).join('') : '<div class="card ok">エラーはありません</div>'}`;
+  }
+
+  /* ---------- ギフト ---------- */
+  let giftOut = null;
+  function tabGift() {
+    const gifts = GKG.list();
+    const mine = APP.save ? APP.save.gifts || {} : {};
+    let h = `<h3>登録中のギフト（js/gifts.js）${gifts.length}件</h3>`;
+    h += gifts.map(g => `<div class="card">${mine[g.h] ? '<span class="ok">受取済</span> ' : ''}<b>${esc(g.title || '')}</b> <span class="dim">${esc(g.from || '')}〜${esc(g.until || '')}</span>
+      <div class="mono dim">${esc(JSON.stringify(g.rewards))}\n${g.h.slice(0, 16)}…</div></div>`).join('') || '<div class="card dim">なし</div>';
+    h += `<div class="row"><button class="b red" data-act="resetGifts">このセーブの受け取り履歴をリセット</button></div>
+      <h3>新しいギフトコードを作る</h3>
+      <div class="row">コード <input id="gf-code" placeholder="例: HITORI-2026" style="flex:1"></div>
+      <div class="row">タイトル <input id="gf-title" placeholder="例: ひとり配布キャンペーン" style="flex:1"></div>
+      <div class="row">有効期間 <input id="gf-from" type="date"> 〜 <input id="gf-until" type="date"></div>
+      <div class="row">銭 <input id="gf-money" type="number" value="0"></div>
+      <div class="row">ちび契約書<input id="gf-chibi" type="number" value="0"> 玉霊<input id="gf-random" type="number" value="0"> 禁呪の書<input id="gf-book" type="number" value="0"> 修行の書<input id="gf-scroll" type="number" value="0"></div>
+      <div class="row">コダマ直接加入 <input id="gf-kodama" placeholder="ID/名前（カンマ区切り）" style="flex:1"></div>
+      <div class="row">契約書で配布 <input id="gf-contract" placeholder="ID/名前（カンマ区切り）" style="flex:1"> Lv<input id="gf-lv" type="number" value="20"></div>
+      <button class="b" data-act="makeGift">登録行を作成</button>`;
+    if (giftOut) h += `<div class="card">コード: <b>${esc(giftOut.code)}</b>（入力時の大文字小文字・空白・ハイフン・全角は無視されます）
+      <div class="mono">${esc(giftOut.line)}</div>
+      <div class="row"><button class="b" data-act="copyGift">登録行をコピー</button><button class="b" data-act="tryGift">今すぐ試す（一時登録）</button></div>
+      <div class="dim">コピーした行を js/gifts.js の GK_GIFTS 配列に貼り付けて、tools/build_standalone.py を実行すると配布版に反映されます。</div></div>`;
+    return h;
   }
 
   /* ---------- 設定 ---------- */
