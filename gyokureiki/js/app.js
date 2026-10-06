@@ -37,7 +37,10 @@
     s.party = (s.party || []).filter(uid => s.owned.some(m => m.uid === uid)).slice(0, GK.MAX_PARTY);
     if (!s.party.length) s.party = [s.owned[0].uid];
     s.nextUid = Math.max(s.nextUid || 1, ...s.owned.map(m => m.uid + 1));
+    const RENAMED = { '名前のない怪物': '呪いの片鱗', '★名前のない怪物': '★呪いの片鱗', 'DESTRUCTION 3,2,1': 'Möbius', '★DESTRUCTION 3,2,1': '★Möbius' };
     for (const m of s.owned) {
+      m.learned = (m.learned || []).map(n => RENAMED[n] || n);
+      m.equip = (m.equip || []).map(n => RENAMED[n] || n);
       const names = new Set(KD[m.id].spells.map(sp => sp.name));
       m.learned = (m.learned || []).filter(n => names.has(n));
       if (!m.learned.length) m.learned = GKP.basicSpells(KD[m.id]);

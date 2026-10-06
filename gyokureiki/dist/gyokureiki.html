@@ -1131,7 +1131,7 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
           ['ひとり', 'どっちでもいいや。全部まとめて撃ち抜くから。'],
         ],
         win: [['ひとり', '……へえ。俺の拳、受け止められる奴がいるんだ。']],
-        lose: [['ひとり', 'DESTRUCTION、3、2、1――。……出直してきなよ。']],
+        lose: [['ひとり', '…またね…次があったらだけど…。']],
       },
       skills: [{ name: '神の失敗作', desc: '与えるダメージがSLv×2％増加します。' }],
       spells: [
@@ -1145,18 +1145,18 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
       id: 9002, name: 'Ａひとり', types: ['雷', '闘'], hp: 70, atk: 160, df: 50, spd: 110,
       special: true,
       profile: '力を解き放った独。こぶしとマシンガンで全てを撃ち抜く、超高火力の攻撃特化型。',
-      skills: [{ name: '名前のない怪物', desc: '与えるダメージがSLv×5％増加します。' }],
+      skills: [{ name: '呪いの片鱗', desc: '与えるダメージがSLv×5％増加します。' }],
       spells: [
         sp('電子パンチ', '闘', 80, 20, 3000, '通常攻撃。'),
         sp('スパークショット', '雷', 80, 20, 3000, '通常攻撃。'),
         sp('マシンガンラッシュ', '雷', 100, 30, 20000, '自分の攻撃を10％上げます。'),
         sp('ブレイクナックル', '闘', 120, 40, 100000, '相手の防御を20％下げます。'),
-        sp('名前のない怪物', '闇', 120, 40, 100000, '自分のＨＰが減ると与えるダメージが増加します。'),
+        sp('呪いの片鱗', '闇', 120, 40, 100000, '自分のＨＰが減ると与えるダメージが増加します。'),
         sp('壁絶された記憶', '理', '―', 20, 200000, '自分の攻撃を100％上げます。'),
         sp('Southern Cross', '雷', 150, 50, 300000, '通常攻撃。'),
-        sp('DESTRUCTION 3,2,1', '雷', 200, 80, 300000, '自分の防御が80％下がります。'),
-        sp('★名前のない怪物', '闇', 150, 50, '禁呪', '自分のＨＰが減ると与えるダメージが増加します。'),
-        sp('★DESTRUCTION 3,2,1', '雷', 250, 80, '禁呪', '攻撃と同時に気絶します。'),
+        sp('Möbius', '雷', 200, 80, 300000, '自分の防御が80％下がります。'),
+        sp('★呪いの片鱗', '闇', 150, 50, '禁呪', '自分のＨＰが減ると与えるダメージが増加します。'),
+        sp('★Möbius', '雷', 250, 80, '禁呪', '攻撃と同時に気絶します。'),
       ],
     },
   ];
@@ -2061,7 +2061,7 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
   const VS_TIERS = [
     { key: 'normal', name: 'ノーマル', lv: 50, rate: 0.10, money: 3000 },
     { key: 'hard', name: 'ハード', lv: 75, rate: 0.20, money: 6000 },
-    { key: 'lunatic', name: 'ルナティック', lv: 100, rate: 0.35, money: 10000 },
+    { key: 'lunatic', name: 'ルナティック', lv: 100, rate: 1, money: 10000 },
   ];
   const VS_JOIN_LV = 20;
   // Vsの相手パーティ：系統の進化形（強い順）＋幼体。スペルは全習得から最良の4つ
@@ -2497,7 +2497,10 @@ skills:r[8].map(function(s){return{name:s[0],desc:s[1]}})}})};
     s.party = (s.party || []).filter(uid => s.owned.some(m => m.uid === uid)).slice(0, GK.MAX_PARTY);
     if (!s.party.length) s.party = [s.owned[0].uid];
     s.nextUid = Math.max(s.nextUid || 1, ...s.owned.map(m => m.uid + 1));
+    const RENAMED = { '名前のない怪物': '呪いの片鱗', '★名前のない怪物': '★呪いの片鱗', 'DESTRUCTION 3,2,1': 'Möbius', '★DESTRUCTION 3,2,1': '★Möbius' };
     for (const m of s.owned) {
+      m.learned = (m.learned || []).map(n => RENAMED[n] || n);
+      m.equip = (m.equip || []).map(n => RENAMED[n] || n);
       const names = new Set(KD[m.id].spells.map(sp => sp.name));
       m.learned = (m.learned || []).filter(n => names.has(n));
       if (!m.learned.length) m.learned = GKP.basicSpells(KD[m.id]);

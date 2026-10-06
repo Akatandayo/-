@@ -78,7 +78,7 @@
   const VS_TIERS = [
     { key: 'normal', name: 'ノーマル', lv: 50, rate: 0.10, money: 3000 },
     { key: 'hard', name: 'ハード', lv: 75, rate: 0.20, money: 6000 },
-    { key: 'lunatic', name: 'ルナティック', lv: 100, rate: 0.35, money: 10000 },
+    { key: 'lunatic', name: 'ルナティック', lv: 100, rate: 1, money: 10000 },
   ];
   const VS_JOIN_LV = 20;
   // Vsの相手パーティ：系統の進化形（強い順）＋幼体。スペルは全習得から最良の4つ
