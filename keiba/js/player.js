@@ -20,6 +20,7 @@ const Player = {
         gradedRaceCount: 0, g1RaceCount: 0, g1WinCount: 0, hofCount: 0
       },
       settings: { raceSpeed: 1 },
+      calendar: { year: 1, week: GAME_DATA.startWeek },  // ゲーム内の日付（全馬共通）
       records: {},                                      // コースレコード { raceId: { time, name } }
       pvp: { rating: 1000, best: 1000, matches: 0, wins: 0, leagueWins: {} },
       ghosts: [],                                       // フレンドから受け取った対戦コードの馬
@@ -39,6 +40,11 @@ const Player = {
     const fresh = this.createNew(this.data.name);
     for (const k of Object.keys(fresh)) if (this.data[k] === undefined) this.data[k] = fresh[k];
     for (const k of Object.keys(fresh.stats)) if (this.data.stats[k] === undefined) this.data.stats[k] = 0;
+    this.data.horses.forEach(h => {
+      if (!h.rights) h.rights = [];
+      if (!h.titles) h.titles = [];
+      if (h.actedAt === undefined) h.actedAt = -1;
+    });
   },
 
   save() { Save.save(this.data); },

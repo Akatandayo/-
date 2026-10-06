@@ -532,3 +532,38 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   .track { height: 200px; }
   .packs { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── カレンダー ── */
+.date-chip { cursor: pointer; background: rgba(245,179,1,.25); }
+.date-panel { border: 3px solid var(--accent2); background: linear-gradient(160deg, #fffaf0, #fff1cf); }
+.date-big { font-size: 20px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.date-big span { font-size: 28px; font-weight: 900; color: var(--accent); }
+.date-big small { color: var(--muted); }
+.week-races { margin: 6px 0; font-size: 13px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.wr { background: #fff; border-radius: 8px; padding: 2px 8px; border: 1px solid var(--line); font-weight: 700; }
+.wr.g1 { border-color: #1d4ed8; background: #e8efff; }
+.upcoming { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px; }
+.upcoming span { font-weight: 700; color: var(--ink); }
+.acted-count { font-size: 13px; margin-top: 4px; }
+.tag.acted { background: #dcfce7; }
+.tag.free { background: #fef3c7; }
+.tag.right { background: #fde68a; }
+.rec-target { font-size: 12px; font-weight: 700; color: var(--turf2); }
+.sub-title .link.light, .muted.light { color: #d9eadf; }
+.screen-title small { font-size: 13px; opacity: .85; margin-left: 6px; }
+.race-row.g1row { border: 3px solid #1d4ed8; }
+.months { flex-wrap: wrap; }
+.months button.cur:not(.active) { border-color: var(--accent2); }
+.cal { display: grid; gap: 10px; }
+.cal-week { background: var(--paper); border-radius: 12px; padding: 10px 12px; box-shadow: 0 3px 8px rgba(0,0,0,.25); }
+.cal-week.now { border: 3px solid var(--accent); }
+.cal-head { font-weight: 900; font-size: 15px; margin-bottom: 4px; }
+.cal-head em { font-style: normal; background: var(--accent); color: #fff; border-radius: 99px; padding: 0 8px; font-size: 12px; margin-left: 4px; }
+.cal-head small { color: var(--muted); font-weight: 400; }
+.cal-race { padding: 6px 0; border-top: 1px dashed var(--line); display: grid; gap: 2px; }
+.cal-race.g1 b { color: #1d4ed8; }
+.newyear h3 { margin: 12px 0 6px; }
+.awards { display: grid; gap: 4px; text-align: left; }
+.award { background: linear-gradient(90deg, #fff4c2, #fffaf0); border-radius: 8px; padding: 6px 10px; }
+.award small { color: var(--ok); font-weight: 800; }
+.big-note { font-size: 16px; }

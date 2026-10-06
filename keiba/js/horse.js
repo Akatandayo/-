@@ -25,6 +25,9 @@ const Horse = {
       condition: opts.condition !== undefined ? opts.condition : 70,
       fatigue: opts.fatigue || 0,
       skills: opts.skills || [],
+      rights: [],           // 優先出走権（レースID）
+      titles: [],           // JRA賞などの称号
+      actedAt: -1,
       route: opts.route || null,
       fatherId: opts.fatherId || '',
       motherId: opts.motherId || '',
@@ -113,16 +116,14 @@ const Horse = {
   },
 
   // 1週進める（調教・レース・休養のたびに呼ぶ）。誕生日なら true
-  advanceWeek(h) {
-    h.week++;
-    // 調子は少しずつランダムに揺れる
-    h.condition = Util.clamp(h.condition + Util.randInt(-6, 5), 0, 100);
-    if (h.week >= GAME_DATA.weeksPerYear) {
-      h.week = 0;
-      h.age++;
-      return true;
-    }
-    return false;
+  // 1週に1回だけ行動できる（調教・レース・休養）
+  acted(h) { return h.actedAt === Calendar.abs(); },
+  act(h) { h.actedAt = Calendar.abs(); },
+
+  // 週が終わるときの自然な変化（疲労が少し抜け、調子が揺れる）
+  weekPass(h) {
+    h.fatigue = Util.clamp(h.fatigue - 4, 0, 100);
+    h.condition = Util.clamp(h.condition + Util.randInt(-5, 4), 0, 100);
   },
 
   mustRetire(h) { return h.age >= GAME_DATA.retireAge; },

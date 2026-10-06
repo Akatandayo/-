@@ -3,12 +3,13 @@
 
 const Training = {
   menus: {
-    speed: { label: 'スピード調教', icon: '⚡', gains: { speed: 4, power: 1 }, fatigue: 14, exp: 20 },
-    stamina: { label: 'スタミナ調教', icon: '❤️', gains: { stamina: 4, guts: 1 }, fatigue: 14, exp: 20 },
-    power: { label: 'パワー調教', icon: '💪', gains: { power: 4, speed: 1 }, fatigue: 14, exp: 20 },
-    guts: { label: '根性調教', icon: '🔥', gains: { guts: 4, stamina: 1 }, fatigue: 12, exp: 20 },
-    intelligence: { label: '賢さ調教', icon: '🧠', gains: { intelligence: 4, speed: 1 }, fatigue: 8, exp: 20 },
-    light: { label: '軽め調教', icon: '🚶', gains: { speed: 1, stamina: 1, power: 1 }, fatigue: 4, condition: 4, exp: 12,
+    // 1年＝48週なので、1回あたりの伸びは控えめ
+    speed: { label: 'スピード調教', icon: '⚡', gains: { speed: 2, power: 0.5 }, fatigue: 13, exp: 10 },
+    stamina: { label: 'スタミナ調教', icon: '❤️', gains: { stamina: 2, guts: 0.5 }, fatigue: 13, exp: 10 },
+    power: { label: 'パワー調教', icon: '💪', gains: { power: 2, speed: 0.5 }, fatigue: 13, exp: 10 },
+    guts: { label: '根性調教', icon: '🔥', gains: { guts: 2, stamina: 0.5 }, fatigue: 11, exp: 10 },
+    intelligence: { label: '賢さ調教', icon: '🧠', gains: { intelligence: 2, speed: 0.5 }, fatigue: 7, exp: 10 },
+    light: { label: '軽め調教', icon: '🚶', gains: { speed: 0.5, stamina: 0.5, power: 0.5 }, fatigue: 3, condition: 4, exp: 6,
       desc: '少しだけ鍛える。疲れにくく調子をキープ。' },
     rest: { label: '休養', icon: '💤', gains: {}, fatigue: -45, condition: 12, exp: 0, desc: '疲労を大きく回復する。' }
   },
@@ -24,6 +25,7 @@ const Training = {
 
   canTrain(h) {
     if (Horse.mustRetire(h)) return { ok: false, reason: '引退の時期です。' };
+    if (Horse.acted(h)) return { ok: false, reason: '今週はもう行動しました。「次の週へ」で進めよう' };
     return { ok: true };
   },
 
@@ -53,7 +55,8 @@ const Training = {
     let conditionDelta = menu.condition || 0;
     if (menu.fatigue > 0 && h.fatigue >= 70) conditionDelta -= 10; // 疲れているのに追い込むと調子が落ちる
     h.fatigue = Util.clamp(h.fatigue + menu.fatigue, 0, 100);
-    const birthday = Horse.advanceWeek(h);
+    Horse.act(h);
+    const birthday = false;
     h.condition = Util.clamp(h.condition + conditionDelta, 0, 100);
     const levelUps = Horse.addExp(h, menu.exp);
     Player.bump('trainCount');
@@ -66,13 +69,17 @@ const Training = {
     if (h.fatigue >= 40 || h.condition < 30) return { menu: 'light', reason: '疲れ気味なので、軽めに調整します。' };
 
     const route = h.route || Horse.recommendRoute(h);
-    const next = Race.nextRace(h, route);
+    const target = Race.targetRace(h);
+    const next = target ? target.race : null;
     let weights = Object.assign({}, this.routeWeights[route]);
     let lead = `目標は${Horse.routeInfo(route).name}路線です。`;
+    if (target && target.weeks <= 1) {
+      return { menu: 'light', reason: `「${next.name}」が${target.weeks === 0 ? '今週' : '来週'}です。レースに向けて軽めに調整します。` };
+    }
     if (next) {
       const cat = Horse.distCat(next.distance);
       const catLabel = GAME_DATA.distances.find(d => d.key === cat).label;
-      lead = `次のレースは「${next.name}」（${catLabel}・${next.distance}m）です。`;
+      lead = `目標は${Calendar.label(next.week)}の「${next.name}」（${catLabel}・${next.distance}m・あと${target.weeks}週）。`;
       if (cat === 'sprint') { weights.speed += 1; weights.power += 0.5; }
       if (cat === 'long') { weights.stamina += 1.5; }
       if (cat === 'classic') { weights.stamina += 0.7; }
@@ -93,7 +100,9 @@ const Training = {
   // アイテム使用
   useItem(h, itemId) {
     const item = Cards.get(itemId);
-    if (!item || item.type !== 'item' || !Player.removeCard(itemId)) return null;
+    if (!item || item.type !== 'item') return null;
+    if (item.use.train && !this.canTrain(h).ok) return null;
+    if (!Player.removeCard(itemId)) return null;
     const u = item.use;
     let result;
     if (u.train) {

@@ -11,9 +11,9 @@ const HallOfFame = {
 
   titles(h) {
     const t = [];
-    const g1Won = h.history.filter(x => x.place === 1 && x.grade === 'g1').map(x => Race.get(x.raceId)).filter(Boolean);
-    if (this.wonAll(h, 'classic')) t.push('三冠馬');
-    if (this.wonAll(h, 'tiara')) t.push('ティアラの女王');
+    const g1Won = h.history.filter(x => x.place === 1 && x.grade === 'g1').map(x => Race.gradedAll().find(r => r.id === x.raceId)).filter(Boolean);
+    Object.entries(GAME_DATA.crowns).forEach(([k, c]) => { if (this.wonAll(h, k)) t.push(c.title); });
+    (h.titles || []).filter(x => x.includes('年度代表馬')).forEach(x => t.push(x));
     if (h.record.g1Wins >= 5) t.push('伝説の王者');
     if (h.record.wins >= 10) t.push(h.gender === 'female' ? '不屈の女王' : '不屈の名馬');
     if (g1Won.some(r => r.route === 'sprint')) t.push('スプリント王');
@@ -21,6 +21,7 @@ const HallOfFame = {
     if (g1Won.some(r => r.route === 'senior')) t.push('古馬の王者');
     if (g1Won.some(r => r.surface === 'dirt')) t.push('ダートの覇者');
     if (g1Won.some(r => r.distance >= 3000)) t.push('最強ステイヤー');
+    (h.titles || []).filter(x => !x.includes('年度代表馬')).forEach(x => t.push(x));
     return t;
   },
 

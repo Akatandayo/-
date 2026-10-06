@@ -13,7 +13,10 @@ const UI = {
     cardQuery: '',
     raceHorse: null,
     raceRoute: null,
-    raceMode: 'route',
+    raceMode: 'week',
+    calMonth: null,
+    calRoute: 'all',
+    showAllRaces: false,
     league: 'bronze',
     friendPick: [],
     friendCourse: 1,
@@ -56,6 +59,7 @@ const UI = {
     this.el('topbar').innerHTML = `
       <div class="brand" onclick="UI.show('home')">🐎🃏 <span>馬主カード</span></div>
       <div class="wallet">
+        <span class="chip date-chip" title="カレンダー" onclick="UI.state.raceMode='calendar';UI.state.calMonth=null;UI.show('race')">📅 ${Calendar.fullLabel()}</span>
         <span class="chip" title="所持金">💰 ${Util.money(p.money)}</span>
         <span class="chip" title="所持カード">🃏 ${cardCount}</span>
       </div>`;
@@ -192,7 +196,8 @@ const UI = {
     const p = Player.data;
     const m = Missions.current();
     const guide = App.guide();
-    const recs = p.horses.map(h => ({ h, race: Race.nextRace(h, h.route || Horse.recommendRoute(h)) })).filter(x => x.race).slice(0, 3);
+    const recs = p.horses.filter(h => !Horse.acted(h) && !Horse.mustRetire(h))
+      .map(h => ({ h, race: Race.nextRace(h), target: Race.targetRace(h) })).filter(x => x.race || x.target).slice(0, 4);
     const totalCards = Object.values(p.cards).reduce((a, b) => a + b, 0);
     return `
       <section class="hero">
@@ -204,6 +209,8 @@ const UI = {
           <div><small>殿堂馬</small><b>${p.hallOfFame.length}頭</b></div>
         </div>
       </section>
+
+      ${this.datePanel()}
 
       ${guide ? `<section class="guide" onclick="${guide.action}"><div class="guide-icon">💡</div><div><b>${guide.title}</b><p>${guide.text}</p></div><span class="guide-go">▶</span></section>` : ''}
 
@@ -222,10 +229,11 @@ const UI = {
           : `<p class="muted">まだ馬がいません。配合で最初の馬を作ろう！</p><button class="btn primary" onclick="UI.show('breed')">🧬 配合へ</button>`}
       </section>
 
-      ${recs.length ? `<section class="panel"><h3>🏇 おすすめレース</h3>
-        ${recs.map(({ h, race }) => `<div class="rec-row" onclick="App.goRace('${h.id}','${race.route}')">
-          <span class="rec-horse">${Util.esc(h.name)}</span><span>→</span>${this.gradeBadge(race.grade)}<b>${race.name}</b>
-          <small>${race.surface === 'turf' ? '芝' : 'ダート'}${race.distance}m</small></div>`).join('')}
+      ${recs.length ? `<section class="panel"><h3>🏇 今週のおすすめ・目標</h3>
+        ${recs.map(({ h, race, target }) => `<div class="rec-row" onclick="App.goRace('${h.id}')">
+          <span class="rec-horse">${Util.esc(h.name)}</span>
+          ${race ? `<span>今週 →</span>${this.gradeBadge(race.grade)}<b>${race.name}</b><small>${race.surface === 'turf' ? '芝' : 'ダ'}${race.distance}m</small>` : ''}
+          ${target && target.weeks > 0 ? `<span class="rec-target">🎯 ${target.race.name}（あと${target.weeks}週）</span>` : ''}</div>`).join('')}
       </section>` : ''}
 
       <section class="panel">
@@ -248,6 +256,29 @@ const UI = {
           <li>🆕 黄金配合・インブリードなどの特殊配合、血統表、カードパック、記録・ランキングを追加。</li>
           <li>わからない言葉は <span class="help static">？</span> ボタンをタップ！</li>
         </ul>
+      </section>`;
+  },
+
+  // カレンダー（日付・次の週へ・今週の重賞）
+  datePanel() {
+    const p = Player.data;
+    const c = Calendar.now();
+    const season = c.month <= 2 || c.month === 12 ? '❄️ 冬' : c.month <= 5 ? '🌸 春' : c.month <= 8 ? '☀️ 夏' : '🍁 秋';
+    const active = p.horses.filter(h => !Horse.mustRetire(h));
+    const acted = active.filter(h => Horse.acted(h)).length;
+    const thisWeek = Race.gradedOn(c.week);
+    const upcoming = Race.gradedAll().filter(r => r.grade === 'g1').map(r => ({ r, n: Calendar.until(r.week) }))
+      .filter(x => x.n > 0 && x.n <= 6).sort((a, b) => a.n - b.n).slice(0, 3);
+    return `<section class="panel date-panel">
+        <div class="date-big">📅 <b>${c.year}年目</b> <span>${c.month}月${c.wom}週</span> <small>${season}</small>${this.help('calendar')}</div>
+        ${thisWeek.length ? `<div class="week-races">今週の重賞：${thisWeek.map(r => `<span class="wr ${r.grade}">${this.gradeBadge(r.grade)}${r.name}</span>`).join('')}</div>` : '<div class="week-races muted">今週は重賞なし（条件戦のみ）</div>'}
+        ${upcoming.length ? `<div class="upcoming">まもなく：${upcoming.map(x => `<span>${x.r.name}<small>（あと${x.n}週）</small></span>`).join('')}</div>` : ''}
+        ${active.length ? `<div class="acted-count">今週の行動：<b>${acted}/${active.length}頭</b> 済み</div>` : ''}
+        <div class="btn-row">
+          <button class="btn primary big" onclick="App.nextWeek()">▶ 次の週へ</button>
+          <button class="btn" onclick="App.nextWeek(4)">⏩ 4週すすめる</button>
+        </div>
+        <p class="muted small">まだ行動していない馬はおまかせ調教をします。⏩は目標の重賞がある週と、年明けで止まります。</p>
       </section>`;
   },
 
@@ -280,7 +311,8 @@ const UI = {
           <div class="hh-name">${this.rarity(h.rarity)} ${Util.esc(h.name)} <button class="link" onclick="App.rename('${h.id}')">✏</button></div>
           <div class="hh-tags">
             <span class="tag">${Horse.genderLabel(h)}</span>
-            <span class="tag">${h.age}歳（${h.week + 1}/${GAME_DATA.weeksPerYear}週）</span>
+            <span class="tag">${h.age}歳</span>
+            <span class="tag ${Horse.acted(h) ? 'acted' : 'free'}">${Horse.acted(h) ? '✅ 今週は行動済み' : '🟢 今週まだ行動できる'}</span>
             ${this.styleTag(h.runningStyle)}
             <span class="tag">🌱 ${growth.label}${this.help('growth')}</span>
           </div>
@@ -347,15 +379,16 @@ const UI = {
     const menuBtn = (k, m) => {
       const gains = Object.keys(m.gains).map(s => GAME_DATA.stats.find(x => x.key === s).icon).join('');
       const fatTxt = m.fatigue > 0 ? `疲労+${m.fatigue}` : `疲労${m.fatigue}`;
-      return `<button class="train-btn ${k === plan.menu ? 'suggest' : ''}" onclick="App.train('${h.id}','${k}')">
+      return `<button class="train-btn ${k === plan.menu ? 'suggest' : ''}" ${Horse.acted(h) ? 'disabled' : ''} onclick="App.train('${h.id}','${k}')">
         <span class="ti">${m.icon}</span><b>${m.label}</b><small>${gains || '回復'}・${fatTxt}</small></button>`;
     };
     return `
       <section class="panel auto-train">
         <h3>🤖 おまかせ調教</h3>
         <p>${plan.reason}</p>
-        <button class="btn primary big" onclick="App.autoTrain('${h.id}')">おまかせで1週すすめる</button>
-        <button class="btn" onclick="App.autoTrain('${h.id}',4)">おまかせ×4週</button>
+        ${Horse.acted(h) ? `<p class="ok">✅ 今週はもう行動しました。</p><button class="btn primary big" onclick="App.nextWeek()">▶ 次の週へ（${Calendar.label((Calendar.get().week + 1) % Calendar.W)}）</button>`
+          : `<button class="btn primary big" onclick="App.autoTrain('${h.id}')">🤖 今週はおまかせ調教</button>`}
+        ${(h.rights || []).length ? `<p class="rec">🎫 優先出走権：${h.rights.map(id => (Race.get(id) || {}).name).filter(Boolean).join('・')}${this.help('right')}</p>` : ''}
       </section>
       <section class="panel">
         <h3>🏋️ 調教メニュー <small class="muted">成長度：${effLabel}</small></h3>
@@ -528,46 +561,104 @@ const UI = {
   // ─────────── レース選択 ───────────
   raceView() {
     const p = Player.data;
-    if (!p.horses.length) return `<h2 class="screen-title">🏇 レース</h2><div class="empty">🐣<p>出走できる馬がいません。<br>まずは配合で馬を作ろう！</p><button class="btn primary big" onclick="UI.show('breed')">🧬 配合へ</button></div>`;
+    if (!p.horses.length && !['calendar'].includes(this.state.raceMode)) {
+      return `<h2 class="screen-title">🏇 レース</h2><div class="empty">🐣<p>出走できる馬がいません。<br>まずは配合で馬を作ろう！</p><button class="btn primary big" onclick="UI.show('breed')">🧬 配合へ</button>
+        <button class="btn" onclick="UI.state.raceMode='calendar';UI.render()">📅 重賞カレンダーを見る</button></div>`;
+    }
     const st = this.state;
-    if (!st.raceHorse || !Player.horse(st.raceHorse)) st.raceHorse = p.horses[0].id;
+    if (p.horses.length && (!st.raceHorse || !Player.horse(st.raceHorse))) st.raceHorse = p.horses[0].id;
     const h = Player.horse(st.raceHorse);
-    const modes = [['route', '🏇 路線レース'], ['league', '⚔ リーグ戦'], ['friend', '🤝 フレンド対戦']];
-    const head = `<h2 class="screen-title">🏇 レース</h2>
+    const modes = [['week', '🏇 今週'], ['calendar', '📅 日程'], ['league', '⚔ リーグ'], ['friend', '🤝 対戦']];
+    const head = `<h2 class="screen-title">🏇 レース <small>📅 ${Calendar.fullLabel()}</small></h2>
       <div class="seg">${modes.map(([k, l]) => `<button class="${st.raceMode === k ? 'active' : ''}" onclick="UI.state.raceMode='${k}';UI.render()">${l}</button>`).join('')}</div>
-      <div class="chips horse-pick">${p.horses.map(x => `<button class="${x.id === h.id ? 'active' : ''}" onclick="UI.state.raceHorse='${x.id}';UI.state.raceRoute=null;UI.render()">${Util.esc(x.name)}</button>`).join('')}</div>`;
+      ${h ? `<div class="chips horse-pick">${p.horses.map(x => `<button class="${x.id === h.id ? 'active' : ''}" onclick="UI.state.raceHorse='${x.id}';UI.render()">${Horse.acted(x) ? '✅' : ''}${Util.esc(x.name)}</button>`).join('')}</div>` : ''}`;
     if (st.raceMode === 'league') return head + this.leagueView(h);
     if (st.raceMode === 'friend') return head + this.friendView(h);
-    const rec = Horse.recommendRoute(h);
-    if (!st.raceRoute) st.raceRoute = h.route || rec;
-    const route = Horse.routeInfo(st.raceRoute);
-    const races = Race.available(h, st.raceRoute);
-    const cond = Horse.conditionInfo(h);
-    const fat = Horse.fatigueInfo(h);
-
-    return `${head}
-      <section class="panel race-horse">
-        <div><b>${Util.esc(h.name)}</b> ${Horse.genderLabel(h)} ${h.age}歳 ${this.styleTag(h.runningStyle)}</div>
-        <div class="muted small">${Horse.mainAptText(h)}・${h.record.wins}勝・<span class="${cond.cls}">${cond.icon}${cond.label}</span>・<span class="${fat.cls}">😓${fat.label}</span></div>
-        <p class="rec">💡 この馬は <b>${Horse.routeInfo(rec).icon}${Horse.routeInfo(rec).name}</b> 路線がおすすめ！</p>
-      </section>
-      <div class="routes">${GAME_DATA.routes.map(r => `<button class="route-btn ${r.id === st.raceRoute ? 'active' : ''}" onclick="UI.state.raceRoute='${r.id}';UI.render()">
-        <span class="ri">${r.icon}</span>${r.name}${r.id === rec ? '<em>おすすめ</em>' : ''}</button>`).join('')}</div>
-      <section class="panel route-desc"><b>${route.icon} ${route.name}</b>（${route.range}）<p class="muted">${route.desc}<br>重要能力：${route.key}</p></section>
-      <div class="race-list">${races.map(({ race, elig }) => this.raceRow(h, race, elig)).join('')}</div>
-      <p class="muted small">レースの格${this.help('grade')}：勝ち星を重ねると上のクラスに挑戦できます。</p>`;
+    if (st.raceMode === 'calendar') return head + this.calendarView(h);
+    return head + this.weekView(h);
   },
 
-  raceRow(h, race, elig) {
+  // ─────────── 今週のレース ───────────
+  weekView(h) {
+    const st = this.state;
+    const c = Calendar.now();
+    const rec = Horse.recommendRoute(h);
+    const cond = Horse.conditionInfo(h);
+    const fat = Horse.fatigueInfo(h);
+    const target = Race.targetRace(h);
+    const all = Race.weekRaces().map(race => ({ race, elig: Race.eligibility(h, race, { ignoreActed: true }) }));
+    const graded = all.filter(x => x.race.kind === 'graded');
+    const conds = all.filter(x => x.race.kind !== 'graded' && (st.showAllRaces || x.elig.ok || x.elig.reason === '疲れすぎ。休ませよう'))
+      .sort((a, b) => Number(b.elig.ok) - Number(a.elig.ok) || Race.fit(h, b.race) - Race.fit(h, a.race));
+    const acted = Horse.acted(h);
+    return `
+      <section class="panel race-horse">
+        <div><b>${Util.esc(h.name)}</b> ${Horse.genderLabel(h)} ${h.age}歳 ${this.styleTag(h.runningStyle)} <span class="tag">${h.record.wins}勝・${Race.isOpen(h) ? 'オープン' : h.record.wins === 0 ? '未勝利' : `${h.record.wins}勝クラス`}</span>${this.help('grade')}</div>
+        <div class="muted small">${Horse.mainAptText(h)}・<span class="${cond.cls}">${cond.icon}${cond.label}</span>・<span class="${fat.cls}">😓${fat.label}</span></div>
+        <p class="rec">💡 おすすめ路線：<b>${Horse.routeInfo(rec).icon}${Horse.routeInfo(rec).name}</b>
+          ${target ? `<br>🎯 目標：<b>${target.race.name}</b>（${Calendar.label(target.race.week)}・${target.weeks ? `あと${target.weeks}週` : '今週！'}）` : ''}
+          ${(h.rights || []).length ? `<br>🎫 優先出走権：${h.rights.map(id => (Race.get(id) || {}).name).filter(Boolean).join('・')}` : ''}</p>
+        ${acted ? `<p class="warn">✅ この馬は今週もう行動しました。</p><button class="btn primary" onclick="App.nextWeek()">▶ 次の週へ</button>` : ''}
+      </section>
+      <h3 class="sub-title">🏆 ${c.month}月${c.wom}週の重賞</h3>
+      ${graded.length ? `<div class="race-list">${graded.map(({ race, elig }) => this.raceRow(h, race, elig, acted)).join('')}</div>` : '<p class="muted light">今週は重賞がありません。</p>'}
+      <h3 class="sub-title">🏁 条件戦・オープン <button class="link light" onclick="UI.state.showAllRaces=!UI.state.showAllRaces;UI.render()">${st.showAllRaces ? '出られるレースだけ表示' : 'すべて表示'}</button></h3>
+      ${conds.length ? `<div class="race-list">${conds.map(({ race, elig }) => this.raceRow(h, race, elig, acted)).join('')}</div>`
+        : `<p class="muted light">${h.age === 2 && c.month < 6 ? '2歳の新馬戦は6月1週から始まります。それまでは調教で鍛えよう！' : '今週この馬が出られる条件戦はありません。'}</p>`}`;
+  },
+
+  raceRow(h, race, elig, acted) {
     const cat = Horse.distCat(race.distance);
-    const g = GAME_DATA.grades[race.grade];
     const dl = GAME_DATA.distances.find(d => d.key === cat);
     const sl = GAME_DATA.surfaces.find(s => s.key === race.surface);
-    return `<div class="race-row ${elig.ok ? '' : 'locked'}">
-      <div class="rr-head">${this.gradeBadge(race.grade)}<b>${race.name}</b>${race.female ? '<span class="tag">牝馬限定</span>' : ''}</div>
-      <div class="rr-info">${sl.icon}${sl.label} ${race.distance}m（${dl.label}）・${race.field}頭・1着賞金 ${Util.money(g.prize)}</div>
+    const trialTo = race.trial ? Race.get(race.trial.to) : null;
+    return `<div class="race-row ${elig.ok ? '' : 'locked'} ${race.grade === 'g1' ? 'g1row' : ''}">
+      <div class="rr-head">${this.gradeBadge(race.grade)}<b>${race.name}</b>${race.female ? '<span class="tag">牝馬限定</span>' : ''}${elig.right ? '<span class="tag right">🎫 優先出走権</span>' : ''}</div>
+      <div class="rr-info">📍${race.venue} ${sl.icon}${sl.label}${race.distance}m（${dl.label}）・${Race.AGE_LABEL[race.ages]}・${race.field}頭・1着 ${Util.money(race.prize)}</div>
+      ${trialTo ? `<div class="rr-info">🎫 ${race.trial.top}着以内で「${trialTo.name}」の優先出走権</div>` : ''}
       <div class="rr-apt">この馬の適性：距離 <b>${Util.stars(h.aptitude[cat])}</b> 馬場 <b>${Util.stars(h.aptitude[race.surface])}</b></div>
-      ${elig.ok ? `<button class="btn primary" onclick="App.prepareRace('${h.id}','${race.id}')">出走する</button>` : `<div class="lock">🔒 ${elig.reason}</div>`}
+      ${elig.ok ? `<button class="btn primary" ${acted ? 'disabled' : ''} onclick="App.prepareRace('${h.id}','${race.id}')">${acted ? '今週は行動済み' : '出走する'}</button>` : `<div class="lock">🔒 ${elig.reason}</div>`}
+    </div>`;
+  },
+
+  // ─────────── 重賞カレンダー ───────────
+  calendarView(h) {
+    const st = this.state;
+    const now = Calendar.now();
+    const month = st.calMonth || now.month;
+    const routes = [['all', 'すべて'], ...GAME_DATA.routes.map(r => [r.id, `${r.icon}${r.name}`])];
+    const list = Race.gradedAll().filter(r => r.m === month && (st.calRoute === 'all' || r.route === st.calRoute));
+    const weeks = [1, 2, 3, 4].map(w => {
+      const races = list.filter(r => r.w === w).sort((a, b) => GAME_DATA.grades[b.grade].order - GAME_DATA.grades[a.grade].order);
+      const week = Calendar.weekOf(month, w);
+      const until = Calendar.until(week);
+      const isNow = week === now.week;
+      return `<div class="cal-week ${isNow ? 'now' : ''}">
+        <div class="cal-head">${month}月${w}週 ${isNow ? '<em>今週</em>' : `<small>あと${until}週${now.week + until >= Calendar.W ? '（来年）' : ''}</small>`}</div>
+        ${races.length ? races.map(r => this.calRow(h, r, until)).join('') : '<div class="muted small">重賞なし</div>'}
+      </div>`;
+    }).join('');
+    return `
+      <section class="panel">
+        <p class="muted small">実在のJRA重賞の年間スケジュールです（ゲームでは1か月を4週にまとめています）。${this.help('calendar')}</p>
+        <div class="chips months">${Array.from({ length: 12 }, (_, i) => i + 1).map(m => `<button class="${m === month ? 'active' : ''} ${m === now.month ? 'cur' : ''}" onclick="UI.state.calMonth=${m};UI.render()">${m}月</button>`).join('')}</div>
+        <div class="chips" style="margin-top:6px">${routes.map(([k, l]) => `<button class="${st.calRoute === k ? 'active' : ''}" onclick="UI.state.calRoute='${k}';UI.render()">${l}</button>`).join('')}</div>
+      </section>
+      <div class="cal">${weeks}</div>`;
+  },
+
+  calRow(h, r, until) {
+    let status = '';
+    if (h) {
+      const age = h.age + (Calendar.get().week + until >= Calendar.W ? 1 : 0);
+      const e = Race.eligibility(Object.assign({}, h, { age }), r, { ignoreActed: true, ignoreFatigue: true });
+      status = e.ok ? `<span class="ok small">✅ ${Util.esc(h.name)}は出走できます${e.right ? '（優先出走権）' : ''}</span>` : `<span class="muted small">🔒 ${e.reason}</span>`;
+    }
+    const trialTo = r.trial ? Race.get(r.trial.to) : null;
+    return `<div class="cal-race ${r.grade}">
+      <div>${this.gradeBadge(r.grade)}<b>${r.name}</b>${r.crown ? ` <span class="tag">${GAME_DATA.crowns[r.crown].title}</span>` : ''}</div>
+      <div class="muted small">📍${r.venue} ${r.surface === 'turf' ? '芝' : 'ダート'}${r.distance}m・${Race.AGE_LABEL[r.ages]}${r.f ? '牝馬' : ''}・1着 ${Util.money(r.prize)}${trialTo ? `・🎫${r.trial.top}着以内→${trialTo.name}` : ''}</div>
+      ${status}
     </div>`;
   },
 
@@ -665,7 +756,9 @@ const UI = {
       const list = all.filter(x => x.record[key] > 0).sort((a, b) => b.record[key] - a.record[key]).slice(0, 10);
       return `<section class="panel"><h3>${label}</h3>${list.length ? `<table class="hist">${list.map((x, i) => `<tr><td class="rank r${i + 1}">${i + 1}</td><td>${this.rarity(x.rarity)} ${Util.esc(x.name)} <small class="muted">${x.tag}</small></td><td class="num">${fmt(x.record[key])}</td></tr>`).join('')}</table>` : '<p class="muted">まだ記録がありません。</p>'}</section>`;
     };
-    const recs = GAME_DATA.races.filter(r => p.records[r.id]);
+    const recs = Object.entries(p.records).filter(([, v]) => v.raceName)
+      .map(([id, v]) => ({ id, name: v.raceName, grade: v.grade, distance: v.distance, surface: v.surface }))
+      .sort((a, b) => GAME_DATA.grades[b.grade].order - GAME_DATA.grades[a.grade].order);
     return `<button class="back" onclick="UI.show('home')">◀ ホーム</button>
       <h2 class="screen-title">📊 記録・ランキング</h2>
       <section class="panel"><h3>👤 オーナー成績</h3>
@@ -917,6 +1010,7 @@ const RaceView = {
       const cards = this.cardsHTML(reward.cards);
       body = `${this.placeHead(reward.place, fin[0].name)}
         ${reward.newRecord ? '<p class="center ok">⏱ コースレコード更新！</p>' : ''}
+        ${reward.rightTo ? `<p class="center ok big-note">🎫「${reward.rightTo.name}」の優先出走権を獲得！</p>` : ''}
         ${this.resultTable(fin)}
         <h3>🎁 報酬</h3>
         <div class="rewards">

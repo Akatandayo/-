@@ -50,9 +50,11 @@ GAME_DATA.growthTypes = {
   late: { label: '晩成', desc: '若いうちはゆっくり。4歳以降に大きく伸びる。', mult: [0.7, 0.95, 1.25, 1.1, 0.7] }
 };
 
-// 1年あたりの週数（調教・レース・休養で1週進む）
-GAME_DATA.weeksPerYear = 12;
-GAME_DATA.retireAge = 7;
+// カレンダー：1年＝12か月×4週。馬は1週に1回行動（調教・レース・休養）できる。
+// 1月1週に年が明け、全馬が1歳年をとる（JRAと同じく誕生日は1月1日扱い）。
+GAME_DATA.weeksPerYear = 48;
+GAME_DATA.startWeek = 20;   // ゲーム開始は6月1週（2歳新馬戦の開幕）
+GAME_DATA.retireAge = 6;    // 6歳の1月1週で引退
 GAME_DATA.maxStable = 6;
 
 // ───────── 種牡馬カード ─────────
@@ -238,70 +240,171 @@ GAME_DATA.routes = [
 ];
 
 // ───────── レース ─────────
-// grade: debut(新馬) maiden(未勝利) cond(条件) op(オープン) g3 g2 g1
-// minWins/maxWins で出走条件（勝利数）、ageMin/ageMax、female(牝馬限定)
+// grade: debut(新馬) maiden(未勝利) cond(1勝クラス) c2(2勝クラス) c3(3勝クラス) op(オープン) g3 g2 g1
+// クラスは勝利数で決まる：0勝→新馬・未勝利、1勝→1勝クラス、2勝→2勝クラス、3勝→3勝クラス、4勝以上 or 重賞勝ち→オープン
 GAME_DATA.grades = {
   debut: { label: '新馬', short: '新馬', npc: 46, prize: 700, exp: 60, order: 0 },
-  maiden: { label: '未勝利', short: '未勝利', npc: 48, prize: 600, exp: 60, order: 1 },
-  cond: { label: '1勝クラス', short: '条件', npc: 55, prize: 1000, exp: 80, order: 2 },
-  op: { label: 'オープン', short: 'OP', npc: 63, prize: 1800, exp: 100, order: 3 },
-  g3: { label: 'GⅢ', short: 'GⅢ', npc: 71, prize: 3500, exp: 130, order: 4 },
-  g2: { label: 'GⅡ', short: 'GⅡ', npc: 75, prize: 6000, exp: 160, order: 5 },
-  g1: { label: 'GⅠ', short: 'GⅠ', npc: 80, prize: 15000, exp: 220, order: 6 }
+  maiden: { label: '未勝利', short: '未勝利', npc: 48, prize: 550, exp: 60, order: 1 },
+  cond: { label: '1勝クラス', short: '1勝', npc: 55, prize: 800, exp: 80, order: 2 },
+  c2: { label: '2勝クラス', short: '2勝', npc: 59, prize: 1100, exp: 90, order: 3 },
+  c3: { label: '3勝クラス', short: '3勝', npc: 63, prize: 1500, exp: 100, order: 4 },
+  op: { label: 'オープン', short: 'OP', npc: 66, prize: 2400, exp: 110, order: 5 },
+  g3: { label: 'GⅢ', short: 'GⅢ', npc: 71, prize: 4000, exp: 130, order: 6 },
+  g2: { label: 'GⅡ', short: 'GⅡ', npc: 75, prize: 6000, exp: 160, order: 7 },
+  g1: { label: 'GⅠ', short: 'GⅠ', npc: 80, prize: 15000, exp: 220, order: 8 }
 };
 
+// ───────── JRA 重賞カレンダー ─────────
+// 実在のJRA重賞（年間スケジュールをもとに、1か月＝4週に丸めて配置）。
+// m=月 w=週(1〜4) ages: '2'=2歳 '3'=3歳 '3+'=3歳以上 '4+'=4歳以上  f=牝馬限定
+// trial: { to: 本番レースID, top: 何着までに優先出走権 }  crown: 三冠などの称号判定用
+// prize: 1着賞金（ゲーム内G。省略時は格の標準値）
 GAME_DATA.races = [
-  // ⚡ スプリンター
-  { id: 'sp_debut', route: 'sprint', name: 'ジュニア新馬戦', grade: 'debut', distance: 1000, surface: 'turf', ageMin: 2, ageMax: 2, maxWins: 0, field: 10 },
-  { id: 'sp_maiden', route: 'sprint', name: 'スプリント未勝利戦', grade: 'maiden', distance: 1200, surface: 'dirt', ageMin: 2, ageMax: 3, maxWins: 0, field: 10 },
-  { id: 'sp_cond', route: 'sprint', name: '若葉スプリント', grade: 'cond', distance: 1200, surface: 'turf', ageMin: 2, minWins: 1, maxWins: 2, field: 12 },
-  { id: 'sp_op', route: 'sprint', name: '韋駄天ステークス', grade: 'op', distance: 1400, surface: 'turf', ageMin: 2, minWins: 2, field: 12 },
-  { id: 'sp_g3', route: 'sprint', name: '春雷ステークス', grade: 'g3', distance: 1200, surface: 'turf', ageMin: 3, minWins: 2, field: 14 },
-  { id: 'sp_g2', route: 'sprint', name: '疾風ステークス', grade: 'g2', distance: 1400, surface: 'turf', ageMin: 3, minWins: 3, field: 14 },
-  { id: 'sp_g1', route: 'sprint', name: 'スプリント王決定戦', grade: 'g1', distance: 1200, surface: 'turf', ageMin: 3, minWins: 4, field: 16 },
-  { id: 'sp_g1d', route: 'sprint', name: 'ダートスプリントカップ', grade: 'g1', distance: 1200, surface: 'dirt', ageMin: 3, minWins: 4, field: 14 },
-  // 🌟 マイラー
-  { id: 'mi_debut', route: 'mile', name: 'メイクデビュー', grade: 'debut', distance: 1600, surface: 'turf', ageMin: 2, ageMax: 2, maxWins: 0, field: 10 },
-  { id: 'mi_maiden', route: 'mile', name: 'マイル未勝利戦', grade: 'maiden', distance: 1400, surface: 'dirt', ageMin: 2, ageMax: 3, maxWins: 0, field: 12 },
-  { id: 'mi_cond', route: 'mile', name: '若草マイル', grade: 'cond', distance: 1600, surface: 'turf', ageMin: 2, minWins: 1, maxWins: 2, field: 12 },
-  { id: 'mi_op', route: 'mile', name: 'ポラリスステークス', grade: 'op', distance: 1800, surface: 'turf', ageMin: 2, minWins: 2, field: 12 },
-  { id: 'mi_g3', route: 'mile', name: '流星ステークス', grade: 'g3', distance: 1600, surface: 'dirt', ageMin: 3, minWins: 2, field: 14 },
-  { id: 'mi_g2', route: 'mile', name: '蒼天マイラーズ', grade: 'g2', distance: 1600, surface: 'turf', ageMin: 3, minWins: 3, field: 14 },
-  { id: 'mi_g1', route: 'mile', name: 'マイルカップ', grade: 'g1', distance: 1600, surface: 'turf', ageMin: 3, ageMax: 3, minWins: 3, field: 16 },
-  { id: 'mi_g1b', route: 'mile', name: 'マイル王決定戦', grade: 'g1', distance: 1600, surface: 'turf', ageMin: 3, minWins: 4, field: 16 },
-  { id: 'mi_g1d', route: 'mile', name: 'ダートマイル王者決定戦', grade: 'g1', distance: 1600, surface: 'dirt', ageMin: 3, minWins: 4, field: 14 },
-  // 👑 クラシック
-  { id: 'cl_debut', route: 'classic', name: 'クラシック新馬戦', grade: 'debut', distance: 1800, surface: 'turf', ageMin: 2, ageMax: 2, maxWins: 0, field: 10 },
-  { id: 'cl_maiden', route: 'classic', name: '中距離未勝利戦', grade: 'maiden', distance: 2000, surface: 'turf', ageMin: 2, ageMax: 3, maxWins: 0, field: 12 },
-  { id: 'cl_op', route: 'classic', name: 'ジュニアステークス', grade: 'op', distance: 2000, surface: 'turf', ageMin: 2, ageMax: 2, minWins: 1, field: 12 },
-  { id: 'cl_cond', route: 'classic', name: '若駒ステークス', grade: 'cond', distance: 2000, surface: 'turf', ageMin: 3, ageMax: 3, minWins: 1, maxWins: 1, field: 12 },
-  { id: 'cl_g2', route: 'classic', name: 'クラシックトライアル', grade: 'g2', distance: 2000, surface: 'turf', ageMin: 3, ageMax: 3, minWins: 1, field: 14 },
-  { id: 'cl_g1a', route: 'classic', name: '王冠賞', grade: 'g1', distance: 2000, surface: 'turf', ageMin: 3, ageMax: 3, minWins: 2, field: 16, crown: 'classic' },
-  { id: 'cl_g1b', route: 'classic', name: 'グランドダービー', grade: 'g1', distance: 2400, surface: 'turf', ageMin: 3, ageMax: 3, minWins: 2, field: 16, crown: 'classic' },
-  { id: 'cl_g1c', route: 'classic', name: 'ロングクラウン', grade: 'g1', distance: 3000, surface: 'turf', ageMin: 3, ageMax: 3, minWins: 2, field: 16, crown: 'classic' },
-  // 🌸 牝馬クラシック
-  { id: 'fi_debut', route: 'filly', name: '牝馬新馬戦', grade: 'debut', distance: 1600, surface: 'turf', ageMin: 2, ageMax: 2, maxWins: 0, female: true, field: 10 },
-  { id: 'fi_maiden', route: 'filly', name: '牝馬未勝利戦', grade: 'maiden', distance: 1600, surface: 'turf', ageMin: 2, ageMax: 3, maxWins: 0, female: true, field: 12 },
-  { id: 'fi_op', route: 'filly', name: 'フェアリーステークス', grade: 'op', distance: 1600, surface: 'turf', ageMin: 2, minWins: 1, female: true, field: 12 },
-  { id: 'fi_g2', route: 'filly', name: 'ティアラトライアル', grade: 'g2', distance: 1600, surface: 'turf', ageMin: 3, ageMax: 3, minWins: 1, female: true, field: 14 },
-  { id: 'fi_g1a', route: 'filly', name: '桜冠賞', grade: 'g1', distance: 1600, surface: 'turf', ageMin: 3, ageMax: 3, minWins: 2, female: true, field: 16, crown: 'tiara' },
-  { id: 'fi_g1b', route: 'filly', name: '女王ティアラ', grade: 'g1', distance: 2400, surface: 'turf', ageMin: 3, ageMax: 3, minWins: 2, female: true, field: 16, crown: 'tiara' },
-  { id: 'fi_g1c', route: 'filly', name: 'ティアラファイナル', grade: 'g1', distance: 2000, surface: 'turf', ageMin: 3, ageMax: 3, minWins: 2, female: true, field: 16, crown: 'tiara' },
-  // 🏆 王道古馬
-  { id: 'se_cond', route: 'senior', name: '古馬条件戦', grade: 'cond', distance: 2000, surface: 'turf', ageMin: 3, maxWins: 2, field: 12 },
-  { id: 'se_op', route: 'senior', name: 'アンドロメダステークス', grade: 'op', distance: 2200, surface: 'turf', ageMin: 3, minWins: 2, field: 12 },
-  { id: 'se_g2', route: 'senior', name: '大阪城ステークス', grade: 'g2', distance: 2500, surface: 'turf', ageMin: 4, minWins: 3, field: 14 },
-  { id: 'se_g1a', route: 'senior', name: '王者決定戦', grade: 'g1', distance: 2000, surface: 'turf', ageMin: 4, minWins: 4, field: 16 },
-  { id: 'se_g1b', route: 'senior', name: '春の長距離王', grade: 'g1', distance: 3200, surface: 'turf', ageMin: 4, minWins: 4, field: 16 },
-  { id: 'se_g1c', route: 'senior', name: '年末王者決定戦', grade: 'g1', distance: 2500, surface: 'turf', ageMin: 3, minWins: 4, field: 16 },
-  { id: 'se_g1d', route: 'senior', name: 'ダート王者決定戦', grade: 'g1', distance: 2000, surface: 'dirt', ageMin: 4, minWins: 4, field: 14 }
+  // 1月
+  { id: 'nakayama_kinpai', name: '中山金杯', grade: 'g3', m: 1, w: 1, venue: '中山', surface: 'turf', distance: 2000, ages: '4+' },
+  { id: 'kyoto_kinpai', name: '京都金杯', grade: 'g3', m: 1, w: 1, venue: '京都', surface: 'turf', distance: 1600, ages: '4+' },
+  { id: 'fairy', name: 'フェアリーステークス', grade: 'g3', m: 1, w: 2, venue: '中山', surface: 'turf', distance: 1600, ages: '3', f: true },
+  { id: 'shinzan', name: 'シンザン記念', grade: 'g3', m: 1, w: 2, venue: '京都', surface: 'turf', distance: 1600, ages: '3' },
+  { id: 'keisei', name: '京成杯', grade: 'g3', m: 1, w: 3, venue: '中山', surface: 'turf', distance: 2000, ages: '3' },
+  { id: 'nikkei_shinshun', name: '日経新春杯', grade: 'g2', m: 1, w: 3, venue: '京都', surface: 'turf', distance: 2400, ages: '4+' },
+  { id: 'ajcc', name: 'アメリカジョッキークラブカップ', grade: 'g2', m: 1, w: 4, venue: '中山', surface: 'turf', distance: 2200, ages: '4+' },
+  { id: 'tokai', name: '東海ステークス', grade: 'g2', m: 1, w: 4, venue: '中京', surface: 'dirt', distance: 1800, ages: '4+' },
+  { id: 'silkroad', name: 'シルクロードステークス', grade: 'g3', m: 1, w: 4, venue: '京都', surface: 'turf', distance: 1200, ages: '4+' },
+  // 2月
+  { id: 'negishi', name: '根岸ステークス', grade: 'g3', m: 2, w: 1, venue: '東京', surface: 'dirt', distance: 1400, ages: '4+' },
+  { id: 'kisaragi', name: 'きさらぎ賞', grade: 'g3', m: 2, w: 1, venue: '京都', surface: 'turf', distance: 1800, ages: '3' },
+  { id: 'tokyo_shinbun', name: '東京新聞杯', grade: 'g3', m: 2, w: 2, venue: '東京', surface: 'turf', distance: 1600, ages: '4+' },
+  { id: 'kyodo', name: '共同通信杯', grade: 'g3', m: 2, w: 2, venue: '東京', surface: 'turf', distance: 1800, ages: '3' },
+  { id: 'kyoto_kinen', name: '京都記念', grade: 'g2', m: 2, w: 3, venue: '京都', surface: 'turf', distance: 2200, ages: '4+' },
+  { id: 'queen_cup', name: 'クイーンカップ', grade: 'g3', m: 2, w: 3, venue: '東京', surface: 'turf', distance: 1600, ages: '3', f: true },
+  { id: 'february', name: 'フェブラリーステークス', grade: 'g1', m: 2, w: 4, venue: '東京', surface: 'dirt', distance: 1600, ages: '4+', prize: 12000 },
+  { id: 'kokura_daishoten', name: '小倉大賞典', grade: 'g3', m: 2, w: 4, venue: '小倉', surface: 'turf', distance: 1800, ages: '4+' },
+  // 3月
+  { id: 'nakayama_kinen', name: '中山記念', grade: 'g2', m: 3, w: 1, venue: '中山', surface: 'turf', distance: 1800, ages: '4+' },
+  { id: 'hankyu_hai', name: '阪急杯', grade: 'g3', m: 3, w: 1, venue: '阪神', surface: 'turf', distance: 1400, ages: '4+' },
+  { id: 'tulip', name: 'チューリップ賞', grade: 'g2', m: 3, w: 1, venue: '阪神', surface: 'turf', distance: 1600, ages: '3', f: true, trial: { to: 'oka', top: 3 } },
+  { id: 'yayoi', name: '弥生賞ディープインパクト記念', grade: 'g2', m: 3, w: 2, venue: '中山', surface: 'turf', distance: 2000, ages: '3', trial: { to: 'satsuki', top: 3 } },
+  { id: 'kinko', name: '金鯱賞', grade: 'g2', m: 3, w: 2, venue: '中京', surface: 'turf', distance: 2000, ages: '4+' },
+  { id: 'spring_s', name: 'スプリングステークス', grade: 'g2', m: 3, w: 3, venue: '中山', surface: 'turf', distance: 1800, ages: '3', trial: { to: 'satsuki', top: 3 } },
+  { id: 'hanshin_daishoten', name: '阪神大賞典', grade: 'g2', m: 3, w: 3, venue: '阪神', surface: 'turf', distance: 3000, ages: '4+' },
+  { id: 'fillies_review', name: 'フィリーズレビュー', grade: 'g2', m: 3, w: 3, venue: '阪神', surface: 'turf', distance: 1400, ages: '3', f: true, trial: { to: 'oka', top: 3 } },
+  { id: 'takamatsu', name: '高松宮記念', grade: 'g1', m: 3, w: 4, venue: '中京', surface: 'turf', distance: 1200, ages: '4+', prize: 17000 },
+  { id: 'nikkei_sho', name: '日経賞', grade: 'g2', m: 3, w: 4, venue: '中山', surface: 'turf', distance: 2500, ages: '4+' },
+  { id: 'mainichi_hai', name: '毎日杯', grade: 'g3', m: 3, w: 4, venue: '阪神', surface: 'turf', distance: 1800, ages: '3' },
+  { id: 'march_s', name: 'マーチステークス', grade: 'g3', m: 3, w: 4, venue: '中山', surface: 'dirt', distance: 1800, ages: '4+' },
+  // 4月
+  { id: 'osaka_hai', name: '大阪杯', grade: 'g1', m: 4, w: 1, venue: '阪神', surface: 'turf', distance: 2000, ages: '4+', prize: 30000, crown: 'springSenior' },
+  { id: 'derby_kyo', name: 'ダービー卿チャレンジトロフィー', grade: 'g3', m: 4, w: 1, venue: '中山', surface: 'turf', distance: 1600, ages: '4+' },
+  { id: 'oka', name: '桜花賞', grade: 'g1', m: 4, w: 2, venue: '阪神', surface: 'turf', distance: 1600, ages: '3', f: true, prize: 15000, crown: 'tiara', trial: { to: 'oaks', top: 5 } },
+  { id: 'nzt', name: 'ニュージーランドトロフィー', grade: 'g2', m: 4, w: 2, venue: '中山', surface: 'turf', distance: 1600, ages: '3', trial: { to: 'nhk_mile', top: 3 } },
+  { id: 'hanshin_himba', name: '阪神牝馬ステークス', grade: 'g2', m: 4, w: 2, venue: '阪神', surface: 'turf', distance: 1600, ages: '4+', f: true },
+  { id: 'satsuki', name: '皐月賞', grade: 'g1', m: 4, w: 3, venue: '中山', surface: 'turf', distance: 2000, ages: '3', prize: 20000, crown: 'classic', trial: { to: 'derby', top: 5 } },
+  { id: 'antares', name: 'アンタレスステークス', grade: 'g3', m: 4, w: 3, venue: '阪神', surface: 'dirt', distance: 1800, ages: '4+' },
+  { id: 'tenno_spring', name: '天皇賞（春）', grade: 'g1', m: 4, w: 4, venue: '京都', surface: 'turf', distance: 3200, ages: '4+', prize: 30000, crown: 'springSenior' },
+  { id: 'flora', name: 'フローラステークス', grade: 'g2', m: 4, w: 4, venue: '東京', surface: 'turf', distance: 2000, ages: '3', f: true, trial: { to: 'oaks', top: 2 } },
+  { id: 'aoba', name: '青葉賞', grade: 'g2', m: 4, w: 4, venue: '東京', surface: 'turf', distance: 2400, ages: '3', trial: { to: 'derby', top: 2 } },
+  { id: 'milers_cup', name: 'マイラーズカップ', grade: 'g2', m: 4, w: 4, venue: '京都', surface: 'turf', distance: 1600, ages: '4+' },
+  // 5月
+  { id: 'nhk_mile', name: 'NHKマイルカップ', grade: 'g1', m: 5, w: 1, venue: '東京', surface: 'turf', distance: 1600, ages: '3', prize: 13000 },
+  { id: 'kyoto_shinbun', name: '京都新聞杯', grade: 'g2', m: 5, w: 1, venue: '京都', surface: 'turf', distance: 2200, ages: '3', trial: { to: 'derby', top: 2 } },
+  { id: 'victoria_mile', name: 'ヴィクトリアマイル', grade: 'g1', m: 5, w: 2, venue: '東京', surface: 'turf', distance: 1600, ages: '4+', f: true, prize: 13000 },
+  { id: 'keio_spring', name: '京王杯スプリングカップ', grade: 'g2', m: 5, w: 2, venue: '東京', surface: 'turf', distance: 1400, ages: '4+' },
+  { id: 'oaks', name: 'オークス（優駿牝馬）', grade: 'g1', m: 5, w: 3, venue: '東京', surface: 'turf', distance: 2400, ages: '3', f: true, prize: 15000, crown: 'tiara' },
+  { id: 'heian', name: '平安ステークス', grade: 'g3', m: 5, w: 3, venue: '京都', surface: 'dirt', distance: 1900, ages: '4+' },
+  { id: 'derby', name: '日本ダービー（東京優駿）', grade: 'g1', m: 5, w: 4, venue: '東京', surface: 'turf', distance: 2400, ages: '3', prize: 30000, crown: 'classic' },
+  { id: 'meguro', name: '目黒記念', grade: 'g2', m: 5, w: 4, venue: '東京', surface: 'turf', distance: 2500, ages: '4+' },
+  // 6月
+  { id: 'yasuda', name: '安田記念', grade: 'g1', m: 6, w: 1, venue: '東京', surface: 'turf', distance: 1600, ages: '3+', prize: 18000 },
+  { id: 'naruo', name: '鳴尾記念', grade: 'g3', m: 6, w: 1, venue: '阪神', surface: 'turf', distance: 2000, ages: '3+' },
+  { id: 'epsom', name: 'エプソムカップ', grade: 'g3', m: 6, w: 2, venue: '東京', surface: 'turf', distance: 1800, ages: '3+' },
+  { id: 'hakodate_sprint', name: '函館スプリントステークス', grade: 'g3', m: 6, w: 2, venue: '函館', surface: 'turf', distance: 1200, ages: '3+' },
+  { id: 'unicorn', name: 'ユニコーンステークス', grade: 'g3', m: 6, w: 3, venue: '東京', surface: 'dirt', distance: 1600, ages: '3' },
+  { id: 'mermaid', name: 'マーメイドステークス', grade: 'g3', m: 6, w: 3, venue: '阪神', surface: 'turf', distance: 2000, ages: '3+', f: true },
+  { id: 'takarazuka', name: '宝塚記念', grade: 'g1', m: 6, w: 4, venue: '阪神', surface: 'turf', distance: 2200, ages: '3+', prize: 30000, crown: 'springSenior' },
+  // 7月
+  { id: 'radio_nikkei', name: 'ラジオNIKKEI賞', grade: 'g3', m: 7, w: 1, venue: '福島', surface: 'turf', distance: 1800, ages: '3' },
+  { id: 'cbc', name: 'CBC賞', grade: 'g3', m: 7, w: 1, venue: '中京', surface: 'turf', distance: 1200, ages: '3+' },
+  { id: 'tanabata', name: '七夕賞', grade: 'g3', m: 7, w: 2, venue: '福島', surface: 'turf', distance: 2000, ages: '3+' },
+  { id: 'procyon', name: 'プロキオンステークス', grade: 'g3', m: 7, w: 2, venue: '中京', surface: 'dirt', distance: 1400, ages: '3+' },
+  { id: 'hakodate_kinen', name: '函館記念', grade: 'g3', m: 7, w: 3, venue: '函館', surface: 'turf', distance: 2000, ages: '3+' },
+  { id: 'hakodate_2yo', name: '函館2歳ステークス', grade: 'g3', m: 7, w: 3, venue: '函館', surface: 'turf', distance: 1200, ages: '2' },
+  { id: 'chukyo_kinen', name: '中京記念', grade: 'g3', m: 7, w: 4, venue: '中京', surface: 'turf', distance: 1600, ages: '3+' },
+  // 8月
+  { id: 'ibis', name: 'アイビスサマーダッシュ', grade: 'g3', m: 8, w: 1, venue: '新潟', surface: 'turf', distance: 1000, ages: '3+' },
+  { id: 'queen_s', name: 'クイーンステークス', grade: 'g3', m: 8, w: 1, venue: '札幌', surface: 'turf', distance: 1800, ages: '3+', f: true },
+  { id: 'sekiya', name: '関屋記念', grade: 'g3', m: 8, w: 2, venue: '新潟', surface: 'turf', distance: 1600, ages: '3+' },
+  { id: 'elm', name: 'エルムステークス', grade: 'g3', m: 8, w: 2, venue: '札幌', surface: 'dirt', distance: 1700, ages: '3+' },
+  { id: 'sapporo_kinen', name: '札幌記念', grade: 'g2', m: 8, w: 3, venue: '札幌', surface: 'turf', distance: 2000, ages: '3+' },
+  { id: 'kitakyushu', name: '北九州記念', grade: 'g3', m: 8, w: 3, venue: '小倉', surface: 'turf', distance: 1200, ages: '3+' },
+  { id: 'niigata_2yo', name: '新潟2歳ステークス', grade: 'g3', m: 8, w: 4, venue: '新潟', surface: 'turf', distance: 1600, ages: '2' },
+  { id: 'keeneland', name: 'キーンランドカップ', grade: 'g3', m: 8, w: 4, venue: '札幌', surface: 'turf', distance: 1200, ages: '3+' },
+  // 9月
+  { id: 'sapporo_2yo', name: '札幌2歳ステークス', grade: 'g3', m: 9, w: 1, venue: '札幌', surface: 'turf', distance: 1800, ages: '2' },
+  { id: 'kokura_2yo', name: '小倉2歳ステークス', grade: 'g3', m: 9, w: 1, venue: '小倉', surface: 'turf', distance: 1200, ages: '2' },
+  { id: 'niigata_kinen', name: '新潟記念', grade: 'g3', m: 9, w: 1, venue: '新潟', surface: 'turf', distance: 2000, ages: '3+' },
+  { id: 'shion', name: '紫苑ステークス', grade: 'g2', m: 9, w: 2, venue: '中山', surface: 'turf', distance: 2000, ages: '3', f: true, trial: { to: 'shuka', top: 3 } },
+  { id: 'centaur', name: 'セントウルステークス', grade: 'g2', m: 9, w: 2, venue: '阪神', surface: 'turf', distance: 1200, ages: '3+' },
+  { id: 'keisei_ah', name: '京成杯オータムハンデキャップ', grade: 'g3', m: 9, w: 2, venue: '中山', surface: 'turf', distance: 1600, ages: '3+' },
+  { id: 'rose', name: 'ローズステークス', grade: 'g2', m: 9, w: 3, venue: '阪神', surface: 'turf', distance: 1800, ages: '3', f: true, trial: { to: 'shuka', top: 3 } },
+  { id: 'st_lite', name: 'セントライト記念', grade: 'g2', m: 9, w: 3, venue: '中山', surface: 'turf', distance: 2200, ages: '3', trial: { to: 'kikka', top: 3 } },
+  { id: 'kobe_shinbun', name: '神戸新聞杯', grade: 'g2', m: 9, w: 4, venue: '阪神', surface: 'turf', distance: 2400, ages: '3', trial: { to: 'kikka', top: 3 } },
+  { id: 'all_comers', name: 'オールカマー', grade: 'g2', m: 9, w: 4, venue: '中山', surface: 'turf', distance: 2200, ages: '3+' },
+  { id: 'sprinters', name: 'スプリンターズステークス', grade: 'g1', m: 9, w: 4, venue: '中山', surface: 'turf', distance: 1200, ages: '3+', prize: 17000 },
+  // 10月
+  { id: 'saudi_rc', name: 'サウジアラビアロイヤルカップ', grade: 'g3', m: 10, w: 1, venue: '東京', surface: 'turf', distance: 1600, ages: '2' },
+  { id: 'sirius', name: 'シリウスステークス', grade: 'g3', m: 10, w: 1, venue: '阪神', surface: 'dirt', distance: 2000, ages: '3+' },
+  { id: 'mainichi_okan', name: '毎日王冠', grade: 'g2', m: 10, w: 2, venue: '東京', surface: 'turf', distance: 1800, ages: '3+' },
+  { id: 'kyoto_daishoten', name: '京都大賞典', grade: 'g2', m: 10, w: 2, venue: '京都', surface: 'turf', distance: 2400, ages: '3+' },
+  { id: 'shuka', name: '秋華賞', grade: 'g1', m: 10, w: 3, venue: '京都', surface: 'turf', distance: 2000, ages: '3', f: true, prize: 11000, crown: 'tiara' },
+  { id: 'fuchu_himba', name: '府中牝馬ステークス', grade: 'g2', m: 10, w: 3, venue: '東京', surface: 'turf', distance: 1800, ages: '3+', f: true },
+  { id: 'kikka', name: '菊花賞', grade: 'g1', m: 10, w: 4, venue: '京都', surface: 'turf', distance: 3000, ages: '3', prize: 20000, crown: 'classic' },
+  { id: 'fuji_s', name: '富士ステークス', grade: 'g2', m: 10, w: 4, venue: '東京', surface: 'turf', distance: 1600, ages: '3+' },
+  // 11月
+  { id: 'tenno_autumn', name: '天皇賞（秋）', grade: 'g1', m: 11, w: 1, venue: '東京', surface: 'turf', distance: 2000, ages: '3+', prize: 30000, crown: 'autumnSenior' },
+  { id: 'artemis', name: 'アルテミスステークス', grade: 'g3', m: 11, w: 1, venue: '東京', surface: 'turf', distance: 1600, ages: '2', f: true },
+  { id: 'argentina', name: 'アルゼンチン共和国杯', grade: 'g2', m: 11, w: 1, venue: '東京', surface: 'turf', distance: 2500, ages: '3+' },
+  { id: 'keio_2yo', name: '京王杯2歳ステークス', grade: 'g2', m: 11, w: 1, venue: '東京', surface: 'turf', distance: 1400, ages: '2' },
+  { id: 'elizabeth', name: 'エリザベス女王杯', grade: 'g1', m: 11, w: 2, venue: '京都', surface: 'turf', distance: 2200, ages: '3+', f: true, prize: 13000 },
+  { id: 'daily_2yo', name: 'デイリー杯2歳ステークス', grade: 'g2', m: 11, w: 2, venue: '京都', surface: 'turf', distance: 1600, ages: '2' },
+  { id: 'musashino', name: '武蔵野ステークス', grade: 'g3', m: 11, w: 2, venue: '東京', surface: 'dirt', distance: 1600, ages: '3+' },
+  { id: 'mile_cs', name: 'マイルチャンピオンシップ', grade: 'g1', m: 11, w: 3, venue: '京都', surface: 'turf', distance: 1600, ages: '3+', prize: 18000 },
+  { id: 'tokyo_sports_2yo', name: '東京スポーツ杯2歳ステークス', grade: 'g2', m: 11, w: 3, venue: '東京', surface: 'turf', distance: 1800, ages: '2' },
+  { id: 'japan_cup', name: 'ジャパンカップ', grade: 'g1', m: 11, w: 4, venue: '東京', surface: 'turf', distance: 2400, ages: '3+', prize: 50000, crown: 'autumnSenior' },
+  { id: 'keihan_hai', name: '京阪杯', grade: 'g3', m: 11, w: 4, venue: '京都', surface: 'turf', distance: 1200, ages: '3+' },
+  // 12月
+  { id: 'champions_cup', name: 'チャンピオンズカップ', grade: 'g1', m: 12, w: 1, venue: '中京', surface: 'dirt', distance: 1800, ages: '3+', prize: 12000 },
+  { id: 'stayers', name: 'ステイヤーズステークス', grade: 'g2', m: 12, w: 1, venue: '中山', surface: 'turf', distance: 3600, ages: '3+' },
+  { id: 'challenge_cup', name: 'チャレンジカップ', grade: 'g3', m: 12, w: 1, venue: '阪神', surface: 'turf', distance: 2000, ages: '3+' },
+  { id: 'hanshin_jf', name: '阪神ジュベナイルフィリーズ', grade: 'g1', m: 12, w: 2, venue: '阪神', surface: 'turf', distance: 1600, ages: '2', f: true, prize: 7000 },
+  { id: 'capella', name: 'カペラステークス', grade: 'g3', m: 12, w: 2, venue: '中山', surface: 'dirt', distance: 1200, ages: '3+' },
+  { id: 'asahi_fs', name: '朝日杯フューチュリティステークス', grade: 'g1', m: 12, w: 3, venue: '阪神', surface: 'turf', distance: 1600, ages: '2', prize: 7000 },
+  { id: 'turquoise', name: 'ターコイズステークス', grade: 'g3', m: 12, w: 3, venue: '中山', surface: 'turf', distance: 1600, ages: '3+', f: true },
+  { id: 'arima', name: '有馬記念', grade: 'g1', m: 12, w: 4, venue: '中山', surface: 'turf', distance: 2500, ages: '3+', prize: 50000, crown: 'autumnSenior' },
+  { id: 'hopeful', name: 'ホープフルステークス', grade: 'g1', m: 12, w: 4, venue: '中山', surface: 'turf', distance: 2000, ages: '2', prize: 7000 },
+  { id: 'hanshin_cup', name: '阪神カップ', grade: 'g2', m: 12, w: 4, venue: '阪神', surface: 'turf', distance: 1400, ages: '3+' }
 ];
+
+// 平場（条件戦）を開催する競馬場（月ごと・おおよそ）
+GAME_DATA.venuesByMonth = [
+  ['中山', '京都'], ['東京', '京都'], ['中山', '阪神'], ['中山', '阪神'], ['東京', '京都'], ['東京', '阪神'],
+  ['福島', '小倉'], ['新潟', '札幌'], ['中山', '阪神'], ['東京', '京都'], ['東京', '京都'], ['中山', '阪神']
+];
+
+// 三冠などの称号
+GAME_DATA.crowns = {
+  classic: { title: '三冠馬', desc: '皐月賞・日本ダービー・菊花賞' },
+  tiara: { title: '牝馬三冠', desc: '桜花賞・オークス・秋華賞' },
+  springSenior: { title: '春古馬三冠', desc: '大阪杯・天皇賞（春）・宝塚記念' },
+  autumnSenior: { title: '秋古馬三冠', desc: '天皇賞（秋）・ジャパンカップ・有馬記念' }
+};
 
 // レース後に手に入るカードのレアリティ確率（%）
 GAME_DATA.dropTable = {
   debut: { N: 60, R: 35, SR: 5, SSR: 0, UR: 0 },
   maiden: { N: 60, R: 35, SR: 5, SSR: 0, UR: 0 },
   cond: { N: 45, R: 40, SR: 13, SSR: 2, UR: 0 },
+  c2: { N: 38, R: 42, SR: 16, SSR: 4, UR: 0 },
+  c3: { N: 32, R: 44, SR: 19, SSR: 5, UR: 0 },
   op: { N: 30, R: 45, SR: 20, SSR: 5, UR: 0 },
   g3: { N: 10, R: 45, SR: 35, SSR: 9, UR: 1 },
   g2: { N: 0, R: 40, SR: 40, SSR: 17, UR: 3 },
@@ -318,15 +421,15 @@ GAME_DATA.missions = [
     reward: { money: 500, cards: ['k_goodpos'] } },
   { id: 'ms_skill', title: 'スキルを装備しよう', hint: '馬の詳細画面の「スキル」から装備', check: 'equipCount', target: 1,
     reward: { money: 500, cards: ['i_speedtr', 'i_stamtr'] } },
-  { id: 'ms_race', title: '初レースに出走しよう', hint: '🏇 レース から路線を選んで出走', check: 'raceCount', target: 1,
+  { id: 'ms_race', title: '初レースに出走しよう', hint: '🏇 レース →「今週のレース」から出走（2歳新馬戦は6月から）', check: 'raceCount', target: 1,
     reward: { money: 1000, cards: ['i_carrot'] } },
   { id: 'ms_win', title: '1勝しよう', hint: '調教で鍛えて、適性に合ったレースへ', check: 'winCount', target: 1,
     reward: { money: 2000, cards: ['k_kick'] } },
   { id: 'ms_sr', title: 'SR以上のカードを獲得しよう', hint: 'レースで勝つとカードがもらえる', check: 'srCount', target: 1,
     reward: { money: 2000, cards: ['i_exp'] } },
-  { id: 'ms_graded', title: '重賞（GⅢ以上）に出走しよう', hint: '2勝以上すると重賞に挑戦できる', check: 'gradedRaceCount', target: 1,
+  { id: 'ms_graded', title: '重賞（GⅢ以上）に出走しよう', hint: '1勝すると2歳・3歳の重賞に挑戦できる（重賞カレンダーをチェック）', check: 'gradedRaceCount', target: 1,
     reward: { money: 3000, cards: ['i_special'] } },
-  { id: 'ms_g1run', title: 'GⅠに挑戦しよう', hint: '勝ち星を重ねてGⅠの舞台へ', check: 'g1RaceCount', target: 1,
+  { id: 'ms_g1run', title: 'GⅠに挑戦しよう', hint: '勝ち星やトライアルの優先出走権でGⅠの舞台へ', check: 'g1RaceCount', target: 1,
     reward: { money: 5000, cards: ['i_potential'] } },
   { id: 'ms_g1win', title: 'GⅠを勝とう', hint: '適性・スキル・調子をそろえよう', check: 'g1WinCount', target: 1,
     reward: { money: 10000, cards: ['s_king'] } },
@@ -351,7 +454,10 @@ GAME_DATA.glossary = {
   potential: { title: '💎 素質', body: 'その馬がどこまで強くなれるかの目安です。配合で決まり、調教で限界まで伸ばせます。' },
   rarity: { title: '🃏 レアリティ', body: 'N → R → SR → SSR → UR の順に珍しいカード。でも、低レアにも特別な血統を持つカードがあります。' },
   skill: { title: '🎴 スキル', body: '1頭に3つまで装備できます。レース中に条件を満たすと自動で発動！脚質が合うスキルは効果が大きくなります。' },
-  grade: { title: '🏅 レースの格', body: '新馬 → 未勝利 → 条件 → オープン → GⅢ → GⅡ → GⅠ の順に格が高く、賞金やカード報酬も豪華になります。勝利数で出走できるレースが増えます。' },
+  grade: { title: '🏅 クラスとレースの格', body: '勝利数でクラスが上がります。<br>0勝：新馬・未勝利 → 1勝：1勝クラス → 2勝：2勝クラス → 3勝：3勝クラス → 4勝以上（または重賞勝ち）：オープン<br>重賞（GⅢ・GⅡ・GⅠ）は格が高く、賞金やカード報酬も豪華です。2歳・3歳の重賞は1勝から挑戦できます。' },
+  calendar: { title: '📅 カレンダー', body: '1年は12か月×4週。馬は1週に1回、調教・レース・休養のどれかができます。<br>重賞は実際のJRAと同じ時期に行われます（皐月賞は4月、日本ダービーは5月、有馬記念は12月など）。<br>「次の週へ」を押すと、まだ行動していない馬はおまかせ調教をして1週すすみます。' },
+  newyear: { title: '🎍 1月1週（年明け）', body: '年が明けると全ての馬が1歳年をとります（JRAと同じく誕生日は1月1日扱い）。<br>前の年の成績から年度表彰（JRA賞）が選ばれ、賞金ボーナスがもらえます。<br>6歳になった馬は引退の時期です。' },
+  right: { title: '🎫 優先出走権', body: 'トライアルレースで上位に入ると、GⅠ本番への優先出走権がもらえます。<br>例：弥生賞・スプリングS 3着以内 → 皐月賞、チューリップ賞 3着以内 → 桜花賞、青葉賞 2着以内 → 日本ダービー' },
   hof: { title: '🏛 殿堂入り', body: 'GⅠ 3勝、または通算10勝した馬が引退すると殿堂入りします。殿堂馬は配合カードになって、血統を次の世代へつなげます。' }
 };
 

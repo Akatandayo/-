@@ -41,11 +41,18 @@ const App = {
       return { title: '新しい馬を作ろう！', text: '厩舎に馬がいません。配合で新しい馬を誕生させよう。', action: "UI.show('breed')" };
     }
     const h = p.horses[0];
+    const now = Calendar.now();
+    if (s.raceCount === 0 && s.trainCount > 0 && h.age === 2 && now.month < 6) {
+      return { title: 'デビューは6月から！', text: '2歳の新馬戦は6月1週から始まります。それまで調教で鍛えて「次の週へ」で進めよう。', action: `UI.state.horseTab='train';UI.show('horse',{id:'${h.id}'})` };
+    }
     if (s.trainCount === 0) {
       return { title: '次は調教！', text: `${Util.esc(h.name)}を鍛えよう。迷ったら「おまかせ」でOK！`, action: `UI.state.horseTab='train';UI.show('horse',{id:'${h.id}'})` };
     }
     if (s.raceCount === 0) {
-      return { title: 'レースに出してみよう！', text: '新馬戦は勝利数0の馬だけが出られるデビュー戦です。', action: `App.goRace('${h.id}')` };
+      return { title: 'レースに出してみよう！', text: '「今週のレース」の新馬戦は、まだ走ったことのない馬だけが出られるデビュー戦です。', action: `App.goRace('${h.id}')` };
+    }
+    if (p.horses.every(x => Horse.acted(x) || Horse.mustRetire(x))) {
+      return { title: '今週はみんな行動ずみ！', text: '「次の週へ」を押してカレンダーを進めよう。', action: 'App.nextWeek()' };
     }
     return null;
   },
@@ -220,9 +227,71 @@ const App = {
     const h = Player.horse(hid);
     if (!h) return;
     UI.state.raceHorse = hid;
-    UI.state.raceMode = 'route';
+    UI.state.raceMode = 'week';
     UI.state.raceRoute = route || h.route || Horse.recommendRoute(h);
     UI.show('race');
+  },
+
+  // ── カレンダー ──
+  // n週すすめる。まだ行動していない馬はおまかせ調教。年が明けたら年明けイベント
+  nextWeek(n = 1) {
+    const p = Player.data;
+    let trained = 0, newYear = null, stopFor = null;
+    for (let i = 0; i < n; i++) {
+      p.horses.forEach(h => {
+        if (!Horse.acted(h) && Training.canTrain(h).ok) {
+          Training.train(h, Training.autoPlan(h).menu);
+          trained++;
+        }
+      });
+      p.horses.forEach(h => Horse.weekPass(h));
+      if (Calendar.advance()) { newYear = this.newYear(); break; }
+      // まとめて進めるときは、目標の重賞がある週で止まる
+      if (n > 1) {
+        stopFor = p.horses.map(h => ({ h, t: Horse.mustRetire(h) ? null : Race.targetRace(h, 0) })).find(x => x.t);
+        if (stopFor) break;
+      }
+    }
+    this.commit();
+    if (newYear) return this.newYearModal(newYear);
+    const graded = Race.gradedOn(Calendar.get().week).filter(r => r.grade === 'g1');
+    UI.toast(`📅 ${Calendar.fullLabel()}${trained ? `<br><small>未行動の${trained}頭はおまかせ調教しました</small>` : ''}`
+      + (graded.length ? `<br>🏆 今週は${graded.map(r => r.name).join('・')}！` : ''));
+    if (stopFor) UI.toast(`🎯 今週は${Util.esc(stopFor.h.name)}の目標「${stopFor.t.race.name}」！`, 'mission-toast');
+  },
+
+  // 1月1週：年齢・年度表彰・引退・お年玉
+  newYear() {
+    const p = Player.data;
+    const prevYear = Calendar.get().year - 1;
+    const report = Awards.evaluate(prevYear);
+    p.horses.forEach(h => { h.age++; h.rights = []; });
+    report.retiring = p.horses.filter(h => Horse.mustRetire(h)).map(h => h.name);
+    report.gift = Cards.openPack(GAME_DATA.packs[0]);
+    report.gift.forEach(c => Player.addCard(c.id));
+    Player.addMoney(3000);
+    return report;
+  },
+
+  newYearModal(r) {
+    UI.modal(`<div class="birth newyear">
+      <div class="sparkle">🎍🌅🎍</div>
+      <h2>あけましておめでとう！</h2>
+      <p><b>${Calendar.fullLabel()}</b> になりました。全ての馬が1歳年をとりました。${UI.help('newyear')}</p>
+      <section class="year-sum"><h3>📊 ${r.year}年目の成績</h3>
+        <div class="hero-stats">
+          <div><small>出走</small><b>${r.summary.races}</b></div><div><small>勝利</small><b>${r.summary.wins}</b></div>
+          <div><small>GⅠ勝利</small><b>${r.summary.g1Wins}</b></div><div><small>獲得賞金</small><b>${Util.money(r.summary.prize)}</b></div>
+        </div></section>
+      <h3>🏆 JRA賞（年度表彰）</h3>
+      ${r.awards.length ? `<div class="awards">${r.awards.map(a => `<div class="award"><b>${a.title}</b>：${Util.esc(a.horse.name)} <small>+${Util.money(a.bonus)}</small></div>`).join('')}</div>`
+        : '<p class="muted">今年は受賞なし。GⅠを勝つと表彰されます！</p>'}
+      ${r.retiring.length ? `<p class="notice">🎌 ${r.retiring.map(n => Util.esc(n)).join('、')} は引退の時期を迎えました。</p>` : ''}
+      <h3>🧧 お年玉</h3>
+      <p>💰 ${Util.money(3000)} ＋ ベーシックパック</p>
+      <div class="cgrid reveal-grid">${r.gift.map((c, i) => `<div class="reveal" style="animation-delay:${0.3 + i * 0.3}s">${UI.anyCard(c, {})}</div>`).join('')}</div>
+      <button class="btn primary big" onclick="UI.closeModal()">今年もがんばろう！</button>
+    </div>`);
   },
 
   prepareRace(hid, raceId) {
@@ -232,6 +301,7 @@ const App = {
     const elig = Race.eligibility(h, race);
     if (!elig.ok) return UI.toast(elig.reason, 'error');
     const field = Race.buildField(h, race);
+    const trialTo = race.trial ? Race.get(race.trial.to) : null;
     const ground = Race.rollGround(race);
     this.pending = { hid, raceId, field, ground };
     const cat = Horse.distCat(race.distance);
@@ -242,7 +312,9 @@ const App = {
     if (!h.skills.length) warn.push('スキルが装備されていません');
     UI.modal(`
       <h3>${UI.gradeBadge(race.grade)} ${race.name}</h3>
-      <p>${race.surface === 'turf' ? '🌱芝' : '🟫ダート'} ${race.distance}m・馬場：<b>${GAME_DATA.grounds[ground].label}</b>${UI.help('ground')}</p>
+      <p>📅 ${Calendar.fullLabel()}・📍${race.venue}<br>${race.surface === 'turf' ? '🌱芝' : '🟫ダート'} ${race.distance}m・${Race.AGE_LABEL[race.ages]}${race.female ? '牝馬' : ''}・馬場：<b>${GAME_DATA.grounds[ground].label}</b>${UI.help('ground')}</p>
+      ${elig.right ? '<p class="ok">🎫 優先出走権で出走！</p>' : ''}
+      ${trialTo ? `<p class="rec">🎫 ${race.trial.top}着以内で「${trialTo.name}」の優先出走権！${UI.help('right')}</p>` : ''}
       <h4>出走メンバー（${field.length}頭）</h4>
       <ol class="entry-list">${field.map(e => `<li class="${e.isPlayer ? 'me' : ''}">${GAME_DATA.styles[e.runningStyle].icon} ${Util.esc(e.name)}${e.isPlayer ? ' ← あなたの馬' : ''}</li>`).join('')}</ol>
       ${warn.length ? `<div class="warn">${warn.map(w => '⚠ ' + w).join('<br>')}</div>` : '<p class="ok">準備万端！</p>'}
