@@ -95,7 +95,8 @@
     const d = hankaku(desc);
     const s = {};
     let m;
-    if ((m = d.match(/^交代で登場したターンのみ、受けるダメージをSLv×(\d+)％減少/))) s.switchInGuard = +m[1];
+    if ((m = d.match(/^パーティーに「(.+?)」がいると、与えるダメージがSLv×(\d+)％増加し、受けるダメージがSLv×(\d+)％減少/))) s.partner = { name: m[1], power: +m[2], guard: +m[3], rage: /倒れると.*2倍/.test(d) };
+    else if ((m = d.match(/^交代で登場したターンのみ、受けるダメージをSLv×(\d+)％減少/))) s.switchInGuard = +m[1];
     else if ((m = d.match(/^ＨＰ最大時、受けるダメージをSLv×(\d+)％減少/))) s.fullHpGuard = +m[1];
     else if ((m = d.match(/^効果抜群の攻撃を受けた時、受けるダメージをSLv×(\d+)％減少/))) s.seGuard = +m[1];
     else if ((m = d.match(/^効果抜群でない攻撃を受けた時、受けるダメージをSLv×(\d+)％減少/))) s.nonSeGuard = +m[1];
@@ -296,6 +297,14 @@
     }
   }
 
+  // パートナー判定：0=いない 1=元気 2=倒れている
+  function partnerState(st, side, m, sk) {
+    if (!sk || !sk.partner) return 0;
+    const ps = st.sides[side].party.filter(p => p !== m && p.name.includes(sk.partner.name));
+    if (!ps.length) return 0;
+    return ps.some(alive) ? 1 : 2;
+  }
+
   /* ---------- 入場時処理 ---------- */
   function onEnter(ctx, side) {
     const st = ctx.state;
@@ -303,6 +312,9 @@
     m.enteredTurn = st.turn;
     m.appeared = true;
     const sk = skillOf(m);
+    const ps = partnerState(st, side, m, sk);
+    if (ps === 1) ctx.say(`${m.name}の【${m.skill.name}】！ ${sk.partner.name}が一緒にいるので張り切っている！`);
+    if (ps === 2 && sk.partner.rage) ctx.say(`${m.name}の【${m.skill.name}】！ ${sk.partner.name}を倒された怒りで力が溢れている……！`);
     if (sk && sk.copy) {
       const foe = active(st, 1 - side);
       if (foe.skill && alive(foe)) {
@@ -380,12 +392,15 @@
     dmg *= 0.85 + ctx.rand() * 0.15;
     // スキル補正（攻撃側）
     if (usk && usk.power) dmg *= 1 + usk.power * user.slv / 100;
+    const ups = partnerState(st, side, user, usk);
+    if (ups) dmg *= 1 + usk.partner.power * user.slv * (ups === 2 && usk.partner.rage ? 2 : 1) / 100;
     if (usk && usk.seBoost && tm > 1) dmg *= 1 + usk.seBoost * user.slv / 100;
     if (usk && usk.revenge && user.hitThisTurn) dmg *= 1 + usk.revenge * user.slv / 100;
     // スキル補正（防御側）
     let guard = 0;
     if (tsk) {
       if (tsk.guard) guard += tsk.guard * target.slv;
+      if (partnerState(st, 1 - side, target, tsk) === 1) guard += tsk.partner.guard * target.slv;
       if (tsk.switchInGuard && target.enteredTurn === st.turn) guard += tsk.switchInGuard * target.slv;
       if (tsk.fullHpGuard && target.hp === target.maxhp) guard += tsk.fullHpGuard * target.slv;
       if (tsk.seGuard && tm > 1) guard += tsk.seGuard * target.slv;

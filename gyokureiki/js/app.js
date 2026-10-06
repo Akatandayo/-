@@ -14,7 +14,8 @@
   const tbs = types => types.map(t => tb(t)).join('');
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const spriteOf = id => (window.GK_SPRITES && window.GK_SPRITES[id]) || null;
-  const icon = id => { const s = spriteOf(id); return s ? `<img class="kicon" src="${esc(s)}" alt="" loading="lazy">` : ''; };
+  const smooth = id => (KD[id] && KD[id].smooth ? ' smooth' : '');
+  const icon = id => { const s = spriteOf(id); return s ? `<img class="kicon${smooth(id)}" src="${esc(s)}" alt="" loading="lazy">` : ''; };
   const yen = n => `${Number(n).toLocaleString('ja-JP')}銭`;
 
   /* ================= 保存 ================= */
@@ -212,7 +213,7 @@
       if (talkSkip) break;
       const who = who0 === '@' ? save.name : who0;
       const sid = who0 && who0 !== '@' ? GKS.charSprite(who0) : null;
-      $('#talk-sprite').innerHTML = sid && spriteOf(sid) ? `<img src="${esc(spriteOf(sid))}" alt="">` : '';
+      $('#talk-sprite').innerHTML = sid && spriteOf(sid) ? `<img class="${smooth(sid)}" src="${esc(spriteOf(sid))}" alt="">` : '';
       $('#talk-name').textContent = who || '';
       $('#talk-name').hidden = !who;
       $('#talk-text').textContent = text.replace(/悠姫/g, save.name);
@@ -639,7 +640,7 @@
     await talk(v.pre, `${v.title}（${tier.name}）`);
     current = new LocalSession({
       kind: 'vs', vsId: id, tier, level: 'hard',
-      foe: { name: v.who || KD[id].name, party: GKP.vsParty(id, tier.lv) },
+      foe: { name: v.trainer || v.who || KD[id].name, party: GKP.vsParty(id, tier.lv) },
       boost: v.raid ? [null, v.boost] : null,
     });
     current.start();
@@ -775,7 +776,7 @@
       const spr = window.GK_SPRITES && window.GK_SPRITES[sn.id];
       const nm = sn.name.replace(/^(ちび|[Ａ-Ｚ]{1,2})/, '') || sn.name;
       el.className = 'mon';
-      el.innerHTML = spr ? `<img src="${esc(spr)}" alt="${esc(sn.name)}">`
+      el.innerHTML = spr ? `<img class="${smooth(sn.id)}" src="${esc(spr)}" alt="${esc(sn.name)}">`
         : `<div class="ph t-${k.types[0]}"><span>${esc(nm.slice(0, 2))}</span></div><div class="lbl">${esc(sn.name)}</div>`;
       if (sn.hp <= 0) el.classList.add('faint');
       else { void el.offsetWidth; el.classList.add('enter'); }
