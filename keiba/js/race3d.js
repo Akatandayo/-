@@ -22,7 +22,8 @@ const Race3D = {
     { name: '栗毛', body: 0xa3552a, dark: 0x8c4520 },
     { name: '芦毛', body: 0xbcb7b0, dark: 0x6f6a64 },
     { name: '青鹿毛', body: 0x2b1d16, dark: 0x0c0806 },
-    { name: '栃栗毛', body: 0x7a3d1c, dark: 0xb88552 }
+    { name: '栃栗毛', body: 0x7a3d1c, dark: 0xb88552 },
+    { name: '白毛', body: 0xf2f0ec, dark: 0xd8d4cc, rare: true }
   ],
   // 勝負服の色と柄
   SILK_COLORS: ['#ffffff', '#1b1b1b', '#d32f2f', '#1e4fd6', '#fbc02d', '#2e7d32', '#f06292', '#4fc3f7', '#7b1fa2', '#b39ddb', '#795548', '#880e4f', '#9e9e9e', '#ef6c00'],
@@ -602,10 +603,10 @@ const Race3D = {
   makeHorse(e, num, n, st) {
     const G = this.geos();
     const r = this.rng(this.hash(e.id + e.name));
-    const coat = this.COATS[Math.floor(r() * this.COATS.length)];
+    const coat = (e.coat && this.COATS.find(c => c.name === e.coat)) || (cs => cs[Math.floor(r() * cs.length)])(this.COATS.filter(c => !c.rare));
     const bracket = this.bracketOf(num, n);
     const capColor = this.BRACKET_COLORS[bracket - 1];
-    const silk = this.silkFor(e.isPlayer ? 'owner:' + Player.data.name : e.owner ? 'owner:' + e.owner : e.id);
+    const silk = this.silkFor(e.isPlayer ? 'owner:' + Player.data.name : e.legendId ? 'legend:' + e.legendId : e.owner ? 'owner:' + e.owner : e.id);
     const coatMat = new THREE.MeshStandardMaterial({ color: coat.body, roughness: 0.55, metalness: 0.05 });
     const darkMat = new THREE.MeshStandardMaterial({ color: coat.dark, roughness: 0.7 });
     const hoofMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
@@ -1234,7 +1235,7 @@ const Race3D = {
       hud.bar.innerHTML = order.map((o, i) => `<div class="r3-item ${o.h.e.isPlayer ? 'me' : ''}">
         <img src="${o.h.icon}" alt=""><span class="r3-pos">${i + 1}</span>
         <span class="r3-num" style="background:${o.h.capColor};color:${this.BRACKET_TEXT[o.h.bracket - 1]}">${o.h.num}</span>
-        <span class="r3-name">${Util.esc(o.h.e.name)}</span></div>`).join('');
+        <span class="r3-name">${o.h.e.legendId ? '👑' : ''}${Util.esc(o.h.e.name)}</span></div>`).join('');
     }
   }
 };

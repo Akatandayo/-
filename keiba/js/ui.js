@@ -112,7 +112,7 @@ const UI = {
     const skill = c.skill ? Cards.get(c.skill) : null;
     return `<div class="gcard ${t.color} rcard-${c.rarity} ${opts.selected ? 'selected' : ''} ${opts.cls || ''}" ${opts.onclick ? `onclick="${opts.onclick}"` : ''}>
       <div class="gcard-head">${this.rarity(c.rarity)}<span class="gtype">${t.icon} ${t.label}</span>${opts.count ? `<span class="count">×${opts.count}</span>` : ''}</div>
-      <div class="gcard-art">${c.type === 'sire' ? '🐎' : '🦄'}${c.custom ? '<span class="legend">🏛</span>' : ''}</div>
+      <div class="gcard-art">${c.type === 'sire' ? '🐎' : '🦄'}${c.custom ? '<span class="legend">🏛</span>' : c.legend ? '<span class="legend">👑</span>' : ''}</div>
       <div class="gcard-name">${Util.esc(c.name)}</div>
       <div class="mini-stats">${st}</div>
       <div class="apt-chips">${apt}</div>
@@ -149,6 +149,12 @@ const UI = {
   },
 
   silhouette(c) {
+    if (c.legend) {
+      const r = (Player.data.legends || {})[c.legendId];
+      return `<div class="gcard silhouette legend-sil rcard-${c.rarity}"><div class="gcard-head">${this.rarity(c.rarity)}<span class="gtype">👑 名馬</span></div>
+        <div class="gcard-art">${r ? '🏇' : '❔'}</div><div class="gcard-name">${r ? Util.esc(c.name) : '？？？？'}</div>
+        <div class="gcard-desc">${r ? `対戦${r.met}回・先着${r.beaten}回<br>重賞で先着するとカード入手のチャンス！` : 'まだ出会っていない名馬'}</div></div>`;
+    }
     return `<div class="gcard silhouette rcard-${c.rarity}"><div class="gcard-head">${this.rarity(c.rarity)}<span class="gtype">${Cards.types[c.type].label}</span></div>
       <div class="gcard-art">❔</div><div class="gcard-name">？？？？</div><div class="gcard-desc">まだ見つけていないカード</div></div>`;
   },
@@ -254,7 +260,8 @@ const UI = {
         <ul>
           <li>競馬×カードゲーム「馬主カード」へようこそ！</li>
           <li>レースで勝つと新しい種牡馬・繁殖牝馬・スキルカードが手に入ります。</li>
-          <li>🆕 レースが2Dトラックで見られるようになりました！</li>
+          <li>🆕 👑 実在のJRA名馬100頭がライバルとして重賞に登場！ 先着すると名馬カードが手に入ることも。</li>
+          <li>🆕 レースが3D・実際の速さで見られるようになりました！</li>
           <li>🆕 ⚔ リーグ戦・🤝 対戦コードでフレンド対戦が登場！</li>
           <li>🆕 黄金配合・インブリードなどの特殊配合、血統表、カードパック、記録・ランキングを追加。</li>
           <li>わからない言葉は <span class="help static">？</span> ボタンをタップ！</li>
@@ -464,10 +471,10 @@ const UI = {
     let body = '';
     if (st.cardTab === 'shop') body = this.shopView();
     else {
-      const types = [['all', 'すべて'], ['sire', '♂ 種牡馬'], ['mare', '♀ 繁殖牝馬'], ['skill', '🎴 スキル'], ['item', '🎒 アイテム']];
+      const types = [['all', 'すべて'], ['legend', '👑 名馬'], ['sire', '♂ 種牡馬'], ['mare', '♀ 繁殖牝馬'], ['skill', '🎴 スキル'], ['item', '🎒 アイテム']];
       const rars = ['all', ...GAME_DATA.rarities];
       const q = st.cardQuery.trim();
-      const match = c => (st.cardType === 'all' || c.type === st.cardType) && (st.cardRarity === 'all' || c.rarity === st.cardRarity)
+      const match = c => (st.cardType === 'all' || (st.cardType === 'legend' ? c.legend : c.type === st.cardType)) && (st.cardRarity === 'all' || c.rarity === st.cardRarity)
         && (!q || c.name.includes(q) || (c.desc || '').includes(q));
       const filters = `<div class="filters">
         <div class="chips">${types.map(([k, l]) => `<button class="${st.cardType === k ? 'active' : ''}" onclick="UI.state.cardType='${k}';UI.render()">${l}</button>`).join('')}</div>
@@ -484,6 +491,7 @@ const UI = {
         const got = Cards.all().filter(c => seen.has(c.id)).length;
         body = `<p class="dex-progress">収集率：<b>${got}</b> / ${Cards.all().length}</p>` + filters +
           `<div class="cgrid">${all.map(c => seen.has(c.id) ? this.anyCard(c, { onclick: `App.cardDetail('${c.id}')` }) : this.silhouette(c)).join('')}</div>`;
+        if (st.cardType === 'legend') { const ls = Legends.stats(); body = `<p class="dex-progress">👑 名馬カード：<b>${ls.cards}</b> / ${ls.total}・対戦 ${ls.met}頭・先着 ${ls.beaten}頭</p>` + body; }
       }
     }
     return `<h2 class="screen-title">🃏 カード</h2>
@@ -747,6 +755,24 @@ const UI = {
       </section>`;
   },
 
+  // 名馬との対戦成績（100頭）
+  legendBook() {
+    const ls = Legends.stats();
+    const recs = Player.data.legends || {};
+    const tiers = [['S', '伝説級'], ['A', '名馬'], ['B', '実力馬']];
+    return `<section class="panel"><h3>👑 名馬との対戦成績 ${this.help('legend')}</h3>
+      <p class="muted small">対戦 ${ls.met}/${ls.total}頭・先着 ${ls.beaten}頭・名馬カード ${ls.cards}枚</p>
+      ${tiers.map(([t, label]) => `<details ${t === 'S' ? 'open' : ''}><summary>${label}（${Legends.all().filter(l => l.tier === t).length}頭）</summary>
+        <div class="legend-grid">${Legends.all().filter(l => l.tier === t).map(l => {
+          const r = recs[l.id];
+          const card = Player.data.seenCards.includes('lc_' + l.id);
+          return `<div class="lg ${r ? 'met' : ''} ${card ? 'got' : ''}" title="${Util.esc(l.wins)}">
+            <b>${r || card ? Util.esc(l.name) : '？？？'}</b>
+            <small>${r ? `${r.beaten}勝${r.lost}敗` : '未対戦'}${card ? '・🃏' : ''}</small></div>`;
+        }).join('')}</div></details>`).join('')}
+    </section>`;
+  },
+
   // ─────────── 記録・ランキング ───────────
   recordsView() {
     const p = Player.data;
@@ -775,6 +801,7 @@ const UI = {
       ${rank('prizeMoney', '💰 獲得賞金ランキング', v => Util.money(v))}
       ${rank('wins', '🏆 勝利数ランキング', v => v + '勝')}
       ${rank('g1Wins', '👑 GⅠ勝利数ランキング', v => v + '勝')}
+      ${this.legendBook()}
       <section class="panel"><h3>⏱ コースレコード</h3>
         ${recs.length ? `<table class="hist"><tr><th>レース</th><th>タイム</th><th>馬名</th></tr>${recs.map(r => `<tr><td>${this.gradeBadge(r.grade)}${r.name}<br><small class="muted">${r.surface === 'turf' ? '芝' : 'ダ'}${r.distance}m</small></td><td class="num">${Race.timeText(p.records[r.id].time)}</td><td>${Util.esc(p.records[r.id].name)}</td></tr>`).join('')}</table>` : '<p class="muted">レースに出るとタイムが記録されます。</p>'}
       </section>`;
@@ -980,7 +1007,7 @@ const RaceView = {
     ol.innerHTML = order.map((o, i) => {
       const st = GAME_DATA.styles[o.e.style];
       const gap = i > 0 && o.ft === null ? `<small>${((leadPos - o.p) / 2.4).toFixed(1)}馬身</small>` : '';
-      return `<li class="${o.e.isPlayer ? 'me' : ''} ${o.e.isGhost ? 'ghost' : ''}"><span class="pos">${i + 1}</span><span title="${st.label}">${st.icon}</span> ${Util.esc(o.e.name)} ${gap}</li>`;
+      return `<li class="${o.e.isPlayer ? 'me' : ''} ${o.e.isGhost ? 'ghost' : ''}"><span class="pos">${i + 1}</span><span title="${st.label}">${st.icon}</span> ${o.e.legendId ? '👑' : ''}${Util.esc(o.e.name)} ${gap}</li>`;
     }).join('');
   },
 
@@ -1073,9 +1100,18 @@ const RaceView = {
         <tr><th>着</th><th>馬名</th><th>タイム</th><th>着差</th></tr>
         ${fin.map(f => {
           const e = this.entrant(f.id) || {};
-          return `<tr class="${f.isPlayer ? 'me' : ''}"><td>${f.place}</td><td>${GAME_DATA.styles[f.style].icon} ${Util.esc(f.name)}${e.owner ? `<br><small class="muted">${Util.esc(e.owner)}</small>` : ''}</td><td>${Race.timeText(f.time)}</td><td>${f.margin}</td></tr>`;
+          return `<tr class="${f.isPlayer ? 'me' : ''} ${f.legendId ? 'is-legend' : ''}"><td>${f.place}</td><td>${GAME_DATA.styles[f.style].icon} ${f.legendId ? '👑' : ''}${Util.esc(f.name)}${e.owner && !f.legendId ? `<br><small class="muted">${Util.esc(e.owner)}</small>` : ''}</td><td>${Race.timeText(f.time)}</td><td>${f.margin}</td></tr>`;
         }).join('')}
       </table>`;
+  },
+
+  // 名馬との対決結果
+  legendHTML(lg) {
+    if (!lg || !lg.met.length) return '';
+    return `<div class="legend-vs"><b>👑 名馬との対決</b>${lg.met.map(l => {
+      const won = lg.beaten.includes(l);
+      return `<div class="${won ? 'ok' : 'muted'}">${won ? '○ 先着' : '● 敗戦'}：${Util.esc(l.name)} <small>（${Util.esc(l.wins)}）</small></div>`;
+    }).join('')}${lg.card ? `<div class="ok">🎉 ${Util.esc(lg.card.card.name)}の名馬カードを手に入れた！ 配合で血を受け継げます。</div>` : lg.beaten.length ? '<div class="muted small">今回はカードを落としませんでした…</div>' : ''}</div>`;
   },
 
   placeHead(place, winnerName) {
@@ -1099,6 +1135,7 @@ const RaceView = {
       const cards = this.cardsHTML(reward.cards);
       body = `${this.placeHead(reward.place, fin[0].name)}
         ${reward.newRecord ? '<p class="center ok">⏱ コースレコード更新！</p>' : ''}
+        ${this.legendHTML(reward.legends)}
         ${reward.rightTo ? `<p class="center ok big-note">🎫「${reward.rightTo.name}」の優先出走権を獲得！</p>` : ''}
         ${this.resultTable(fin)}
         <h3>🎁 報酬</h3>

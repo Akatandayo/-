@@ -39,6 +39,7 @@ const Skills = {
     if (c.rankMax !== undefined && ctx.rank > c.rankMax) return false;
     if (c.distCat && c.distCat !== ctx.distCat) return false;
     if (c.groundMin !== undefined && ctx.ground < c.groundMin) return false;
+    if (c.surface && c.surface !== ctx.surface) return false;
     if (c.close && !ctx.close) return false;
     return true;
   },

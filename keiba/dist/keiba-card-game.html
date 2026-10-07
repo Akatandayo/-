@@ -658,6 +658,22 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 @media (max-width: 560px) {
   .rl-controls button { font-size: 12px; padding: 3px 8px; }
 }
+
+/* ── 名馬 ── */
+.legend-vs { background: linear-gradient(90deg, #fff4c2, #fffaf0); border: 2px solid #e0a100; border-radius: 10px; padding: 8px 12px; margin: 8px 0; display: grid; gap: 3px; }
+.legend-vs small { color: var(--muted); }
+.hist tr.is-legend td { background: #fff8de; }
+.entry-list li.is-legend { color: #8a6100; font-weight: 800; }
+.entry-list li small { display: block; font-weight: 400; color: var(--muted); font-size: 11px; }
+.check-row { display: flex !important; align-items: center; gap: 8px; }
+.check-row input { width: auto !important; display: inline !important; margin: 0 !important; }
+.legend-sil { filter: grayscale(.6); opacity: .75; }
+.legend-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 5px; margin: 6px 0; }
+.lg { background: var(--paper2); border-radius: 8px; padding: 4px 8px; font-size: 12px; opacity: .55; }
+.lg b { display: block; font-size: 12px; }
+.lg small { color: var(--muted); }
+.lg.met { opacity: 1; background: #fff; border: 1px solid var(--line); }
+.lg.got { border: 2px solid #e0a100; background: #fff8de; }
 </style>
 </head>
 <body>
@@ -1142,6 +1158,7 @@ GAME_DATA.glossary = {
   skill: { title: '🎴 スキル', body: '1頭に3つまで装備できます。レース中に条件を満たすと自動で発動！脚質が合うスキルは効果が大きくなります。' },
   grade: { title: '🏅 クラスとレースの格', body: '勝利数でクラスが上がります。<br>0勝：新馬・未勝利 → 1勝：1勝クラス → 2勝：2勝クラス → 3勝：3勝クラス → 4勝以上（または重賞勝ち）：オープン<br>重賞（GⅢ・GⅡ・GⅠ）は格が高く、賞金やカード報酬も豪華です。2歳・3歳の重賞は1勝から挑戦できます。' },
   calendar: { title: '📅 カレンダー', body: '1年は12か月×4週。馬は1週に1回、調教・レース・休養のどれかができます。<br>重賞は実際のJRAと同じ時期に行われます（皐月賞は4月、日本ダービーは5月、有馬記念は12月など）。<br>「次の週へ」を押すと、まだ行動していない馬はおまかせ調教をして1週すすみます。' },
+  legend: { title: '👑 名馬（実在のJRA名馬）', body: 'ディープインパクトやオグリキャップなど、実在の名馬100頭が重賞にライバルとして出走します（能力はゲーム独自の査定）。<br>名馬に先着すると、その名馬のカードが手に入ることがあります（GⅠ 35%・GⅡ 25%・GⅢ 20%）。名馬カードは配合に使え、固有スキルも受け継げます。<br>設定でオフにもできます。' },
   newyear: { title: '🎍 1月1週（年明け）', body: '年が明けると全ての馬が1歳年をとります（JRAと同じく誕生日は1月1日扱い）。<br>前の年の成績から年度表彰（JRA賞）が選ばれ、賞金ボーナスがもらえます。<br>6歳になった馬は引退の時期です。' },
   right: { title: '🎫 優先出走権', body: 'トライアルレースで上位に入ると、GⅠ本番への優先出走権がもらえます。<br>例：弥生賞・スプリングS 3着以内 → 皐月賞、チューリップ賞 3着以内 → 桜花賞、青葉賞 2着以内 → 日本ダービー' },
   hof: { title: '🏛 殿堂入り', body: 'GⅠ 3勝、または通算10勝した馬が引退すると殿堂入りします。殿堂馬は配合カードになって、血統を次の世代へつなげます。' }
@@ -1207,6 +1224,306 @@ GAME_DATA.leagueCourses = [
 GAME_DATA.ratingDelta = [30, 18, 8, 0, -4, -8, -12, -16];
 GAME_DATA.rivalOwners = ['タカハシ', 'サトウ', 'スズキ', 'ヤマモト', 'ナカムラ', 'コバヤシ', 'カトウ', 'ワタナベ',
   'イトウ', 'キムラ', 'ハヤシ', 'シミズ', 'モリ', 'イケダ', 'ハシモト', 'アベ'];
+</script>
+<script>
+// 実在のJRA名馬（ライバル）100頭と、その出走・撃破・カード化の処理
+// 能力はゲーム用の独自査定。勝負服・馬主などは架空のままで、名前と主な勝ち鞍のみ実在のものを使う。
+'use strict';
+
+// ───────── 名馬の固有スキル（名馬カードの配合で受け継げる） ─────────
+GAME_DATA.skills.push(
+  { id: 'k_lg_wing', name: '英雄の翼', rarity: 'UR', style: null, icon: '🕊️', legendOnly: true,
+    desc: '最終直線、飛ぶように伸びる。', condText: '最終直線・2位以下',
+    cond: { phase: 'final', rankMin: 2 }, effect: { speed: 0.13, duration: 10 } },
+  { id: 'k_lg_tyrant', name: '金色の暴君', rarity: 'UR', style: null, icon: '🌋',
+    legendOnly: true, desc: '最終直線で後ろから全てをなぎ倒す。', condText: '最終直線・3位以下',
+    cond: { phase: 'final', rankMin: 3 }, effect: { speed: 0.14, duration: 9 } },
+  { id: 'k_lg_monster', name: '怪物の末脚', rarity: 'UR', style: null, icon: '👹', legendOnly: true,
+    desc: '残り400mから怪物的な伸び。', condText: '残り400m・2位以下',
+    cond: { remainMax: 400, rankMin: 2 }, effect: { speed: 0.12, duration: 10 } },
+  { id: 'k_lg_silence', name: '異次元の逃亡者', rarity: 'UR', style: 'nige', icon: '🌠', legendOnly: true,
+    desc: '中盤から後続を大きく引き離す。', condText: '中盤・1位',
+    cond: { phase: 'mid', rankMax: 1 }, effect: { speed: 0.07, duration: 25 } },
+  { id: 'k_lg_festival', name: '祭りの主役', rarity: 'UR', style: null, icon: '🎆', legendOnly: true,
+    desc: '最終直線で先頭なら、粘って突き放す。', condText: '最終直線・1〜2位',
+    cond: { phase: 'final', rankMax: 2 }, effect: { speed: 0.09, hp: 180, duration: 12 } },
+  { id: 'k_lg_longspurt', name: '不沈艦のロングスパート', rarity: 'UR', style: null, icon: '🚢', legendOnly: true,
+    desc: 'コーナーから長くいい脚を使う。', condText: 'コーナー・4位以下',
+    cond: { phase: 'corner', rankMin: 4 }, effect: { speed: 0.09, duration: 22 } },
+  { id: 'k_lg_queen', name: '女王の誇り', rarity: 'UR', style: null, icon: '👸', legendOnly: true,
+    desc: '最終直線、2〜6位から女王の伸び。', condText: '最終直線・2〜6位',
+    cond: { phase: 'final', rankMin: 2, rankMax: 6 }, effect: { speed: 0.12, duration: 9 } },
+  { id: 'k_lg_dragon', name: '龍王の加速', rarity: 'UR', style: null, icon: '🐉', legendOnly: true,
+    desc: 'スプリント戦のコーナーで一気に加速。', condText: 'スプリント・コーナー',
+    cond: { phase: 'corner', distCat: 'sprint' }, effect: { speed: 0.1, duration: 14 } },
+  { id: 'k_lg_sand', name: '砂塵の王', rarity: 'UR', style: null, icon: '🏜️', legendOnly: true,
+    desc: 'ダートの最終直線で力強く伸びる。', condText: 'ダート・最終直線',
+    cond: { phase: 'final', surface: 'dirt' }, effect: { speed: 0.11, duration: 10 } },
+  { id: 'k_lg_stayer', name: '名優の貫禄', rarity: 'UR', style: null, icon: '🎭', legendOnly: true,
+    desc: '長距離の終盤で体力が回復し、速度アップ。', condText: 'ロング・コーナー',
+    cond: { phase: 'corner', distCat: 'long' }, effect: { speed: 0.06, hp: 300, duration: 14 } },
+  { id: 'k_lg_shadow', name: 'シャドーロールの衝撃', rarity: 'UR', style: null, icon: '💥', legendOnly: true,
+    desc: 'コーナーで2〜5位から圧倒的な進出。', condText: 'コーナー・2〜5位',
+    cond: { phase: 'corner', rankMin: 2, rankMax: 5 }, effect: { speed: 0.1, duration: 14 } }
+);
+
+// ───────── 名馬リスト ─────────
+// [id, 名前, 性別(m/f), 脚質, 馬場(t芝/dダート/b両方), 得意距離(s短 mマ c中 l長), 格(S/A/B), 主な勝ち鞍, 固有スキル, 毛色]
+GAME_DATA.legendList = [
+  ['rudolf', 'シンボリルドルフ', 'm', 'senko', 't', 'cl', 'S', '三冠・ジャパンカップ・有馬記念', 'k_emperor', '鹿毛'],
+  ['deep', 'ディープインパクト', 'm', 'oikomi', 't', 'cl', 'S', '三冠・天皇賞（春）・有馬記念', 'k_lg_wing', '鹿毛'],
+  ['orfevre', 'オルフェーヴル', 'm', 'oikomi', 't', 'cl', 'S', '三冠・宝塚記念・有馬記念', 'k_lg_tyrant', '栗毛'],
+  ['brian', 'ナリタブライアン', 'm', 'senko', 't', 'cl', 'S', '三冠・朝日杯・有馬記念', 'k_lg_shadow', '黒鹿毛'],
+  ['mrcb', 'ミスターシービー', 'm', 'oikomi', 't', 'cl', 'A', '三冠・天皇賞（秋）', 'k_lg_longspurt', '黒鹿毛'],
+  ['shinzan', 'シンザン', 'm', 'senko', 't', 'cl', 'S', '五冠（三冠・天皇賞・有馬記念）', 'k_lg_festival', '鹿毛'],
+  ['contrail', 'コントレイル', 'm', 'sashi', 't', 'mc', 'S', '三冠・ジャパンカップ', 'k_lg_wing', '青鹿毛'],
+  ['kitasan', 'キタサンブラック', 'm', 'nige', 't', 'cl', 'S', '天皇賞（春秋）・ジャパンカップ・有馬記念', 'k_lg_festival', '鹿毛'],
+  ['opera', 'テイエムオペラオー', 'm', 'senko', 't', 'cl', 'S', '年間無敗・天皇賞（春秋）・有馬記念', 'k_lg_stayer', '栗毛'],
+  ['oguri', 'オグリキャップ', 'm', 'sashi', 'b', 'mc', 'S', '有馬記念2勝・安田記念・マイルCS', 'k_lg_monster', '芦毛'],
+  ['teio', 'トウカイテイオー', 'm', 'senko', 't', 'c', 'A', '皐月賞・ダービー・ジャパンカップ・有馬記念', 'k_lg_festival', '鹿毛'],
+  ['mcqueen', 'メジロマックイーン', 'm', 'senko', 't', 'l', 'S', '菊花賞・天皇賞（春）2勝・宝塚記念', 'k_lg_stayer', '芦毛'],
+  ['suzuka', 'サイレンススズカ', 'm', 'nige', 't', 'mc', 'S', '宝塚記念・毎日王冠・金鯱賞', 'k_lg_silence', '栗毛'],
+  ['elcondor', 'エルコンドルパサー', 'm', 'senko', 't', 'mc', 'S', 'NHKマイルC・ジャパンカップ', null, '黒鹿毛'],
+  ['grass', 'グラスワンダー', 'm', 'sashi', 't', 'mc', 'A', '朝日杯・宝塚記念・有馬記念2勝', null, '栗毛'],
+  ['special', 'スペシャルウィーク', 'm', 'sashi', 't', 'cl', 'A', 'ダービー・天皇賞（春秋）・ジャパンカップ', null, '黒鹿毛'],
+  ['shuttle', 'タイキシャトル', 'm', 'senko', 't', 'sm', 'S', '安田記念・マイルCS2勝・スプリンターズS', null, '栗毛'],
+  ['kamehameha', 'キングカメハメハ', 'm', 'senko', 't', 'mc', 'A', 'NHKマイルC・日本ダービー', null, '鹿毛'],
+  ['goldship', 'ゴールドシップ', 'm', 'oikomi', 't', 'cl', 'S', '皐月賞・菊花賞・宝塚記念2勝・有馬記念', 'k_lg_longspurt', '芦毛'],
+  ['equinox', 'イクイノックス', 'm', 'sashi', 't', 'c', 'S', '天皇賞（秋）2勝・ジャパンカップ・有馬記念', 'k_lg_wing', '青鹿毛'],
+  ['almond', 'アーモンドアイ', 'f', 'sashi', 't', 'mc', 'S', '牝馬三冠・ジャパンカップ2勝・天皇賞（秋）2勝', 'k_lg_queen', '鹿毛'],
+  ['vodka', 'ウオッカ', 'f', 'sashi', 't', 'mc', 'S', '日本ダービー・安田記念2勝・天皇賞（秋）', 'k_lg_queen', '鹿毛'],
+  ['scarlet', 'ダイワスカーレット', 'f', 'nige', 't', 'mc', 'S', '桜花賞・秋華賞・有馬記念', 'k_lg_festival', '栗毛'],
+  ['gentil', 'ジェンティルドンナ', 'f', 'sashi', 't', 'c', 'S', '牝馬三冠・ジャパンカップ2勝・有馬記念', 'k_lg_queen', '鹿毛'],
+  ['buena', 'ブエナビスタ', 'f', 'sashi', 't', 'mc', 'A', '桜花賞・オークス・天皇賞（秋）・ジャパンカップ', 'k_lg_queen', '黒鹿毛'],
+  ['chrono', 'クロノジェネシス', 'f', 'sashi', 't', 'c', 'A', '宝塚記念2勝・有馬記念・秋華賞', null, '芦毛'],
+  ['lys', 'リスグラシュー', 'f', 'sashi', 't', 'c', 'A', '宝塚記念・有馬記念・エリザベス女王杯', null, '黒鹿毛'],
+  ['gran', 'グランアレグリア', 'f', 'sashi', 't', 'sm', 'S', '桜花賞・安田記念・マイルCS2勝・スプリンターズS', 'k_lg_queen', '鹿毛'],
+  ['daring', 'デアリングタクト', 'f', 'sashi', 't', 'mc', 'A', '牝馬三冠', null, '青鹿毛'],
+  ['liberty', 'リバティアイランド', 'f', 'sashi', 't', 'mc', 'S', '牝馬三冠・阪神JF', 'k_lg_queen', '鹿毛'],
+  ['sodashi', 'ソダシ', 'f', 'senko', 'b', 'm', 'B', '桜花賞・ヴィクトリアマイル・阪神JF', null, '白毛'],
+  ['dober', 'メジロドーベル', 'f', 'sashi', 't', 'mc', 'B', 'オークス・秋華賞・エリザベス女王杯2勝', null, '鹿毛'],
+  ['airgroove', 'エアグルーヴ', 'f', 'senko', 't', 'c', 'A', 'オークス・天皇賞（秋）', null, '鹿毛'],
+  ['hishiamazon', 'ヒシアマゾン', 'f', 'oikomi', 't', 'mc', 'B', '阪神3歳牝馬S・エリザベス女王杯', null, '黒鹿毛'],
+  ['stillinlove', 'スティルインラブ', 'f', 'sashi', 't', 'mc', 'B', '牝馬三冠', null, '栗毛'],
+  ['apapane', 'アパパネ', 'f', 'senko', 't', 'mc', 'B', '牝馬三冠・ヴィクトリアマイル・阪神JF', null, '鹿毛'],
+  ['lilac', 'ラッキーライラック', 'f', 'senko', 't', 'mc', 'B', '阪神JF・エリザベス女王杯2勝・大阪杯', null, '栗毛'],
+  ['curren', 'カレンチャン', 'f', 'senko', 't', 's', 'B', 'スプリンターズS・高松宮記念', null, '鹿毛'],
+  ['canaloa', 'ロードカナロア', 'm', 'senko', 't', 'sm', 'S', 'スプリンターズS2勝・高松宮記念・安田記念', 'k_lg_dragon', '鹿毛'],
+  ['bakushin', 'サクラバクシンオー', 'm', 'senko', 't', 's', 'S', 'スプリンターズS2勝', 'k_lg_dragon', '鹿毛'],
+  ['nishinoflower', 'ニシノフラワー', 'f', 'senko', 't', 'sm', 'B', '桜花賞・スプリンターズS・阪神3歳牝馬S', null, '黒鹿毛'],
+  ['durandal', 'デュランダル', 'm', 'oikomi', 't', 'sm', 'A', 'スプリンターズS・マイルCS2勝', null, '栗毛'],
+  ['daiwamajor', 'ダイワメジャー', 'm', 'senko', 't', 'm', 'A', '皐月賞・天皇賞（秋）・マイルCS2勝・安田記念', null, '栗毛'],
+  ['maurice', 'モーリス', 'm', 'senko', 't', 'mc', 'S', '安田記念・マイルCS・天皇賞（秋）', null, '鹿毛'],
+  ['staygold', 'ステイゴールド', 'm', 'sashi', 't', 'cl', 'B', '目黒記念・日経新春杯・香港ヴァーズ', null, '黒鹿毛'],
+  ['heartscry', 'ハーツクライ', 'm', 'sashi', 't', 'cl', 'A', '有馬記念・ドバイシーマクラシック', null, '鹿毛'],
+  ['justaway', 'ジャスタウェイ', 'm', 'sashi', 't', 'mc', 'A', '天皇賞（秋）・安田記念・ドバイDF', null, '鹿毛'],
+  ['dodeuce', 'ドウデュース', 'm', 'sashi', 't', 'c', 'A', '日本ダービー・有馬記念・天皇賞（秋）・JC', null, '鹿毛'],
+  ['efforia', 'エフフォーリア', 'm', 'senko', 't', 'c', 'A', '皐月賞・天皇賞（秋）・有馬記念', null, '鹿毛'],
+  ['satonodia', 'サトノダイヤモンド', 'm', 'sashi', 't', 'cl', 'A', '菊花賞・有馬記念', null, '鹿毛'],
+  ['kizuna', 'キズナ', 'm', 'oikomi', 't', 'c', 'B', '日本ダービー', null, '青鹿毛'],
+  ['duramente', 'ドゥラメンテ', 'm', 'sashi', 't', 'c', 'A', '皐月賞・日本ダービー', null, '鹿毛'],
+  ['topgun', 'マヤノトップガン', 'm', 'senko', 't', 'cl', 'A', '菊花賞・有馬記念・宝塚記念・天皇賞（春）', null, '栗毛'],
+  ['riceshower', 'ライスシャワー', 'm', 'senko', 't', 'l', 'A', '菊花賞・天皇賞（春）2勝', 'k_lg_stayer', '黒鹿毛'],
+  ['biwa', 'ビワハヤヒデ', 'm', 'senko', 't', 'cl', 'A', '菊花賞・宝塚記念・天皇賞（春）', null, '芦毛'],
+  ['manhattan', 'マンハッタンカフェ', 'm', 'sashi', 't', 'l', 'A', '菊花賞・有馬記念・天皇賞（春）', null, '青鹿毛'],
+  ['jungle', 'ジャングルポケット', 'm', 'sashi', 't', 'c', 'B', '日本ダービー・ジャパンカップ', null, '鹿毛'],
+  ['tachyon', 'アグネスタキオン', 'm', 'senko', 't', 'mc', 'A', '朝日杯・皐月賞（4戦4勝）', null, '栗毛'],
+  ['neouniverse', 'ネオユニヴァース', 'm', 'sashi', 't', 'c', 'B', '皐月賞・日本ダービー', null, '鹿毛'],
+  ['roblox', 'ゼンノロブロイ', 'm', 'sashi', 't', 'c', 'A', '天皇賞（秋）・ジャパンカップ・有馬記念', null, '黒鹿毛'],
+  ['samson', 'メイショウサムソン', 'm', 'senko', 't', 'cl', 'B', '皐月賞・ダービー・天皇賞（春秋）', null, '鹿毛'],
+  ['pisa', 'ヴィクトワールピサ', 'm', 'senko', 't', 'c', 'B', '皐月賞・有馬記念・ドバイWC', null, '黒鹿毛'],
+  ['flash', 'エイシンフラッシュ', 'm', 'sashi', 't', 'c', 'B', '日本ダービー・天皇賞（秋）', null, '黒鹿毛'],
+  ['bourbon', 'ミホノブルボン', 'm', 'nige', 't', 'mc', 'A', '朝日杯・皐月賞・日本ダービー', null, '栗毛'],
+  ['laurel', 'サクラローレル', 'm', 'sashi', 't', 'l', 'A', '天皇賞（春）・有馬記念', null, '栗毛'],
+  ['creek', 'スーパークリーク', 'm', 'senko', 't', 'l', 'A', '菊花賞・天皇賞（春秋）', 'k_lg_stayer', '鹿毛'],
+  ['inariwan', 'イナリワン', 'm', 'sashi', 't', 'l', 'B', '天皇賞（春）・宝塚記念・有馬記念', null, '鹿毛'],
+  ['tamamo', 'タマモクロス', 'm', 'sashi', 't', 'cl', 'A', '天皇賞（春秋）・宝塚記念', null, '芦毛'],
+  ['ryan', 'メジロライアン', 'm', 'sashi', 't', 'c', 'B', '宝塚記念', null, '鹿毛'],
+  ['helios', 'ダイタクヘリオス', 'm', 'nige', 't', 'm', 'B', 'マイルCS2勝', null, '黒鹿毛'],
+  ['turbo', 'ツインターボ', 'm', 'nige', 't', 'c', 'B', 'オールカマー・七夕賞', 'k_lg_silence', '鹿毛'],
+  ['seiunsky', 'セイウンスカイ', 'm', 'nige', 't', 'cl', 'A', '皐月賞・菊花賞', null, '芦毛'],
+  ['kinghalo', 'キングヘイロー', 'm', 'sashi', 't', 's', 'B', '高松宮記念', null, '鹿毛'],
+  ['digital', 'アグネスデジタル', 'm', 'sashi', 'b', 'm', 'A', 'マイルCS・天皇賞（秋）・フェブラリーS', null, '栗毛'],
+  ['kurofune', 'クロフネ', 'm', 'senko', 'b', 'm', 'S', 'NHKマイルC・ジャパンCダート', 'k_lg_sand', '芦毛'],
+  ['allure', 'ゴールドアリュール', 'm', 'senko', 'd', 'mc', 'A', 'ジャパンダートダービー・フェブラリーS', 'k_lg_sand', '栗毛'],
+  ['kanehikiri', 'カネヒキリ', 'm', 'senko', 'd', 'mc', 'A', 'フェブラリーS・ジャパンCダート', 'k_lg_sand', '栗毛'],
+  ['vermilion', 'ヴァーミリアン', 'm', 'senko', 'd', 'c', 'A', 'ジャパンCダート・フェブラリーS', null, '黒鹿毛'],
+  ['espoir', 'エスポワールシチー', 'm', 'nige', 'd', 'm', 'B', 'フェブラリーS・ジャパンCダート', null, '栗毛'],
+  ['transcend', 'トランセンド', 'm', 'nige', 'd', 'mc', 'B', 'フェブラリーS・ジャパンCダート2勝', null, '鹿毛'],
+  ['hokko', 'ホッコータルマエ', 'm', 'senko', 'd', 'c', 'A', 'チャンピオンズC・川崎記念3連覇', null, '鹿毛'],
+  ['rikki', 'コパノリッキー', 'm', 'nige', 'd', 'm', 'A', 'フェブラリーS2勝', null, '栗毛'],
+  ['golddream', 'ゴールドドリーム', 'm', 'sashi', 'd', 'm', 'B', 'フェブラリーS・チャンピオンズC', null, '鹿毛'],
+  ['chrysoberyl', 'クリソベリル', 'm', 'senko', 'd', 'c', 'A', 'チャンピオンズC・JDD・帝王賞', null, '栗毛'],
+  ['lemonpop', 'レモンポップ', 'm', 'nige', 'd', 'sm', 'A', 'フェブラリーS・チャンピオンズC', 'k_lg_sand', '栗毛'],
+  ['falcon', 'スマートファルコン', 'm', 'nige', 'd', 'c', 'A', '東京大賞典・帝王賞・JBCクラシック', 'k_lg_sand', '栗毛'],
+  ['tapdance', 'タップダンスシチー', 'm', 'nige', 't', 'c', 'B', 'ジャパンカップ・宝塚記念', null, '鹿毛'],
+  ['cesario', 'シーザリオ', 'f', 'sashi', 't', 'c', 'B', 'オークス・アメリカンオークス', null, '青鹿毛'],
+  ['linecraft', 'ラインクラフト', 'f', 'senko', 't', 'm', 'B', '桜花賞・NHKマイルC', null, '鹿毛'],
+  ['kawakami', 'カワカミプリンセス', 'f', 'sashi', 't', 'c', 'B', 'オークス・秋華賞（無敗）', null, '鹿毛'],
+  ['straight', 'ストレイトガール', 'f', 'sashi', 't', 'sm', 'B', 'ヴィクトリアマイル2勝・スプリンターズS', null, '鹿毛'],
+  ['believe', 'ビリーヴ', 'f', 'senko', 't', 's', 'B', 'スプリンターズS・高松宮記念', null, '鹿毛'],
+  ['sweep', 'スイープトウショウ', 'f', 'oikomi', 't', 'mc', 'B', '秋華賞・宝塚記念・エリザベス女王杯', null, '鹿毛'],
+  ['journey', 'ドリームジャーニー', 'm', 'oikomi', 't', 'c', 'B', '朝日杯・宝塚記念・有馬記念', null, '鹿毛'],
+  ['titleholder', 'タイトルホルダー', 'm', 'nige', 't', 'l', 'A', '菊花賞・天皇賞（春）・宝塚記念', 'k_lg_festival', '鹿毛'],
+  ['finemotion', 'ファインモーション', 'f', 'senko', 't', 'mc', 'B', '秋華賞・エリザベス女王杯', null, '鹿毛'],
+  ['zephyr', 'ヤマニンゼファー', 'm', 'senko', 't', 'sm', 'B', '安田記念2勝・天皇賞（秋）', null, '栗毛'],
+  ['reydeoro', 'レイデオロ', 'm', 'sashi', 't', 'c', 'B', '日本ダービー・天皇賞（秋）', null, '鹿毛'],
+  ['fierement', 'フィエールマン', 'm', 'sashi', 't', 'l', 'A', '菊花賞・天皇賞（春）2勝', null, '鹿毛'],
+  ['songline', 'ソングライン', 'f', 'senko', 't', 'm', 'B', '安田記念2勝・ヴィクトリアマイル', null, '鹿毛']
+];
+
+const Legends = {
+  TIER: { S: { base: 94, rarity: 'UR' }, A: { base: 89, rarity: 'SSR' }, B: { base: 85, rarity: 'SR' } },
+  DIST_CODE: { s: 'sprint', m: 'mile', c: 'classic', l: 'long' },
+  STYLE_SKILLS: {
+    nige: ['k_escape', 'k_keeplead', 'k_rocket'],
+    senko: ['k_breakout', 'k_senkoaccel', 'k_goodpos'],
+    sashi: ['k_sashikiri', 'k_kick', 'k_outside'],
+    oikomi: ['k_doto', 'k_ooso', 'k_lastaccel']
+  },
+  _list: null,
+
+  hash(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  },
+
+  // 名馬の能力（格・得意距離・馬場・脚質から査定）
+  all() {
+    if (this._list) return this._list;
+    this._list = GAME_DATA.legendList.map(([id, name, sex, style, surf, dists, tier, wins, sig, coat]) => {
+      const h = this.hash(id);
+      const v = k => ((h >>> (k * 3)) % 7) - 3;     // 馬ごとの個性（-3〜+3）
+      const base = this.TIER[tier].base;
+      const ds = dists.split('').map(c => this.DIST_CODE[c]);
+      const stats = { speed: base + v(0), stamina: base + v(1), power: base + v(2), guts: base + v(3), intelligence: base - 2 + v(4) };
+      if (ds.includes('sprint')) { stats.speed += 5; stats.power += 4; stats.stamina -= 10; }
+      if (ds.includes('mile')) { stats.speed += 3; stats.stamina -= 2; }
+      if (ds.includes('long')) { stats.stamina += 8; stats.speed -= 2; }
+      if (surf === 'd') { stats.power += 5; }
+      if (style === 'nige') stats.guts += 3;
+      if (style === 'oikomi' || style === 'sashi') stats.speed += 2;
+      const aptitude = {};
+      Object.values(this.DIST_CODE).forEach(k => { aptitude[k] = ds.includes(k) ? 95 : 50; });
+      const order = ['sprint', 'mile', 'classic', 'long'];
+      ds.forEach(k => {
+        const i = order.indexOf(k);
+        [order[i - 1], order[i + 1]].forEach(n => { if (n && aptitude[n] < 72) aptitude[n] = 72; });
+      });
+      aptitude.turf = surf === 'd' ? 45 : surf === 'b' ? 88 : 96;
+      aptitude.dirt = surf === 't' ? 40 : surf === 'b' ? 88 : 96;
+      const pool = this.STYLE_SKILLS[style];
+      const skills = [];
+      if (sig) skills.push(sig);
+      skills.push(pool[0]);
+      if (ds.includes('long')) skills.push('k_stayer');
+      else if (ds.includes('sprint')) skills.push('k_sprintking');
+      else skills.push(tier === 'B' ? pool[1] : 'k_tataki');
+      return {
+        id, name, gender: sex === 'f' ? 'female' : 'male', style, surf, dists: ds, tier, wins, coat,
+        stats, aptitude, skills: [...new Set(skills)].slice(0, 3), rarity: this.TIER[tier].rarity
+      };
+    });
+    return this._list;
+  },
+
+  get(id) { return this.all().find(l => l.id === id); },
+
+  // 名馬カード（配合に使える）
+  card(l) {
+    const stats = {};
+    STAT_KEYS.forEach(k => { stats[k] = Math.min(98, Math.round(l.stats[k] * 0.97)); });
+    const trait = STAT_KEYS.reduce((a, b) => (stats[b] > stats[a] ? b : a));
+    return {
+      id: 'lc_' + l.id, type: l.gender === 'male' ? 'sire' : 'mare', legend: true, legendId: l.id,
+      name: l.name, rarity: l.rarity, stats, apt: Object.assign({}, l.aptitude),
+      style: l.style, growth: l.dists.includes('long') ? 'late' : l.dists.includes('sprint') ? 'early' : 'normal',
+      trait, skill: l.skills[0],
+      desc: `👑 実在の名馬。主な勝ち鞍：${l.wins}`
+    };
+  },
+
+  enabled() { return Player.data.settings.legends !== false; },
+
+  // このレースに出てくる名馬を選ぶ（重賞のみ、適性が合う馬）
+  pickFor(race) {
+    if (!this.enabled() || race.kind !== 'graded' || race.ages === '2') return [];
+    const n = race.grade === 'g1' ? 1 + (Math.random() < 0.6 ? 1 : 0) + (Math.random() < 0.25 ? 1 : 0)
+      : race.grade === 'g2' ? (Math.random() < 0.6 ? 1 : 0) : (Math.random() < 0.35 ? 1 : 0);
+    if (!n) return [];
+    const cat = Horse.distCat(race.distance);
+    const cands = this.all().filter(l => (!race.female || l.gender === 'female')
+      && l.aptitude[cat] >= 72 && l.aptitude[race.surface] >= 80);
+    const out = [];
+    while (out.length < n && cands.length) {
+      // 格の高い名馬ほどGⅠに、格下の名馬ほどGⅢに出やすい
+      const w = cands.map(l => (race.grade === 'g1' ? { S: 3, A: 2, B: 1 } : race.grade === 'g2' ? { S: 1, A: 2, B: 2 } : { S: 0.5, A: 1, B: 3 })[l.tier]
+        * (l.aptitude[cat] >= 95 ? 2 : 1));
+      let r = Math.random() * w.reduce((a, b) => a + b, 0);
+      let i = 0;
+      while ((r -= w[i]) > 0) i++;
+      out.push(cands.splice(i, 1)[0]);
+    }
+    return out;
+  },
+
+  entrant(l, race) {
+    const adj = Race.ageAdjust(race);
+    const stats = {};
+    STAT_KEYS.forEach(k => { stats[k] = Math.round(l.stats[k] + adj + Util.gauss() * 1.5); });
+    return {
+      id: Util.uid('lg_'), legendId: l.id, name: l.name, owner: '👑 名馬', isPlayer: false, isLegend: true,
+      stats, aptitude: Object.assign({}, l.aptitude), runningStyle: l.style, skills: l.skills.slice(),
+      condition: Util.randInt(80, 100), fatigue: 0, coat: l.coat
+    };
+  },
+
+  // 記録（出会った・先着した・カード入手）
+  rec(id) {
+    const p = Player.data;
+    if (!p.legends) p.legends = {};
+    if (!p.legends[id]) p.legends[id] = { met: 0, beaten: 0, lost: 0 };
+    return p.legends[id];
+  },
+
+  CARD_CHANCE: { g1: 0.35, g2: 0.25, g3: 0.2 },
+
+  // レース結果の反映：先着した名馬から一定確率でカード入手
+  applyResult(race, result) {
+    const me = result.finish.find(f => f.isPlayer);
+    const out = { met: [], beaten: [], card: null };
+    if (!me) return out;
+    const legends = result.finish.filter(f => f.legendId);
+    legends.forEach(f => {
+      const r = this.rec(f.legendId);
+      r.met++;
+      const l = this.get(f.legendId);
+      out.met.push(l);
+      if (me.place < f.place) { r.beaten++; out.beaten.push(l); } else r.lost++;
+    });
+    const chance = this.CARD_CHANCE[race.grade] || 0;
+    const target = out.beaten.slice().sort((a, b) => 'SAB'.indexOf(a.tier) - 'SAB'.indexOf(b.tier))[0];
+    if (target && Math.random() < chance) {
+      const c = Cards.get('lc_' + target.id);
+      const isNew = !Player.data.seenCards.includes(c.id);
+      Player.addCard(c.id);
+      out.card = { card: c, isNew };
+    }
+    return out;
+  },
+
+  stats() {
+    const p = Player.data.legends || {};
+    const v = Object.values(p);
+    return {
+      met: v.filter(r => r.met).length,
+      beaten: v.filter(r => r.beaten).length,
+      cards: this.all().filter(l => Player.data.seenCards.includes('lc_' + l.id)).length,
+      total: this.all().length
+    };
+  }
+};
 </script>
 <script>
 // セーブ処理。ゲームロジックから分離し、将来サーバー保存へ差し替えられるようにする。
@@ -1310,6 +1627,7 @@ const Cards = {
     GAME_DATA.mares.forEach(c => { idx[c.id] = Object.assign({ type: 'mare' }, c); });
     GAME_DATA.skills.forEach(c => { idx[c.id] = Object.assign({ type: 'skill' }, c); });
     GAME_DATA.items.forEach(c => { idx[c.id] = Object.assign({ type: 'item' }, c); });
+    if (typeof Legends !== 'undefined') Legends.all().forEach(l => { const c = Legends.card(l); idx[c.id] = c; });
     this._index = idx;
     return idx;
   },
@@ -1332,7 +1650,8 @@ const Cards = {
 
   // 指定タイプ・レアリティのカードをランダムに選ぶ。無ければ近いレアリティから。
   randomOf(type, rarity) {
-    const pool = this.all(false).filter(c => c.type === type && !(c.type === 'item' && c.price === undefined));
+    // 名馬カード・名馬の固有スキルは抽選に入れない（名馬に先着したときだけ手に入る）
+    const pool = this.all(false).filter(c => c.type === type && !c.legend && !c.legendOnly && !(c.type === 'item' && c.price === undefined));
     const target = this.rarityIndex(rarity);
     for (let d = 0; d < GAME_DATA.rarities.length; d++) {
       for (const dir of [-1, 1]) {
@@ -2051,6 +2370,7 @@ const Skills = {
     if (c.rankMax !== undefined && ctx.rank > c.rankMax) return false;
     if (c.distCat && c.distCat !== ctx.distCat) return false;
     if (c.groundMin !== undefined && ctx.ground < c.groundMin) return false;
+    if (c.surface && c.surface !== ctx.surface) return false;
     if (c.close && !ctx.close) return false;
     return true;
   },
@@ -2285,6 +2605,14 @@ const Race = {
       condition: h.condition, fatigue: h.fatigue
     }];
     const used = new Set([h.name]);
+    // 重賞には実在の名馬がライバルとして出てくる
+    if (typeof Legends !== 'undefined') {
+      Legends.pickFor(race).forEach(l => {
+        if (used.has(l.name) || entrants.length >= race.field) return;
+        used.add(l.name);
+        entrants.push(Legends.entrant(l, race));
+      });
+    }
     while (entrants.length < race.field) {
       const npc = this.makeNpc(race);
       if (used.has(npc.name)) continue;
@@ -2409,7 +2737,7 @@ const Race = {
 
         // スキル判定（1刻みにつき1つまで、優先順位順）
         const neighbor = ranked.some(o => o !== r && !o.finished && Math.abs(o.pos - r.pos) < 1.5);
-        const ctx = { phase, remain, rank, distCat, ground, close: phase === 'final' && neighbor };
+        const ctx = { phase, remain, rank, distCat, ground, surface: race.surface, close: phase === 'final' && neighbor };
         for (const sk of r.skills) {
           if (r.usedSkills.has(sk.id) || !Skills.conditionMet(sk, ctx)) continue;
           if (Math.random() > Skills.activationChance(s.intelligence) * this.DT) continue;
@@ -2472,7 +2800,7 @@ const Race = {
     const finish = final.map((r, i) => {
       const prev = final[i - 1];
       return {
-        id: r.e.id, name: r.e.name, isPlayer: r.e.isPlayer, place: i + 1,
+        id: r.e.id, name: r.e.name, isPlayer: r.e.isPlayer, legendId: r.e.legendId, place: i + 1,
         style: r.e.runningStyle,
         time: r.time,
         margin: prev ? this.marginText((r.time - prev.time) * r.v / 2.4) : ''
@@ -2487,7 +2815,7 @@ const Race = {
     return {
       raceId: race.id, name: race.name, grade: race.grade, distance: D, surface: race.surface,
       distCat, ground,
-      entrants: runners.map(r => ({ id: r.e.id, name: r.e.name, owner: r.e.owner || '', isPlayer: r.e.isPlayer, isGhost: !!r.e.isGhost, style: r.e.runningStyle, gate: r.gate + 1 })),
+      entrants: runners.map(r => ({ id: r.e.id, name: r.e.name, owner: r.e.owner || '', isPlayer: r.e.isPlayer, isGhost: !!r.e.isGhost, legendId: r.e.legendId, coat: r.e.coat, style: r.e.runningStyle, gate: r.gate + 1 })),
       finish, events: events.sort((a, b) => a.t - b.t), frames,
       phases: { startEnd, cornerStart, finalStart }
     };
@@ -2579,7 +2907,11 @@ const Race = {
         raceName: race.name, grade: race.grade, distance: race.distance, surface: race.surface };
     }
 
-    return { place, prize, exp, cards, levelUps, birthday, field: result.finish.length, newRecord: newRecord && !!prevRec, rightTo };
+    // 名馬との対戦記録と名馬カード
+    const legends = typeof Legends !== 'undefined' ? Legends.applyResult(race, result) : { met: [], beaten: [], card: null };
+    if (legends.card) cards.push(Object.assign({ legend: true }, legends.card));
+
+    return { place, prize, exp, cards, levelUps, birthday, field: result.finish.length, newRecord: newRecord && !!prevRec, rightTo, legends };
   }
 };
 </script>
@@ -2632,7 +2964,7 @@ const Pvp = {
     aptitude[cat] = Util.randInt(75, 100);
     aptitude[course.surface] = Util.randInt(75, 100);
     const runningStyle = Util.pick(Object.keys(GAME_DATA.styles));
-    const pool = GAME_DATA.skills.filter(s => (!s.style || s.style === runningStyle) && (allowUR || s.rarity !== 'UR'));
+    const pool = GAME_DATA.skills.filter(s => (!s.style || s.style === runningStyle) && !s.legendOnly && (allowUR || s.rarity !== 'UR'));
     const skills = [];
     while (skills.length < 3 && pool.length) skills.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0].id);
     let name;
@@ -2941,7 +3273,8 @@ const Race3D = {
     { name: '栗毛', body: 0xa3552a, dark: 0x8c4520 },
     { name: '芦毛', body: 0xbcb7b0, dark: 0x6f6a64 },
     { name: '青鹿毛', body: 0x2b1d16, dark: 0x0c0806 },
-    { name: '栃栗毛', body: 0x7a3d1c, dark: 0xb88552 }
+    { name: '栃栗毛', body: 0x7a3d1c, dark: 0xb88552 },
+    { name: '白毛', body: 0xf2f0ec, dark: 0xd8d4cc, rare: true }
   ],
   // 勝負服の色と柄
   SILK_COLORS: ['#ffffff', '#1b1b1b', '#d32f2f', '#1e4fd6', '#fbc02d', '#2e7d32', '#f06292', '#4fc3f7', '#7b1fa2', '#b39ddb', '#795548', '#880e4f', '#9e9e9e', '#ef6c00'],
@@ -3521,10 +3854,10 @@ const Race3D = {
   makeHorse(e, num, n, st) {
     const G = this.geos();
     const r = this.rng(this.hash(e.id + e.name));
-    const coat = this.COATS[Math.floor(r() * this.COATS.length)];
+    const coat = (e.coat && this.COATS.find(c => c.name === e.coat)) || (cs => cs[Math.floor(r() * cs.length)])(this.COATS.filter(c => !c.rare));
     const bracket = this.bracketOf(num, n);
     const capColor = this.BRACKET_COLORS[bracket - 1];
-    const silk = this.silkFor(e.isPlayer ? 'owner:' + Player.data.name : e.owner ? 'owner:' + e.owner : e.id);
+    const silk = this.silkFor(e.isPlayer ? 'owner:' + Player.data.name : e.legendId ? 'legend:' + e.legendId : e.owner ? 'owner:' + e.owner : e.id);
     const coatMat = new THREE.MeshStandardMaterial({ color: coat.body, roughness: 0.55, metalness: 0.05 });
     const darkMat = new THREE.MeshStandardMaterial({ color: coat.dark, roughness: 0.7 });
     const hoofMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
@@ -4153,7 +4486,7 @@ const Race3D = {
       hud.bar.innerHTML = order.map((o, i) => `<div class="r3-item ${o.h.e.isPlayer ? 'me' : ''}">
         <img src="${o.h.icon}" alt=""><span class="r3-pos">${i + 1}</span>
         <span class="r3-num" style="background:${o.h.capColor};color:${this.BRACKET_TEXT[o.h.bracket - 1]}">${o.h.num}</span>
-        <span class="r3-name">${Util.esc(o.h.e.name)}</span></div>`).join('');
+        <span class="r3-name">${o.h.e.legendId ? '👑' : ''}${Util.esc(o.h.e.name)}</span></div>`).join('');
     }
   }
 };
@@ -4273,7 +4606,7 @@ const UI = {
     const skill = c.skill ? Cards.get(c.skill) : null;
     return `<div class="gcard ${t.color} rcard-${c.rarity} ${opts.selected ? 'selected' : ''} ${opts.cls || ''}" ${opts.onclick ? `onclick="${opts.onclick}"` : ''}>
       <div class="gcard-head">${this.rarity(c.rarity)}<span class="gtype">${t.icon} ${t.label}</span>${opts.count ? `<span class="count">×${opts.count}</span>` : ''}</div>
-      <div class="gcard-art">${c.type === 'sire' ? '🐎' : '🦄'}${c.custom ? '<span class="legend">🏛</span>' : ''}</div>
+      <div class="gcard-art">${c.type === 'sire' ? '🐎' : '🦄'}${c.custom ? '<span class="legend">🏛</span>' : c.legend ? '<span class="legend">👑</span>' : ''}</div>
       <div class="gcard-name">${Util.esc(c.name)}</div>
       <div class="mini-stats">${st}</div>
       <div class="apt-chips">${apt}</div>
@@ -4310,6 +4643,12 @@ const UI = {
   },
 
   silhouette(c) {
+    if (c.legend) {
+      const r = (Player.data.legends || {})[c.legendId];
+      return `<div class="gcard silhouette legend-sil rcard-${c.rarity}"><div class="gcard-head">${this.rarity(c.rarity)}<span class="gtype">👑 名馬</span></div>
+        <div class="gcard-art">${r ? '🏇' : '❔'}</div><div class="gcard-name">${r ? Util.esc(c.name) : '？？？？'}</div>
+        <div class="gcard-desc">${r ? `対戦${r.met}回・先着${r.beaten}回<br>重賞で先着するとカード入手のチャンス！` : 'まだ出会っていない名馬'}</div></div>`;
+    }
     return `<div class="gcard silhouette rcard-${c.rarity}"><div class="gcard-head">${this.rarity(c.rarity)}<span class="gtype">${Cards.types[c.type].label}</span></div>
       <div class="gcard-art">❔</div><div class="gcard-name">？？？？</div><div class="gcard-desc">まだ見つけていないカード</div></div>`;
   },
@@ -4415,7 +4754,8 @@ const UI = {
         <ul>
           <li>競馬×カードゲーム「馬主カード」へようこそ！</li>
           <li>レースで勝つと新しい種牡馬・繁殖牝馬・スキルカードが手に入ります。</li>
-          <li>🆕 レースが2Dトラックで見られるようになりました！</li>
+          <li>🆕 👑 実在のJRA名馬100頭がライバルとして重賞に登場！ 先着すると名馬カードが手に入ることも。</li>
+          <li>🆕 レースが3D・実際の速さで見られるようになりました！</li>
           <li>🆕 ⚔ リーグ戦・🤝 対戦コードでフレンド対戦が登場！</li>
           <li>🆕 黄金配合・インブリードなどの特殊配合、血統表、カードパック、記録・ランキングを追加。</li>
           <li>わからない言葉は <span class="help static">？</span> ボタンをタップ！</li>
@@ -4625,10 +4965,10 @@ const UI = {
     let body = '';
     if (st.cardTab === 'shop') body = this.shopView();
     else {
-      const types = [['all', 'すべて'], ['sire', '♂ 種牡馬'], ['mare', '♀ 繁殖牝馬'], ['skill', '🎴 スキル'], ['item', '🎒 アイテム']];
+      const types = [['all', 'すべて'], ['legend', '👑 名馬'], ['sire', '♂ 種牡馬'], ['mare', '♀ 繁殖牝馬'], ['skill', '🎴 スキル'], ['item', '🎒 アイテム']];
       const rars = ['all', ...GAME_DATA.rarities];
       const q = st.cardQuery.trim();
-      const match = c => (st.cardType === 'all' || c.type === st.cardType) && (st.cardRarity === 'all' || c.rarity === st.cardRarity)
+      const match = c => (st.cardType === 'all' || (st.cardType === 'legend' ? c.legend : c.type === st.cardType)) && (st.cardRarity === 'all' || c.rarity === st.cardRarity)
         && (!q || c.name.includes(q) || (c.desc || '').includes(q));
       const filters = `<div class="filters">
         <div class="chips">${types.map(([k, l]) => `<button class="${st.cardType === k ? 'active' : ''}" onclick="UI.state.cardType='${k}';UI.render()">${l}</button>`).join('')}</div>
@@ -4645,6 +4985,7 @@ const UI = {
         const got = Cards.all().filter(c => seen.has(c.id)).length;
         body = `<p class="dex-progress">収集率：<b>${got}</b> / ${Cards.all().length}</p>` + filters +
           `<div class="cgrid">${all.map(c => seen.has(c.id) ? this.anyCard(c, { onclick: `App.cardDetail('${c.id}')` }) : this.silhouette(c)).join('')}</div>`;
+        if (st.cardType === 'legend') { const ls = Legends.stats(); body = `<p class="dex-progress">👑 名馬カード：<b>${ls.cards}</b> / ${ls.total}・対戦 ${ls.met}頭・先着 ${ls.beaten}頭</p>` + body; }
       }
     }
     return `<h2 class="screen-title">🃏 カード</h2>
@@ -4908,6 +5249,24 @@ const UI = {
       </section>`;
   },
 
+  // 名馬との対戦成績（100頭）
+  legendBook() {
+    const ls = Legends.stats();
+    const recs = Player.data.legends || {};
+    const tiers = [['S', '伝説級'], ['A', '名馬'], ['B', '実力馬']];
+    return `<section class="panel"><h3>👑 名馬との対戦成績 ${this.help('legend')}</h3>
+      <p class="muted small">対戦 ${ls.met}/${ls.total}頭・先着 ${ls.beaten}頭・名馬カード ${ls.cards}枚</p>
+      ${tiers.map(([t, label]) => `<details ${t === 'S' ? 'open' : ''}><summary>${label}（${Legends.all().filter(l => l.tier === t).length}頭）</summary>
+        <div class="legend-grid">${Legends.all().filter(l => l.tier === t).map(l => {
+          const r = recs[l.id];
+          const card = Player.data.seenCards.includes('lc_' + l.id);
+          return `<div class="lg ${r ? 'met' : ''} ${card ? 'got' : ''}" title="${Util.esc(l.wins)}">
+            <b>${r || card ? Util.esc(l.name) : '？？？'}</b>
+            <small>${r ? `${r.beaten}勝${r.lost}敗` : '未対戦'}${card ? '・🃏' : ''}</small></div>`;
+        }).join('')}</div></details>`).join('')}
+    </section>`;
+  },
+
   // ─────────── 記録・ランキング ───────────
   recordsView() {
     const p = Player.data;
@@ -4936,6 +5295,7 @@ const UI = {
       ${rank('prizeMoney', '💰 獲得賞金ランキング', v => Util.money(v))}
       ${rank('wins', '🏆 勝利数ランキング', v => v + '勝')}
       ${rank('g1Wins', '👑 GⅠ勝利数ランキング', v => v + '勝')}
+      ${this.legendBook()}
       <section class="panel"><h3>⏱ コースレコード</h3>
         ${recs.length ? `<table class="hist"><tr><th>レース</th><th>タイム</th><th>馬名</th></tr>${recs.map(r => `<tr><td>${this.gradeBadge(r.grade)}${r.name}<br><small class="muted">${r.surface === 'turf' ? '芝' : 'ダ'}${r.distance}m</small></td><td class="num">${Race.timeText(p.records[r.id].time)}</td><td>${Util.esc(p.records[r.id].name)}</td></tr>`).join('')}</table>` : '<p class="muted">レースに出るとタイムが記録されます。</p>'}
       </section>`;
@@ -5141,7 +5501,7 @@ const RaceView = {
     ol.innerHTML = order.map((o, i) => {
       const st = GAME_DATA.styles[o.e.style];
       const gap = i > 0 && o.ft === null ? `<small>${((leadPos - o.p) / 2.4).toFixed(1)}馬身</small>` : '';
-      return `<li class="${o.e.isPlayer ? 'me' : ''} ${o.e.isGhost ? 'ghost' : ''}"><span class="pos">${i + 1}</span><span title="${st.label}">${st.icon}</span> ${Util.esc(o.e.name)} ${gap}</li>`;
+      return `<li class="${o.e.isPlayer ? 'me' : ''} ${o.e.isGhost ? 'ghost' : ''}"><span class="pos">${i + 1}</span><span title="${st.label}">${st.icon}</span> ${o.e.legendId ? '👑' : ''}${Util.esc(o.e.name)} ${gap}</li>`;
     }).join('');
   },
 
@@ -5234,9 +5594,18 @@ const RaceView = {
         <tr><th>着</th><th>馬名</th><th>タイム</th><th>着差</th></tr>
         ${fin.map(f => {
           const e = this.entrant(f.id) || {};
-          return `<tr class="${f.isPlayer ? 'me' : ''}"><td>${f.place}</td><td>${GAME_DATA.styles[f.style].icon} ${Util.esc(f.name)}${e.owner ? `<br><small class="muted">${Util.esc(e.owner)}</small>` : ''}</td><td>${Race.timeText(f.time)}</td><td>${f.margin}</td></tr>`;
+          return `<tr class="${f.isPlayer ? 'me' : ''} ${f.legendId ? 'is-legend' : ''}"><td>${f.place}</td><td>${GAME_DATA.styles[f.style].icon} ${f.legendId ? '👑' : ''}${Util.esc(f.name)}${e.owner && !f.legendId ? `<br><small class="muted">${Util.esc(e.owner)}</small>` : ''}</td><td>${Race.timeText(f.time)}</td><td>${f.margin}</td></tr>`;
         }).join('')}
       </table>`;
+  },
+
+  // 名馬との対決結果
+  legendHTML(lg) {
+    if (!lg || !lg.met.length) return '';
+    return `<div class="legend-vs"><b>👑 名馬との対決</b>${lg.met.map(l => {
+      const won = lg.beaten.includes(l);
+      return `<div class="${won ? 'ok' : 'muted'}">${won ? '○ 先着' : '● 敗戦'}：${Util.esc(l.name)} <small>（${Util.esc(l.wins)}）</small></div>`;
+    }).join('')}${lg.card ? `<div class="ok">🎉 ${Util.esc(lg.card.card.name)}の名馬カードを手に入れた！ 配合で血を受け継げます。</div>` : lg.beaten.length ? '<div class="muted small">今回はカードを落としませんでした…</div>' : ''}</div>`;
   },
 
   placeHead(place, winnerName) {
@@ -5260,6 +5629,7 @@ const RaceView = {
       const cards = this.cardsHTML(reward.cards);
       body = `${this.placeHead(reward.place, fin[0].name)}
         ${reward.newRecord ? '<p class="center ok">⏱ コースレコード更新！</p>' : ''}
+        ${this.legendHTML(reward.legends)}
         ${reward.rightTo ? `<p class="center ok big-note">🎫「${reward.rightTo.name}」の優先出走権を獲得！</p>` : ''}
         ${this.resultTable(fin)}
         <h3>🎁 報酬</h3>
@@ -5600,7 +5970,8 @@ const App = {
       ${elig.right ? '<p class="ok">🎫 優先出走権で出走！</p>' : ''}
       ${trialTo ? `<p class="rec">🎫 ${race.trial.top}着以内で「${trialTo.name}」の優先出走権！${UI.help('right')}</p>` : ''}
       <h4>出走メンバー（${field.length}頭）</h4>
-      <ol class="entry-list">${field.map(e => `<li class="${e.isPlayer ? 'me' : ''}">${GAME_DATA.styles[e.runningStyle].icon} ${Util.esc(e.name)}${e.isPlayer ? ' ← あなたの馬' : ''}</li>`).join('')}</ol>
+      <ol class="entry-list">${field.map(e => `<li class="${e.isPlayer ? 'me' : ''} ${e.isLegend ? 'is-legend' : ''}">${GAME_DATA.styles[e.runningStyle].icon} ${e.isLegend ? '👑' : ''}${Util.esc(e.name)}${e.isPlayer ? ' ← あなたの馬' : ''}${e.isLegend ? `<small>${Util.esc(Legends.get(e.legendId).wins)}</small>` : ''}</li>`).join('')}</ol>
+      ${field.some(e => e.isLegend) ? '<p class="rec">👑 名馬が出走！ 先着するとその名馬のカードが手に入ることがあります。</p>' : ''}
       ${warn.length ? `<div class="warn">${warn.map(w => '⚠ ' + w).join('<br>')}</div>` : '<p class="ok">準備万端！</p>'}
       <div class="btn-row"><button class="btn" onclick="UI.closeModal()">やめる</button><button class="btn primary big" onclick="App.runRace()">🏁 スタート！</button></div>`);
   },
@@ -5828,6 +6199,7 @@ const App = {
   settings() {
     UI.modal(`<h3>⚙ 設定</h3>
       <label>厩舎の名前<input id="set-name" maxlength="12" value="${Util.esc(Player.data.name)}"></label>
+      <label class="check-row"><input type="checkbox" id="set-legends" ${Player.data.settings.legends !== false ? 'checked' : ''}> 👑 実在の名馬をライバルとして出走させる</label>
       <button class="btn primary" onclick="App.saveSettings()">保存</button>
       <hr>
       <p class="muted small">データはこのブラウザ（localStorage）に自動保存されています。</p>
@@ -5837,6 +6209,7 @@ const App = {
   saveSettings() {
     const v = (UI.el('set-name').value || '').trim().slice(0, 12);
     if (v) Player.data.name = v;
+    Player.data.settings.legends = UI.el('set-legends').checked;
     UI.closeModal();
     this.commit();
   },

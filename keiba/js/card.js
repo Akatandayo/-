@@ -57,6 +57,7 @@ const Cards = {
     GAME_DATA.mares.forEach(c => { idx[c.id] = Object.assign({ type: 'mare' }, c); });
     GAME_DATA.skills.forEach(c => { idx[c.id] = Object.assign({ type: 'skill' }, c); });
     GAME_DATA.items.forEach(c => { idx[c.id] = Object.assign({ type: 'item' }, c); });
+    if (typeof Legends !== 'undefined') Legends.all().forEach(l => { const c = Legends.card(l); idx[c.id] = c; });
     this._index = idx;
     return idx;
   },
@@ -79,7 +80,8 @@ const Cards = {
 
   // 指定タイプ・レアリティのカードをランダムに選ぶ。無ければ近いレアリティから。
   randomOf(type, rarity) {
-    const pool = this.all(false).filter(c => c.type === type && !(c.type === 'item' && c.price === undefined));
+    // 名馬カード・名馬の固有スキルは抽選に入れない（名馬に先着したときだけ手に入る）
+    const pool = this.all(false).filter(c => c.type === type && !c.legend && !c.legendOnly && !(c.type === 'item' && c.price === undefined));
     const target = this.rarityIndex(rarity);
     for (let d = 0; d < GAME_DATA.rarities.length; d++) {
       for (const dir of [-1, 1]) {

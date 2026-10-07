@@ -46,7 +46,7 @@ const Pvp = {
     aptitude[cat] = Util.randInt(75, 100);
     aptitude[course.surface] = Util.randInt(75, 100);
     const runningStyle = Util.pick(Object.keys(GAME_DATA.styles));
-    const pool = GAME_DATA.skills.filter(s => (!s.style || s.style === runningStyle) && (allowUR || s.rarity !== 'UR'));
+    const pool = GAME_DATA.skills.filter(s => (!s.style || s.style === runningStyle) && !s.legendOnly && (allowUR || s.rarity !== 'UR'));
     const skills = [];
     while (skills.length < 3 && pool.length) skills.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0].id);
     let name;

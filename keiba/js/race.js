@@ -211,6 +211,14 @@ const Race = {
       condition: h.condition, fatigue: h.fatigue
     }];
     const used = new Set([h.name]);
+    // 重賞には実在の名馬がライバルとして出てくる
+    if (typeof Legends !== 'undefined') {
+      Legends.pickFor(race).forEach(l => {
+        if (used.has(l.name) || entrants.length >= race.field) return;
+        used.add(l.name);
+        entrants.push(Legends.entrant(l, race));
+      });
+    }
     while (entrants.length < race.field) {
       const npc = this.makeNpc(race);
       if (used.has(npc.name)) continue;
@@ -335,7 +343,7 @@ const Race = {
 
         // スキル判定（1刻みにつき1つまで、優先順位順）
         const neighbor = ranked.some(o => o !== r && !o.finished && Math.abs(o.pos - r.pos) < 1.5);
-        const ctx = { phase, remain, rank, distCat, ground, close: phase === 'final' && neighbor };
+        const ctx = { phase, remain, rank, distCat, ground, surface: race.surface, close: phase === 'final' && neighbor };
         for (const sk of r.skills) {
           if (r.usedSkills.has(sk.id) || !Skills.conditionMet(sk, ctx)) continue;
           if (Math.random() > Skills.activationChance(s.intelligence) * this.DT) continue;
@@ -398,7 +406,7 @@ const Race = {
     const finish = final.map((r, i) => {
       const prev = final[i - 1];
       return {
-        id: r.e.id, name: r.e.name, isPlayer: r.e.isPlayer, place: i + 1,
+        id: r.e.id, name: r.e.name, isPlayer: r.e.isPlayer, legendId: r.e.legendId, place: i + 1,
         style: r.e.runningStyle,
         time: r.time,
         margin: prev ? this.marginText((r.time - prev.time) * r.v / 2.4) : ''
@@ -413,7 +421,7 @@ const Race = {
     return {
       raceId: race.id, name: race.name, grade: race.grade, distance: D, surface: race.surface,
       distCat, ground,
-      entrants: runners.map(r => ({ id: r.e.id, name: r.e.name, owner: r.e.owner || '', isPlayer: r.e.isPlayer, isGhost: !!r.e.isGhost, style: r.e.runningStyle, gate: r.gate + 1 })),
+      entrants: runners.map(r => ({ id: r.e.id, name: r.e.name, owner: r.e.owner || '', isPlayer: r.e.isPlayer, isGhost: !!r.e.isGhost, legendId: r.e.legendId, coat: r.e.coat, style: r.e.runningStyle, gate: r.gate + 1 })),
       finish, events: events.sort((a, b) => a.t - b.t), frames,
       phases: { startEnd, cornerStart, finalStart }
     };
@@ -505,6 +513,10 @@ const Race = {
         raceName: race.name, grade: race.grade, distance: race.distance, surface: race.surface };
     }
 
-    return { place, prize, exp, cards, levelUps, birthday, field: result.finish.length, newRecord: newRecord && !!prevRec, rightTo };
+    // 名馬との対戦記録と名馬カード
+    const legends = typeof Legends !== 'undefined' ? Legends.applyResult(race, result) : { met: [], beaten: [], card: null };
+    if (legends.card) cards.push(Object.assign({ legend: true }, legends.card));
+
+    return { place, prize, exp, cards, levelUps, birthday, field: result.finish.length, newRecord: newRecord && !!prevRec, rightTo, legends };
   }
 };

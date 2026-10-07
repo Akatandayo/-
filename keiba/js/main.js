@@ -316,7 +316,8 @@ const App = {
       ${elig.right ? '<p class="ok">🎫 優先出走権で出走！</p>' : ''}
       ${trialTo ? `<p class="rec">🎫 ${race.trial.top}着以内で「${trialTo.name}」の優先出走権！${UI.help('right')}</p>` : ''}
       <h4>出走メンバー（${field.length}頭）</h4>
-      <ol class="entry-list">${field.map(e => `<li class="${e.isPlayer ? 'me' : ''}">${GAME_DATA.styles[e.runningStyle].icon} ${Util.esc(e.name)}${e.isPlayer ? ' ← あなたの馬' : ''}</li>`).join('')}</ol>
+      <ol class="entry-list">${field.map(e => `<li class="${e.isPlayer ? 'me' : ''} ${e.isLegend ? 'is-legend' : ''}">${GAME_DATA.styles[e.runningStyle].icon} ${e.isLegend ? '👑' : ''}${Util.esc(e.name)}${e.isPlayer ? ' ← あなたの馬' : ''}${e.isLegend ? `<small>${Util.esc(Legends.get(e.legendId).wins)}</small>` : ''}</li>`).join('')}</ol>
+      ${field.some(e => e.isLegend) ? '<p class="rec">👑 名馬が出走！ 先着するとその名馬のカードが手に入ることがあります。</p>' : ''}
       ${warn.length ? `<div class="warn">${warn.map(w => '⚠ ' + w).join('<br>')}</div>` : '<p class="ok">準備万端！</p>'}
       <div class="btn-row"><button class="btn" onclick="UI.closeModal()">やめる</button><button class="btn primary big" onclick="App.runRace()">🏁 スタート！</button></div>`);
   },
@@ -544,6 +545,7 @@ const App = {
   settings() {
     UI.modal(`<h3>⚙ 設定</h3>
       <label>厩舎の名前<input id="set-name" maxlength="12" value="${Util.esc(Player.data.name)}"></label>
+      <label class="check-row"><input type="checkbox" id="set-legends" ${Player.data.settings.legends !== false ? 'checked' : ''}> 👑 実在の名馬をライバルとして出走させる</label>
       <button class="btn primary" onclick="App.saveSettings()">保存</button>
       <hr>
       <p class="muted small">データはこのブラウザ（localStorage）に自動保存されています。</p>
@@ -553,6 +555,7 @@ const App = {
   saveSettings() {
     const v = (UI.el('set-name').value || '').trim().slice(0, 12);
     if (v) Player.data.name = v;
+    Player.data.settings.legends = UI.el('set-legends').checked;
     UI.closeModal();
     this.commit();
   },

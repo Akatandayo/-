@@ -650,3 +650,19 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 @media (max-width: 560px) {
   .rl-controls button { font-size: 12px; padding: 3px 8px; }
 }
+
+/* ── 名馬 ── */
+.legend-vs { background: linear-gradient(90deg, #fff4c2, #fffaf0); border: 2px solid #e0a100; border-radius: 10px; padding: 8px 12px; margin: 8px 0; display: grid; gap: 3px; }
+.legend-vs small { color: var(--muted); }
+.hist tr.is-legend td { background: #fff8de; }
+.entry-list li.is-legend { color: #8a6100; font-weight: 800; }
+.entry-list li small { display: block; font-weight: 400; color: var(--muted); font-size: 11px; }
+.check-row { display: flex !important; align-items: center; gap: 8px; }
+.check-row input { width: auto !important; display: inline !important; margin: 0 !important; }
+.legend-sil { filter: grayscale(.6); opacity: .75; }
+.legend-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 5px; margin: 6px 0; }
+.lg { background: var(--paper2); border-radius: 8px; padding: 4px 8px; font-size: 12px; opacity: .55; }
+.lg b { display: block; font-size: 12px; }
+.lg small { color: var(--muted); }
+.lg.met { opacity: 1; background: #fff; border: 1px solid var(--line); }
+.lg.got { border: 2px solid #e0a100; background: #fff8de; }
