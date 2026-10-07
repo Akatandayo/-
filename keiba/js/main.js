@@ -384,7 +384,7 @@ const App = {
       result, reward, race: m.race, horseId: h.id,
       resultHTML: v => {
         const fin = result.finish;
-        const back = `<div class="btn-row"><button class="btn" onclick="UI.show('horse',{id:'${h.id}'})">🐎 馬の詳細へ</button>
+        const back = `<div class="btn-row">${v.three ? '<button class="btn" onclick="RaceView.replay()">🎬 ゴール前リプレイ</button>' : ''}<button class="btn" onclick="UI.show('horse',{id:'${h.id}'})">🐎 馬の詳細へ</button>
           <button class="btn primary" onclick="UI.show('race')">⚔ 対戦画面へ</button></div>`;
         if (m.kind === 'league') {
           const cards = v.cardsHTML(reward.cards);

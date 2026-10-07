@@ -28,7 +28,10 @@ const UI = {
   show(screen, params = {}) {
     this.state.screen = screen;
     this.state.params = params;
-    if (typeof RaceView !== 'undefined' && screen !== 'raceView') RaceView.stop();
+    if (typeof RaceView !== 'undefined' && screen !== 'raceView') {
+      RaceView.stop();
+      if (typeof Race3D !== 'undefined') Race3D.unmount();
+    }
     this.render();
     window.scrollTo(0, 0);
   },
@@ -790,13 +793,18 @@ const RaceView = {
   done: false,
   skipping: false,
   lastOrderAt: 0,
-  RATE: 9,         // 実時間1秒あたりに進むレース秒（×1のとき）
+  RATE: 9,         // 実時間1秒あたりに進むレース秒（×1のとき・2D）
+  RATE_3D: 6,      // 3Dはじっくり見せる
+  PREROLL: 2.2,    // 3Dのゲートイン演出（秒）
   WINDOW: 44,      // トラックに映す範囲（m）
+
+  // 3Dで表示するか（WebGLが使え、設定で2Dにしていない）
+  use3d() { return typeof Race3D !== 'undefined' && Race3D.supported() && Player.data.settings.raceView !== '2d'; },
 
   start(ctx) {
     this.stop();
     this.ctx = ctx;
-    this.clock = 0;
+    this.clock = this.use3d() ? -this.PREROLL : 0;
     this.idx = 0;
     this.done = false;
     this.lastTs = null;
@@ -817,10 +825,14 @@ const RaceView = {
     const ground = GAME_DATA.grounds[result.ground].label;
     const sl = GAME_DATA.surfaces.find(s => s.key === result.surface);
     const lanes = result.entrants.slice().sort((a, b) => a.gate - b.gate);
-    return `<section class="race-live">
+    const three = this.use3d();
+    const toggle = typeof Race3D !== 'undefined' && Race3D.supported()
+      ? `<button onclick="RaceView.toggle3d()">${three ? '🗺 2D表示' : '🎥 3D表示'}</button>` : '';
+    return `<section class="race-live ${three ? 'is3d' : ''}">
         <div class="rl-title">🏇 ${UI.gradeBadge(race.grade)} ${Util.esc(race.name)}</div>
         <div class="rl-info">${sl.icon}${sl.label} ${result.distance}m・馬場：${ground}${UI.help('ground')}・${result.finish.length}頭</div>
-        <div class="track ${result.surface}" id="rl-track">
+        ${three ? '<div class="r3-wrap" id="r3"></div>' : ''}
+        <div class="track ${result.surface} ${three ? 'hidden' : ''}" id="rl-track">
           <div class="track-remain" id="rl-remain">スタート</div>
           <div class="track-goal" id="rl-goal"></div>
           ${[0, 1, 2, 3, 4].map(i => `<div class="track-post" data-i="${i}"></div>`).join('')}
@@ -832,6 +844,7 @@ const RaceView = {
         <div class="rl-controls">
           ${[1, 2, 4].map(s => `<button class="${this.speed() === s ? 'active' : ''}" onclick="RaceView.setSpeed(${s})">×${s}</button>`).join('')}
           <button onclick="RaceView.skip()">⏭ スキップ</button>
+          ${toggle}
         </div>
       </section>
       <div class="race-split">
@@ -843,6 +856,15 @@ const RaceView = {
 
   mount() {
     this.stop();
+    this.three = this.use3d() && Race3D.mount(UI.el('r3'), this.ctx);
+    if (!this.three) {
+      // 3Dが使えなかったら2Dに切り替え
+      const w = UI.el('r3');
+      if (w) w.remove();
+      const tr = UI.el('rl-track');
+      if (tr) tr.classList.remove('hidden');
+      if (this.clock < 0) this.clock = 0;
+    }
     const log = UI.el('rl-log');
     this.ctx.result.events.slice(0, this.idx).forEach(e => log.insertAdjacentHTML('afterbegin', this.eventHTML(e)));
     this.draw(true);
@@ -857,9 +879,29 @@ const RaceView = {
     document.querySelectorAll('.rl-controls button').forEach(b => b.classList.toggle('active', b.textContent === '×' + s));
   },
 
+  toggle3d() {
+    Player.data.settings.raceView = this.use3d() ? '2d' : '3d';
+    Player.save();
+    if (this.clock < 0) this.clock = 0;
+    Race3D.unmount();
+    UI.render();
+  },
+
+  // 再生速度（3Dはゴール前でスローモーション）
+  rate() {
+    if (!this.three) return this.RATE * this.speed();
+    if (this.clock < 0) return 1;
+    const fin = this.ctx.result.finish;
+    const lead = Math.max(...this.positionsAt(this.clock));
+    const slow = !this.skipping && lead > this.ctx.result.distance - 28 && this.clock < fin[0].time + 0.4;
+    return this.RATE_3D * this.speed() * (slow ? 0.3 : 1);
+  },
+
   tick(ts) {
     if (!UI.el('rl-track')) { this.stop(); return; }
-    if (this.lastTs !== null) this.clock += Math.min(0.1, (ts - this.lastTs) / 1000) * this.RATE * this.speed();
+    const realDt = this.lastTs !== null ? Math.min(0.1, (ts - this.lastTs) / 1000) : 0;
+    this.curRate = this.rate();
+    this.clock += realDt * this.curRate;
     this.lastTs = ts;
     const events = this.ctx.result.events;
     while (this.idx < events.length && events[this.idx].t <= this.clock) { this.apply(events[this.idx]); this.idx++; }
@@ -884,6 +926,11 @@ const RaceView = {
   },
 
   draw(force) {
+    if (this.three) {
+      const t = this.done ? this.endTime : this.clock;
+      const anim = this.clock < 0 ? 1 : Util.clamp((this.curRate || this.RATE_3D) / this.RATE_3D, 0.3, 1.6);
+      Race3D.render(t, this.positionsAt(Math.max(0, t)), anim);
+    }
     const result = this.ctx.result;
     const D = result.distance;
     const pos = this.positionsAt(this.done ? this.endTime : this.clock);
@@ -957,7 +1004,8 @@ const RaceView = {
         el.classList.add('boost');
         el.setAttribute('data-skill', e.text.replace(/[「」]|発動！/g, ''));
       }
-      if (e.isPlayer) UI.toast(`${e.text}<br>${Util.esc(e.sub)}`, 'skill-toast');
+      if (this.three) Race3D.onSkill(e);
+      else if (e.isPlayer) UI.toast(`${e.text}<br>${Util.esc(e.sub)}`, 'skill-toast');
     }
   },
 
@@ -977,6 +1025,47 @@ const RaceView = {
     this.clock = this.endTime;
     this.draw(true);
     this.showResult();
+    if (this.three) this.coolDown();
+  },
+
+  // ゴール前リプレイ（3D）：ゴール10秒前からスローで再生
+  replay() {
+    if (!this.three || !Race3D.state) return;
+    this.stop();
+    const ft = this.ctx.result.finish[0].time;
+    let t = Math.max(0, ft - 10), last = null;
+    const st = Race3D.state;
+    st.goalShown = false;
+    st.startShown = true;
+    st.shot = null;
+    const rp = UI.el('r3-replay');
+    if (rp) rp.classList.add('show');
+    UI.el('r3').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const loop = ts => {
+      if (!UI.el('r3') || !Race3D.state) return;
+      if (last !== null) {
+        const near = t > ft - 2 && t < ft + 0.6;
+        t += Math.min(0.1, (ts - last) / 1000) * (near ? 1.2 : 3.5);
+      }
+      last = ts;
+      Race3D.render(t, this.positionsAt(t), t > ft - 2 && t < ft + 0.6 ? 0.3 : 0.7);
+      if (t < ft + 3) this.raf = requestAnimationFrame(loop);
+      else if (rp) rp.classList.remove('show');
+    };
+    this.raf = requestAnimationFrame(loop);
+  },
+
+  // ゴール後：馬が流して減速していく様子をしばらく映す
+  coolDown() {
+    let t = this.endTime, last = null;
+    const loop = ts => {
+      if (!UI.el('r3') || !Race3D.state) return;
+      if (last !== null) t += Math.min(0.1, (ts - last) / 1000) * 3;
+      last = ts;
+      Race3D.render(t, this.positionsAt(t), 0.8);
+      if (t < this.endTime + 10) this.raf = requestAnimationFrame(loop);
+    };
+    this.raf = requestAnimationFrame(loop);
   },
 
   resultTable(fin) {
@@ -1021,6 +1110,7 @@ const RaceView = {
         ${cards ? `<h3>🃏 カード獲得！</h3><div class="cgrid reveal-grid">${cards}</div>` : '<p class="muted">カードは獲得できませんでした（1着で確定、2〜3着で50%）。</p>'}
         ${h && Horse.mustRetire(h) ? `<p class="notice">🎌 ${Util.esc(h.name)}は引退の時期を迎えました。</p>` : ''}
         <div class="btn-row">
+          ${this.three ? '<button class="btn" onclick="RaceView.replay()">🎬 ゴール前リプレイ</button>' : ''}
           <button class="btn" onclick="UI.show('horse',{id:'${horseId}'})">🐎 馬の詳細へ</button>
           <button class="btn primary" onclick="UI.show('race')">🏇 レース選択へ</button>
         </div>`;

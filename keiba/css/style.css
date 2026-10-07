@@ -567,3 +567,86 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .award { background: linear-gradient(90deg, #fff4c2, #fffaf0); border-radius: 8px; padding: 6px 10px; }
 .award small { color: var(--ok); font-weight: 800; }
 .big-note { font-size: 16px; }
+
+/* ── 3Dレース ── */
+.hidden { display: none !important; }
+.race-live.is3d { padding: 10px; }
+.r3-wrap {
+  position: relative; width: 100%; aspect-ratio: 16 / 9; margin: 8px 0 6px; border-radius: 10px; overflow: hidden;
+  background: #8ec5f0; border: 2px solid #f5f5f5; user-select: none;
+}
+.r3-wrap:fullscreen { aspect-ratio: auto; border: 0; border-radius: 0; }
+.r3-wrap canvas { display: block; }
+.r3-hud { position: absolute; inset: 0; pointer-events: none; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.7); }
+.r3-title {
+  position: absolute; top: 8px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 6px;
+  background: rgba(10,30,22,.72); border-radius: 8px; padding: 3px 10px; font-size: 13px; white-space: nowrap; max-width: 70%; overflow: hidden;
+}
+.r3-title small { font-weight: 700; opacity: .85; }
+.r3-remain {
+  position: absolute; top: 8px; right: 10px; background: linear-gradient(#ffffff, #dfe5ea); color: #222; text-shadow: none;
+  border-radius: 6px 6px 6px 18px; padding: 4px 14px; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,.4);
+}
+.r3-time { position: absolute; top: 40px; right: 12px; font-size: 22px; font-variant-numeric: tabular-nums; }
+.r3-map { position: absolute; top: 40px; left: 10px; bottom: 74px; width: 120px; }
+.r3-map-line { position: absolute; left: 9px; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,.7); }
+.r3-dot {
+  position: absolute; left: 0; top: 0; width: 20px; height: 20px; border-radius: 50%; border: 2px solid rgba(255,255,255,.9);
+  font-size: 11px; line-height: 16px; text-align: center; text-shadow: none; transition: transform .25s linear; box-shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+.r3-dot.me { outline: 3px solid #ff7a1a; z-index: 2; }
+.r3-bar {
+  position: absolute; left: 0; right: 0; bottom: 0; display: flex; gap: 2px; padding: 4px 6px 6px;
+  background: linear-gradient(transparent, rgba(0,0,0,.55)); overflow: hidden;
+}
+.r3-item { position: relative; flex: 0 0 auto; width: 64px; text-align: center; font-size: 10px; }
+.r3-item img { width: 40px; height: 40px; display: block; margin: 0 auto -2px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
+.r3-item .r3-pos { position: absolute; top: 0; left: 2px; font-size: 11px; }
+.r3-item .r3-num { position: absolute; top: 12px; right: 4px; min-width: 18px; border-radius: 4px; font-size: 12px; text-shadow: none; border: 1px solid rgba(0,0,0,.3); }
+.r3-item .r3-name { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.r3-item.me .r3-name { background: #ff7a1a; border-radius: 4px; }
+.r3-banner {
+  position: absolute; top: 34%; left: 50%; transform: translate(-50%, -50%) scale(.7); opacity: 0; transition: all .25s;
+  background: rgba(0,0,0,.6); border-radius: 12px; padding: 8px 22px; text-align: center; font-size: 26px; white-space: nowrap;
+}
+.r3-banner.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.r3-banner small { display: block; font-size: 13px; }
+.r3-banner.skill { background: linear-gradient(90deg, rgba(245,158,11,.9), rgba(232,85,45,.9)); }
+.r3-banner.skill .sk { font-size: 24px; }
+.r3-banner.start { font-size: 34px; letter-spacing: 4px; }
+.r3-banner.goal { background: rgba(20,20,20,.75); border: 2px solid #f5b301; }
+.r3-banner .gw { display: inline-flex; align-items: center; gap: 8px; font-size: 26px; }
+.r3-banner .num { display: inline-block; min-width: 30px; border-radius: 6px; text-shadow: none; border: 1px solid rgba(0,0,0,.3); }
+.r3-cams { position: absolute; right: 8px; bottom: 74px; display: flex; flex-direction: column; gap: 4px; pointer-events: auto; }
+.r3-cams button { border: 0; border-radius: 6px; background: rgba(0,0,0,.55); color: #fff; font-size: 11px; font-weight: 800; padding: 4px 8px; text-align: left; }
+.r3-cams button.active { background: #f5b301; color: #222; }
+
+@media (max-width: 560px) {
+  .r3-wrap { aspect-ratio: 4 / 3.4; }
+  .r3-title { font-size: 11px; top: 4px; max-width: 64%; }
+  .r3-title small { display: none; }
+  .r3-remain { font-size: 11px; padding: 3px 8px; top: 4px; right: 6px; }
+  .r3-time { font-size: 16px; top: 30px; right: 8px; }
+  .r3-map { top: 30px; bottom: 62px; left: 6px; }
+  .r3-dot { width: 17px; height: 17px; font-size: 9px; line-height: 13px; }
+  .r3-item { width: 52px; font-size: 9px; }
+  .r3-item img { width: 32px; height: 32px; }
+  .r3-cams { bottom: 62px; right: 4px; }
+  .r3-cams button { font-size: 10px; padding: 3px 6px; }
+  .r3-banner { font-size: 20px; padding: 6px 14px; }
+  .r3-banner .gw { font-size: 20px; }
+}
+.race-live.is3d > .rl-title, .race-live.is3d > .rl-info { display: none; }
+.r3-bar { pointer-events: auto; overflow-x: auto; scrollbar-width: none; }
+.r3-bar::-webkit-scrollbar { display: none; }
+@media (max-width: 560px) {
+  .r3-cams .lbl { display: none; }
+  .r3-cams button { font-size: 14px; padding: 2px 5px; text-align: center; }
+}
+.r3-replay { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); display: none; background: #d32f2f; color: #fff; border-radius: 4px; padding: 1px 10px; font-size: 13px; letter-spacing: 3px; animation: blink 1s infinite; }
+.r3-replay.show { display: block; }
+@keyframes blink { 50% { opacity: .4; } }
+.rl-controls { flex-wrap: wrap; }
+@media (max-width: 560px) {
+  .rl-controls button { font-size: 12px; padding: 3px 8px; }
+}
