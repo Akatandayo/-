@@ -123,7 +123,7 @@ const App = {
       <div class="birth">
         <div class="sparkle">✨🐣✨</div>
         <h2>馬が生まれました！</h2>
-        ${UI.horseCard(h, { onclick: '' })}
+        ${UI.horseCard(h, { onclick: '', quick: false })}
         <label>名前をつけよう<input id="horse-name" maxlength="12" value="${Util.esc(h.name)}"></label>
         <p>素質：<b>${Util.grade(Horse.potential(h))}</b>${UI.help('potential')}・成長：<b>${GAME_DATA.growthTypes[h.growthType].label}</b>・おすすめ：<b>${rec.icon}${rec.name}</b></p>
         ${h.specials && h.specials.length ? `<p class="special-tags">${h.specials.map(x => `<span class="special">✨ ${x}</span>`).join('')}</p>` : ''}

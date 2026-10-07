@@ -205,6 +205,7 @@ const Race3D = {
     try {
       if (!this.renderer) {
         this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+        this.renderer.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); this.lost = true; });
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1.05;
@@ -568,13 +569,14 @@ const Race3D = {
     const sh = g => { g.userData.shared = true; return g; };
     this._geo = {
       sphere: sh(new THREE.SphereGeometry(1, 18, 12)),
-      neck: sh(new THREE.CylinderGeometry(0.17, 0.3, 1.05, 10)),
+      neck: sh(new THREE.CylinderGeometry(0.19, 0.34, 1.1, 12)),
+      capsule: sh(new THREE.CapsuleGeometry(0.42, 1.25, 8, 18)),
       head: sh(new THREE.CylinderGeometry(0.09, 0.16, 0.62, 10)),
       ear: sh(new THREE.ConeGeometry(0.05, 0.16, 5)),
       mane: sh(new THREE.BoxGeometry(0.07, 0.95, 0.06)),
-      tail: sh(new THREE.CylinderGeometry(0.12, 0.05, 0.85, 6)),
-      upper: sh(new THREE.CylinderGeometry(0.095, 0.07, 0.56, 8)),
-      lower: sh(new THREE.CylinderGeometry(0.055, 0.045, 0.5, 6)),
+      tail: sh(new THREE.CylinderGeometry(0.13, 0.05, 1.0, 8)),
+      upper: sh(new THREE.CylinderGeometry(0.11, 0.075, 0.56, 10)),
+      lower: sh(new THREE.CylinderGeometry(0.06, 0.05, 0.5, 8)),
       hoof: sh(new THREE.CylinderGeometry(0.07, 0.08, 0.08, 8)),
       cloth: sh(new THREE.PlaneGeometry(0.66, 0.44)),
       saddle: sh(new THREE.BoxGeometry(0.5, 0.06, 0.5)),
@@ -602,7 +604,8 @@ const Race3D = {
     return new THREE.CanvasTexture(c);
   },
 
-  makeHorse(e, num, n, st) {
+  // opts.portrait：カード用の肖像（ゼッケン・マーカーなし）、opts.bare：騎手なし（種牡馬・繁殖牝馬）
+  makeHorse(e, num, n, st, opts = {}) {
     const G = this.geos();
     const r = this.rng(this.hash(e.id + e.name));
     const coat = (e.coat && this.COATS.find(c => c.name === e.coat)) || (cs => cs[Math.floor(r() * cs.length)])(this.COATS.filter(c => !c.rare));
@@ -631,17 +634,21 @@ const Race3D = {
       parent.add(m);
       return m;
     };
-    add(body, G.sphere, coatMat, 0, 1.32, 0, 1.0, 0.42, 0.36);
-    add(body, G.sphere, coatMat, -0.62, 1.36, 0, 0.5, 0.5, 0.39);
-    add(body, G.sphere, coatMat, 0.62, 1.3, 0, 0.45, 0.49, 0.37);
+    // 胴体：なめらかな樽型に、トモ（尻）と胸を重ねる
+    const barrel = add(body, G.capsule, coatMat, 0, 1.33, 0);
+    barrel.rotation.z = Math.PI / 2;
+    barrel.scale.set(0.95, 0.92, 0.82);
+    add(body, G.sphere, coatMat, -0.62, 1.4, 0, 0.44, 0.45, 0.37);
+    add(body, G.sphere, coatMat, 0.68, 1.3, 0, 0.42, 0.47, 0.37);
     add(body, G.saddle, bootMat, 0.05, 1.74, 0);
-    const cl = add(body, G.cloth, clothMat, 0.02, 1.42, 0.375);
-    const cr = add(body, G.cloth, clothMat, 0.02, 1.42, -0.375);
-    cr.rotation.y = Math.PI;
-    cl.rotation.y = 0;
+    if (!opts.portrait) {
+      add(body, G.cloth, clothMat, 0.02, 1.42, 0.375);
+      const cr = add(body, G.cloth, clothMat, 0.02, 1.42, -0.375);
+      cr.rotation.y = Math.PI;
+    }
 
     const neck = new THREE.Group();
-    neck.position.set(0.86, 1.55, 0);
+    neck.position.set(0.8, 1.5, 0);
     neck.rotation.z = -0.95;
     body.add(neck);
     add(neck, G.neck, coatMat, 0, 0.5, 0);
@@ -651,16 +658,18 @@ const Race3D = {
     head.rotation.z = -1.4;
     neck.add(head);
     add(head, G.head, coatMat, 0, 0.3, 0);
+    add(head, G.sphere, coatMat, 0.03, 0.08, 0, 0.17, 0.2, 0.13);   // ほお
+    add(head, G.sphere, coatMat, 0, 0.58, 0, 0.1, 0.1, 0.095);      // 鼻先
     if (r() < 0.45) add(head, G.sphere, whiteMat, -0.1, 0.24, 0, 0.035, r() < 0.5 ? 0.24 : 0.08, 0.055);   // 流星・星
     const e1 = add(head, G.ear, coatMat, -0.05, 0.02, 0.07);
     const e2 = add(head, G.ear, coatMat, -0.05, 0.02, -0.07);
     e1.rotation.z = e2.rotation.z = 2.5;
 
     const tail = new THREE.Group();
-    tail.position.set(-1.05, 1.55, 0);
-    tail.rotation.z = -2.3;
+    tail.position.set(-1.12, 1.62, 0);
+    tail.rotation.z = 2.3;   // 後ろ下向き
     body.add(tail);
-    add(tail, G.tail, darkMat, 0, 0.42, 0);
+    add(tail, G.tail, darkMat, 0, 0.5, 0);
 
     // 脚：付け根を回転、膝で曲げる
     const legs = [];
@@ -670,19 +679,25 @@ const Race3D = {
       upper.position.set(x, 1.12, z);
       body.add(upper);
       const um = add(upper, G.upper, coatMat, 0, -0.28, 0);
-      if (i >= 2) um.scale.set(1.35, 1, 1.25);   // トモ（後脚の付け根）は太く
+      if (i >= 2) {
+        um.scale.set(1.35, 1, 1.25);   // トモ（後脚の付け根）は太く
+        add(upper, G.sphere, coatMat, -0.02, -0.1, 0, 0.21, 0.3, 0.15);
+      } else add(upper, G.sphere, coatMat, 0.02, -0.06, 0, 0.15, 0.24, 0.13);
       const lower = new THREE.Group();
       lower.position.set(0, -0.56, 0);
       upper.add(lower);
       const legMat = i < socks ? whiteMat : coat.name === '鹿毛' || coat.name === '黒鹿毛' ? darkMat : coatMat;
       add(lower, G.lower, legMat, 0, -0.25, 0);
       add(lower, G.hoof, hoofMat, 0, -0.52, 0);
+      add(lower, G.sphere, legMat, 0, 0, 0, 0.075, 0.08, 0.075);   // 膝
       legs.push({ upper, lower, off, fore: i < 2 });
     });
 
     // 騎手（前傾のモンキー乗り）
     const jockey = new THREE.Group();
-    jockey.position.set(0.18, 1.86, 0);
+    jockey.position.set(0.16, 1.86, 0);
+    jockey.scale.setScalar(1.2);
+    jockey.visible = !opts.bare;
     body.add(jockey);
     const torso = add(jockey, G.jTorso, silkMat, 0.05, 0.12, 0);
     torso.rotation.z = 0.28;
@@ -711,7 +726,7 @@ const Race3D = {
     aura.visible = false;
     root.add(aura);
     let marker = null;
-    if (e.isPlayer) {
+    if (e.isPlayer && !opts.portrait) {
       const ring = new THREE.Mesh(G.ring, new THREE.MeshBasicMaterial({ color: 0xff7a1a, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
       ring.rotation.x = -Math.PI / 2;
       ring.position.y = 0.05;
@@ -790,6 +805,7 @@ const Race3D = {
       <div class="r3-map" id="r3-map"><div class="r3-map-line"></div></div>
       <div class="r3-banner" id="r3-banner"></div>
       <div class="r3-bar" id="r3-bar"></div>
+      <button class="r3-camtoggle" onclick="this.nextElementSibling.classList.toggle('open')" aria-label="カメラ">🎥</button>
       <div class="r3-cams">${cams.map(([k, l]) => { const [ic, tx] = l.split(' '); return `<button class="${cam === k ? 'active' : ''}" data-cam="${k}" title="${tx}">${ic}<span class="lbl"> ${tx}</span></button>`; }).join('')}<button data-sound="1" title="音">${this.sound.enabled() ? '🔊' : '🔇'}</button><button data-full="1" title="全画面">⛶</button></div>
       <div class="r3-replay" id="r3-replay">REPLAY</div>`;
     hud.querySelectorAll('[data-cam]').forEach(b => b.addEventListener('click', () => {
@@ -797,6 +813,7 @@ const Race3D = {
       Player.save();
       st.shot = null;
       hud.querySelectorAll('[data-cam]').forEach(x => x.classList.toggle('active', x === b));
+      hud.querySelector('.r3-cams').classList.remove('open');
     }));
     hud.querySelector('[data-sound]').addEventListener('click', () => this.toggleSound());
     hud.querySelector('[data-full]').addEventListener('click', () => {
@@ -1008,7 +1025,7 @@ const Race3D = {
     h.body.position.y = k * 0.07 * Math.cos(ph);
     h.body.rotation.z = k * 0.045 * Math.sin(ph);
     h.neck.rotation.z = -0.95 + 0.12 * k * Math.sin(ph + 1.2) + (running ? 0.15 : 0);
-    h.tail.rotation.z = -2.3 + 0.35 * k + 0.12 * Math.sin(ph * 0.5);
+    h.tail.rotation.z = 2.5 - 0.4 * k + 0.12 * Math.sin(ph * 0.5);   // 走ると後ろになびく
     h.legs.forEach(L => {
       const p = (h.phase + L.off) % 1;
       let ang, knee;
@@ -1215,5 +1232,107 @@ const Race3D = {
         <span class="r3-num" style="background:${o.h.capColor};color:${this.BRACKET_TEXT[o.h.bracket - 1]}">${o.h.num}</span>
         <span class="r3-name">${o.h.e.legendId ? '👑' : ''}${Util.esc(o.h.e.name)}</span></div>`).join('');
     }
+  }
+};
+
+// ─────────── 馬の肖像（カードや厩舎に表示する3Dの立ち絵） ───────────
+// レースと同じ馬のモデル（毛色・白斑・勝負服）を1枚の画像にして使い回す。
+const Portrait = {
+  W: 320, H: 240,
+  cache: {},
+  failed: false,
+  queue: [],
+  busy: false,
+
+  ok() { return !this.failed && typeof Race3D !== 'undefined' && Race3D.supported(); },
+
+  setup() {
+    if (this.renderer) return true;
+    try {
+      this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+      // GPUの都合でコンテキストが失われたら、作り直す（何度も失敗したら絵文字表示に戻す）
+      this.renderer.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); this.reset(); });
+      this.renderer.setPixelRatio(1);
+      this.renderer.setSize(this.W, this.H, false);
+      this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    } catch (e) { this.failed = true; return false; }
+    const sc = this.scene = new THREE.Scene();
+    sc.add(new THREE.HemisphereLight(0xffffff, 0x8a7a60, 1.1));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+    sun.position.set(3, 6, 8);
+    sc.add(sun);
+    this.camera = new THREE.PerspectiveCamera(30, this.W / this.H, 0.1, 50);
+    this.camera.position.set(0.25, 1.9, 6.3);
+    this.camera.lookAt(0.25, 1.4, 0);
+    this.st = { shadowMat: new THREE.MeshBasicMaterial({ map: Race3D.shadowTexture(), transparent: true, depthWrite: false }), auraTex: Race3D.glowTexture('rgba(255,210,80,1)') };
+    return true;
+  },
+
+  errors: 0,
+  reset() {
+    try { if (this.renderer) this.renderer.dispose(); } catch (e) { /* noop */ }
+    this.renderer = null;
+    if (++this.errors >= 3) this.failed = true;
+  },
+
+  // desc: { key, id, name, isPlayer, owner, coat, legendId, bare }
+  render(desc) {
+    if (this.cache[desc.key]) return this.cache[desc.key];
+    if (!this.ok() || !this.setup()) return null;
+    try { return this.draw(desc); } catch (e) { this.reset(); return null; }
+  },
+
+  draw(desc) {
+    const e = { id: desc.id, name: desc.name, isPlayer: !!desc.isPlayer, owner: desc.owner, coat: desc.coat, legendId: desc.legendId };
+    const h = Race3D.makeHorse(e, 1, 1, this.st, { portrait: true, bare: !!desc.bare });
+    h.speed = 16;
+    h.phase = 0.62;
+    Race3D.animateHorse(h, 1, 0, 999);
+    h.aura.visible = false;
+    h.root.rotation.y = -0.18;
+    this.scene.add(h.root);
+    this.renderer.render(this.scene, this.camera);
+    const url = this.renderer.domElement.toDataURL('image/png');
+    this.scene.remove(h.root);
+    h.root.traverse(o => {
+      if (o.geometry && !o.geometry.userData.shared) o.geometry.dispose();
+      const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
+      mats.forEach(m => { if (m.map && m.map !== this.st.auraTex && m !== this.st.shadowMat) m.map.dispose(); if (m !== this.st.shadowMat) m.dispose(); });
+    });
+    this.cache[desc.key] = url;
+    return url;
+  },
+
+  // 画面にある肖像の置き場所に、少しずつ画像を入れていく（重くならないように）
+  descs: {},
+  slot(desc, fallback) {
+    this.descs[desc.key] = desc;
+    const url = this.cache[desc.key];
+    return `<span class="pt ${url ? 'ready' : ''}" data-pkey="${desc.key}">${url ? `<img src="${url}" alt="">` : `<span class="pt-fb">${fallback}</span>`}</span>`;
+  },
+
+  hydrate() {
+    if (!this.ok()) return;
+    const els = [...document.querySelectorAll('.pt:not(.ready)')];
+    if (!els.length) return;
+    clearTimeout(this._t);
+    const step = () => {
+      const start = performance.now();
+      while (els.length && performance.now() - start < 24) {
+        const el = els.shift();
+        const d = this.descs[el.dataset.pkey];
+        const url = d && this.render(d);
+        if (!url) continue;
+        document.querySelectorAll(`.pt[data-pkey="${CSS.escape(el.dataset.pkey)}"]`).forEach(x => { x.innerHTML = `<img src="${url}" alt="">`; x.classList.add('ready'); });
+      }
+      if (els.length) this._t = setTimeout(step, 16);
+    };
+    this._t = setTimeout(step, 30);
+  },
+
+  forHorse(h) { return { key: 'h:' + h.id, id: h.id, name: h.name, isPlayer: true }; },
+  forCard(c) {
+    const l = c.legend ? Legends.get(c.legendId) : null;
+    return { key: 'c:' + c.id, id: c.id, name: c.name, coat: l ? l.coat : null, legendId: c.legendId, owner: 'card', bare: true };
   }
 };

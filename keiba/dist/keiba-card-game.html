@@ -692,6 +692,113 @@ label.btn { display: inline-block; cursor: pointer; }
 .ff-btns { display: flex; gap: 4px; flex-shrink: 0; }
 .notice.small { font-size: 12px; font-weight: 400; }
 label.btn input[type=file] { display: none !important; }
+
+/* ═════════ UIリニューアル ═════════ */
+html, body { overflow-x: hidden; }
+:focus-visible { outline: 3px solid var(--accent2); outline-offset: 2px; }
+.main.enter { animation: enter .22s ease-out; }
+@keyframes enter { from { opacity: 0; transform: translateY(6px); } }
+
+/* 肖像 */
+.pt { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+.pt img { width: 100%; height: 100%; object-fit: contain; display: block; filter: drop-shadow(0 3px 3px rgba(0,0,0,.25)); }
+.pt-fb { font-size: 40px; }
+
+/* ホーム */
+.owner-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; color: #fff; margin: 0 2px 10px; }
+.ob-name { font-size: 16px; }
+.ob-name b { font-size: 18px; }
+.ob-stats { display: flex; gap: 6px; font-size: 13px; font-weight: 800; }
+.ob-stats span { background: rgba(255,255,255,.12); border-radius: 99px; padding: 2px 10px; }
+.mission { position: relative; }
+.mission.complete { border: 3px solid var(--accent2); animation: glowbox 1.6s infinite; }
+@keyframes glowbox { 50% { box-shadow: 0 0 18px rgba(245,179,1,.7); } }
+.mission-head { display: flex; justify-content: space-between; align-items: center; font-size: 12px; margin-bottom: 2px; }
+.mission-tag { background: var(--turf2); color: #fff; border-radius: 99px; padding: 1px 10px; font-weight: 800; }
+.mission .bar { margin: 6px 0; }
+.mission-reward { color: var(--muted); }
+.hstrip { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 2px 8px; margin: 0 -4px; }
+.hstrip .hcard { flex: 0 0 200px; scroll-snap-align: start; }
+.empty-mini { text-align: center; padding: 10px; display: grid; gap: 8px; justify-items: center; }
+.rec-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; }
+.rec-row .rec-horse { grid-column: 1; }
+.rec-row .rec-race { grid-column: 1; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: 13px; }
+.rec-row .rec-target { grid-column: 1; }
+.rec-row .rec-go { grid-column: 2; grid-row: 1 / span 3; color: var(--turf2); font-weight: 900; }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+.tile {
+  border: 0; border-radius: 14px; background: var(--paper); padding: 10px 4px 8px; display: flex; flex-direction: column; align-items: center; gap: 1px;
+  box-shadow: 0 3px 0 rgba(0,0,0,.25); transition: transform .08s;
+}
+.tile:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,.25); }
+.ti-ic { font-size: 24px; line-height: 1.1; }
+.tile b { font-size: 12px; }
+.tile small { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.news summary { font-weight: 800; cursor: pointer; }
+.news ul { margin-top: 8px; }
+
+/* 馬カード */
+.hgrid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+.hcard { display: flex; flex-direction: column; gap: 3px; padding: 8px; transition: transform .1s; }
+.hcard.is-acted { opacity: .92; }
+.hcard-art { position: relative; height: 104px; margin: 4px 0; padding: 0; background: linear-gradient(180deg, #cfe9fb 0%, #e8f6ff 55%, #8cc77b 56%, #5fae6c 100%); overflow: hidden; }
+.hs { position: absolute; left: 6px; top: 6px; font-size: 10px; font-weight: 900; border-radius: 99px; padding: 1px 8px; background: rgba(255,255,255,.92); }
+.hs.todo { color: var(--ok); }
+.hs.done { color: #666; }
+.hs.retire { color: var(--danger); }
+.hcard-info.small { font-size: 11px; }
+.mbars { display: grid; gap: 2px; margin: 2px 0; }
+.mb { display: block; height: 4px; border-radius: 99px; }
+.hcard-quick { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 4px; }
+.hcard-quick button { border: 0; border-radius: 8px; padding: 5px 2px; font-size: 11px; font-weight: 800; background: var(--turf2); color: #fff; }
+.hcard-quick button:last-child { background: var(--accent); }
+.hcard-quick button:disabled { background: #b9b2a4; }
+.hh-art { overflow: hidden; background: linear-gradient(180deg, #cfe9fb 0%, #e8f6ff 55%, #8cc77b 56%, #5fae6c 100%); }
+.gcard-art .pt img { object-fit: contain; }
+.gcard-art.sire, .gcard-art.mare { padding: 0; overflow: hidden; }
+
+/* レーダー */
+.radar { display: block; width: 100%; max-width: 260px; margin: 0 auto 6px; }
+.radar .rg { fill: none; stroke: #e2d6bd; stroke-width: 1; }
+.radar .rc { fill: rgba(0,0,0,.04); stroke: #8a7a60; stroke-width: 1.2; stroke-dasharray: 4 3; }
+.radar .rs { fill: rgba(232,85,45,.32); stroke: var(--accent); stroke-width: 2; }
+.radar text { font-size: 11px; font-weight: 800; fill: var(--ink); }
+
+/* ナビのバッジ */
+.nav-btn { position: relative; }
+.nb { position: absolute; top: 6px; left: calc(50% + 8px); min-width: 16px; height: 16px; border-radius: 99px; background: var(--accent); color: #fff; font-style: normal; font-size: 10px; font-weight: 900; line-height: 16px; padding: 0 4px; }
+.nb.alert { background: #e11d48; animation: pulse 1.2s infinite; }
+.nb.g1 { background: #1d4ed8; }
+
+/* 通知は上に小さく */
+.toasts { top: 58px; bottom: auto; }
+.toast { pointer-events: auto; cursor: pointer; font-size: 13px; padding: 8px 12px; box-shadow: 0 4px 14px rgba(0,0,0,.35); }
+.toast.out { transform: translateY(-10px); }
+.toast.skill-toast { font-size: 15px; }
+
+/* 紙吹雪 */
+.confetti { position: fixed; inset: 0; pointer-events: none; z-index: 70; overflow: hidden; }
+.confetti i { position: absolute; top: -12px; width: 8px; height: 13px; border-radius: 2px; animation: fall linear forwards; }
+@keyframes fall { to { top: 105%; transform: rotate(720deg) translateX(40px); } }
+
+@media (max-width: 560px) {
+  .hgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hstrip .hcard { flex-basis: 172px; }
+  /* モーダルは下から出るシート */
+  .modal { align-items: flex-end; padding: 0; }
+  .modal-box, .modal-box.small { max-width: none; border-radius: 18px 18px 0 0; max-height: 90vh; padding-bottom: calc(18px + env(safe-area-inset-bottom)); animation: sheet .25s ease-out; }
+  @keyframes sheet { from { transform: translateY(40%); opacity: .4; } }
+  .tiles { gap: 6px; }
+  .ti-ic { font-size: 21px; }
+}
+.hcard .hname { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 14px; line-height: 1.2; }
+@media (max-width: 560px) { .hcard .hname { font-size: 13px; } }
+.r3-camtoggle { display: none; }
+@media (max-width: 560px) {
+  .r3-camtoggle { display: block; position: absolute; right: 6px; bottom: 64px; pointer-events: auto; border: 0; border-radius: 50%; width: 34px; height: 34px; background: rgba(0,0,0,.6); font-size: 16px; }
+  .r3-cams { display: none; bottom: 102px; }
+  .r3-cams.open { display: flex; }
+}
 </style>
 </head>
 <body>
@@ -5046,6 +5153,7 @@ const Race3D = {
     try {
       if (!this.renderer) {
         this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+        this.renderer.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); this.lost = true; });
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1.05;
@@ -5409,13 +5517,14 @@ const Race3D = {
     const sh = g => { g.userData.shared = true; return g; };
     this._geo = {
       sphere: sh(new THREE.SphereGeometry(1, 18, 12)),
-      neck: sh(new THREE.CylinderGeometry(0.17, 0.3, 1.05, 10)),
+      neck: sh(new THREE.CylinderGeometry(0.19, 0.34, 1.1, 12)),
+      capsule: sh(new THREE.CapsuleGeometry(0.42, 1.25, 8, 18)),
       head: sh(new THREE.CylinderGeometry(0.09, 0.16, 0.62, 10)),
       ear: sh(new THREE.ConeGeometry(0.05, 0.16, 5)),
       mane: sh(new THREE.BoxGeometry(0.07, 0.95, 0.06)),
-      tail: sh(new THREE.CylinderGeometry(0.12, 0.05, 0.85, 6)),
-      upper: sh(new THREE.CylinderGeometry(0.095, 0.07, 0.56, 8)),
-      lower: sh(new THREE.CylinderGeometry(0.055, 0.045, 0.5, 6)),
+      tail: sh(new THREE.CylinderGeometry(0.13, 0.05, 1.0, 8)),
+      upper: sh(new THREE.CylinderGeometry(0.11, 0.075, 0.56, 10)),
+      lower: sh(new THREE.CylinderGeometry(0.06, 0.05, 0.5, 8)),
       hoof: sh(new THREE.CylinderGeometry(0.07, 0.08, 0.08, 8)),
       cloth: sh(new THREE.PlaneGeometry(0.66, 0.44)),
       saddle: sh(new THREE.BoxGeometry(0.5, 0.06, 0.5)),
@@ -5443,7 +5552,8 @@ const Race3D = {
     return new THREE.CanvasTexture(c);
   },
 
-  makeHorse(e, num, n, st) {
+  // opts.portrait：カード用の肖像（ゼッケン・マーカーなし）、opts.bare：騎手なし（種牡馬・繁殖牝馬）
+  makeHorse(e, num, n, st, opts = {}) {
     const G = this.geos();
     const r = this.rng(this.hash(e.id + e.name));
     const coat = (e.coat && this.COATS.find(c => c.name === e.coat)) || (cs => cs[Math.floor(r() * cs.length)])(this.COATS.filter(c => !c.rare));
@@ -5472,17 +5582,21 @@ const Race3D = {
       parent.add(m);
       return m;
     };
-    add(body, G.sphere, coatMat, 0, 1.32, 0, 1.0, 0.42, 0.36);
-    add(body, G.sphere, coatMat, -0.62, 1.36, 0, 0.5, 0.5, 0.39);
-    add(body, G.sphere, coatMat, 0.62, 1.3, 0, 0.45, 0.49, 0.37);
+    // 胴体：なめらかな樽型に、トモ（尻）と胸を重ねる
+    const barrel = add(body, G.capsule, coatMat, 0, 1.33, 0);
+    barrel.rotation.z = Math.PI / 2;
+    barrel.scale.set(0.95, 0.92, 0.82);
+    add(body, G.sphere, coatMat, -0.62, 1.4, 0, 0.44, 0.45, 0.37);
+    add(body, G.sphere, coatMat, 0.68, 1.3, 0, 0.42, 0.47, 0.37);
     add(body, G.saddle, bootMat, 0.05, 1.74, 0);
-    const cl = add(body, G.cloth, clothMat, 0.02, 1.42, 0.375);
-    const cr = add(body, G.cloth, clothMat, 0.02, 1.42, -0.375);
-    cr.rotation.y = Math.PI;
-    cl.rotation.y = 0;
+    if (!opts.portrait) {
+      add(body, G.cloth, clothMat, 0.02, 1.42, 0.375);
+      const cr = add(body, G.cloth, clothMat, 0.02, 1.42, -0.375);
+      cr.rotation.y = Math.PI;
+    }
 
     const neck = new THREE.Group();
-    neck.position.set(0.86, 1.55, 0);
+    neck.position.set(0.8, 1.5, 0);
     neck.rotation.z = -0.95;
     body.add(neck);
     add(neck, G.neck, coatMat, 0, 0.5, 0);
@@ -5492,16 +5606,18 @@ const Race3D = {
     head.rotation.z = -1.4;
     neck.add(head);
     add(head, G.head, coatMat, 0, 0.3, 0);
+    add(head, G.sphere, coatMat, 0.03, 0.08, 0, 0.17, 0.2, 0.13);   // ほお
+    add(head, G.sphere, coatMat, 0, 0.58, 0, 0.1, 0.1, 0.095);      // 鼻先
     if (r() < 0.45) add(head, G.sphere, whiteMat, -0.1, 0.24, 0, 0.035, r() < 0.5 ? 0.24 : 0.08, 0.055);   // 流星・星
     const e1 = add(head, G.ear, coatMat, -0.05, 0.02, 0.07);
     const e2 = add(head, G.ear, coatMat, -0.05, 0.02, -0.07);
     e1.rotation.z = e2.rotation.z = 2.5;
 
     const tail = new THREE.Group();
-    tail.position.set(-1.05, 1.55, 0);
-    tail.rotation.z = -2.3;
+    tail.position.set(-1.12, 1.62, 0);
+    tail.rotation.z = 2.3;   // 後ろ下向き
     body.add(tail);
-    add(tail, G.tail, darkMat, 0, 0.42, 0);
+    add(tail, G.tail, darkMat, 0, 0.5, 0);
 
     // 脚：付け根を回転、膝で曲げる
     const legs = [];
@@ -5511,19 +5627,25 @@ const Race3D = {
       upper.position.set(x, 1.12, z);
       body.add(upper);
       const um = add(upper, G.upper, coatMat, 0, -0.28, 0);
-      if (i >= 2) um.scale.set(1.35, 1, 1.25);   // トモ（後脚の付け根）は太く
+      if (i >= 2) {
+        um.scale.set(1.35, 1, 1.25);   // トモ（後脚の付け根）は太く
+        add(upper, G.sphere, coatMat, -0.02, -0.1, 0, 0.21, 0.3, 0.15);
+      } else add(upper, G.sphere, coatMat, 0.02, -0.06, 0, 0.15, 0.24, 0.13);
       const lower = new THREE.Group();
       lower.position.set(0, -0.56, 0);
       upper.add(lower);
       const legMat = i < socks ? whiteMat : coat.name === '鹿毛' || coat.name === '黒鹿毛' ? darkMat : coatMat;
       add(lower, G.lower, legMat, 0, -0.25, 0);
       add(lower, G.hoof, hoofMat, 0, -0.52, 0);
+      add(lower, G.sphere, legMat, 0, 0, 0, 0.075, 0.08, 0.075);   // 膝
       legs.push({ upper, lower, off, fore: i < 2 });
     });
 
     // 騎手（前傾のモンキー乗り）
     const jockey = new THREE.Group();
-    jockey.position.set(0.18, 1.86, 0);
+    jockey.position.set(0.16, 1.86, 0);
+    jockey.scale.setScalar(1.2);
+    jockey.visible = !opts.bare;
     body.add(jockey);
     const torso = add(jockey, G.jTorso, silkMat, 0.05, 0.12, 0);
     torso.rotation.z = 0.28;
@@ -5552,7 +5674,7 @@ const Race3D = {
     aura.visible = false;
     root.add(aura);
     let marker = null;
-    if (e.isPlayer) {
+    if (e.isPlayer && !opts.portrait) {
       const ring = new THREE.Mesh(G.ring, new THREE.MeshBasicMaterial({ color: 0xff7a1a, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
       ring.rotation.x = -Math.PI / 2;
       ring.position.y = 0.05;
@@ -5631,6 +5753,7 @@ const Race3D = {
       <div class="r3-map" id="r3-map"><div class="r3-map-line"></div></div>
       <div class="r3-banner" id="r3-banner"></div>
       <div class="r3-bar" id="r3-bar"></div>
+      <button class="r3-camtoggle" onclick="this.nextElementSibling.classList.toggle('open')" aria-label="カメラ">🎥</button>
       <div class="r3-cams">${cams.map(([k, l]) => { const [ic, tx] = l.split(' '); return `<button class="${cam === k ? 'active' : ''}" data-cam="${k}" title="${tx}">${ic}<span class="lbl"> ${tx}</span></button>`; }).join('')}<button data-sound="1" title="音">${this.sound.enabled() ? '🔊' : '🔇'}</button><button data-full="1" title="全画面">⛶</button></div>
       <div class="r3-replay" id="r3-replay">REPLAY</div>`;
     hud.querySelectorAll('[data-cam]').forEach(b => b.addEventListener('click', () => {
@@ -5638,6 +5761,7 @@ const Race3D = {
       Player.save();
       st.shot = null;
       hud.querySelectorAll('[data-cam]').forEach(x => x.classList.toggle('active', x === b));
+      hud.querySelector('.r3-cams').classList.remove('open');
     }));
     hud.querySelector('[data-sound]').addEventListener('click', () => this.toggleSound());
     hud.querySelector('[data-full]').addEventListener('click', () => {
@@ -5849,7 +5973,7 @@ const Race3D = {
     h.body.position.y = k * 0.07 * Math.cos(ph);
     h.body.rotation.z = k * 0.045 * Math.sin(ph);
     h.neck.rotation.z = -0.95 + 0.12 * k * Math.sin(ph + 1.2) + (running ? 0.15 : 0);
-    h.tail.rotation.z = -2.3 + 0.35 * k + 0.12 * Math.sin(ph * 0.5);
+    h.tail.rotation.z = 2.5 - 0.4 * k + 0.12 * Math.sin(ph * 0.5);   // 走ると後ろになびく
     h.legs.forEach(L => {
       const p = (h.phase + L.off) % 1;
       let ang, knee;
@@ -6058,6 +6182,108 @@ const Race3D = {
     }
   }
 };
+
+// ─────────── 馬の肖像（カードや厩舎に表示する3Dの立ち絵） ───────────
+// レースと同じ馬のモデル（毛色・白斑・勝負服）を1枚の画像にして使い回す。
+const Portrait = {
+  W: 320, H: 240,
+  cache: {},
+  failed: false,
+  queue: [],
+  busy: false,
+
+  ok() { return !this.failed && typeof Race3D !== 'undefined' && Race3D.supported(); },
+
+  setup() {
+    if (this.renderer) return true;
+    try {
+      this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+      // GPUの都合でコンテキストが失われたら、作り直す（何度も失敗したら絵文字表示に戻す）
+      this.renderer.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); this.reset(); });
+      this.renderer.setPixelRatio(1);
+      this.renderer.setSize(this.W, this.H, false);
+      this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    } catch (e) { this.failed = true; return false; }
+    const sc = this.scene = new THREE.Scene();
+    sc.add(new THREE.HemisphereLight(0xffffff, 0x8a7a60, 1.1));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+    sun.position.set(3, 6, 8);
+    sc.add(sun);
+    this.camera = new THREE.PerspectiveCamera(30, this.W / this.H, 0.1, 50);
+    this.camera.position.set(0.25, 1.9, 6.3);
+    this.camera.lookAt(0.25, 1.4, 0);
+    this.st = { shadowMat: new THREE.MeshBasicMaterial({ map: Race3D.shadowTexture(), transparent: true, depthWrite: false }), auraTex: Race3D.glowTexture('rgba(255,210,80,1)') };
+    return true;
+  },
+
+  errors: 0,
+  reset() {
+    try { if (this.renderer) this.renderer.dispose(); } catch (e) { /* noop */ }
+    this.renderer = null;
+    if (++this.errors >= 3) this.failed = true;
+  },
+
+  // desc: { key, id, name, isPlayer, owner, coat, legendId, bare }
+  render(desc) {
+    if (this.cache[desc.key]) return this.cache[desc.key];
+    if (!this.ok() || !this.setup()) return null;
+    try { return this.draw(desc); } catch (e) { this.reset(); return null; }
+  },
+
+  draw(desc) {
+    const e = { id: desc.id, name: desc.name, isPlayer: !!desc.isPlayer, owner: desc.owner, coat: desc.coat, legendId: desc.legendId };
+    const h = Race3D.makeHorse(e, 1, 1, this.st, { portrait: true, bare: !!desc.bare });
+    h.speed = 16;
+    h.phase = 0.62;
+    Race3D.animateHorse(h, 1, 0, 999);
+    h.aura.visible = false;
+    h.root.rotation.y = -0.18;
+    this.scene.add(h.root);
+    this.renderer.render(this.scene, this.camera);
+    const url = this.renderer.domElement.toDataURL('image/png');
+    this.scene.remove(h.root);
+    h.root.traverse(o => {
+      if (o.geometry && !o.geometry.userData.shared) o.geometry.dispose();
+      const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
+      mats.forEach(m => { if (m.map && m.map !== this.st.auraTex && m !== this.st.shadowMat) m.map.dispose(); if (m !== this.st.shadowMat) m.dispose(); });
+    });
+    this.cache[desc.key] = url;
+    return url;
+  },
+
+  // 画面にある肖像の置き場所に、少しずつ画像を入れていく（重くならないように）
+  descs: {},
+  slot(desc, fallback) {
+    this.descs[desc.key] = desc;
+    const url = this.cache[desc.key];
+    return `<span class="pt ${url ? 'ready' : ''}" data-pkey="${desc.key}">${url ? `<img src="${url}" alt="">` : `<span class="pt-fb">${fallback}</span>`}</span>`;
+  },
+
+  hydrate() {
+    if (!this.ok()) return;
+    const els = [...document.querySelectorAll('.pt:not(.ready)')];
+    if (!els.length) return;
+    clearTimeout(this._t);
+    const step = () => {
+      const start = performance.now();
+      while (els.length && performance.now() - start < 24) {
+        const el = els.shift();
+        const d = this.descs[el.dataset.pkey];
+        const url = d && this.render(d);
+        if (!url) continue;
+        document.querySelectorAll(`.pt[data-pkey="${CSS.escape(el.dataset.pkey)}"]`).forEach(x => { x.innerHTML = `<img src="${url}" alt="">`; x.classList.add('ready'); });
+      }
+      if (els.length) this._t = setTimeout(step, 16);
+    };
+    this._t = setTimeout(step, 30);
+  },
+
+  forHorse(h) { return { key: 'h:' + h.id, id: h.id, name: h.name, isPlayer: true }; },
+  forCard(c) {
+    const l = c.legend ? Legends.get(c.legendId) : null;
+    return { key: 'c:' + c.id, id: c.id, name: c.name, coat: l ? l.coat : null, legendId: c.legendId, owner: 'card', bare: true };
+  }
+};
 </script>
 <script>
 // 画面描画（ゲームロジックは持たない。操作は App.* を呼ぶ）
@@ -6112,10 +6338,15 @@ const UI = {
       records: () => this.recordsView(),
       raceView: () => RaceView.view()
     };
-    this.el('main').innerHTML = (views[s] || views.home)();
+    const main = this.el('main');
+    main.innerHTML = (views[s] || views.home)();
+    if (this._lastScreen !== s) { main.classList.remove('enter'); void main.offsetWidth; main.classList.add('enter'); }
+    this._lastScreen = s;
     const navKey = { horse: 'stable', hof: 'home', records: 'home', raceView: 'race' }[s] || s;
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.nav === navKey));
+    this.navBadges();
     if (s === 'raceView') RaceView.mount();
+    else Portrait.hydrate();
   },
 
   renderHeader() {
@@ -6157,6 +6388,24 @@ const UI = {
     </div>`;
   },
 
+  // 能力のレーダーチャート（実線：今の能力、点線：限界）
+  radar(stats, caps) {
+    const R = 70, cx = 100, cy = 92;
+    const pt = (i, v) => {
+      const a = -Math.PI / 2 + i * Math.PI * 2 / 5;
+      const r = Util.clamp(v / 120, 0, 1) * R;
+      return `${(cx + Math.cos(a) * r).toFixed(1)},${(cy + Math.sin(a) * r).toFixed(1)}`;
+    };
+    const poly = vals => STAT_KEYS.map((k, i) => pt(i, vals[k])).join(' ');
+    const grid = [0.25, 0.5, 0.75, 1].map(f => `<polygon points="${STAT_KEYS.map((k, i) => pt(i, 120 * f)).join(' ')}" class="rg"/>`).join('');
+    const labels = GAME_DATA.stats.map((s, i) => {
+      const a = -Math.PI / 2 + i * Math.PI * 2 / 5;
+      return `<text x="${(cx + Math.cos(a) * (R + 16)).toFixed(1)}" y="${(cy + Math.sin(a) * (R + 14) + 4).toFixed(1)}" text-anchor="middle">${s.icon}${stats[s.key]}</text>`;
+    }).join('');
+    return `<svg class="radar" viewBox="0 0 200 184" role="img" aria-label="能力チャート">${grid}
+      ${caps ? `<polygon points="${poly(caps)}" class="rc"/>` : ''}<polygon points="${poly(stats)}" class="rs"/>${labels}</svg>`;
+  },
+
   aptGrid(apt) {
     const d = GAME_DATA.distances.map(x => `<div class="apt"><span>${x.label}</span><b>${Util.stars(apt[x.key])}</b><small>${Util.aptMark(apt[x.key])}</small></div>`).join('');
     const s = GAME_DATA.surfaces.map(x => `<div class="apt"><span>${x.icon}${x.label}</span><b>${Util.stars(apt[x.key])}</b><small>${Util.aptMark(apt[x.key])}</small></div>`).join('');
@@ -6177,7 +6426,7 @@ const UI = {
       ${(() => {
         const photo = c.legend ? Legends.photoUrl(c.legendId) : null;
         return photo ? `<div class="gcard-art photo"><img src="${photo}" alt="${Util.esc(c.name)}" loading="lazy"><span class="legend">👑</span></div>`
-          : `<div class="gcard-art">${c.type === 'sire' ? '🐎' : '🦄'}${c.custom ? '<span class="legend">🏛</span>' : c.legend ? '<span class="legend">👑</span>' : ''}</div>`;
+          : `<div class="gcard-art ${c.type}">${Portrait.slot(Portrait.forCard(c), c.type === 'sire' ? '🐎' : '🐴')}${c.custom ? '<span class="legend">🏛</span>' : c.legend ? '<span class="legend">👑</span>' : ''}</div>`;
       })()}
       <div class="gcard-name">${Util.esc(c.name)}</div>
       <div class="mini-stats">${st}</div>
@@ -6230,19 +6479,22 @@ const UI = {
     const cond = Horse.conditionInfo(h);
     const fat = Horse.fatigueInfo(h);
     const ov = Horse.overall(h);
-    return `<div class="hcard rcard-${h.rarity}" onclick="${opts.onclick !== undefined ? opts.onclick : `UI.show('horse',{id:'${h.id}'})`}">
+    const acted = Horse.acted(h);
+    const retire = Horse.mustRetire(h);
+    const status = retire ? '<span class="hs retire">🎌 引退時期</span>' : acted ? '<span class="hs done">✅ 行動済み</span>' : '<span class="hs todo">🟢 今週まだ</span>';
+    const bars = STAT_KEYS.map(k => `<i class="mb stat-${k}" style="width:${Util.clamp(h.stats[k] / 1.2, 4, 100)}%" title="${GAME_DATA.stats.find(x => x.key === k).label} ${h.stats[k]}"></i>`).join('');
+    const quick = opts.quick === false || retire ? '' : `<div class="hcard-quick" onclick="event.stopPropagation()">
+        <button ${acted ? 'disabled' : ''} onclick="App.autoTrain('${h.id}')">🤖 おまかせ</button>
+        <button ${acted ? 'disabled' : ''} onclick="App.goRace('${h.id}')">🏇 レース</button></div>`;
+    return `<div class="hcard rcard-${h.rarity} ${acted ? 'is-acted' : ''}" onclick="${opts.onclick !== undefined ? opts.onclick : `UI.show('horse',{id:'${h.id}'})`}">
       <div class="hcard-top">${this.rarity(h.rarity)}<span class="hname">${Util.esc(h.name)}</span><span class="ovr" title="総合評価">${Util.grade(ov)}</span></div>
-      <div class="hcard-art">🏇</div>
-      <div class="hcard-info">
-        <span>${Horse.genderLabel(h)}</span><span>${h.age}歳</span><span>Lv.${h.level}</span>
-      </div>
-      <div class="hcard-info">
-        <span>${Horse.mainAptText(h)}</span>${this.styleTag(h.runningStyle)}
-      </div>
-      <div class="hcard-info">
-        <span class="${cond.cls}">${cond.icon} ${cond.label}</span><span class="${fat.cls}">😓 ${fat.label}</span>
-      </div>
+      <div class="hcard-art">${Portrait.slot(Portrait.forHorse(h), '🏇')}${opts.quick === false ? '' : status}</div>
+      <div class="hcard-info"><span>${Horse.genderLabel(h)}</span><span>${h.age}歳</span><span>Lv.${h.level}</span>${this.styleTag(h.runningStyle)}</div>
+      <div class="hcard-info small"><span>${Horse.mainAptText(h)}</span></div>
+      <div class="mbars">${bars}</div>
+      <div class="hcard-info small"><span class="${cond.cls}">${cond.icon} ${cond.label}</span><span class="${fat.cls}">😓 ${fat.label}</span></div>
       <div class="hcard-rec">${h.record.races}戦${h.record.wins}勝${h.record.g1Wins ? `・GⅠ ${h.record.g1Wins}勝` : ''}</div>
+      ${quick}
     </div>`;
   },
 
@@ -6251,22 +6503,57 @@ const UI = {
     m.innerHTML = `<div class="modal-box ${opts.cls || ''}" role="dialog">
       ${opts.noClose ? '' : '<button class="modal-x" onclick="UI.closeModal()" aria-label="閉じる">✕</button>'}${html}</div>`;
     m.classList.add('open');
+    Portrait.hydrate();
     m.onclick = e => { if (e.target === m && !opts.noClose) UI.closeModal(); };
   },
+  // 勝利の紙吹雪
+  confetti() {
+    const box = document.createElement('div');
+    box.className = 'confetti';
+    const cols = ['#f5b301', '#e8552d', '#2e9d48', '#1e63d6', '#f48fb1', '#ffffff'];
+    box.innerHTML = Array.from({ length: 70 }, () => `<i style="left:${Math.random() * 100}%;background:${cols[Math.floor(Math.random() * cols.length)]};animation-delay:${(Math.random() * 0.6).toFixed(2)}s;animation-duration:${(2 + Math.random() * 1.5).toFixed(2)}s;transform:rotate(${Math.floor(Math.random() * 360)}deg)"></i>`).join('');
+    document.body.appendChild(box);
+    setTimeout(() => box.remove(), 4200);
+  },
+
   closeModal() { this.el('modal').classList.remove('open'); this.el('modal').innerHTML = ''; },
 
   toast(msg, type = '') {
+    const box = this.el('toasts');
+    // 同じ内容は重ねない・最大2件。タップで消せる
+    if ([...box.children].some(x => x.dataset.msg === msg)) return;
+    while (box.children.length >= 2) box.firstChild.remove();
     const t = document.createElement('div');
     t.className = 'toast ' + type;
+    t.dataset.msg = msg;
     t.innerHTML = msg;
-    const box = this.el('toasts');
-    while (box.children.length >= 3) box.firstChild.remove();
+    t.onclick = () => t.remove();
     box.appendChild(t);
-    setTimeout(() => t.classList.add('out'), 2600);
-    setTimeout(() => t.remove(), 3100);
+    setTimeout(() => t.classList.add('out'), 2400);
+    setTimeout(() => t.remove(), 2800);
   },
 
   // ─────────── ホーム ───────────
+  // 下のナビにバッジ（ミッション達成・未行動の馬・今週のGⅠ）
+  navBadges() {
+    const p = Player.data;
+    const m = Missions.current();
+    const todo = p.horses.filter(h => !Horse.acted(h) && !Horse.mustRetire(h)).length;
+    const g1 = Race.gradedOn(Calendar.get().week).some(r => r.grade === 'g1');
+    const set = (nav, txt, cls) => {
+      const b = document.querySelector(`.nav-btn[data-nav="${nav}"]`);
+      if (!b) return;
+      let el = b.querySelector('.nb');
+      if (!txt) { if (el) el.remove(); return; }
+      if (!el) { el = document.createElement('i'); b.appendChild(el); }
+      el.className = 'nb ' + (cls || '');
+      el.textContent = txt;
+    };
+    set('home', m && Missions.isComplete(m) ? '!' : '', 'alert');
+    set('stable', todo ? String(todo) : '');
+    set('race', g1 ? 'GⅠ' : '', 'g1');
+  },
+
   homeView() {
     const p = Player.data;
     const m = Missions.current();
@@ -6274,65 +6561,66 @@ const UI = {
     const recs = p.horses.filter(h => !Horse.acted(h) && !Horse.mustRetire(h))
       .map(h => ({ h, race: Race.nextRace(h), target: Race.targetRace(h) })).filter(x => x.race || x.target).slice(0, 4);
     const totalCards = Object.values(p.cards).reduce((a, b) => a + b, 0);
+    const ls = Legends.stats();
+    const tiles = [
+      ['🧬', '配合', "UI.show('breed')", `♂${Player.ownedCards('sire').length}・♀${Player.ownedCards('mare').length}`],
+      ['🐎', '厩舎', "UI.show('stable')", `${p.horses.length}/${GAME_DATA.maxStable}頭`],
+      ['🏇', '今週のレース', "UI.state.raceMode='week';UI.show('race')", Calendar.label(Calendar.get().week)],
+      ['📅', '重賞日程', "UI.state.raceMode='calendar';UI.state.calMonth=null;UI.show('race')", 'JRAカレンダー'],
+      ['🃏', 'カード', "UI.state.cardTab='owned';UI.show('cards')", `${totalCards}枚`],
+      ['🛒', 'ショップ', "UI.state.cardTab='shop';UI.show('cards')", 'パック・アイテム'],
+      ['⚔', '対戦', "UI.state.raceMode='league';UI.show('race')", `R ${p.pvp.rating}`],
+      ['👑', '名馬', "UI.state.cardTab='dex';UI.state.cardType='legend';UI.show('cards')", `${ls.cards}/${ls.total}`],
+      ['🏛', '殿堂', "UI.show('hof')", `${p.hallOfFame.length}頭`],
+      ['📊', '記録', "UI.show('records')", 'ランキング'],
+      ['🎺', '曲・音', 'App.fanfareSettings()', 'ファンファーレ'],
+      ['⚙', '設定', 'App.settings()', '']
+    ];
     return `
-      <section class="hero">
-        <div class="hero-name">🏇 ${Util.esc(p.name)} 厩舎 <button class="link" onclick="App.settings()">⚙ 設定</button></div>
-        <div class="hero-stats">
-          <div><small>所持金</small><b>${Util.money(p.money)}</b></div>
-          <div><small>カード</small><b>${totalCards}枚</b></div>
-          <div><small>厩舎</small><b>${p.horses.length}/${GAME_DATA.maxStable}頭</b></div>
-          <div><small>殿堂馬</small><b>${p.hallOfFame.length}頭</b></div>
-        </div>
+      <section class="owner-bar">
+        <div class="ob-name">🏇 <b>${Util.esc(p.name)}</b> 厩舎</div>
+        <div class="ob-stats"><span>💰 ${Util.money(p.money)}</span><span>🃏 ${totalCards}</span><span>🏛 ${p.hallOfFame.length}</span></div>
       </section>
-
-      ${this.datePanel()}
 
       ${guide ? `<section class="guide" onclick="${guide.action}"><div class="guide-icon">💡</div><div><b>${guide.title}</b><p>${guide.text}</p></div><span class="guide-go">▶</span></section>` : ''}
 
-      ${m ? `<section class="panel mission">
-        <h3>📋 今日のミッション</h3>
+      ${this.datePanel()}
+
+      ${m ? `<section class="panel mission ${Missions.isComplete(m) ? 'complete' : ''}">
+        <div class="mission-head"><span class="mission-tag">📋 ミッション ${Player.data.missions.index + 1}/${GAME_DATA.missions.length}</span>
+          ${Missions.isComplete(m) ? '<span class="ok">達成！</span>' : ''}</div>
         <div class="mission-title">${m.title}</div>
         <div class="bar"><div class="bar-fill mission-fill" style="width:${Math.min(100, Missions.progress(m) / m.target * 100)}%"></div></div>
-        <p class="muted">${m.hint}</p>
+        ${Missions.isComplete(m) ? `<button class="btn primary big" onclick="App.claimMission()">🎁 報酬を受け取る</button>`
+          : `<p class="muted small">${m.hint}</p>`}
         <div class="mission-reward">報酬：💰${Util.money(m.reward.money)} ${(m.reward.cards || []).map(id => { const c = Cards.get(id); return `${this.rarity(c.rarity)}${c.name}`; }).join(' ')}</div>
-        ${Missions.isComplete(m) ? `<button class="btn primary big" onclick="App.claimMission()">🎁 報酬を受け取る</button>` : ''}
-      </section>` : `<section class="panel"><h3>📋 ミッション</h3><p>全てのミッションをクリアしました！🎉</p></section>`}
-
-      <section class="panel">
-        <h3>🐎 厩舎 <button class="link" onclick="UI.show('stable')">すべて見る ▶</button></h3>
-        ${p.horses.length ? `<div class="hgrid">${p.horses.slice(0, 4).map(h => this.horseCard(h)).join('')}</div>`
-          : `<p class="muted">まだ馬がいません。配合で最初の馬を作ろう！</p><button class="btn primary" onclick="UI.show('breed')">🧬 配合へ</button>`}
-      </section>
-
-      ${recs.length ? `<section class="panel"><h3>🏇 今週のおすすめ・目標</h3>
-        ${recs.map(({ h, race, target }) => `<div class="rec-row" onclick="App.goRace('${h.id}')">
-          <span class="rec-horse">${Util.esc(h.name)}</span>
-          ${race ? `<span>今週 →</span>${this.gradeBadge(race.grade)}<b>${race.name}</b><small>${race.surface === 'turf' ? '芝' : 'ダ'}${race.distance}m</small>` : ''}
-          ${target && target.weeks > 0 ? `<span class="rec-target">🎯 ${target.race.name}（あと${target.weeks}週）</span>` : ''}</div>`).join('')}
       </section>` : ''}
 
       <section class="panel">
-        <h3>⚔ 対戦 <button class="link" onclick="UI.state.raceMode='league';UI.show('race')">挑戦する ▶</button></h3>
-        <p class="muted">CPU馬主とのリーグ戦や、対戦コードでフレンドの馬と勝負！ レーティング：<b>${p.pvp.rating}</b></p>
+        <h3>🐎 わたしの馬 <button class="link" onclick="UI.show('stable')">厩舎へ ▶</button></h3>
+        ${p.horses.length ? `<div class="hstrip">${p.horses.map(h => this.horseCard(h)).join('')}</div>`
+          : `<div class="empty-mini">🐣 まだ馬がいません。<button class="btn primary" onclick="UI.show('breed')">🧬 最初の馬を配合する</button></div>`}
       </section>
 
-      <div class="home-links">
-        <button class="panel link-card" onclick="UI.show('hof')"><span>🏛</span><b>殿堂</b><small>${p.hallOfFame.length}頭</small></button>
-        <button class="panel link-card" onclick="UI.show('records')"><span>📊</span><b>記録・ランキング</b><small>レコードと名馬</small></button>
-      </div>
+      ${recs.length ? `<section class="panel"><h3>🎯 今週のおすすめ・目標</h3>
+        ${recs.map(({ h, race, target }) => `<div class="rec-row" onclick="App.goRace('${h.id}')">
+          <span class="rec-horse">${Util.esc(h.name)}</span>
+          ${race ? `<span class="rec-race">${this.gradeBadge(race.grade)}<b>${race.name}</b><small>${race.surface === 'turf' ? '芝' : 'ダ'}${race.distance}m</small></span>` : ''}
+          ${target && target.weeks > 0 ? `<span class="rec-target">🎯 ${target.race.name}（あと${target.weeks}週）</span>` : ''}<span class="rec-go">▶</span></div>`).join('')}
+      </section>` : ''}
 
-      <section class="panel news">
-        <h3>📢 お知らせ</h3>
+      <section class="tiles">${tiles.map(([ic, l, act, sub]) => `<button class="tile" onclick="${act}"><span class="ti-ic">${ic}</span><b>${l}</b><small>${sub}</small></button>`).join('')}</section>
+
+      <details class="panel news">
+        <summary>📢 お知らせ</summary>
         <ul>
-          <li>競馬×カードゲーム「馬主カード」へようこそ！</li>
-          <li>レースで勝つと新しい種牡馬・繁殖牝馬・スキルカードが手に入ります。</li>
-          <li>🆕 👑 実在のJRA名馬100頭がライバルとして重賞に登場！ 先着すると名馬カードが手に入ることも。</li>
-          <li>🆕 レースが3D・実際の速さで見られるようになりました！</li>
-          <li>🆕 ⚔ リーグ戦・🤝 対戦コードでフレンド対戦が登場！</li>
-          <li>🆕 黄金配合・インブリードなどの特殊配合、血統表、カードパック、記録・ランキングを追加。</li>
+          <li>🆕 UIをリニューアル！ 馬の姿がカードや厩舎に表示されるようになりました。</li>
+          <li>🆕 👑 実在の名馬${ls.total}頭がライバルとして重賞に登場。名馬カードには実際の写真も。</li>
+          <li>🆕 🎺 ファンファーレ設定：区分ごとに自分の音源を登録できます。</li>
+          <li>🆕 レースが3D・実際の速さで見られます。</li>
           <li>わからない言葉は <span class="help static">？</span> ボタンをタップ！</li>
         </ul>
-      </section>`;
+      </details>`;
   },
 
   // カレンダー（日付・次の週へ・今週の重賞）
@@ -6382,7 +6670,7 @@ const UI = {
     return `
       <button class="back" onclick="UI.show('stable')">◀ 厩舎</button>
       <section class="horse-head rcard-${h.rarity}">
-        <div class="hh-art">🏇</div>
+        <div class="hh-art">${Portrait.slot(Portrait.forHorse(h), '🏇')}</div>
         <div class="hh-main">
           <div class="hh-name">${this.rarity(h.rarity)} ${Util.esc(h.name)} <button class="link" onclick="App.rename('${h.id}')">✏</button></div>
           <div class="hh-tags">
@@ -6417,6 +6705,7 @@ const UI = {
     const s = GAME_DATA.styles[h.runningStyle];
     return `
       <section class="panel"><h3>能力</h3>
+        ${this.radar(h.stats, h.caps)}
         ${STAT_KEYS.map(k => this.statRow(k, h.stats[k], h.caps[k])).join('')}
         <p class="muted small">｜の位置がこの馬の限界（素質）。調教で限界まで伸ばせます。</p>
       </section>
@@ -6897,6 +7186,7 @@ const RaceView = {
   start(ctx) {
     this.stop();
     this.ctx = ctx;
+    this._confettiDone = false;
     // 3Dはゲートイン中にファンファーレ（区分は競馬場と格で決まる）。曲の長さだけ待つ
     ctx.slot = Fanfare.slotFor(ctx.race);
     ctx.preroll = Player.data.settings.sound3d === false ? this.PREROLL : Math.max(this.PREROLL, Fanfare.length(ctx.slot) + 1);
@@ -6975,6 +7265,21 @@ const RaceView = {
     document.querySelectorAll('.rl-controls button').forEach(b => b.classList.toggle('active', b.textContent === '×' + s));
   },
 
+  // 3D表示で問題が起きたら、その場で2D表示に切り替えて続ける
+  fallback2d() {
+    console.warn('3D表示を続けられないため2D表示に切り替えます');
+    this.three = false;
+    Race3D.failed = true;
+    Fanfare.stop();
+    try { Race3D.unmount(); } catch (e) { /* noop */ }
+    const w = UI.el('r3');
+    if (w) w.remove();
+    const tr = UI.el('rl-track');
+    if (tr) tr.classList.remove('hidden');
+    if (this.clock < 0) this.clock = 0;
+    UI.toast('3D表示を続けられなかったため、2D表示に切り替えました');
+  },
+
   toggle3d() {
     Player.data.settings.raceView = this.use3d() ? '2d' : '3d';
     Player.save();
@@ -7025,7 +7330,12 @@ const RaceView = {
     if (this.three) {
       const t = this.done ? this.endTime : this.clock;
       const anim = this.clock < 0 ? 1 : Util.clamp((this.curRate || this.RATE_3D) / this.RATE_3D, 0.3, 1.6);
-      Race3D.render(t, this.positionsAt(Math.max(0, t)), anim, (this.curRate || this.RATE_3D) / this.RATE_3D);
+      try {
+        if (Race3D.lost) throw new Error('WebGL context lost');
+        Race3D.render(t, this.positionsAt(Math.max(0, t)), anim, (this.curRate || this.RATE_3D) / this.RATE_3D);
+      } catch (e) {
+        this.fallback2d();
+      }
     }
     const result = this.ctx.result;
     const D = result.distance;
@@ -7145,7 +7455,7 @@ const RaceView = {
         t += Math.min(0.1, (ts - last) / 1000) * (near ? 0.4 : 1);
       }
       last = ts;
-      Race3D.render(t, this.positionsAt(t), t > ft - 2 && t < ft + 0.6 ? 0.4 : 1);
+      try { Race3D.render(t, this.positionsAt(t), t > ft - 2 && t < ft + 0.6 ? 0.4 : 1); } catch (e) { this.fallback2d(); return; }
       if (t < ft + 3) this.raf = requestAnimationFrame(loop);
       else if (rp) rp.classList.remove('show');
     };
@@ -7159,7 +7469,7 @@ const RaceView = {
       if (!UI.el('r3') || !Race3D.state) return;
       if (last !== null) t += Math.min(0.1, (ts - last) / 1000);
       last = ts;
-      Race3D.render(t, this.positionsAt(t), 1);
+      try { Race3D.render(t, this.positionsAt(t), 1); } catch (e) { return; }
       if (t < this.endTime + 10) this.raf = requestAnimationFrame(loop);
     };
     this.raf = requestAnimationFrame(loop);
@@ -7223,6 +7533,7 @@ const RaceView = {
         </div>`;
     }
     UI.el('rl-result').innerHTML = `<section class="panel result">${body}</section>`;
+    if (reward.place === 1 && !this._confettiDone) { this._confettiDone = true; UI.confetti(); }
     UI.el('rl-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 };
@@ -7353,7 +7664,7 @@ const App = {
       <div class="birth">
         <div class="sparkle">✨🐣✨</div>
         <h2>馬が生まれました！</h2>
-        ${UI.horseCard(h, { onclick: '' })}
+        ${UI.horseCard(h, { onclick: '', quick: false })}
         <label>名前をつけよう<input id="horse-name" maxlength="12" value="${Util.esc(h.name)}"></label>
         <p>素質：<b>${Util.grade(Horse.potential(h))}</b>${UI.help('potential')}・成長：<b>${GAME_DATA.growthTypes[h.growthType].label}</b>・おすすめ：<b>${rec.icon}${rec.name}</b></p>
         ${h.specials && h.specials.length ? `<p class="special-tags">${h.specials.map(x => `<span class="special">✨ ${x}</span>`).join('')}</p>` : ''}
