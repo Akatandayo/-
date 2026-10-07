@@ -944,9 +944,10 @@ const Race3D = {
 
   // ── 毎フレームの描画 ──
   // t：レース内の時刻（秒、マイナスはゲートイン中）、raw：frames から補間した位置、animScale：脚の動きの速さ
-  render(t, raw, animScale) {
+  render(t, raw, animScale, speedK = 1) {
     const st = this.state;
     if (!st) return;
+    st.speedK = speedK;
     const D = st.D;
     const dt = st.lastT === null ? 0 : Util.clamp(t - st.lastT, -1, 1);
     const realNow = performance.now();
@@ -1121,7 +1122,11 @@ const Race3D = {
     if (mode === 'auto') {
       if (t < 0) shot = 'intro';
       else if (t < 2.5) shot = 'gate';
-      else if (leaderRemain > 430) shot = 'side';
+      else if (leaderRemain > 430) {
+        // 道中はカメラを切り替えて中継らしく（横→後ろ→横→上空）
+        const cyc = Math.floor((t - 2.5) / 9) % 4;
+        shot = leaderRemain < 700 ? 'side' : ['side', 'rear', 'side', 'top'][cyc];
+      }
       else if (leaderRemain > 110 && t < lead.h.ft) shot = 'front';
       else if (t < lead.h.ft + 1.2) shot = 'finish';
       else shot = 'after';
@@ -1140,6 +1145,10 @@ const Race3D = {
       const far = 30 * Util.clamp(1.75 / st.camera.aspect, 1, 1.9);   // 縦長の画面では引きで撮る
       cam = { x: center.x + o.x * far - center.dx * 3, y: 6.5 * far / 30, z: center.z + o.z * far - center.dz * 3 };
       look = { x: center.x + center.dx * 4, y: 1.3, z: center.z + center.dz * 4 };
+    } else if (shot === 'rear') {
+      const o = out(center);
+      cam = { x: center.x - center.dx * 24 + o.x * 7, y: 6, z: center.z - center.dz * 24 + o.z * 7 };
+      look = { x: center.x + center.dx * 10, y: 1.2, z: center.z + center.dz * 10 };
     } else if (shot === 'front') {
       const f = this.path(st.sStart + lead.p + 34 * Util.clamp(1.75 / st.camera.aspect, 1, 1.6), this.W + 10);
       cam = { x: f.x, y: 4.5, z: f.z };
@@ -1173,7 +1182,8 @@ const Race3D = {
     const C = st.camera;
     const cut = st.shot !== shot;
     st.shot = shot;
-    const k = cut ? 1 : 1 - Math.exp(-realDt * (shot === 'pov' || shot === 'chase' ? 12 : 4));
+    const follow = (shot === 'pov' || shot === 'chase' ? 12 : 4) * Math.max(1, st.speedK || 1);   // 早送りでもカメラが置いていかれない
+    const k = cut ? 1 : 1 - Math.exp(-realDt * follow);
     st.camPos.lerp(new THREE.Vector3(cam.x, cam.y, cam.z), k);
     st.camLook.lerp(new THREE.Vector3(look.x, look.y, look.z), k);
     C.position.copy(st.camPos);

@@ -794,7 +794,7 @@ const RaceView = {
   skipping: false,
   lastOrderAt: 0,
   RATE: 9,         // 実時間1秒あたりに進むレース秒（×1のとき・2D）
-  RATE_3D: 6,      // 3Dはじっくり見せる
+  RATE_3D: 1,      // 3Dは実際のレースと同じ速さ（×1で1秒＝1秒）
   PREROLL: 2.2,    // 3Dのゲートイン演出（秒）
   WINDOW: 44,      // トラックに映す範囲（m）
 
@@ -894,12 +894,12 @@ const RaceView = {
     const fin = this.ctx.result.finish;
     const lead = Math.max(...this.positionsAt(this.clock));
     const slow = !this.skipping && lead > this.ctx.result.distance - 28 && this.clock < fin[0].time + 0.4;
-    return this.RATE_3D * this.speed() * (slow ? 0.3 : 1);
+    return this.RATE_3D * this.speed() * (slow ? 0.5 : 1);
   },
 
   tick(ts) {
     if (!UI.el('rl-track')) { this.stop(); return; }
-    const realDt = this.lastTs !== null ? Math.min(0.1, (ts - this.lastTs) / 1000) : 0;
+    const realDt = this.lastTs !== null ? Math.min(0.25, (ts - this.lastTs) / 1000) : 0;   // 重い端末でも実時間に近く
     this.curRate = this.rate();
     this.clock += realDt * this.curRate;
     this.lastTs = ts;
@@ -929,7 +929,7 @@ const RaceView = {
     if (this.three) {
       const t = this.done ? this.endTime : this.clock;
       const anim = this.clock < 0 ? 1 : Util.clamp((this.curRate || this.RATE_3D) / this.RATE_3D, 0.3, 1.6);
-      Race3D.render(t, this.positionsAt(Math.max(0, t)), anim);
+      Race3D.render(t, this.positionsAt(Math.max(0, t)), anim, (this.curRate || this.RATE_3D) / this.RATE_3D);
     }
     const result = this.ctx.result;
     const D = result.distance;
@@ -1045,10 +1045,10 @@ const RaceView = {
       if (!UI.el('r3') || !Race3D.state) return;
       if (last !== null) {
         const near = t > ft - 2 && t < ft + 0.6;
-        t += Math.min(0.1, (ts - last) / 1000) * (near ? 1.2 : 3.5);
+        t += Math.min(0.1, (ts - last) / 1000) * (near ? 0.4 : 1);
       }
       last = ts;
-      Race3D.render(t, this.positionsAt(t), t > ft - 2 && t < ft + 0.6 ? 0.3 : 0.7);
+      Race3D.render(t, this.positionsAt(t), t > ft - 2 && t < ft + 0.6 ? 0.4 : 1);
       if (t < ft + 3) this.raf = requestAnimationFrame(loop);
       else if (rp) rp.classList.remove('show');
     };
@@ -1060,9 +1060,9 @@ const RaceView = {
     let t = this.endTime, last = null;
     const loop = ts => {
       if (!UI.el('r3') || !Race3D.state) return;
-      if (last !== null) t += Math.min(0.1, (ts - last) / 1000) * 3;
+      if (last !== null) t += Math.min(0.1, (ts - last) / 1000);
       last = ts;
-      Race3D.render(t, this.positionsAt(t), 0.8);
+      Race3D.render(t, this.positionsAt(t), 1);
       if (t < this.endTime + 10) this.raf = requestAnimationFrame(loop);
     };
     this.raf = requestAnimationFrame(loop);
