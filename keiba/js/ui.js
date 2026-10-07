@@ -112,7 +112,11 @@ const UI = {
     const skill = c.skill ? Cards.get(c.skill) : null;
     return `<div class="gcard ${t.color} rcard-${c.rarity} ${opts.selected ? 'selected' : ''} ${opts.cls || ''}" ${opts.onclick ? `onclick="${opts.onclick}"` : ''}>
       <div class="gcard-head">${this.rarity(c.rarity)}<span class="gtype">${t.icon} ${t.label}</span>${opts.count ? `<span class="count">×${opts.count}</span>` : ''}</div>
-      <div class="gcard-art">${c.type === 'sire' ? '🐎' : '🦄'}${c.custom ? '<span class="legend">🏛</span>' : c.legend ? '<span class="legend">👑</span>' : ''}</div>
+      ${(() => {
+        const photo = c.legend ? Legends.photoUrl(c.legendId) : null;
+        return photo ? `<div class="gcard-art photo"><img src="${photo}" alt="${Util.esc(c.name)}" loading="lazy"><span class="legend">👑</span></div>`
+          : `<div class="gcard-art">${c.type === 'sire' ? '🐎' : '🦄'}${c.custom ? '<span class="legend">🏛</span>' : c.legend ? '<span class="legend">👑</span>' : ''}</div>`;
+      })()}
       <div class="gcard-name">${Util.esc(c.name)}</div>
       <div class="mini-stats">${st}</div>
       <div class="apt-chips">${apt}</div>
@@ -152,7 +156,7 @@ const UI = {
     if (c.legend) {
       const r = (Player.data.legends || {})[c.legendId];
       return `<div class="gcard silhouette legend-sil rcard-${c.rarity}"><div class="gcard-head">${this.rarity(c.rarity)}<span class="gtype">👑 名馬</span></div>
-        <div class="gcard-art">${r ? '🏇' : '❔'}</div><div class="gcard-name">${r ? Util.esc(c.name) : '？？？？'}</div>
+        ${r && Legends.photoUrl(c.legendId) ? `<div class="gcard-art photo"><img src="${Legends.photoUrl(c.legendId)}" alt="" loading="lazy"></div>` : `<div class="gcard-art">${r ? '🏇' : '❔'}</div>`}<div class="gcard-name">${r ? Util.esc(c.name) : '？？？？'}</div>
         <div class="gcard-desc">${r ? `対戦${r.met}回・先着${r.beaten}回<br>重賞で先着するとカード入手のチャンス！` : 'まだ出会っていない名馬'}</div></div>`;
     }
     return `<div class="gcard silhouette rcard-${c.rarity}"><div class="gcard-head">${this.rarity(c.rarity)}<span class="gtype">${Cards.types[c.type].label}</span></div>
@@ -831,7 +835,10 @@ const RaceView = {
   start(ctx) {
     this.stop();
     this.ctx = ctx;
-    this.clock = this.use3d() ? -this.PREROLL : 0;
+    // 3Dはゲートイン中にファンファーレ（区分は競馬場と格で決まる）。曲の長さだけ待つ
+    ctx.slot = Fanfare.slotFor(ctx.race);
+    ctx.preroll = Player.data.settings.sound3d === false ? this.PREROLL : Math.max(this.PREROLL, Fanfare.length(ctx.slot) + 1);
+    this.clock = this.use3d() ? -ctx.preroll : 0;
     this.idx = 0;
     this.done = false;
     this.lastTs = null;
@@ -1038,6 +1045,7 @@ const RaceView = {
 
   skip() {
     this.stop();
+    Fanfare.stop();
     const events = this.ctx.result.events;
     this.skipping = true;
     while (this.idx < events.length) { this.apply(events[this.idx]); this.idx++; }

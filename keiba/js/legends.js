@@ -1,4 +1,4 @@
-// 実在のJRA名馬（ライバル）100頭と、その出走・撃破・カード化の処理
+// 実在のJRA名馬（ライバル）と、その出走・撃破・カード化の処理
 // 能力はゲーム用の独自査定。勝負服・馬主などは架空のままで、名前と主な勝ち鞍のみ実在のものを使う。
 'use strict';
 
@@ -141,7 +141,120 @@ GAME_DATA.legendList = [
   ['zephyr', 'ヤマニンゼファー', 'm', 'senko', 't', 'sm', 'B', '安田記念2勝・天皇賞（秋）', null, '栗毛'],
   ['reydeoro', 'レイデオロ', 'm', 'sashi', 't', 'c', 'B', '日本ダービー・天皇賞（秋）', null, '鹿毛'],
   ['fierement', 'フィエールマン', 'm', 'sashi', 't', 'l', 'A', '菊花賞・天皇賞（春）2勝', null, '鹿毛'],
-  ['songline', 'ソングライン', 'f', 'senko', 't', 'm', 'B', '安田記念2勝・ヴィクトリアマイル', null, '鹿毛']
+  ['songline', 'ソングライン', 'f', 'senko', 't', 'm', 'B', '安田記念2勝・ヴィクトリアマイル', null, '鹿毛'],
+  ['topload', 'ナリタトップロード', 'm', 'senko', 't', 'l', 'B', '菊花賞', null, '栗毛'],
+  ['admirevega', 'アドマイヤベガ', 'm', 'sashi', 't', 'c', 'B', '日本ダービー', null, '鹿毛'],
+  ['pirowinner', 'ニホンピロウイナー', 'm', 'senko', 't', 'sm', 'B', 'マイルCS2勝・安田記念', null, '黒鹿毛'],
+  ['northflight', 'ノースフライト', 'f', 'sashi', 't', 'm', 'B', '安田記念・マイルCS', null, '鹿毛'],
+  ['karston', 'カルストンライトオ', 'm', 'nige', 't', 's', 'B', 'スプリンターズS・アイビスSD2勝', null, '鹿毛'],
+  ['hishimiracle', 'ヒシミラクル', 'm', 'sashi', 't', 'l', 'B', '菊花賞・天皇賞（春）・宝塚記念', null, '芦毛'],
+  ['shahryar', 'シャフリヤール', 'm', 'sashi', 't', 'c', 'B', '日本ダービー・ドバイシーマクラシック', null, '黒鹿毛'],
+  ['justinmilano', 'ジャスティンミラノ', 'm', 'senko', 't', 'c', 'A', '皐月賞', null, '鹿毛'],
+  ['danondecile', 'ダノンデサイル', 'm', 'senko', 't', 'c', 'B', '日本ダービー', null, '鹿毛'],
+  ['soleoriens', 'ソールオリエンス', 'm', 'oikomi', 't', 'c', 'B', '皐月賞', null, '鹿毛'],
+  ['tastiera', 'タスティエーラ', 'm', 'senko', 't', 'c', 'B', '日本ダービー', null, '鹿毛'],
+  ['durezza', 'ドゥレッツァ', 'm', 'senko', 't', 'l', 'B', '菊花賞', null, '栗毛'],
+  ['starsonearth', 'スターズオンアース', 'f', 'sashi', 't', 'mc', 'A', '桜花賞・オークス', null, '鹿毛'],
+  ['geoglyph', 'ジオグリフ', 'm', 'sashi', 't', 'c', 'B', '皐月賞', null, '栗毛'],
+  ['askvictormore', 'アスクビクターモア', 'm', 'senko', 't', 'l', 'B', '菊花賞', null, '鹿毛'],
+  ['jackdor', 'ジャックドール', 'm', 'nige', 't', 'c', 'B', '大阪杯・金鯱賞', null, '栗毛'],
+  ['panthalassa', 'パンサラッサ', 'm', 'nige', 'b', 'c', 'A', 'サウジカップ・ドバイターフ', 'k_lg_silence', '鹿毛'],
+  ['ushba', 'ウシュバテソーロ', 'm', 'oikomi', 'd', 'c', 'A', 'ドバイワールドカップ・東京大賞典', 'k_lg_sand', '栗毛'],
+  ['namur', 'ナミュール', 'f', 'sashi', 't', 'm', 'B', 'マイルCS', null, '栗毛'],
+  ['serifos', 'セリフォス', 'm', 'sashi', 't', 'm', 'B', 'マイルCS', null, '鹿毛'],
+  ['schnell', 'シュネルマイスター', 'm', 'sashi', 't', 'm', 'B', 'NHKマイルC', null, '鹿毛'],
+  ['pixieknight', 'ピクシーナイト', 'm', 'senko', 't', 's', 'B', 'スプリンターズS', null, '栗毛'],
+  ['mamacocha', 'ママコチャ', 'f', 'senko', 't', 's', 'B', 'スプリンターズS', null, '栗毛'],
+  ['lugal', 'ルガル', 'm', 'senko', 't', 's', 'B', 'スプリンターズS', null, '鹿毛'],
+  ['namuraclair', 'ナムラクレア', 'f', 'sashi', 't', 's', 'B', '函館スプリントS・キーンランドC', null, '栗毛'],
+  ['fastforce', 'ファストフォース', 'm', 'senko', 't', 's', 'B', '高松宮記念', null, '鹿毛'],
+  ['danonsmash', 'ダノンスマッシュ', 'm', 'senko', 't', 's', 'B', '高松宮記念・香港スプリント', null, '鹿毛'],
+  ['mozuascot', 'モズアスコット', 'm', 'sashi', 'b', 'm', 'B', '安田記念・フェブラリーS', null, '栗毛'],
+  ['indychamp', 'インディチャンプ', 'm', 'senko', 't', 'm', 'A', '安田記念・マイルCS', null, '鹿毛'],
+  ['admiremars', 'アドマイヤマーズ', 'm', 'senko', 't', 'm', 'B', '朝日杯FS・NHKマイルC・香港マイル', null, '栗毛'],
+  ['salios', 'サリオス', 'm', 'senko', 't', 'm', 'B', '朝日杯FS', null, '栗毛'],
+  ['stelvio', 'ステルヴィオ', 'm', 'sashi', 't', 'm', 'B', 'マイルCS', null, '黒鹿毛'],
+  ['persianknight', 'ペルシアンナイト', 'm', 'sashi', 't', 'm', 'B', 'マイルCS', null, '黒鹿毛'],
+  ['mikkyisle', 'ミッキーアイル', 'm', 'nige', 't', 'sm', 'B', 'NHKマイルC・マイルCS', null, '鹿毛'],
+  ['logotype', 'ロゴタイプ', 'm', 'senko', 't', 'm', 'B', '朝日杯FS・皐月賞・安田記念', null, '黒鹿毛'],
+  ['goldactor', 'ゴールドアクター', 'm', 'senko', 't', 'l', 'B', '有馬記念', null, '青鹿毛'],
+  ['satonocrown', 'サトノクラウン', 'm', 'sashi', 't', 'c', 'B', '宝塚記念・香港ヴァーズ', null, '黒鹿毛'],
+  ['cheval', 'シュヴァルグラン', 'm', 'sashi', 't', 'l', 'B', 'ジャパンカップ', null, '栗毛'],
+  ['kiseki', 'キセキ', 'm', 'senko', 't', 'cl', 'B', '菊花賞', null, '黒鹿毛'],
+  ['alain', 'アルアイン', 'm', 'senko', 't', 'c', 'B', '皐月賞・大阪杯', null, '鹿毛'],
+  ['raypapale', 'レイパパレ', 'f', 'nige', 't', 'c', 'B', '大阪杯（無敗で制覇）', null, '鹿毛'],
+  ['potager', 'ポタジェ', 'm', 'sashi', 't', 'c', 'B', '大阪杯', null, '鹿毛'],
+  ['wagnerian', 'ワグネリアン', 'm', 'sashi', 't', 'c', 'B', '日本ダービー', null, '鹿毛'],
+  ['blastonepiece', 'ブラストワンピース', 'm', 'senko', 't', 'c', 'B', '有馬記念', null, '鹿毛'],
+  ['worldpremiere', 'ワールドプレミア', 'm', 'sashi', 't', 'l', 'B', '菊花賞・天皇賞（春）', null, '鹿毛'],
+  ['geraldina', 'ジェラルディーナ', 'f', 'sashi', 't', 'c', 'B', 'エリザベス女王杯', null, '鹿毛'],
+  ['akaiito', 'アカイイト', 'f', 'oikomi', 't', 'c', 'B', 'エリザベス女王杯', null, '鹿毛'],
+  ['lovesonlyyou', 'ラヴズオンリーユー', 'f', 'sashi', 't', 'c', 'A', 'オークス・BCフィリー＆メアターフ', 'k_lg_queen', '鹿毛'],
+  ['noomcore', 'ノームコア', 'f', 'senko', 't', 'm', 'B', 'ヴィクトリアマイル・香港カップ', null, '芦毛'],
+  ['aerolithe', 'アエロリット', 'f', 'nige', 't', 'm', 'B', 'NHKマイルC', null, '芦毛'],
+  ['letsgodonki', 'レッツゴードンキ', 'f', 'senko', 't', 'sm', 'B', '桜花賞', null, '栗毛'],
+  ['harpstar', 'ハープスター', 'f', 'oikomi', 't', 'mc', 'B', '桜花賞', null, '鹿毛'],
+  ['mambo', 'メイショウマンボ', 'f', 'sashi', 't', 'c', 'B', 'オークス・秋華賞・エリザベス女王杯', null, '鹿毛'],
+  ['mikkyqueen', 'ミッキークイーン', 'f', 'sashi', 't', 'c', 'B', 'オークス・秋華賞', null, '鹿毛'],
+  ['pandora', 'ショウナンパンドラ', 'f', 'sashi', 't', 'c', 'B', '秋華賞・ジャパンカップ', null, '鹿毛'],
+  ['marialite', 'マリアライト', 'f', 'sashi', 't', 'c', 'B', '宝塚記念・エリザベス女王杯', null, '黒鹿毛'],
+  ['reddesire', 'レッドディザイア', 'f', 'sashi', 't', 'mc', 'B', '秋華賞', null, '鹿毛'],
+  ['danceinthedark', 'ダンスインザダーク', 'm', 'sashi', 't', 'l', 'A', '菊花賞', null, '鹿毛'],
+  ['fusaichi', 'フサイチコンコルド', 'm', 'sashi', 't', 'c', 'B', '日本ダービー（キャリア3戦目で制覇）', null, '鹿毛'],
+  ['taishin', 'ナリタタイシン', 'm', 'oikomi', 't', 'c', 'B', '皐月賞', null, '黒鹿毛'],
+  ['ticket', 'ウイニングチケット', 'm', 'sashi', 't', 'c', 'A', '日本ダービー', null, '黒鹿毛'],
+  ['yaeno', 'ヤエノムテキ', 'm', 'senko', 't', 'c', 'B', '皐月賞・天皇賞（秋）', null, '栗毛'],
+  ['chiyonoo', 'サクラチヨノオー', 'm', 'senko', 't', 'c', 'B', '朝日杯3歳S・日本ダービー', null, '鹿毛'],
+  ['ines', 'アイネスフウジン', 'm', 'nige', 't', 'c', 'B', '朝日杯3歳S・日本ダービー', null, '黒鹿毛'],
+  ['legacyworld', 'レガシーワールド', 'm', 'senko', 't', 'c', 'B', 'ジャパンカップ', null, '栗毛'],
+  ['marvelous', 'マーベラスサンデー', 'm', 'sashi', 't', 'cl', 'B', '宝塚記念', null, '栗毛'],
+  ['bubblegum', 'バブルガムフェロー', 'm', 'senko', 't', 'c', 'B', '朝日杯3歳S・天皇賞（秋）', null, '鹿毛'],
+  ['dantsuflame', 'ダンツフレーム', 'm', 'sashi', 't', 'c', 'B', '宝塚記念', null, '鹿毛'],
+  ['kris', 'シンボリクリスエス', 'm', 'senko', 't', 'c', 'A', '天皇賞（秋）2勝・有馬記念2勝', null, '黒鹿毛'],
+  ['noreason', 'ノーリーズン', 'm', 'senko', 't', 'c', 'B', '皐月賞', null, '鹿毛'],
+  ['deepsky', 'ディープスカイ', 'm', 'sashi', 't', 'mc', 'B', 'NHKマイルC・日本ダービー', null, '栗毛'],
+  ['oken', 'オウケンブルースリ', 'm', 'oikomi', 't', 'l', 'B', '菊花賞', null, '栗毛'],
+  ['rogiuniverse', 'ロジユニヴァース', 'm', 'senko', 't', 'c', 'B', '日本ダービー（不良馬場）', null, '鹿毛'],
+  ['screenhero', 'スクリーンヒーロー', 'm', 'senko', 't', 'c', 'B', 'ジャパンカップ', null, '栗毛'],
+  ['admiremoon', 'アドマイヤムーン', 'm', 'sashi', 't', 'c', 'A', '宝塚記念・ジャパンカップ・ドバイDF', null, '鹿毛'],
+  ['festa', 'ナカヤマフェスタ', 'm', 'sashi', 't', 'c', 'B', '宝塚記念・凱旋門賞2着', null, '鹿毛'],
+  ['jordan', 'トーセンジョーダン', 'm', 'senko', 't', 'c', 'B', '天皇賞（秋）', null, '鹿毛'],
+  ['oneandonly', 'ワンアンドオンリー', 'm', 'sashi', 't', 'c', 'B', '日本ダービー', null, '黒鹿毛'],
+  ['islabonita', 'イスラボニータ', 'm', 'senko', 't', 'mc', 'B', '皐月賞', null, '黒鹿毛'],
+  ['jackal', 'トーホウジャッカル', 'm', 'senko', 't', 'l', 'B', '菊花賞', null, '栗毛'],
+  ['lovelyday', 'ラブリーデイ', 'm', 'senko', 't', 'c', 'B', '宝塚記念・天皇賞（秋）', null, '黒鹿毛'],
+  ['makahiki', 'マカヒキ', 'm', 'oikomi', 't', 'c', 'B', '日本ダービー', null, '鹿毛'],
+  ['southvigorous', 'サウスヴィグラス', 'm', 'nige', 'd', 's', 'B', 'JBCスプリント', null, '栗毛'],
+  ['wonderacute', 'ワンダーアキュート', 'm', 'senko', 'd', 'c', 'B', 'JBCクラシック・かしわ記念', null, '鹿毛'],
+  ['teokeynes', 'テーオーケインズ', 'm', 'senko', 'd', 'c', 'B', 'チャンピオンズC・帝王賞', null, '栗毛'],
+  ['cafepharoah', 'カフェファラオ', 'm', 'senko', 'd', 'm', 'B', 'フェブラリーS2勝', null, '鹿毛'],
+  ['moanin', 'モーニン', 'm', 'senko', 'd', 'm', 'B', 'フェブラリーS', null, '栗毛'],
+  ['sanvista', 'サンビスタ', 'f', 'sashi', 'd', 'c', 'B', 'チャンピオンズC', null, '黒鹿毛'],
+  ['chuwawizard', 'チュウワウィザード', 'm', 'senko', 'd', 'c', 'B', 'チャンピオンズC・川崎記念', null, '鹿毛'],
+  ['luvansleve', 'ルヴァンスレーヴ', 'm', 'senko', 'd', 'mc', 'A', 'チャンピオンズC・JBCクラシック', null, '鹿毛'],
+  ['fineneedle', 'ファインニードル', 'm', 'senko', 't', 's', 'B', '高松宮記念・スプリンターズS', null, '鹿毛'],
+  ['bigarthur', 'ビッグアーサー', 'm', 'senko', 't', 's', 'B', '高松宮記念', null, '鹿毛'],
+  ['redfalx', 'レッドファルクス', 'm', 'oikomi', 't', 's', 'B', 'スプリンターズS2勝', null, '芦毛'],
+  ['marchan', 'アストンマーチャン', 'f', 'nige', 't', 's', 'B', 'スプリンターズS', null, '栗毛'],
+  ['sleepless', 'スリープレスナイト', 'f', 'senko', 't', 's', 'B', 'スプリンターズS', null, '栗毛'],
+  ['laurelguerreiro', 'ローレルゲレイロ', 'm', 'nige', 't', 's', 'B', '高松宮記念・スプリンターズS', null, '青鹿毛'],
+  ['flowerpark', 'フラワーパーク', 'f', 'senko', 't', 's', 'B', '高松宮杯・スプリンターズS', null, '鹿毛'],
+  ['haiseiko', 'ハイセイコー', 'm', 'senko', 'b', 'c', 'A', '皐月賞（国民的アイドルホース）', null, '鹿毛'],
+  ['toshoboy', 'トウショウボーイ', 'm', 'senko', 't', 'mc', 'A', '皐月賞・有馬記念', 'k_lg_wing', '鹿毛'],
+  ['tenpoint', 'テンポイント', 'm', 'senko', 't', 'cl', 'A', '天皇賞（春）・有馬記念', null, '栗毛'],
+  ['greengrass', 'グリーングラス', 'm', 'senko', 't', 'l', 'A', '菊花賞・天皇賞（春）・有馬記念', 'k_lg_stayer', '青鹿毛'],
+  ['maruzensky', 'マルゼンスキー', 'm', 'nige', 't', 'sm', 'S', '朝日杯3歳S（8戦無敗）', 'k_lg_silence', '鹿毛'],
+  ['katsuragi', 'カツラギエース', 'm', 'nige', 't', 'c', 'B', 'ジャパンカップ・宝塚記念', null, '鹿毛'],
+  ['nippoteio', 'ニッポーテイオー', 'm', 'senko', 't', 'm', 'B', '天皇賞（秋）・マイルCS・安田記念', null, '鹿毛'],
+  ['ramonu', 'メジロラモーヌ', 'f', 'sashi', 't', 'mc', 'A', '史上初の牝馬三冠', 'k_lg_queen', '鹿毛'],
+  ['starou', 'サクラスターオー', 'm', 'sashi', 't', 'cl', 'B', '皐月賞・菊花賞', null, '栗毛'],
+  ['speedsymboli', 'スピードシンボリ', 'm', 'senko', 't', 'l', 'B', '有馬記念2勝・天皇賞（春）', null, '黒鹿毛'],
+  ['mihoshinzan', 'ミホシンザン', 'm', 'senko', 't', 'cl', 'B', '皐月賞・菊花賞・天皇賞（春）', null, '鹿毛'],
+  ['kaburaya', 'カブラヤオー', 'm', 'nige', 't', 'c', 'A', '皐月賞・日本ダービー', 'k_lg_silence', '黒鹿毛'],
+  ['hokutovega', 'ホクトベガ', 'f', 'senko', 'b', 'c', 'A', 'エリザベス女王杯・川崎記念', null, '鹿毛'],
+  ['vega', 'ベガ', 'f', 'sashi', 't', 'mc', 'B', '桜花賞・オークス', null, '鹿毛'],
+  ['dancepartner', 'ダンスパートナー', 'f', 'sashi', 't', 'c', 'B', 'オークス・エリザベス女王杯', null, '青鹿毛'],
+  ['maxbeauty', 'マックスビューティ', 'f', 'senko', 't', 'mc', 'B', '桜花賞・オークス', null, '栗毛']
 ];
 
 const Legends = {
@@ -217,6 +330,34 @@ const Legends = {
   },
 
   enabled() { return Player.data.settings.legends !== false; },
+
+  // ── 写真：自分で設定した写真 → Wikimedia Commons の写真 → なし ──
+  _photoUrls: {},
+  photoUrl(id) {
+    const custom = typeof Media !== 'undefined' && Media.url('photo:' + id);
+    if (custom) return custom;
+    const p = GAME_DATA.legendPhotos && GAME_DATA.legendPhotos[id];
+    if (!p) return null;
+    if (!this._photoUrls[id]) {
+      // data URI を blob URL にして、画面のHTMLを軽くする
+      try {
+        const bin = atob(p.src.split(',')[1]);
+        const arr = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        this._photoUrls[id] = URL.createObjectURL(new Blob([arr], { type: 'image/jpeg' }));
+      } catch (e) { this._photoUrls[id] = p.src; }
+    }
+    return this._photoUrls[id];
+  },
+  photoCredit(id) {
+    if (typeof Media !== 'undefined' && Media.url('photo:' + id)) return { custom: true };
+    return (GAME_DATA.legendPhotos || {})[id] || null;
+  },
+  async setPhoto(id, file) {
+    const blob = await Media.resizeImage(file, 420);
+    await Media.put('photo:' + id, blob, { name: file.name });
+  },
+  resetPhoto(id) { return Media.del('photo:' + id); },
 
   // このレースに出てくる名馬を選ぶ（重賞のみ、適性が合う馬）
   pickFor(race) {

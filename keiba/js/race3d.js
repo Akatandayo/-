@@ -231,6 +231,7 @@ const Race3D = {
 
   unmount() {
     this.sound.stop();
+    if (typeof Fanfare !== 'undefined') Fanfare.stop();
     if (this._ro) this._ro.disconnect();
     if (this.renderer && this.renderer.domElement.parentNode) this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
     this.disposeScene();
@@ -283,6 +284,7 @@ const Race3D = {
     const sF = this.S - this.FINISH_BACK;
     const st = this.state = {
       result: res, race: ctx.race, scene, camera, D, sF, sStart: sF - D,
+      preroll: ctx.preroll || 2.2, slot: ctx.slot || 'normal_east',
       horses: [], lastT: null, camPos: new THREE.Vector3(), camLook: new THREE.Vector3(), shot: null,
       particles: null, banner: null, bannerUntil: 0, goalShown: false, rain: null, lastHud: 0
     };
@@ -906,31 +908,6 @@ const Race3D = {
         o.connect(g).connect(this.master);
         o.start(t); o.stop(t + 0.4);
       });
-    },
-    // オリジナルの短いファンファーレ（重賞は豪華に）
-    fanfare(big) {
-      if (!this.ac) return;
-      const notes = big
-        ? [[67, 0.16], [72, 0.16], [76, 0.16], [79, 0.38], [76, 0.16], [79, 0.6], [84, 0.9]]
-        : [[72, 0.14], [76, 0.14], [79, 0.4]];
-      let t = this.ac.currentTime + 0.05;
-      notes.forEach(([n, d]) => {
-        const f = 440 * Math.pow(2, (n - 69) / 12);
-        [1, 2.005].forEach((m, i) => {
-          const o = this.ac.createOscillator();
-          const g = this.ac.createGain();
-          const lp = this.ac.createBiquadFilter();
-          o.type = 'sawtooth'; o.frequency.value = f * (i ? 1.003 : 1);
-          lp.type = 'lowpass'; lp.frequency.value = 2400;
-          g.gain.setValueAtTime(0.0001, t);
-          g.gain.exponentialRampToValueAtTime(i ? 0.03 : 0.07, t + 0.03);
-          g.gain.setValueAtTime(i ? 0.03 : 0.07, t + d * 0.8);
-          g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-          o.connect(lp).connect(g).connect(this.master);
-          o.start(t); o.stop(t + d + 0.02);
-        });
-        t += d;
-      });
     }
   },
 
@@ -939,6 +916,7 @@ const Race3D = {
     Player.save();
     if (this.sound.enabled()) { this.sound.init(); this.sound.startCrowd(); }
     if (this.sound.master) this.sound.master.gain.value = this.sound.enabled() ? 0.9 : 0;
+    if (!this.sound.enabled()) Fanfare.stop();
     const b = this.container && this.container.querySelector('[data-sound]');
     if (b) b.textContent = this.sound.enabled() ? '🔊' : '🔇';
   },
@@ -1050,7 +1028,7 @@ const Race3D = {
   updateSound(t, pos, order, realDt) {
     const st = this.state, snd = this.sound;
     if (!snd.ac || !snd.enabled()) return;
-    if (!st.fanfareDone && t < 0) { st.fanfareDone = true; snd.fanfare(['g1', 'g2', 'g3'].includes(st.race.grade)); }
+    if (!st.fanfareDone && t < 0) { st.fanfareDone = true; Fanfare.play(st.slot); }
     if (!st.clangDone && t >= 0) { st.clangDone = true; snd.clang(); snd.startCrowd(); }
     const remain = st.D - order[0].p;
     const finished = t > order[0].h.ft;
@@ -1136,7 +1114,7 @@ const Race3D = {
     if (shot === 'intro' || shot === 'gate') {
       const g = this.path(st.sStart, 9);
       const o = out(g);
-      const k = shot === 'intro' ? Util.clamp(1 + t / 2.2, 0, 1) : 1;
+      const k = shot === 'intro' ? Util.clamp(1 + t / st.preroll, 0, 1) : 1;
       const ahead = shot === 'intro' ? 26 - 8 * k : 20 + t * 6;
       cam = { x: g.x + g.dx * ahead + o.x * (28 - 8 * k), y: 16 - 11 * k, z: g.z + g.dz * ahead + o.z * (28 - 8 * k) };
       const lk = this.path(st.sStart + Math.max(0, cS) * 0.7, 8);

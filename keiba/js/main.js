@@ -13,6 +13,8 @@ const App = {
     });
     UI.show('home');
     if (!Player.data.tutorialDone) this.welcome();
+    // 登録した写真・ファンファーレを読み込む
+    Media.init().then(() => { if (UI.state.screen !== 'raceView') UI.render(); });
   },
 
   // 変更を保存して再描画
@@ -526,7 +528,7 @@ const App = {
     let detail = '';
     if (c.type === 'sire' || c.type === 'mare') {
       const sk = c.skill ? Cards.get(c.skill) : null;
-      detail = `<p>${Util.esc(c.desc || '')}</p>
+      detail = `${c.legend ? this.legendPhotoBlock(c) : ''}<p>${Util.esc(c.desc || '')}</p>
         ${STAT_KEYS.map(k => UI.statRow(k, c.stats[k])).join('')}
         ${UI.aptGrid(c.apt)}
         <p>脚質：${GAME_DATA.styles[c.style].icon}${GAME_DATA.styles[c.style].label}・成長：${GAME_DATA.growthTypes[c.growth].label}</p>
@@ -541,12 +543,91 @@ const App = {
     UI.modal(`<div class="card-detail">${UI.anyCard(c, { count: Player.count(c.id) })}<div>${detail}</div></div>`);
   },
 
+  // ── 名馬の写真 ──
+  legendPhotoBlock(c) {
+    const url = Legends.photoUrl(c.legendId);
+    const cr = Legends.photoCredit(c.legendId);
+    const credit = !cr ? '<small class="muted">写真なし（自分で設定できます）</small>'
+      : cr.custom ? '<small class="muted">📷 あなたが設定した写真</small>'
+      : `<small class="muted">📷 ${Util.esc(cr.artist)}／<a href="${cr.licenseUrl || cr.page}" target="_blank" rel="noopener">${Util.esc(cr.license)}</a>／<a href="${cr.page}" target="_blank" rel="noopener">Wikimedia Commons</a></small>`;
+    return `<div class="legend-photo">${url ? `<img src="${url}" alt="${Util.esc(c.name)}">` : ''}${credit}
+      <div class="btn-row">
+        <label class="btn small">📷 写真を変更<input type="file" accept="image/*" hidden onchange="App.setLegendPhoto('${c.legendId}', this)"></label>
+        ${cr && cr.custom ? `<button class="btn small" onclick="App.resetLegendPhoto('${c.legendId}')">↩ 元に戻す</button>` : ''}
+      </div></div>`;
+  },
+
+  async setLegendPhoto(id, input) {
+    const f = input.files && input.files[0];
+    if (!f) return;
+    try {
+      await Legends.setPhoto(id, f);
+      UI.toast('📷 写真を設定しました');
+      this.cardDetail('lc_' + id);
+      UI.render();
+    } catch (e) { UI.toast(e.message, 'error'); }
+  },
+
+  async resetLegendPhoto(id) {
+    await Legends.resetPhoto(id);
+    this.cardDetail('lc_' + id);
+    UI.render();
+  },
+
+  photoCredits() {
+    const list = Object.entries(GAME_DATA.legendPhotos || {});
+    UI.modal(`<h3>📷 名馬写真のクレジット</h3>
+      <p class="muted small">名馬カードの写真は Wikimedia Commons の自由ライセンス画像です（Wikidata の各馬の代表画像を縮小して使用）。各ライセンスの条件に従って利用しています。</p>
+      <div class="credits">${list.map(([id, p]) => `<div><b>${Util.esc((Legends.get(id) || {}).name || id)}</b>：${Util.esc(p.artist)}／<a href="${p.licenseUrl || p.page}" target="_blank" rel="noopener">${Util.esc(p.license)}</a>／<a href="${p.page}" target="_blank" rel="noopener">出典</a></div>`).join('')}</div>`);
+  },
+
+  // ── ファンファーレ設定 ──
+  fanfareSettings() {
+    const rows = Fanfare.SLOTS.map(s => {
+      const m = Media.meta[Fanfare.key(s.id)];
+      const has = !!Fanfare.custom(s.id);
+      return `<div class="ff-row">
+        <div><b>${s.label}</b><small>${s.desc}</small>
+          <small class="${has ? 'ok' : 'muted'}">${has ? `🎵 ${Util.esc(m.name || '登録済み')}（${(m.duration || 0).toFixed(1)}秒）` : 'オリジナル曲'}</small></div>
+        <div class="ff-btns">
+          <button class="btn small" onclick="App.fanfareTest('${s.id}')">▶</button>
+          <label class="btn small">📂 登録<input type="file" accept="audio/*" hidden onchange="App.fanfareUpload('${s.id}', this)"></label>
+          ${has ? `<button class="btn small" onclick="App.fanfareRemove('${s.id}')">🗑</button>` : ''}
+        </div></div>`;
+    }).join('');
+    UI.modal(`<h3>🎺 ファンファーレ設定</h3>
+      <p class="muted small">3Dレースのゲートイン中に、競馬場（関東・関西・ローカル）とレースの格に合わせて流れます。</p>
+      <p class="notice small">JRAのファンファーレは作曲家の著作物のため、ゲームには入っていません。ご自身で正規に入手した音源ファイルを各区分に登録できます（ファイルはこのブラウザの中だけに保存され、外部には送信されません）。</p>
+      ${Media.ok ? '' : '<p class="warn small">この環境では保存ができないため、登録はページを開いている間だけ有効です。</p>'}
+      <div class="ff-list">${rows}</div>
+      <button class="btn" onclick="Fanfare.stop();UI.closeModal()">閉じる</button>`);
+  },
+
+  fanfareTest(slot) {
+    Race3D.sound.init();
+    Fanfare.play(slot);
+  },
+
+  async fanfareUpload(slot, input) {
+    const r = await Fanfare.register(slot, input.files && input.files[0]);
+    if (!r.ok) return UI.toast(r.reason, 'error');
+    UI.toast(`🎺 登録しました（${r.duration.toFixed(1)}秒）`);
+    this.fanfareSettings();
+  },
+
+  async fanfareRemove(slot) {
+    Fanfare.stop();
+    await Fanfare.remove(slot);
+    this.fanfareSettings();
+  },
+
   // ── 設定 ──
   settings() {
     UI.modal(`<h3>⚙ 設定</h3>
       <label>厩舎の名前<input id="set-name" maxlength="12" value="${Util.esc(Player.data.name)}"></label>
       <label class="check-row"><input type="checkbox" id="set-legends" ${Player.data.settings.legends !== false ? 'checked' : ''}> 👑 実在の名馬をライバルとして出走させる</label>
       <button class="btn primary" onclick="App.saveSettings()">保存</button>
+      <div class="btn-row"><button class="btn" onclick="App.fanfareSettings()">🎺 ファンファーレ設定</button><button class="btn" onclick="App.photoCredits()">📷 写真クレジット</button></div>
       <hr>
       <p class="muted small">データはこのブラウザ（localStorage）に自動保存されています。</p>
       <button class="btn danger" onclick="App.confirmReset()">データを消去して最初から</button>`, { cls: 'small' });
