@@ -890,6 +890,67 @@ html, body { overflow-x: hidden; }
 @keyframes photoIn { from { transform: scale(1.2) rotate(2deg); opacity: 0; } to { transform: rotate(-1.5deg); opacity: 1; } }
 @keyframes pfBlink { 50% { opacity: .55; } }
 .r3-banner.incident { background: linear-gradient(90deg, rgba(198,40,40,.92), rgba(120,20,20,.92)); }
+
+/* ───────── v10：騎手・個性・ライバル・アルバム・掲示板 ───────── */
+.jockey-pick { background: #eef3f8; border-radius: 12px; padding: 8px 10px; margin: 8px 0; }
+.jockey-pick h4 { margin: 0 0 6px; }
+.jockey-pick .chips { flex-wrap: wrap; }
+.jockey-pick .chips button { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 5px 9px; border-radius: 10px; border: 2px solid #cdd8e3; background: #fff; font-weight: 800; font-size: 12px; color: var(--ink); min-width: 74px; }
+.jockey-pick .chips button.active { border-color: #2563eb; background: #e8f0ff; }
+.jockey-pick .chips button.locked { opacity: .45; }
+.jockey-pick .chips button small { font-size: 10px; color: var(--muted); font-weight: 700; }
+.jockey-pick p { margin: 6px 0 0; }
+.jr { display: inline-block; min-width: 18px; padding: 0 4px; border-radius: 4px; color: #fff; font-size: 10px; font-weight: 900; text-align: center; }
+.trait-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.trait { display: inline-flex; flex-direction: column; background: #fff3e0; border: 1px solid #ffcc80; border-radius: 10px; padding: 5px 10px; font-weight: 800; }
+.trait small { font-weight: 400; font-size: 11px; color: var(--muted); }
+.trait.unknown { background: #f1f1f1; border-color: #ddd; color: #888; }
+.trait.none { background: #f4f4f4; border-color: #e3e3e3; color: #888; }
+.rival-box { border-radius: 12px; padding: 8px 12px; margin: 8px 0; font-weight: 700; background: linear-gradient(90deg, #f3e5f5, #ede7f6); border-left: 5px solid #8e24aa; }
+.rival-box.won { border-left-color: #2e7d32; }
+.rival-box small { display: block; font-weight: 400; color: var(--muted); }
+.trait-found { background: #fff8e1; border: 2px dashed #ffb300; border-radius: 12px; padding: 8px 12px; margin: 8px 0; font-weight: 900; animation: popIn .5s; }
+.trait-found small { display: block; font-weight: 400; color: var(--muted); }
+.interview { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; margin: 8px 0; box-shadow: 0 2px 6px rgba(0,0,0,.06); }
+.interview .iv-head { font-weight: 900; color: #1f6b4a; font-size: 13px; }
+.interview p { margin: 4px 0 0; line-height: 1.6; }
+.laps { margin: 8px 0; font-size: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.laps .lap-list { font-family: ui-monospace, Menlo, Consolas, monospace; background: #f4f0e4; border-radius: 6px; padding: 2px 6px; word-break: break-all; }
+.pace { color: #fff; border-radius: 999px; padding: 1px 8px; font-weight: 900; }
+.pace-H { background: #d84315; } .pace-M { background: #6d4c41; } .pace-S { background: #1565c0; }
+.ceremony { background: radial-gradient(circle at 50% 0, #fff6d5, #fff 70%); border: 2px solid #f5b301; border-radius: 14px; padding: 8px 12px; margin: 10px 0; }
+.ceremony h3 { text-align: center; margin: 4px 0 8px; }
+.album { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.album-card { display: flex; gap: 10px; background: #fffdf6; border: 1px solid #ecdcae; border-radius: 12px; padding: 8px; }
+.album-photo { position: relative; flex: 0 0 96px; height: 96px; border-radius: 10px; overflow: hidden; background: linear-gradient(#bfe0ff, #8fcf7d); border: 4px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.2); transform: rotate(-2deg); }
+.album-photo .pt, .album-photo .pt img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.album-photo .trophy { position: absolute; right: 2px; bottom: 0; font-size: 26px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
+.album-info { min-width: 0; font-size: 13px; }
+.album-comment { margin: 4px 0 0; font-size: 12px; color: #5a4a2a; line-height: 1.5; }
+@keyframes popIn { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* 3D：着順掲示板 */
+.r3-board { position: absolute; right: 104px; bottom: 74px; width: 150px; background: #101010; border: 3px solid #3a3a3a; border-radius: 6px; padding: 6px 8px;
+  font-family: ui-monospace, Menlo, Consolas, monospace; color: #ffb300; opacity: 0; transform: translateY(10px); transition: opacity .4s, transform .4s; pointer-events: none; z-index: 3; }
+.r3-board.show { opacity: 1; transform: none; }
+.r3-board .bd-head { color: #fff; font-family: inherit; font-size: 11px; font-weight: 900; letter-spacing: .3em; text-align: center; border-bottom: 1px solid #333; margin-bottom: 3px; }
+.r3-board .bd-row { display: grid; grid-template-columns: 18px 34px 1fr; align-items: center; font-weight: 900; text-shadow: 0 0 6px rgba(255,179,0,.7); }
+.r3-board .bd-pl { color: #fff; font-size: 12px; text-shadow: none; }
+.r3-board .bd-num { font-size: 20px; text-align: center; }
+.r3-board .bd-mg { font-size: 11px; text-align: right; }
+.r3-board .bd-time { border-top: 1px solid #333; margin-top: 3px; padding-top: 2px; font-size: 16px; font-weight: 900; text-align: center; text-shadow: 0 0 6px rgba(255,179,0,.7); }
+.r3-board .bd-time small { display: block; font-size: 10px; }
+.r3-board .bd-lamps { display: flex; gap: 6px; justify-content: center; margin-top: 4px; }
+.r3-board .lamp { font-size: 11px; font-weight: 900; padding: 1px 6px; border-radius: 3px; background: #2a2a2a; color: #555; text-shadow: none; }
+.r3-board.photo .lamp.photo { background: #fdd835; color: #111; animation: pfBlink .8s infinite; }
+.r3-board.fixed .lamp.fix { background: #e53935; color: #fff; box-shadow: 0 0 10px #e53935; }
+
+/* 3D：コース全景のミニマップ */
+.r3-mini { position: absolute; right: 10px; top: 76px; width: 128px; height: 82px; background: rgba(6, 24, 16, .62); border-radius: 10px; padding: 4px; z-index: 2; pointer-events: none; }
+.r3-mini .mini-track { fill: none; stroke: #6fbf73; stroke-width: 22; stroke-linejoin: round; }
+.r3-mini .mini-start { fill: #fff; opacity: .8; }
+.r3-mini .mini-goal { fill: #ff5252; }
+@media (max-width: 560px) { .r3-mini { width: 92px; height: 60px; top: 62px; } .r3-board { width: 118px; right: 10px; bottom: 64px; } .r3-board .bd-num { font-size: 16px; } }
 </style>
 </head>
 <body>
@@ -1329,6 +1390,49 @@ GAME_DATA.orders = {
   inside: { label: '内を突く', icon: '↪️', desc: '最短距離を通って体力を節約。ただし直線で前が壁になりやすい。' }
 };
 
+// 騎手（すべて架空の人物）。skill：騎乗技術、style：得意な脚質、trait：得意技、fee：騎乗料（1レース）
+// unlock：起用できる条件（厩舎の通算勝利数・GⅠ勝利数）。勝つと賞金の5%を進上金として支払う
+GAME_DATA.jockeyTraits = {
+  g1: { label: '大舞台の男', desc: 'GⅠで馬の力を引き出す' },
+  start: { label: 'ゲート名人', desc: '出遅れがほとんどない' },
+  calm: { label: '折り合いの達人', desc: '馬が掛かりにくい' },
+  path: { label: '進路取り上手', desc: '直線で前が壁になりにくい' },
+  long: { label: '長距離の名手', desc: '2500m以上で力を発揮' },
+  mud: { label: '道悪巧者', desc: '重・不良馬場で力を発揮' },
+  sprint: { label: '短距離の鬼', desc: '1400m以下で力を発揮' },
+  rookie: { label: '若手の勢い', desc: '技術は発展途上だが、怖いもの知らず' }
+};
+GAME_DATA.jockeys = [
+  { id: 'j_haruno', name: '春野 つばさ', rank: 'C', skill: 50, style: 'nige', trait: 'rookie', fee: 0, unlock: null, desc: 'デビュー2年目の見習い騎手。騎乗料は無料。' },
+  { id: 'j_yuki', name: '結城 大地', rank: 'C', skill: 58, style: 'senko', trait: 'start', fee: 300, unlock: null, desc: '真面目なベテラン。スタートが上手い。' },
+  { id: 'j_nanjo', name: '南条 航', rank: 'B', skill: 66, style: 'senko', trait: 'mud', fee: 800, unlock: { wins: 3 }, desc: '雨の日に頼れる職人肌。' },
+  { id: 'j_shiina', name: '椎名 リオ', rank: 'B', skill: 68, style: 'oikomi', trait: 'path', fee: 900, unlock: { wins: 5 }, desc: 'インを鋭く突く若手のホープ。' },
+  { id: 'j_kurosawa', name: '黒沢 迅', rank: 'B', skill: 70, style: 'nige', trait: 'sprint', fee: 1000, unlock: { wins: 8 }, desc: 'スタートからの速さはピカイチ。' },
+  { id: 'j_yukimura', name: '雪村 こはる', rank: 'A', skill: 78, style: 'sashi', trait: 'calm', fee: 2000, unlock: { wins: 12 }, desc: '馬との対話を大切にする女性騎手。' },
+  { id: 'j_takano', name: '鷹野 誠', rank: 'A', skill: 80, style: 'senko', trait: 'long', fee: 2200, unlock: { wins: 18 }, desc: '長距離戦の駆け引きに長けた理論派。' },
+  { id: 'j_ookouchi', name: '大河内 剛', rank: 'A', skill: 82, style: 'oikomi', trait: 'path', fee: 2500, unlock: { wins: 25 }, desc: '豪快な追い込みが代名詞。' },
+  { id: 'j_bernard', name: 'L・ベルナール', rank: 'A', skill: 84, style: 'sashi', trait: 'start', fee: 3000, unlock: { g1Wins: 1 }, desc: '短期免許で来日した名手。' },
+  { id: 'j_shiraishi', name: '白石 蓮', rank: 'S', skill: 90, style: 'senko', trait: 'calm', fee: 4500, unlock: { g1Wins: 2 }, desc: '冷静沈着なリーディングジョッキー。' },
+  { id: 'j_hayase', name: '早瀬 悠真', rank: 'S', skill: 92, style: 'nige', trait: 'g1', fee: 5000, unlock: { g1Wins: 4 }, desc: '逃げで大レースを勝ちまくる天才。' },
+  { id: 'j_kazama', name: '風間 翔', rank: 'S', skill: 96, style: 'sashi', trait: 'g1', fee: 6000, unlock: { g1Wins: 6 }, desc: '「競馬の神に愛された男」。' }
+];
+
+// 馬の個性（生まれつき。最初は ？？？ で、条件のレースを走ると判明する）
+GAME_DATA.traits = {
+  rain: { label: '雨巧者', icon: '☔', desc: '重・不良馬場で力を発揮する' },
+  firm: { label: '良馬場巧者', icon: '☀️', desc: '良馬場で伸びるが、重い馬場は苦手' },
+  bigstage: { label: '大舞台', icon: '🎆', desc: 'GⅠで普段以上の力を出す' },
+  hill: { label: '坂巧者', icon: '⛰️', desc: '坂のある中山・阪神・中京が得意' },
+  flat: { label: '平坦巧者', icon: '🛤️', desc: '平坦な京都・新潟・福島・小倉・札幌・函館が得意' },
+  tight: { label: '小回り巧者', icon: '🌀', desc: '直線の短い小回りコースが得意' },
+  wide: { label: '大箱向き', icon: '🏟️', desc: '直線の長い広いコースが得意' },
+  gate: { label: 'ゲート巧者', icon: '🚪', desc: 'スタートが抜群にうまい' },
+  temper: { label: '気性難', icon: '💢', desc: '掛かりやすいが、闘争心で最後にもうひと伸び' },
+  fighter: { label: '勝負根性', icon: '🔥', desc: '直線で並ばれると負けない' },
+  summer: { label: '夏馬', icon: '🌻', desc: '6〜8月のレースで調子が上がる' },
+  winter: { label: '冬馬', icon: '❄️', desc: '12〜2月のレースで調子が上がる' }
+};
+
 // 競馬場のコース（実際のレイアウトのおおよその値）
 // dir：R=右回り・L=左回り、P：1周の距離(m)、L：最後の直線(m)
 // outer：外回りコース（d に含まれる距離で使う）、straight：直線コースの距離
@@ -1401,6 +1505,8 @@ GAME_DATA.glossary = {
   intelligence: { title: '🧠 賢さ', body: 'スキルが発動しやすくなり、レースでの走りも安定します。賢い馬は出遅れ・掛かり・前が壁といったアクシデントも起こしにくくなります。' },
   order: { title: '🗣 作戦', body: 'レース前に騎手へ出す指示です。<br>🔥積極策：直線が短いコースで前に残る／🧘脚をためる：長い直線で末脚爆発／⏩早めスパート：スタミナ自慢向き／↪️内を突く：体力を節約できるが前が壁になりやすい。<br>脚質とコースに合った作戦を選ぶと勝ちやすくなります（「おすすめ」が目安）。' },
   popularity: { title: '📊 人気・単勝オッズ', body: '出走馬の強さから見積もった予想です。1番人気が一番勝ちそうな馬。4番人気以下で勝つと「大金星ボーナス」で賞金が増えます（最大+50%）。' },
+  trait: { title: '🧬 個性', body: '馬が生まれつき持っている性質（雨巧者・坂巧者・気性難など）。最初は ？？？ で、条件に合うレースを走ると判明します。殿堂馬カードで配合すると、判明した個性を子に受け継ぐことがあります。' },
+  jockey: { title: '🏇 騎手', body: '騎手の技術が高いほど作戦がよく効き、出遅れ・掛かりなどのアクシデントも減ります。得意な脚質が合うと少し速くなり、同じ騎手で乗り続けるとコンビの相性が上がります。<br>騎乗料はレース前に、勝ったときは賞金の5%（進上金）を支払います。上位の騎手は厩舎の勝利数・GⅠ勝利数で起用できるようになります。' },
   turn: { title: '🔄 右回り・左回り', body: '馬によって得意な回りがあります（◎得意・△少し苦手）。東京・中京・新潟は左回り、それ以外は右回りです。' },
   incident: { title: '⚠ アクシデント', body: '出遅れ：スタートで遅れる／掛かり：前半に力んで体力を使う／前が壁：直線で進路がなく減速する。賢さが高く、調子が良いほど起きにくくなります。' },
   distance: { title: '📏 距離適性', body: 'その馬が得意な距離です。★が多い距離のレースに出ると力を発揮できます。<br>スプリント（〜1400m）／マイル（〜1800m）／クラシック（〜2400m）／ロング（2401m〜）' },
@@ -1883,6 +1989,7 @@ const Legends = {
     STAT_KEYS.forEach(k => { stats[k] = Math.round(l.stats[k] + adj + Util.gauss() * 1.5); });
     return {
       id: Util.uid('lg_'), legendId: l.id, name: l.name, owner: '👑 名馬', isPlayer: false, isLegend: true,
+      traits: l.tier === 'S' ? ['bigstage'] : [],
       stats, aptitude: Object.assign({}, l.aptitude), runningStyle: l.style, skills: l.skills.slice(),
       condition: Util.randInt(65, 95), fatigue: 0, coat: l.coat
     };
@@ -3424,6 +3531,8 @@ const Player = {
       if (!h.titles) h.titles = [];
       if (h.actedAt === undefined) h.actedAt = -1;
       if (h.turn === undefined) h.turn = Horse.randomTurn();
+      if (!h.traits) { h.traits = Traits.random(); h.traitsKnown = []; }
+      if (!h.rides) h.rides = {};
       // v8：限界値アップに上限ができたので、以前のセーブで上がりすぎた限界値を整える
       if (h.capBoost === undefined) {
         h.capBoost = 0;
@@ -3532,6 +3641,11 @@ const Horse = {
       caps: Object.assign({}, opts.caps || opts.stats),
       capBoost: 0,          // アイテムで上げた限界値（上限 GAME_DATA.capBoostMax）
       turn: opts.turn !== undefined ? opts.turn : this.randomTurn(),   // 得意な回り（R/L/''）
+      traits: opts.traits || Traits.random(),   // 個性（最初は ？？？）
+      traitsKnown: [],
+      jockey: null,         // 主戦騎手
+      rides: {},            // 騎手ごとのコンビ回数
+      rival: null,          // 宿命のライバル（初めての重賞で登場）
       aptitude: Object.assign({ sprint: 50, mile: 50, classic: 50, long: 50, turf: 50, dirt: 50 }, opts.aptitude),
       runningStyle: opts.runningStyle || 'senko',
       growthType: opts.growthType || 'normal',
@@ -3797,6 +3911,7 @@ const Breeding = {
 
     const potential = STAT_KEYS.reduce((s, k) => s + caps[k], 0) / STAT_KEYS.length;
     const horse = Horse.create({
+      traits: Traits.inherit(father, mother),
       stats, caps, aptitude, runningStyle, growthType,
       rarity: Horse.rarityFromPotential(potential),
       condition: Util.randInt(60, 85),
@@ -4026,6 +4141,255 @@ const Skills = {
 };
 </script>
 <script>
+// 騎手・ライバル・個性・勝利インタビュー・思い出アルバム
+// レースの数値計算は race.js（Race.simulate）が行い、ここは「誰が乗るか」「誰と戦うか」と物語の部分を受け持つ。
+'use strict';
+
+// ───────── 騎手 ─────────
+const Jockeys = {
+  RANK_COLOR: { S: '#c98a00', A: '#c0392b', B: '#2563eb', C: '#6b7280' },
+  STAKE: 0.05,   // 勝ったときの進上金（賞金の5%）
+
+  get(id) { return GAME_DATA.jockeys.find(j => j.id === id); },
+
+  unlocked(j) {
+    const u = j.unlock;
+    if (!u) return true;
+    const st = Player.data.stats;
+    return (!u.wins || st.winCount >= u.wins) && (!u.g1Wins || st.g1WinCount >= u.g1Wins);
+  },
+  unlockText(j) {
+    const u = j.unlock || {};
+    return u.g1Wins ? `厩舎でGⅠ ${u.g1Wins}勝` : u.wins ? `厩舎で通算${u.wins}勝` : '';
+  },
+
+  // 馬の主戦騎手（使えなければ無料の見習い騎手）
+  defaultFor(h) {
+    const j = this.get(h.jockey);
+    return j && this.unlocked(j) ? j.id : 'j_haruno';
+  },
+
+  // レース用の騎手データ（コンビ回数つき）
+  entry(h, id) {
+    const j = this.get(id) || this.get('j_haruno');
+    return { id: j.id, name: j.name, skill: j.skill, style: j.style, trait: j.trait, combo: h && h.rides ? h.rides[j.id] || 0 : 0 };
+  },
+
+  stats(id) {
+    const p = Player.data;
+    if (!p.jockeyStats) p.jockeyStats = {};
+    if (!p.jockeyStats[id]) p.jockeyStats[id] = { rides: 0, wins: 0, g1Wins: 0 };
+    return p.jockeyStats[id];
+  },
+
+  // レース後：コンビ回数・主戦・騎手成績
+  afterRace(h, id, place, grade) {
+    if (!h.rides) h.rides = {};
+    h.rides[id] = (h.rides[id] || 0) + 1;
+    h.jockey = id;
+    const s = this.stats(id);
+    s.rides++;
+    if (place === 1) { s.wins++; if (grade === 'g1') s.g1Wins++; }
+  },
+
+  comboLabel(n) { return n >= 5 ? '名コンビ' : n >= 3 ? '息ぴったり' : n >= 1 ? `${n}回目のコンビ` : '初コンビ'; },
+
+  // 作戦選びと並べて出す騎手の選択
+  picker(h, opts = {}) {
+    const st = UI.state;
+    st.jockeyCtx = { hid: h.id, free: !!opts.free };
+    if (!this.get(st.jockey)) st.jockey = this.defaultFor(h);
+    const cur = this.get(st.jockey);
+    const tr = GAME_DATA.jockeyTraits[cur.trait];
+    const rides = (h.rides || {})[cur.id] || 0;
+    return `<div class="jockey-pick"><h4>🏇 騎手 ${UI.help('jockey')}</h4>
+      <div class="chips">${GAME_DATA.jockeys.map(j => {
+        const ok = this.unlocked(j);
+        return `<button class="${st.jockey === j.id ? 'active' : ''} ${ok ? '' : 'locked'}" ${ok ? `onclick="UI.setJockey('${j.id}')"` : 'disabled'} title="${ok ? Util.esc(j.desc) : '🔒 ' + this.unlockText(j)}">
+          <span class="jr" style="background:${this.RANK_COLOR[j.rank]}">${j.rank}</span>${ok ? Util.esc(j.name) : '🔒'}${opts.free || !j.fee ? '' : `<small>${Util.money(j.fee)}</small>`}</button>`;
+      }).join('')}</div>
+      <p class="muted small" id="jockey-desc">${Util.esc(cur.name)}（技術 ${cur.skill}・得意 ${GAME_DATA.styles[cur.style].label}）「${tr.label}」${tr.desc}。${Util.esc(cur.desc)}
+        ${rides ? `<b class="ok">🤝 ${this.comboLabel(rides)}</b>` : ''}${opts.free ? '' : `<br>騎乗料 ${Util.money(cur.fee)}・勝てば賞金の5%を進上金として支払います。`}</p></div>`;
+  }
+};
+
+// ───────── 個性 ─────────
+const Traits = {
+  CONFLICT: [['rain', 'firm'], ['hill', 'flat'], ['tight', 'wide'], ['summer', 'winter']],
+  random() {
+    const r = Math.random();
+    const n = r < 0.15 ? 0 : r < 0.75 ? 1 : 2;
+    const ids = Object.keys(GAME_DATA.traits);
+    const out = [];
+    while (out.length < n) {
+      const id = Util.pick(ids);
+      if (out.includes(id) || this.CONFLICT.some(([a, b]) => (id === a && out.includes(b)) || (id === b && out.includes(a)))) continue;
+      out.push(id);
+    }
+    return out;
+  },
+  // 配合：親（殿堂馬カード）の個性を受け継ぐことがある
+  inherit(father, mother) {
+    const out = this.random();
+    [father, mother].forEach(c => {
+      (c.traits || []).forEach(id => {
+        if (Math.random() < 0.35 && !out.includes(id) && !this.CONFLICT.some(([a, b]) => (id === a && out.includes(b)) || (id === b && out.includes(a)))) out.push(id);
+      });
+    });
+    return out.slice(0, 2);
+  },
+  // 馬の個性の表示（判明していないものは ？？？）
+  html(h) {
+    const all = h.traits || [];
+    if (!all.length) return '<div class="trait-list"><span class="trait none">特になし（素直な馬）</span></div>';
+    return `<div class="trait-list">${all.map(id => {
+      const t = GAME_DATA.traits[id];
+      return (h.traitsKnown || []).includes(id) ? `<span class="trait" title="${Util.esc(t.desc)}">${t.icon} ${t.label}<small>${t.desc}</small></span>`
+        : '<span class="trait unknown">❔ ？？？<small>条件のレースを走ると判明</small></span>';
+    }).join('')}</div>`;
+  },
+  // レース結果から新しく判明した個性
+  reveal(h, hits) {
+    if (!h.traitsKnown) h.traitsKnown = [];
+    const found = (hits || []).filter(id => (h.traits || []).includes(id) && !h.traitsKnown.includes(id));
+    found.forEach(id => h.traitsKnown.push(id));
+    return found.map(id => GAME_DATA.traits[id]);
+  }
+};
+
+// ───────── 宿命のライバル ─────────
+const Rivals = {
+  // 初めて重賞に出たときに現れる、同期のライバル
+  create(h) {
+    const styles = Object.keys(GAME_DATA.styles);
+    const pool = GAME_DATA.skills.filter(s => !s.legendOnly && s.rarity !== 'UR');
+    const style = Util.pick(styles);
+    const skills = [];
+    const sp = pool.filter(s => !s.style || s.style === style);
+    while (skills.length < 2 && sp.length) skills.push(sp.splice(Math.floor(Math.random() * sp.length), 1)[0].id);
+    let name;
+    do { name = Horse.randomName(h.gender); } while (name === h.name);
+    return {
+      name, gender: h.gender, style, skills, traits: Traits.random(),
+      owner: Util.pick(GAME_DATA.rivalOwners) + '厩舎', edge: Util.randInt(-5, -1),
+      coat: Util.pick(['鹿毛', '黒鹿毛', '栗毛', '芦毛', '青鹿毛']),
+      vs: { win: 0, lose: 0 }, met: 0, isNew: true
+    };
+  },
+
+  // 自分の馬と同じくらい（少し上下）に成長する
+  entrant(h, race) {
+    const rv = h.rival;
+    const cat = Horse.distCat(race.distance);
+    const ov = Horse.overall(h);
+    const stats = {};
+    STAT_KEYS.forEach(k => { stats[k] = Math.round(Util.clamp(ov + rv.edge + (h.stats[k] - ov) * 0.4 + Util.gauss() * 2.5, 30, 125)); });
+    const aptitude = { sprint: 60, mile: 60, classic: 60, long: 60, turf: 60, dirt: 60 };
+    aptitude[cat] = 92;
+    aptitude[race.surface] = 92;
+    return {
+      id: Util.uid('rv_'), name: rv.name, owner: '⚔ ' + rv.owner, isPlayer: false, isRival: true,
+      stats, aptitude, runningStyle: rv.style, skills: rv.skills.slice(), traits: rv.traits || [],
+      turn: '', order: Race.npcOrder(rv.style), coat: rv.coat,
+      jockey: { skill: 82, name: 'ライバルの騎手' },
+      condition: Util.randInt(70, 95), fatigue: 0
+    };
+  },
+
+  shouldAppear(h, race) {
+    if (race.kind !== 'graded') return false;
+    if (race.female && h.gender !== 'female') return false;
+    if (!h.rival) h.rival = this.create(h);
+    return h.rival.isNew || Math.random() < (race.grade === 'g1' ? 0.6 : 0.35);
+  },
+
+  applyResult(h, result) {
+    const rf = result.finish.find(f => f.isRival);
+    if (!rf || !h.rival) return null;
+    const me = result.finish.find(f => f.isPlayer);
+    const rv = h.rival;
+    const first = rv.isNew;
+    rv.isNew = false;
+    rv.met++;
+    const won = me.place < rf.place;
+    rv.vs[won ? 'win' : 'lose']++;
+    return { name: rv.name, owner: rv.owner, won, first, place: rf.place, vs: Object.assign({}, rv.vs) };
+  }
+};
+
+// ───────── 勝利騎手インタビュー・表彰式・アルバム ─────────
+const Story = {
+  // レース内容から騎手のコメントを作る
+  interview(result, me, jockeyName, rival) {
+    const lines = [];
+    const fin = result.finish;
+    const margin = fin[1] ? fin[1].margin : '';
+    const style = me.style;
+    const inc = result.events.filter(e => e.type === 'incident' && e.isPlayer).map(e => e.kind);
+    if (me.place === 1) {
+      if (inc.includes('late')) lines.push('スタートで出遅れて焦りましたが、馬が最後まであきらめずに走ってくれました。');
+      else if (inc.includes('kakari')) lines.push('道中は掛かってしまいましたが、なんとか我慢してくれました。');
+      else if (inc.includes('block')) lines.push('直線で前が壁になった時はダメかと思いましたが、進路が開いてからの脚がすごかったです。');
+      else if (style === 'nige') lines.push('自分のペースで行けたのが一番。最後まで脚色は衰えませんでした。');
+      else if (style === 'senko') lines.push('いい位置が取れて、直線では手応え十分でした。');
+      else if (style === 'sashi') lines.push('道中はじっくり脚をためて、直線でよく伸びてくれました。');
+      else lines.push('後ろからでも届くと信じていました。最後の末脚は本物です！');
+      if (margin === 'ハナ' || margin === 'アタマ' || margin === 'クビ') lines.push('ゴール前はしびれました。本当に勝負根性のある馬です。');
+      else if (/大差|[5-9]馬身/.test(margin)) lines.push('着差以上の完勝。まだまだ強くなりますよ。');
+      if (me.pop >= 6) lines.push('人気はありませんでしたが、この馬の力を信じていました。');
+      else if (me.pop === 1) lines.push('1番人気に応えられてホッとしています。');
+      if (rival && rival.won) lines.push(`ライバルの${rival.name}に勝てたのは大きいですね。`);
+      if (result.grade === 'g1') lines.push('GⅠの舞台で勝てて最高の気分です。応援ありがとうございました！');
+    } else if (me.place <= 3) {
+      lines.push(inc.length ? 'レース中のアクシデントが響きました。力は見せてくれたと思います。' : 'よく頑張ってくれました。あと一歩でしたね。');
+      if (rival && !rival.won) lines.push(`${rival.name}は手強い相手です。次こそは。`);
+    } else {
+      lines.push(inc.length ? '今日は流れに乗れませんでした。' : '今日は相手が強かったです。');
+      lines.push(me.last3f && fin.filter(f => f.last3f && f.last3f < me.last3f).length < 3 ? '最後の脚は使えているので、展開ひとつです。' : '調教でもう少し鍛えれば、もっとやれるはずです。');
+    }
+    return { jockey: jockeyName, text: lines.join('') };
+  },
+
+  // GⅠ勝利の記念写真をアルバムに残す
+  addAlbum(h, race, result, me, jockeyName, comment) {
+    const p = Player.data;
+    if (!p.album) p.album = [];
+    const cal = Calendar.get();
+    const entry = {
+      id: Util.uid('al_'), horseId: h.id, horseName: h.name, raceName: race.name, grade: race.grade,
+      venue: race.venue || '', distance: race.distance, surface: race.surface,
+      year: cal.year, week: cal.week, time: me.time, margin: (result.finish[1] || {}).margin || '',
+      pop: me.pop, jockey: jockeyName, comment, at: Date.now()
+    };
+    p.album.unshift(entry);
+    if (p.album.length > 60) p.album.length = 60;
+    return entry;
+  },
+
+  photoCard(a) {
+    return `<div class="album-card">
+      <div class="album-photo">${typeof Portrait !== 'undefined' ? Portrait.slot({ key: 'h:' + a.horseId, id: a.horseId, name: a.horseName, isPlayer: true }, '🏇') : '🏇'}<span class="trophy">🏆</span></div>
+      <div class="album-info">${UI.gradeBadge(a.grade)} <b>${Util.esc(a.raceName)}</b>
+        <div>${Util.esc(a.horseName)}${a.jockey ? `<small>（騎手：${Util.esc(a.jockey)}）</small>` : ''}</div>
+        <small class="muted">${a.year}年目 ${Calendar.label(a.week)}・${Util.esc(a.venue)} ${a.surface === 'turf' ? '芝' : 'ダート'}${a.distance}m・${Race.timeText(a.time)}${a.margin ? '・' + Util.esc(a.margin) + '差' : ''}${a.pop ? '・' + a.pop + '番人気' : ''}</small>
+        ${a.comment ? `<p class="album-comment">「${Util.esc(a.comment)}」</p>` : ''}</div></div>`;
+  },
+
+  // ペース判定（前半と後半の比較）
+  pace(laps) {
+    if (!laps || laps.length < 4) return null;
+    const full = laps.slice(1);   // 最初の端数区間は除く
+    const half = Math.floor(full.length / 2);
+    const a = full.slice(0, half).reduce((s, v) => s + v, 0) / half;
+    const b = full.slice(full.length - half).reduce((s, v) => s + v, 0) / half;
+    const d = b - a;
+    return d > 0.25 ? { key: 'H', label: 'ハイペース', desc: '前半が速く、差し・追込に向いた流れ' }
+      : d < -0.25 ? { key: 'S', label: 'スローペース', desc: '前半がゆっくりで、前に行った馬に向いた流れ' }
+        : { key: 'M', label: 'ミドルペース', desc: '平均的な流れ' };
+  }
+};
+</script>
+<script>
 // レースシステム
 // 「結果計算（simulate）」は表示から完全に分離した純粋な計算。
 // 返り値の events（実況）と frames（毎秒の位置）を使って、UI側がログ表示や将来の2Dアニメーションを行う。
@@ -4236,7 +4600,7 @@ const Race = {
     }
     return {
       id: Util.uid('npc_'), name: Horse.randomName(), isPlayer: false,
-      stats, aptitude, runningStyle, skills, turn: Horse.randomTurn(), order: this.npcOrder(runningStyle),
+      stats, aptitude, runningStyle, skills, turn: Horse.randomTurn(), order: this.npcOrder(runningStyle), traits: Math.random() < 0.5 ? Traits.random() : [],
       condition: Util.randInt(55, 100), fatigue: Util.randInt(0, 20)
     };
   },
@@ -4251,9 +4615,15 @@ const Race = {
       id: h.id, name: h.name, isPlayer: true,
       stats: Object.assign({}, h.stats), aptitude: Object.assign({}, h.aptitude),
       runningStyle: h.runningStyle, skills: h.skills.slice(), turn: h.turn || '', order: 'normal',
+      traits: (h.traits || []).slice(), jockey: Jockeys.entry(h, Jockeys.defaultFor(h)),
       condition: h.condition, fatigue: h.fatigue
     }];
     const used = new Set([h.name]);
+    // 宿命のライバル（重賞で何度もぶつかる同期）
+    if (typeof Rivals !== 'undefined' && Rivals.shouldAppear(h, race) && !used.has(h.rival.name)) {
+      used.add(h.rival.name);
+      entrants.push(Rivals.entrant(h, race));
+    }
     // 重賞には実在の名馬がライバルとして出てくる
     if (typeof Legends !== 'undefined') {
       Legends.pickFor(race).forEach(l => {
@@ -4375,13 +4745,47 @@ const Race = {
       .map(Math.round).filter(m => m > 100 && m < D - 100))].sort((a, b) => a - b);
     const passCount = marks.map(() => 0);
     const last3 = Math.max(0, D - 600);
+    // ラップ（先頭が200mごとの地点を通過した時刻。端数は最初の区間）
+    const lapMarks = [];
+    for (let m = D; m > 0; m -= 200) lapMarks.unshift(m);
+    const lapTimes = [];
+    const month = race.m || (typeof Calendar !== 'undefined' ? Calendar.month(Calendar.get().week) : 4);
+    const HILL = ['中山', '阪神', '中京'], FLAT = ['京都', '新潟', '福島', '小倉', '札幌', '函館'];
 
     const runners = entrants.map((e, gate) => {
       const s = e.stats;
-      const fx = this.ORDER_FX[e.order] || this.ORDER_FX.normal;
+      // 騎手：技術が高いほど作戦が効き、アクシデントが減る
+      const jk = e.jockey || { skill: e.isLegend ? 88 : 70 };
+      const jt = jk.trait;
+      const ofx = this.ORDER_FX[e.order] || this.ORDER_FX.normal;
+      const k = 0.7 + jk.skill / 200;
+      const fx = {};
+      Object.entries(ofx).forEach(([key, v]) => { fx[key] = ['early', 'final', 'corner', 'cost'].includes(key) ? 1 + (v - 1) * k : v; });
+      let jockeyMul = 1 + (jk.skill - 70) * 0.00004 + Math.min(0.002, (jk.combo || 0) * 0.0004);
+      if (jk.style && jk.style === e.runningStyle) jockeyMul *= 1.0015;
+      if ((jt === 'g1' && race.grade === 'g1') || (jt === 'long' && D >= 2500) || (jt === 'sprint' && D <= 1400)) jockeyMul *= 1.002;
+      if (jt === 'mud' && ground >= 2) jockeyMul *= 1.0025;
+      if (jt === 'rookie') jockeyMul *= 1.001;
+      // 個性（条件を満たしたものは hits に記録し、レース後に判明する）
+      const tr = e.traits || [];
+      const hits = [];
+      let traitMul = 1;
+      const T = (id, cond, m) => { if (tr.includes(id) && cond) { traitMul *= m; hits.push(id); } };
+      T('rain', ground >= 2, 1.004);
+      T('firm', ground === 0, 1.0025);
+      T('firm', ground >= 2, 0.9975);
+      T('bigstage', race.grade === 'g1', 1.003);
+      T('hill', HILL.includes(course.venue) && !course.straight, 1.003);
+      T('flat', FLAT.includes(course.venue), 1.003);
+      T('tight', course.L <= 330, 1.003);
+      T('wide', course.L >= 450 && !course.straight, 1.003);
+      T('summer', month >= 6 && month <= 8, 1.003);
+      T('winter', month === 12 || month <= 2, 1.003);
+      T('gate', true, 1);
+      T('temper', true, 1);
       // 右回り・左回りの得意不得意（直線コースは関係なし）
       const turnMul = e.turn && !course.straight ? (e.turn === course.dir ? 1.004 : 0.994) : 1;
-      const aptMul = (0.93 + 0.07 * e.aptitude[distCat] / 100) * (0.96 + 0.04 * e.aptitude[race.surface] / 100) * turnMul;
+      const aptMul = (0.93 + 0.07 * e.aptitude[distCat] / 100) * (0.96 + 0.04 * e.aptitude[race.surface] / 100) * turnMul * jockeyMul * traitMul;
       const groundMul = 1 - ground * 0.006 * (1 - Math.min(s.power, 120) / 130);
       const condMul = (0.98 + 0.02 * e.condition / 100) * (1 - 0.025 * e.fatigue / 100);
       const form = 1 + Util.gauss() * 0.004 * (1.2 - s.intelligence / 250);
@@ -4389,16 +4793,17 @@ const Race = {
         .sort((a, b) => Skills.priority(b) - Skills.priority(a));
       const maxHp = 300 + s.stamina * 22 + s.guts * 4;
       // アクシデント：賢さが低い・調子が悪いほど起きやすい
-      const careless = Util.clamp(1.25 - s.intelligence / 160, 0.35, 1.2) * (e.condition < 45 ? 1.4 : 1);
-      const late = Math.random() < 0.06 * careless;
-      const kakari = Math.random() < 0.07 * careless * (fx.kakari || 1);
+      const careless = Util.clamp(1.25 - s.intelligence / 160, 0.35, 1.2) * (e.condition < 45 ? 1.4 : 1) * Util.clamp(1.35 - jk.skill / 150, 0.65, 1.1);
+      const late = Math.random() < 0.06 * careless * (jt === 'start' ? 0.2 : 1) * (tr.includes('gate') ? 0.2 : 1);
+      const kakari = Math.random() < 0.07 * careless * (fx.kakari || 1) * (jt === 'calm' ? 0.35 : 1) * (tr.includes('temper') ? 2.5 : 1);
       return {
         e, gate, fx, pos: late ? -(3 + Math.random() * 5) : 0, v: 0, hp: maxHp, maxHp,
         mul: aptMul * groundMul * condMul * form,
         skills, usedSkills: new Set(), active: [],
         finished: false, time: null, exhaustedLogged: false,
         late, kakariAt: kakari ? startEnd * 0.6 + Math.random() * Math.max(50, cornerStart - startEnd) : null, kakariUntil: 0,
-        careless, blocked: false, blockUntil: 0, passing: [], t600: null
+        careless, blocked: false, blockUntil: 0, passing: [], t600: null,
+        blockMul: jt === 'path' ? 0.35 : 1, temper: tr.includes('temper'), fighter: tr.includes('fighter'), hits
       };
     });
 
@@ -4424,6 +4829,9 @@ const Race = {
     checkpoint('start', 'スタート', 0, `${race.name}、各馬いっせいにスタート！`);
     const incident = (t, r, kind, text) => events.push({ t: Math.round(t * 10) / 10, type: 'incident', kind, horseId: r.e.id, isPlayer: r.e.isPlayer, text });
     runners.filter(r => r.late).forEach(r => incident(0.5, r, 'late', `${name(r)}、出遅れた！`));
+    const rivalR = runners.find(r => r.e.isRival);
+    const playerR = runners.find(r => r.e.isPlayer);
+    if (rivalR) say(1.5, `宿命のライバル、${name(rivalR)}も出走しています！`, { horseId: rivalR.e.id });
     let t = 0, lastLeader = null, nextFrame = 0;
     const maxT = D / 8;
     while (runners.some(r => !r.finished) && t < maxT) {
@@ -4451,7 +4859,9 @@ const Race = {
       if (D - leaderPos <= 200) {
         const a = ranked[0], b = ranked[1];
         const close = a.pos - b.pos < 2.4;
-        checkpoint('r200', '残り200m', t, close ? `残り200m！ ${name(a)}と${name(b)}の叩き合い！` : `残り200m！ ${name(a)}が抜け出した！`);
+        const duel = rivalR && playerR && [a, b].includes(rivalR) && [a, b].includes(playerR);
+        checkpoint('r200', '残り200m', t, duel ? `残り200m！ 宿命のライバル対決！ ${name(a)}と${name(b)}の一騎打ち！`
+          : close ? `残り200m！ ${name(a)}と${name(b)}の叩き合い！` : `残り200m！ ${name(a)}が抜け出した！`);
       }
 
       // 最終直線での先頭交代
@@ -4512,13 +4922,16 @@ const Race = {
         if (phase === 'final' && !r.blocked && rank >= 3 && remain > 120) {
           const wall = ranked.some(o => o !== r && !o.finished && o.pos0 - r.pos0 > 0.4 && o.pos0 - r.pos0 < 3);
           const prone = (r.e.runningStyle === 'sashi' || r.e.runningStyle === 'oikomi' ? 1 : 0.4) * (fx.block || 1);
-          if (wall && Math.random() < 0.012 * prone * r.careless * this.DT * 2) {
+          if (wall && Math.random() < 0.012 * prone * r.careless * r.blockMul * this.DT * 2) {
             r.blocked = true;
             r.blockUntil = t + 1.5 + Math.random() * 1.5;
             incident(t, r, 'block', `${name(r)}、前が壁！ 進路がない！`);
           }
         }
         if (t < r.blockUntil) target *= 0.95;
+        // 個性：気性難は闘争心で最後にひと伸び、勝負根性は並ばれると伸びる
+        if (phase === 'final' && r.temper) target *= 1.003;
+        if (phase === 'final' && r.fighter && neighbor) { target *= 1.004; if (!r.hits.includes('fighter')) r.hits.push('fighter'); }
         if (phase === 'final' && r.hp > 0) {
           target *= 1.02 + s.guts * 0.0001; // ラストスパート
           costMul = 1.4;
@@ -4541,6 +4954,10 @@ const Race = {
         // 通過順と上がり3F
         marks.forEach((m, i) => { if (prev < m && r.pos >= m) r.passing[i] = ++passCount[i]; });
         if (prev < last3 && r.pos >= last3) r.t600 = t + this.DT * ((last3 - prev) / (r.pos - prev));
+        while (lapTimes.length < lapMarks.length && r.pos >= lapMarks[lapTimes.length]) {
+          const m = lapMarks[lapTimes.length];
+          lapTimes.push(t + this.DT * ((m - Math.max(prev, 0)) / Math.max(0.01, r.pos - Math.max(prev, 0))));
+        }
         if (r.pos >= D) {
           r.finished = true;
           r.time = t + this.DT * ((D - prev) / (r.pos - prev));
@@ -4567,7 +4984,8 @@ const Race = {
         margin: prev ? this.marginText((r.time - prev.time) * r.v / 2.4) : '',
         passing: marks.map((m, i) => r.passing[i] || runners.length),
         last3f: r.time !== null && r.t600 !== null && D >= 1000 ? Math.round((r.time - r.t600) * 10) / 10 : null,
-        pop: r.e.pop || null, odds: r.e.odds || null, order: r.e.order || 'normal'
+        pop: r.e.pop || null, odds: r.e.odds || null, order: r.e.order || 'normal',
+        hits: r.hits, jockey: r.e.jockey ? r.e.jockey.name : null, jockeyId: r.e.jockey ? r.e.jockey.id : null, isRival: !!r.e.isRival
       };
     });
     const second = final[1];
@@ -4579,9 +4997,10 @@ const Race = {
     return {
       raceId: race.id, name: race.name, grade: race.grade, distance: D, surface: race.surface,
       distCat, ground, venue: course.venue, course,
-      entrants: runners.map(r => ({ id: r.e.id, name: r.e.name, owner: r.e.owner || '', isPlayer: r.e.isPlayer, isGhost: !!r.e.isGhost, legendId: r.e.legendId, coat: r.e.coat, style: r.e.runningStyle, gate: r.gate + 1, pop: r.e.pop || null, odds: r.e.odds || null, order: r.e.order || 'normal' })),
+      entrants: runners.map(r => ({ id: r.e.id, name: r.e.name, owner: r.e.owner || '', isPlayer: r.e.isPlayer, isGhost: !!r.e.isGhost, legendId: r.e.legendId, isRival: !!r.e.isRival, jockey: r.e.jockey && r.e.jockey.id ? r.e.jockey.name : '', coat: r.e.coat, style: r.e.runningStyle, gate: r.gate + 1, pop: r.e.pop || null, odds: r.e.odds || null, order: r.e.order || 'normal' })),
       finish, events: events.sort((a, b) => a.t - b.t), frames,
-      phases: { startEnd, cornerStart, finalStart }, marks
+      phases: { startEnd, cornerStart, finalStart }, marks,
+      laps: lapTimes.map((v, i) => Math.round((v - (lapTimes[i - 1] || 0)) * 10) / 10)
     };
   },
 
@@ -4679,7 +5098,19 @@ const Race = {
     const legends = typeof Legends !== 'undefined' ? Legends.applyResult(race, result) : { met: [], beaten: [], card: null };
     if (legends.card) cards.push(Object.assign({ legend: true }, legends.card));
 
-    return { place, prize, bonus, pop: me.pop, exp, cards, levelUps, birthday, field: result.finish.length, newRecord: newRecord && !!prevRec, rightTo, legends };
+    // 騎手（進上金・コンビ）、個性の判明、ライバル、インタビュー、GⅠの記念写真
+    const jockeyId = me.jockeyId || 'j_haruno';
+    const stake = place === 1 ? Math.round(prize * Jockeys.STAKE) : 0;
+    if (stake) { Player.addMoney(-stake); rec.prizeMoney -= stake; }
+    Jockeys.afterRace(h, jockeyId, place, race.grade);
+    const traitsFound = Traits.reveal(h, me.hits);
+    const rival = Rivals.applyResult(h, result);
+    const jockeyName = (Jockeys.get(jockeyId) || {}).name || '';
+    const interview = Story.interview(result, me, jockeyName, rival);
+    const album = place === 1 && race.grade === 'g1' ? Story.addAlbum(h, race, result, me, jockeyName, interview.text) : null;
+
+    return { place, prize, bonus, stake, pop: me.pop, exp, cards, levelUps, birthday, field: result.finish.length, newRecord: newRecord && !!prevRec, rightTo, legends,
+      traitsFound, rival, interview, album, jockeyId };
   }
 };
 </script>
@@ -4716,6 +5147,7 @@ const Pvp = {
       id: h.id, name: h.name, owner: Player.data.name, isPlayer: true,
       stats: this.capStats(h.stats, cap), aptitude: Object.assign({}, h.aptitude),
       runningStyle: h.runningStyle, skills: h.skills.slice(), turn: h.turn || '', order: 'normal',
+      traits: (h.traits || []).slice(), jockey: Jockeys.entry(h, Jockeys.defaultFor(h)),
       condition: h.condition, fatigue: h.fatigue
     };
   },
@@ -4742,7 +5174,7 @@ const Pvp = {
     usedNames.add(name);
     return {
       id: Util.uid('rv_'), name, owner: Util.pick(GAME_DATA.rivalOwners) + '厩舎', isPlayer: false,
-      stats: this.capStats(stats, cap), aptitude, runningStyle, skills, turn: Horse.randomTurn(), order: Race.npcOrder(runningStyle),
+      stats: this.capStats(stats, cap), aptitude, runningStyle, skills, turn: Horse.randomTurn(), order: Race.npcOrder(runningStyle), traits: Traits.random(),
       condition: Util.randInt(60, 100), fatigue: Util.randInt(0, 15)
     };
   },
@@ -4830,7 +5262,8 @@ const Pvp = {
       s: STAT_KEYS.map(k => h.stats[k]),
       a: [...DIST_KEYS, 'turf', 'dirt'].map(k => h.aptitude[k]),
       st: h.runningStyle, k: h.skills.slice(0, 3),
-      w: h.record.wins, rc: h.record.races, g1: h.record.g1Wins, t: h.turn || ''
+      w: h.record.wins, rc: h.record.races, g1: h.record.g1Wins, t: h.turn || '',
+      tr: (h.traitsKnown || []).slice(0, 2), j: Jockeys.defaultFor(h)
     };
     const body = this.toB64(JSON.stringify(data));
     return this.PREFIX + body + '.' + this.checksum(body);
@@ -4861,6 +5294,8 @@ const Pvp = {
       skills: (Array.isArray(d.k) ? d.k : []).filter(id => Skills.get(id)).slice(0, 3),
       record: { wins: num(d.w, 0, 999), races: num(d.rc, 0, 999), g1Wins: num(d.g1, 0, 999) },
       turn: d.t === 'R' || d.t === 'L' ? d.t : '',
+      traits: (Array.isArray(d.tr) ? d.tr : []).filter(id => GAME_DATA.traits[id]).slice(0, 2),
+      jockeyId: Jockeys.get(d.j) ? d.j : 'j_haruno',
       vs: { win: 0, lose: 0 },
       addedAt: Date.now()
     };
@@ -4880,7 +5315,8 @@ const Pvp = {
     return {
       id: 'e_' + g.id, ghostId: g.id, name: g.name, owner: g.owner + '厩舎', isPlayer: false, isGhost: true,
       stats: this.capStats(g.stats, cap), aptitude: Object.assign({}, g.aptitude),
-      runningStyle: g.runningStyle, skills: g.skills.slice(), turn: g.turn || '', order: g.order || 'normal', condition: 85, fatigue: 0
+      runningStyle: g.runningStyle, skills: g.skills.slice(), turn: g.turn || '', order: g.order || 'normal', condition: 85, fatigue: 0,
+      traits: (g.traits || []).slice(), jockey: Jockeys.entry(null, g.jockeyId || 'j_haruno')
     };
   },
 
@@ -5052,7 +5488,7 @@ const HallOfFame = {
       id: 'c_' + h.id, type: h.gender === 'male' ? 'sire' : 'mare', custom: true,
       name: h.name, rarity, stats,
       apt: Object.assign({}, h.aptitude),
-      style: h.runningStyle, growth: h.growthType, trait,
+      style: h.runningStyle, growth: h.growthType, trait, traits: (h.traitsKnown || []).slice(),
       skill: h.skills[0] || null,
       pedigree: { f: Horse.pedigree(h).f, m: Horse.pedigree(h).m },
       ancestors: this.ancestorsOf(h),
@@ -5605,6 +6041,7 @@ const Race3D = {
   disposeScene() {
     const st = this.state;
     if (!st) return;
+    if (st.visionRT) st.visionRT.dispose();
     st.scene.traverse(o => {
       if (o.geometry && !o.geometry.userData.shared) o.geometry.dispose();
       const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
@@ -5635,15 +6072,22 @@ const Race3D = {
     scene.fog = new THREE.Fog(rainy ? 0xa9b1b8 : 0xcfe4f4, rainy ? 160 : 260, rainy ? 900 : 1500);
     const camera = new THREE.PerspectiveCamera(36, 16 / 9, 0.3, 3500);
 
-    scene.add(new THREE.HemisphereLight(0xe8f4ff, 0x4f6b2e, rainy ? 0.75 : 0.95));
+    // 季節と時間帯：冬の重賞（メインレース）は西日、夏はまぶしい日差し
+    const month = (ctx.race && ctx.race.m) || (typeof Calendar !== 'undefined' ? Calendar.month(Calendar.get().week) : 5);
+    const main = ctx.race && ['g1', 'g2', 'g3'].includes(ctx.race.grade);
+    const evening = !rainy && main && (month >= 11 || month <= 2);
+    const summer = !rainy && month >= 6 && month <= 8;
+    this.mood = evening ? 'evening' : summer ? 'summer' : 'day';
+    if (evening) { scene.background = new THREE.Color(0xe9c9a4); scene.fog = new THREE.Fog(0xf0d2b0, 260, 1500); }
+    scene.add(new THREE.HemisphereLight(evening ? 0xffe2c2 : 0xe8f4ff, 0x4f6b2e, rainy ? 0.75 : evening ? 0.8 : 0.95));
     this.layout(res.course || (typeof Race !== 'undefined' && ctx.race ? Race.courseOf(ctx.race) : null));
-    const sun = new THREE.DirectionalLight(0xfff4e0, rainy ? 0.8 : 1.7);
-    sun.position.set(260 * this.M, 420, -300);
+    const sun = new THREE.DirectionalLight(evening ? 0xffc48a : summer ? 0xfffaf0 : 0xfff4e0, rainy ? 0.8 : evening ? 1.45 : summer ? 1.9 : 1.7);
+    sun.position.set(260 * this.M, evening ? 170 : 420, -300);
     scene.add(sun);
     const fill = new THREE.DirectionalLight(0xdfeaff, rainy ? 0.45 : 0.7);   // 逆光でも馬が黒くつぶれないように
     fill.position.set(-200 * this.M, 260, 600);
     scene.add(fill);
-    this.buildSky(scene, rainy, res.ground === 1);
+    this.buildSky(scene, rainy, res.ground === 1, evening);
 
     const D = res.distance;
     const sF = this.S - this.FINISH_BACK;
@@ -5659,13 +6103,34 @@ const Race3D = {
     this.buildHorses(scene, st, res);
     this.buildParticles(scene, st, res.surface);
     if (rainy) this.buildRain(scene, st);
+    // ターフビジョンのライブ中継（別カメラの映像をテクスチャにする）
+    try {
+      st.visionRT = new THREE.WebGLRenderTarget(384, 216);
+      st.visionCam = new THREE.PerspectiveCamera(32, 16 / 9, 0.5, 1500);
+    } catch (e) { st.visionRT = null; }
+  },
+
+  updateVision(t, center, frame) {
+    const st = this.state;
+    if (!st.visionRT || !st.visionScr || t < 0.3 || frame % 2) return;
+    if (st.visionScr.material.map !== st.visionRT.texture) { st.visionScr.material.map = st.visionRT.texture; st.visionScr.material.needsUpdate = true; }
+    const o = this.outward(center);
+    const C = st.visionCam;
+    C.position.set(center.x + o.x * 46 - center.dx * 6, 10, center.z + o.z * 46 - center.dz * 6);
+    C.lookAt(center.x + center.dx * 6, 1.2, center.z + center.dz * 6);
+    const r = this.renderer;
+    st.visionScr.visible = false;   // 自分自身を映すとフィードバックループになるので隠す
+    r.setRenderTarget(st.visionRT);
+    r.render(st.scene, C);
+    r.setRenderTarget(null);
+    st.visionScr.visible = true;
   },
 
   // 空（グラデーションのドーム）と雲
-  buildSky(scene, rainy, cloudy) {
+  buildSky(scene, rainy, cloudy, evening) {
     const geo = new THREE.SphereGeometry(3000, 32, 16);
-    const top = new THREE.Color(rainy ? 0x7d8792 : cloudy ? 0x8fb0cc : 0x3f8fe0);
-    const hor = new THREE.Color(rainy ? 0xb5bcc3 : cloudy ? 0xd7e3ec : 0xcfe8fb);
+    const top = new THREE.Color(rainy ? 0x7d8792 : evening ? 0x5f7fb8 : cloudy ? 0x8fb0cc : 0x3f8fe0);
+    const hor = new THREE.Color(rainy ? 0xb5bcc3 : evening ? 0xffc99a : cloudy ? 0xd7e3ec : 0xcfe8fb);
     const cols = [];
     const p = geo.attributes.position;
     for (let i = 0; i < p.count; i++) {
@@ -5840,6 +6305,7 @@ const Race3D = {
     scr.position.z = -0.8;
     scr.rotation.y = Math.PI;
     vision.add(scr);
+    this.state.visionScr = scr;
     vision.position.set(40 * this.M, 14, W + 60);
     scene.add(vision);
     const legs = new THREE.Mesh(new THREE.BoxGeometry(2, 8, 2), new THREE.MeshLambertMaterial({ color: 0x555555 }));
@@ -6102,6 +6568,12 @@ const Race3D = {
       marker.position.y = 3.3;
       marker.renderOrder = 10;
       root.add(marker);
+    } else if (e.isRival && !opts.portrait) {
+      marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.textTexture('⚔ ' + e.name, { w: 512, h: 96, bg: '#6a1b9a', color: '#fff', size: 54 }), depthTest: false, transparent: true }));
+      marker.scale.set(3.6, 0.68, 1);
+      marker.position.y = 3.2;
+      marker.renderOrder = 9;
+      root.add(marker);
     }
 
     return {
@@ -6259,6 +6731,8 @@ const Race3D = {
         <div class="r3-card-list">${st.horses.slice().sort((a, b) => a.num - b.num).map(h => `<div class="r3-card-row ${h.e.isPlayer ? 'me' : ''}">
           <span class="num" style="background:${h.capColor};color:${this.BRACKET_TEXT[h.bracket - 1]}">${h.num}</span><img src="${h.icon}" alt="">
           <b>${h.e.legendId ? '👑' : ''}${Util.esc(h.e.name)}</b><span class="pop ${h.e.pop && h.e.pop <= 3 ? 'fav' : ''}">${h.e.pop ? h.e.pop + '人' : ''}</span><span class="odds">${h.e.odds ? h.e.odds.toFixed(1) : ''}</span></div>`).join('')}</div></div>
+      <div class="r3-board" id="r3-board"></div>
+      ${this.minimapSVG()}
       <div class="r3-photo" id="r3-photo"><div class="r3-photo-frame"><img alt=""><div class="r3-photo-line"></div></div><div class="r3-photo-label">📸 写真判定</div></div>`;
     hud.querySelectorAll('[data-cam]').forEach(b => b.addEventListener('click', () => {
       Player.data.settings.cam3d = b.dataset.cam;
@@ -6282,8 +6756,21 @@ const Race3D = {
     st.hud = {
       remain: hud.querySelector('#r3-remain'), time: hud.querySelector('#r3-time'), map: hud.querySelector('#r3-map'),
       bar: hud.querySelector('#r3-bar'), banner: hud.querySelector('#r3-banner'), orderKey: '',
-      card: hud.querySelector('#r3-card'), photo: hud.querySelector('#r3-photo')
+      card: hud.querySelector('#r3-card'), photo: hud.querySelector('#r3-photo'), board: hud.querySelector('#r3-board'),
+      mini: hud.querySelector('#r3-mini')
     };
+    // ミニマップの点（馬番の枠色）
+    const NS = 'http://www.w3.org/2000/svg';
+    const g = hud.querySelector('#r3-mini-dots');
+    st.horses.slice().sort((a, b) => Number(a.e.isPlayer) - Number(b.e.isPlayer)).forEach(h => {
+      const c = document.createElementNS(NS, 'circle');
+      c.setAttribute('r', h.e.isPlayer ? 13 : h.e.isRival ? 11 : 9);
+      c.setAttribute('fill', h.capColor);
+      c.setAttribute('stroke', h.e.isPlayer ? '#ff6a2a' : h.e.isRival ? '#9c27b0' : '#222');
+      c.setAttribute('stroke-width', h.e.isPlayer || h.e.isRival ? 6 : 3);
+      g.appendChild(c);
+      h.miniDot = c;
+    });
     // 位置マップの丸（馬番・枠色）
     st.horses.forEach(h => {
       const d = document.createElement('div');
@@ -6321,6 +6808,36 @@ const Race3D = {
       if (typeof Voice !== 'undefined') Voice.say(`${w.e.name}、${margin}差で勝利！`, { interrupt: true });
       this._photoTimer = setTimeout(() => { el.className = 'r3-photo'; done(); }, 2200);
     }, 2000);
+  },
+
+  // コース全景のミニマップ（スタンドが下、実際の回りの向きで表示）
+  mapXY(p) { return [-p.x, -p.z]; },
+  minimapSVG() {
+    const st = this.state;
+    const P = this.P, n = 160, pts = [];
+    for (let i = 0; i <= n; i++) pts.push(this.mapXY(this.path(i / n * P, this.W / 2)));
+    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+    const pad = 40;
+    const minX = Math.min(...xs) - pad, minY = Math.min(...ys) - pad, w = Math.max(...xs) - minX + pad, h = Math.max(...ys) - minY + pad;
+    const d = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(0)} ${p[1].toFixed(0)}`).join(' ') + 'Z';
+    const [gx, gy] = this.mapXY(this.path(st.sF, this.W / 2));
+    const [sx, sy] = this.mapXY(this.path(st.sStart, this.W / 2));
+    return `<svg class="r3-mini" id="r3-mini" viewBox="${minX.toFixed(0)} ${minY.toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}">
+      <path d="${d}" class="mini-track"/><circle cx="${sx}" cy="${sy}" r="10" class="mini-start"/>
+      <rect x="${gx - 3}" y="${gy - 30}" width="6" height="60" class="mini-goal"/><g id="r3-mini-dots"></g></svg>`;
+  },
+
+  // 着順掲示板（JRA風の電光掲示板）
+  boardHTML() {
+    const st = this.state;
+    const fin = st.result.finish;
+    const num = id => (st.horses.find(h => h.e.id === id) || {}).num || '';
+    const winner = fin[0];
+    const l3 = winner.last3f;
+    return `<div class="bd-head">着順</div>
+      ${fin.slice(0, 5).map((f, i) => `<div class="bd-row"><span class="bd-pl">${i + 1}</span><span class="bd-num">${num(f.id)}</span><span class="bd-mg">${i ? Util.esc(f.margin) : ''}</span></div>`).join('')}
+      <div class="bd-time">${Race.timeText(winner.time)}<small>${l3 ? '上 ' + l3.toFixed(1) : ''}</small></div>
+      <div class="bd-lamps"><span class="lamp photo">写真</span><span class="lamp fix">確定</span></div>`;
   },
 
   banner(text, cls, ms) {
@@ -6686,6 +7203,8 @@ const Race3D = {
     }
     C.updateProjectionMatrix();
     C.lookAt(st.camLook);
+    st.frameNo = (st.frameNo || 0) + 1;
+    this.updateVision(t, center, st.frameNo);
   },
 
   updateHud(t, pos, order) {
@@ -6699,6 +7218,15 @@ const Race3D = {
     hud.remain.textContent = t < 0 ? 'ゲートイン' : remain <= 0 ? 'ゴール' : remain <= 400 ? `最後の直線 残り${Math.ceil(remain / 100) * 100}m` : `残り ${Math.ceil(remain / 100) * 100}m`;
     if (t > 0 && t < 1.2 && !st.startShown) { st.startShown = true; this.banner('スタート！', 'start', 1100); }
     hud.card.classList.toggle('show', t < -0.4);
+    // 着順掲示板：ゴール後に点灯し、少しして「確定」
+    const wft = st.winner ? st.winner.ft : 9999;
+    const photoOn = hud.photo.classList.contains('show');
+    const showBoard = t >= wft + 1.4 && !photoOn;
+    if (showBoard && !hud.board.dataset.ready) { hud.board.innerHTML = this.boardHTML(); hud.board.dataset.ready = '1'; }
+    hud.board.classList.toggle('show', showBoard);
+    const close = st.result.finish[1] && st.result.finish[1].time - st.result.finish[0].time < 0.06;
+    hud.board.classList.toggle('photo', showBoard && close && t < wft + 4);
+    hud.board.classList.toggle('fixed', showBoard && t >= wft + (close ? 4 : 3.2));
     if (lead.h.ft < 9000 && t >= lead.h.ft && !st.goalShown) {
       st.goalShown = true;
       const w = lead.h;
@@ -6711,6 +7239,13 @@ const Race3D = {
     const now = performance.now();
     if (now - st.lastHud < 120) return;
     st.lastHud = now;
+    // ミニマップの点
+    order.forEach(o => {
+      if (!o.h.miniDot) return;
+      const [x, y] = this.mapXY(this.path(st.sStart + Math.max(0, o.p), this.W / 2));
+      o.h.miniDot.setAttribute('cx', x.toFixed(0));
+      o.h.miniDot.setAttribute('cy', y.toFixed(0));
+    });
     // 左の位置マップ：先頭からの差を縦方向に
     const H = hud.map.clientHeight - 24;
     const maxGap = Math.max(24, order[order.length - 1] ? lead.p - order[order.length - 1].p : 24);
@@ -7635,6 +8170,11 @@ const UI = {
         <p class="muted small">｜の位置がこの馬の限界（素質）。調教で限界まで伸ばせます。</p>
       </section>
       <section class="panel"><h3>適性</h3>${this.aptGrid(h.aptitude, h.turn || "")}</section>
+      <section class="panel"><h3>🧬 個性${this.help('trait')}</h3>${Traits.html(h)}</section>
+      <section class="panel"><h3>🤝 チーム</h3>
+        <p>🏇 主戦騎手：${h.jockey && Jockeys.get(h.jockey) ? `<b>${Util.esc(Jockeys.get(h.jockey).name)}</b>（${Jockeys.comboLabel((h.rides || {})[h.jockey] || 0)}）` : '<span class="muted">まだいません（レースで騎手を選ぼう）</span>'}</p>
+        <p>⚔ ライバル：${h.rival ? `<b>${Util.esc(h.rival.name)}</b> <small class="muted">${Util.esc(h.rival.owner)}・${GAME_DATA.styles[h.rival.style].label}</small><br>対戦成績 <b>${h.rival.vs.win}勝${h.rival.vs.lose}敗</b>` : '<span class="muted">初めての重賞で、同期のライバルが現れます</span>'}</p>
+      </section>
       <section class="panel"><h3>脚質${this.help('style')}</h3>
         <div class="style-box"><span class="style-big">${s.icon}</span><div><b>${s.label}</b><p>${s.desc}</p></div></div>
       </section>
@@ -8068,6 +8608,16 @@ const UI = {
     if (d) d.textContent = `${GAME_DATA.orders[k].icon} ${GAME_DATA.orders[k].desc}`;
     if (Online.status === 'lobby') Online.setOrder(k);
   },
+  setJockey(id) {
+    const j = Jockeys.get(id);
+    if (!j || !Jockeys.unlocked(j)) return;
+    this.state.jockey = id;
+    const ctx = this.state.jockeyCtx || {};
+    const h = Player.horse(ctx.hid);
+    const el = document.querySelector('.jockey-pick');
+    if (h && el) el.outerHTML = Jockeys.picker(h, { free: ctx.free });
+  },
+
   // 馬番・人気・単勝オッズつきの出走表
   entryTable(field, opts = {}) {
     const n = field.length;
@@ -8195,6 +8745,17 @@ const UI = {
           <div><small>GⅠ勝利</small><b>${p.stats.g1WinCount}</b></div>
           <div><small>レーティング</small><b>${p.pvp.rating}</b></div>
         </div>
+      </section>
+      <section class="panel"><h3>📸 思い出アルバム <small class="muted">GⅠ勝利の記念写真</small></h3>
+        ${(p.album || []).length ? `<div class="album">${p.album.map(x => Story.photoCard(x)).join('')}</div>` : '<p class="muted">GⅠを勝つと、表彰式の記念写真がここに残ります。</p>'}
+      </section>
+      <section class="panel"><h3>🏇 騎手 <small class="muted">起用した騎手の成績</small></h3>
+        <table class="hist">${GAME_DATA.jockeys.map(j => {
+          const s = (p.jockeyStats || {})[j.id];
+          const ok = Jockeys.unlocked(j);
+          return `<tr class="${ok ? '' : 'muted'}"><td><span class="jr" style="background:${Jockeys.RANK_COLOR[j.rank]}">${j.rank}</span> ${ok ? Util.esc(j.name) : '？？？'}<br><small class="muted">${ok ? GAME_DATA.jockeyTraits[j.trait].label + '・騎乗料 ' + Util.money(j.fee) : '🔒 ' + Jockeys.unlockText(j)}</small></td>
+            <td class="num">${s ? `${s.rides}騎乗 ${s.wins}勝${s.g1Wins ? `<br><small>GⅠ ${s.g1Wins}勝</small>` : ''}` : '-'}</td></tr>`;
+        }).join('')}</table>
       </section>
       ${rank('prizeMoney', '💰 獲得賞金ランキング', v => Util.money(v))}
       ${rank('wins', '🏆 勝利数ランキング', v => v + '勝')}
@@ -8562,6 +9123,33 @@ const RaceView = {
       </table></div>`;
   },
 
+  // ラップタイムとペース
+  lapHTML(result) {
+    const laps = result.laps || [];
+    if (laps.length < 3) return '';
+    const pace = Story.pace(laps);
+    return `<div class="laps"><b>⏱ ラップ</b> <span class="lap-list">${laps.map(v => v.toFixed(1)).join('-')}</span>
+      ${pace ? `<span class="pace pace-${pace.key}" title="${pace.desc}">${pace.label}</span><small class="muted">${pace.desc}</small>` : ''}</div>`;
+  },
+
+  // 騎手のコメント・個性の判明・ライバル・表彰式（JRAのレース）
+  storyHTML(reward) {
+    let html = '';
+    if (reward.rival) {
+      const r = reward.rival;
+      html += `<div class="rival-box ${r.won ? 'won' : 'lost'}">⚔ ${r.first ? '宿命のライバル登場！ ' : ''}<b>${Util.esc(r.name)}</b>（${Util.esc(r.owner)}）に${r.won ? '先着！' : '先着を許した…'}
+        <small>ライバル対決 ${r.vs.win}勝${r.vs.lose}敗</small></div>`;
+    }
+    (reward.traitsFound || []).forEach(t => { html += `<div class="trait-found">🧬 個性「${t.icon} ${t.label}」が判明！<small>${t.desc}</small></div>`; });
+    if (reward.interview && reward.interview.text) {
+      html += `<div class="interview"><div class="iv-head">🎤 ${reward.place === 1 ? '勝利騎手インタビュー' : '騎手のコメント'}：${Util.esc(reward.interview.jockey)}</div><p>「${Util.esc(reward.interview.text)}」</p></div>`;
+    }
+    if (reward.album) {
+      html += `<div class="ceremony"><h3>🏆 表彰式</h3>${Story.photoCard(reward.album)}<p class="muted small center">📸 記念写真を「記録 → 思い出アルバム」に保存しました</p></div>`;
+    }
+    return html;
+  },
+
   // レースのふり返り：自分の馬の人気・作戦・アクシデント・上がり
   reviewHTML() {
     const { result } = this.ctx;
@@ -8610,11 +9198,13 @@ const RaceView = {
         ${this.legendHTML(reward.legends)}
         ${reward.rightTo ? `<p class="center ok big-note">🎫「${reward.rightTo.name}」の優先出走権を獲得！</p>` : ''}
         ${reward.bonus ? `<p class="center ok big-note">🎯 ${reward.pop}番人気で大金星！ ボーナス +${Util.money(reward.bonus)}</p>` : ''}
+        ${this.storyHTML(reward)}
         ${this.reviewHTML()}
         ${this.resultTable(fin)}
+        ${this.lapHTML(result)}
         <h3>🎁 報酬</h3>
         <div class="rewards">
-          <div>💰 賞金 <b>${Util.money(reward.prize)}</b></div>
+          <div>💰 賞金 <b>${Util.money(reward.prize)}</b>${reward.stake ? `<small class="muted">（うち進上金 -${Util.money(reward.stake)} 支払い済み）</small>` : ''}</div>
           <div>✨ 経験値 <b>+${reward.exp}</b>${reward.levelUps ? ` <span class="ok">レベルアップ！ Lv.${h ? h.level : ''}</span>` : ''}</div>
           ${reward.birthday && h ? `<div>🎂 ${Util.esc(h.name)}は${h.age}歳になりました！</div>` : ''}
         </div>
@@ -8948,6 +9538,7 @@ const App = {
     this.pending = { hid, raceId, field, ground };
     const me = field.find(e => e.isPlayer);
     UI.state.order = UI.suggestOrder(h, race);
+    UI.state.jockey = Jockeys.defaultFor(h);
     if (h.turn && !Race.courseOf(race).straight && h.turn !== Race.courseOf(race).dir) warn.push(`${Race.courseOf(race).dirLabel}は少し苦手です`);
     const cat = Horse.distCat(race.distance);
     if (h.aptitude[cat] < 45) warn.push('距離適性が低いレースです');
@@ -8960,8 +9551,10 @@ const App = {
       ${elig.right ? '<p class="ok">🎫 優先出走権で出走！</p>' : ''}
       ${trialTo ? `<p class="rec">🎫 ${race.trial.top}着以内で「${trialTo.name}」の優先出走権！${UI.help('right')}</p>` : ''}
       <h4>出走表（${field.length}頭）<small class="muted">　${Util.esc(h.name)}は ${me.pop}番人気（単勝 ${me.odds.toFixed(1)}倍）${me.pop >= 4 ? '・勝てば大金星ボーナス！' : ''}</small></h4>
+      ${field.some(e => e.isRival) ? `<p class="rec">⚔ 宿命のライバル「${Util.esc(h.rival.name)}」${h.rival.isNew ? 'が現れた！ 同期の強敵です。' : `も出走！（対戦成績 ${h.rival.vs.win}勝${h.rival.vs.lose}敗）`}</p>` : ''}
       ${UI.entryTable(field)}
       ${UI.orderPicker(h, race)}
+      ${Jockeys.picker(h)}
       ${field.some(e => e.isLegend) ? '<p class="rec">👑 名馬が出走！ 先着するとその名馬のカードが手に入ることがあります。</p>' : ''}
       ${warn.length ? `<div class="warn">${warn.map(w => '⚠ ' + w).join('<br>')}</div>` : '<p class="ok">準備万端！</p>'}
       <div class="btn-row"><button class="btn" onclick="UI.closeModal()">やめる</button><button class="btn primary big" onclick="App.runRace()">🏁 スタート！</button></div>`);
@@ -8971,12 +9564,15 @@ const App = {
     const pd = this.pending;
     if (!pd) return;
     this.pending = null;
-    UI.closeModal();
     const h = Player.horse(pd.hid);
     const race = Race.get(pd.raceId);
     if (!h || !Race.eligibility(h, race).ok) return UI.toast('出走できません', 'error');
     const me = pd.field.find(e => e.isPlayer);
-    if (me) me.order = UI.state.order || 'normal';
+    const jk = Jockeys.get(UI.state.jockey) || Jockeys.get('j_haruno');
+    if (!Player.canAfford(jk.fee)) { this.pending = pd; return UI.toast('騎乗料が足りません。別の騎手を選んでね', 'error'); }
+    UI.closeModal();
+    Player.addMoney(-jk.fee);
+    if (me) { me.order = UI.state.order || 'normal'; me.jockey = Jockeys.entry(h, jk.id); }
     // 結果は先に計算・保存し、表示は後から再生する
     const result = Race.simulate(race, pd.field, pd.ground);
     const reward = Race.applyResult(h, race, result);
@@ -8989,6 +9585,7 @@ const App = {
   matchModal(match, h) {
     const r = match.race;
     UI.state.order = UI.suggestOrder(h, r);
+    UI.state.jockey = Jockeys.defaultFor(h);
     UI.modal(`
       <h3>${UI.gradeBadge(r.grade)} ${Util.esc(r.name)}</h3>
       <p>${r.surface === 'turf' ? '🌱芝' : '🟫ダート'} ${r.distance}m・馬場：<b>${GAME_DATA.grounds[match.ground].label}</b>
@@ -8997,6 +9594,7 @@ const App = {
       <h4>出走表</h4>
       ${UI.entryTable(match.field, { owner: true })}
       ${UI.orderPicker(h, r)}
+      ${Jockeys.picker(h, { free: match.kind !== 'league' })}
       <div class="btn-row"><button class="btn" onclick="UI.closeModal()">やめる</button><button class="btn primary big" onclick="App.runMatch()">🏁 スタート！</button></div>`);
   },
 
@@ -9024,10 +9622,15 @@ const App = {
     const m = this.pendingMatch;
     if (!m) return;
     this.pendingMatch = null;
-    UI.closeModal();
     const h = Player.horse(m.hid);
     const me = m.field.find(e => e.isPlayer);
-    if (me) me.order = UI.state.order || 'normal';
+    const jk = Jockeys.get(UI.state.jockey) || Jockeys.get('j_haruno');
+    if (m.kind === 'league') {
+      if (!Player.canAfford(jk.fee)) { this.pendingMatch = m; return UI.toast('騎乗料が足りません。別の騎手を選んでね', 'error'); }
+      Player.addMoney(-jk.fee);
+    }
+    UI.closeModal();
+    if (me) { me.order = UI.state.order || 'normal'; me.jockey = Jockeys.entry(h, jk.id); }
     if (m.kind === 'custom') {
       const result = Race.simulate(m.race, m.field, m.ground);
       const reward = Pvp.applyCustom(result, me.id, false);
@@ -9037,6 +9640,7 @@ const App = {
     if (!h || !Pvp.canEnter(h, { league: m.kind === 'league' }).ok) return UI.toast('出走できません', 'error');
     const result = Race.simulate(m.race, m.field, m.ground);
     const reward = m.kind === 'league' ? Pvp.applyLeague(h, m, result) : Pvp.applyFriend(h, m, result);
+    if (m.kind === 'league') { Jockeys.afterRace(h, jk.id, reward.place, 'op'); reward.fee = jk.fee; }
     Player.save();
     RaceView.start({
       result, reward, race: m.race, horseId: h.id,
@@ -9049,7 +9653,7 @@ const App = {
           return `${v.placeHead(reward.place, fin[0].name)}
             <div class="rating-change ${reward.delta >= 0 ? 'up' : 'down'}">レーティング ${reward.rating} <b>${reward.delta >= 0 ? '+' : ''}${reward.delta}</b></div>
             ${reward.unlocked.map(l => `<p class="center ok">🎉 ${l.icon}${l.name}が解放されました！</p>`).join('')}
-            ${v.reviewHTML()}${v.resultTable(fin)}
+            ${v.reviewHTML()}${v.resultTable(fin)}${v.lapHTML(result)}
             <h3>🎁 報酬</h3>
             <div class="rewards"><div>💰 賞金 <b>${Util.money(reward.prize)}</b></div>
               <div>✨ 経験値 <b>+${reward.exp}</b>${reward.levelUps ? ' <span class="ok">レベルアップ！</span>' : ''}</div></div>
@@ -9058,7 +9662,7 @@ const App = {
         }
         return `${v.placeHead(reward.place, fin[0].name)}
           ${reward.vs.length ? `<div class="vs-list">${reward.vs.map(x => `<div class="${x.won ? 'ok' : 'warn'}">${x.won ? '○ 勝ち' : '● 負け'}：${Util.esc(x.owner)}厩舎の${Util.esc(x.name)}</div>`).join('')}</div>` : ''}
-          ${v.reviewHTML()}${v.resultTable(fin)}
+          ${v.reviewHTML()}${v.resultTable(fin)}${v.lapHTML(result)}
           <p class="muted small">フレンド対戦はエキシビション（報酬・経験値・疲労なし）。何度でも挑戦できます。</p>
           ${back}`;
       }
@@ -9085,6 +9689,7 @@ const App = {
       resultHTML: v => `${v.placeHead(reward.place, result.finish[0].name)}
         ${v.reviewHTML()}
         ${v.resultTable(result.finish)}
+        ${v.lapHTML(result)}
         <p class="muted small center">カスタムレースはエキシビションです（賞金・経験値・疲労なし）。</p>
         <div class="btn-row">${v.three ? '<button class="btn" onclick="RaceView.replay()">🎬 ゴール前リプレイ</button>' : ''}
           ${online ? '<button class="btn primary" onclick="Online.backToLobby()">🌐 ルームに戻る</button>'

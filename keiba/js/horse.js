@@ -21,6 +21,11 @@ const Horse = {
       caps: Object.assign({}, opts.caps || opts.stats),
       capBoost: 0,          // アイテムで上げた限界値（上限 GAME_DATA.capBoostMax）
       turn: opts.turn !== undefined ? opts.turn : this.randomTurn(),   // 得意な回り（R/L/''）
+      traits: opts.traits || Traits.random(),   // 個性（最初は ？？？）
+      traitsKnown: [],
+      jockey: null,         // 主戦騎手
+      rides: {},            // 騎手ごとのコンビ回数
+      rival: null,          // 宿命のライバル（初めての重賞で登場）
       aptitude: Object.assign({ sprint: 50, mile: 50, classic: 50, long: 50, turf: 50, dirt: 50 }, opts.aptitude),
       runningStyle: opts.runningStyle || 'senko',
       growthType: opts.growthType || 'normal',

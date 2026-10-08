@@ -402,6 +402,49 @@ GAME_DATA.orders = {
   inside: { label: '内を突く', icon: '↪️', desc: '最短距離を通って体力を節約。ただし直線で前が壁になりやすい。' }
 };
 
+// 騎手（すべて架空の人物）。skill：騎乗技術、style：得意な脚質、trait：得意技、fee：騎乗料（1レース）
+// unlock：起用できる条件（厩舎の通算勝利数・GⅠ勝利数）。勝つと賞金の5%を進上金として支払う
+GAME_DATA.jockeyTraits = {
+  g1: { label: '大舞台の男', desc: 'GⅠで馬の力を引き出す' },
+  start: { label: 'ゲート名人', desc: '出遅れがほとんどない' },
+  calm: { label: '折り合いの達人', desc: '馬が掛かりにくい' },
+  path: { label: '進路取り上手', desc: '直線で前が壁になりにくい' },
+  long: { label: '長距離の名手', desc: '2500m以上で力を発揮' },
+  mud: { label: '道悪巧者', desc: '重・不良馬場で力を発揮' },
+  sprint: { label: '短距離の鬼', desc: '1400m以下で力を発揮' },
+  rookie: { label: '若手の勢い', desc: '技術は発展途上だが、怖いもの知らず' }
+};
+GAME_DATA.jockeys = [
+  { id: 'j_haruno', name: '春野 つばさ', rank: 'C', skill: 50, style: 'nige', trait: 'rookie', fee: 0, unlock: null, desc: 'デビュー2年目の見習い騎手。騎乗料は無料。' },
+  { id: 'j_yuki', name: '結城 大地', rank: 'C', skill: 58, style: 'senko', trait: 'start', fee: 300, unlock: null, desc: '真面目なベテラン。スタートが上手い。' },
+  { id: 'j_nanjo', name: '南条 航', rank: 'B', skill: 66, style: 'senko', trait: 'mud', fee: 800, unlock: { wins: 3 }, desc: '雨の日に頼れる職人肌。' },
+  { id: 'j_shiina', name: '椎名 リオ', rank: 'B', skill: 68, style: 'oikomi', trait: 'path', fee: 900, unlock: { wins: 5 }, desc: 'インを鋭く突く若手のホープ。' },
+  { id: 'j_kurosawa', name: '黒沢 迅', rank: 'B', skill: 70, style: 'nige', trait: 'sprint', fee: 1000, unlock: { wins: 8 }, desc: 'スタートからの速さはピカイチ。' },
+  { id: 'j_yukimura', name: '雪村 こはる', rank: 'A', skill: 78, style: 'sashi', trait: 'calm', fee: 2000, unlock: { wins: 12 }, desc: '馬との対話を大切にする女性騎手。' },
+  { id: 'j_takano', name: '鷹野 誠', rank: 'A', skill: 80, style: 'senko', trait: 'long', fee: 2200, unlock: { wins: 18 }, desc: '長距離戦の駆け引きに長けた理論派。' },
+  { id: 'j_ookouchi', name: '大河内 剛', rank: 'A', skill: 82, style: 'oikomi', trait: 'path', fee: 2500, unlock: { wins: 25 }, desc: '豪快な追い込みが代名詞。' },
+  { id: 'j_bernard', name: 'L・ベルナール', rank: 'A', skill: 84, style: 'sashi', trait: 'start', fee: 3000, unlock: { g1Wins: 1 }, desc: '短期免許で来日した名手。' },
+  { id: 'j_shiraishi', name: '白石 蓮', rank: 'S', skill: 90, style: 'senko', trait: 'calm', fee: 4500, unlock: { g1Wins: 2 }, desc: '冷静沈着なリーディングジョッキー。' },
+  { id: 'j_hayase', name: '早瀬 悠真', rank: 'S', skill: 92, style: 'nige', trait: 'g1', fee: 5000, unlock: { g1Wins: 4 }, desc: '逃げで大レースを勝ちまくる天才。' },
+  { id: 'j_kazama', name: '風間 翔', rank: 'S', skill: 96, style: 'sashi', trait: 'g1', fee: 6000, unlock: { g1Wins: 6 }, desc: '「競馬の神に愛された男」。' }
+];
+
+// 馬の個性（生まれつき。最初は ？？？ で、条件のレースを走ると判明する）
+GAME_DATA.traits = {
+  rain: { label: '雨巧者', icon: '☔', desc: '重・不良馬場で力を発揮する' },
+  firm: { label: '良馬場巧者', icon: '☀️', desc: '良馬場で伸びるが、重い馬場は苦手' },
+  bigstage: { label: '大舞台', icon: '🎆', desc: 'GⅠで普段以上の力を出す' },
+  hill: { label: '坂巧者', icon: '⛰️', desc: '坂のある中山・阪神・中京が得意' },
+  flat: { label: '平坦巧者', icon: '🛤️', desc: '平坦な京都・新潟・福島・小倉・札幌・函館が得意' },
+  tight: { label: '小回り巧者', icon: '🌀', desc: '直線の短い小回りコースが得意' },
+  wide: { label: '大箱向き', icon: '🏟️', desc: '直線の長い広いコースが得意' },
+  gate: { label: 'ゲート巧者', icon: '🚪', desc: 'スタートが抜群にうまい' },
+  temper: { label: '気性難', icon: '💢', desc: '掛かりやすいが、闘争心で最後にもうひと伸び' },
+  fighter: { label: '勝負根性', icon: '🔥', desc: '直線で並ばれると負けない' },
+  summer: { label: '夏馬', icon: '🌻', desc: '6〜8月のレースで調子が上がる' },
+  winter: { label: '冬馬', icon: '❄️', desc: '12〜2月のレースで調子が上がる' }
+};
+
 // 競馬場のコース（実際のレイアウトのおおよその値）
 // dir：R=右回り・L=左回り、P：1周の距離(m)、L：最後の直線(m)
 // outer：外回りコース（d に含まれる距離で使う）、straight：直線コースの距離
@@ -474,6 +517,8 @@ GAME_DATA.glossary = {
   intelligence: { title: '🧠 賢さ', body: 'スキルが発動しやすくなり、レースでの走りも安定します。賢い馬は出遅れ・掛かり・前が壁といったアクシデントも起こしにくくなります。' },
   order: { title: '🗣 作戦', body: 'レース前に騎手へ出す指示です。<br>🔥積極策：直線が短いコースで前に残る／🧘脚をためる：長い直線で末脚爆発／⏩早めスパート：スタミナ自慢向き／↪️内を突く：体力を節約できるが前が壁になりやすい。<br>脚質とコースに合った作戦を選ぶと勝ちやすくなります（「おすすめ」が目安）。' },
   popularity: { title: '📊 人気・単勝オッズ', body: '出走馬の強さから見積もった予想です。1番人気が一番勝ちそうな馬。4番人気以下で勝つと「大金星ボーナス」で賞金が増えます（最大+50%）。' },
+  trait: { title: '🧬 個性', body: '馬が生まれつき持っている性質（雨巧者・坂巧者・気性難など）。最初は ？？？ で、条件に合うレースを走ると判明します。殿堂馬カードで配合すると、判明した個性を子に受け継ぐことがあります。' },
+  jockey: { title: '🏇 騎手', body: '騎手の技術が高いほど作戦がよく効き、出遅れ・掛かりなどのアクシデントも減ります。得意な脚質が合うと少し速くなり、同じ騎手で乗り続けるとコンビの相性が上がります。<br>騎乗料はレース前に、勝ったときは賞金の5%（進上金）を支払います。上位の騎手は厩舎の勝利数・GⅠ勝利数で起用できるようになります。' },
   turn: { title: '🔄 右回り・左回り', body: '馬によって得意な回りがあります（◎得意・△少し苦手）。東京・中京・新潟は左回り、それ以外は右回りです。' },
   incident: { title: '⚠ アクシデント', body: '出遅れ：スタートで遅れる／掛かり：前半に力んで体力を使う／前が壁：直線で進路がなく減速する。賢さが高く、調子が良いほど起きにくくなります。' },
   distance: { title: '📏 距離適性', body: 'その馬が得意な距離です。★が多い距離のレースに出ると力を発揮できます。<br>スプリント（〜1400m）／マイル（〜1800m）／クラシック（〜2400m）／ロング（2401m〜）' },

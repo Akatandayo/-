@@ -208,7 +208,7 @@ const Race = {
     }
     return {
       id: Util.uid('npc_'), name: Horse.randomName(), isPlayer: false,
-      stats, aptitude, runningStyle, skills, turn: Horse.randomTurn(), order: this.npcOrder(runningStyle),
+      stats, aptitude, runningStyle, skills, turn: Horse.randomTurn(), order: this.npcOrder(runningStyle), traits: Math.random() < 0.5 ? Traits.random() : [],
       condition: Util.randInt(55, 100), fatigue: Util.randInt(0, 20)
     };
   },
@@ -223,9 +223,15 @@ const Race = {
       id: h.id, name: h.name, isPlayer: true,
       stats: Object.assign({}, h.stats), aptitude: Object.assign({}, h.aptitude),
       runningStyle: h.runningStyle, skills: h.skills.slice(), turn: h.turn || '', order: 'normal',
+      traits: (h.traits || []).slice(), jockey: Jockeys.entry(h, Jockeys.defaultFor(h)),
       condition: h.condition, fatigue: h.fatigue
     }];
     const used = new Set([h.name]);
+    // 宿命のライバル（重賞で何度もぶつかる同期）
+    if (typeof Rivals !== 'undefined' && Rivals.shouldAppear(h, race) && !used.has(h.rival.name)) {
+      used.add(h.rival.name);
+      entrants.push(Rivals.entrant(h, race));
+    }
     // 重賞には実在の名馬がライバルとして出てくる
     if (typeof Legends !== 'undefined') {
       Legends.pickFor(race).forEach(l => {
@@ -347,13 +353,47 @@ const Race = {
       .map(Math.round).filter(m => m > 100 && m < D - 100))].sort((a, b) => a - b);
     const passCount = marks.map(() => 0);
     const last3 = Math.max(0, D - 600);
+    // ラップ（先頭が200mごとの地点を通過した時刻。端数は最初の区間）
+    const lapMarks = [];
+    for (let m = D; m > 0; m -= 200) lapMarks.unshift(m);
+    const lapTimes = [];
+    const month = race.m || (typeof Calendar !== 'undefined' ? Calendar.month(Calendar.get().week) : 4);
+    const HILL = ['中山', '阪神', '中京'], FLAT = ['京都', '新潟', '福島', '小倉', '札幌', '函館'];
 
     const runners = entrants.map((e, gate) => {
       const s = e.stats;
-      const fx = this.ORDER_FX[e.order] || this.ORDER_FX.normal;
+      // 騎手：技術が高いほど作戦が効き、アクシデントが減る
+      const jk = e.jockey || { skill: e.isLegend ? 88 : 70 };
+      const jt = jk.trait;
+      const ofx = this.ORDER_FX[e.order] || this.ORDER_FX.normal;
+      const k = 0.7 + jk.skill / 200;
+      const fx = {};
+      Object.entries(ofx).forEach(([key, v]) => { fx[key] = ['early', 'final', 'corner', 'cost'].includes(key) ? 1 + (v - 1) * k : v; });
+      let jockeyMul = 1 + (jk.skill - 70) * 0.00004 + Math.min(0.002, (jk.combo || 0) * 0.0004);
+      if (jk.style && jk.style === e.runningStyle) jockeyMul *= 1.0015;
+      if ((jt === 'g1' && race.grade === 'g1') || (jt === 'long' && D >= 2500) || (jt === 'sprint' && D <= 1400)) jockeyMul *= 1.002;
+      if (jt === 'mud' && ground >= 2) jockeyMul *= 1.0025;
+      if (jt === 'rookie') jockeyMul *= 1.001;
+      // 個性（条件を満たしたものは hits に記録し、レース後に判明する）
+      const tr = e.traits || [];
+      const hits = [];
+      let traitMul = 1;
+      const T = (id, cond, m) => { if (tr.includes(id) && cond) { traitMul *= m; hits.push(id); } };
+      T('rain', ground >= 2, 1.004);
+      T('firm', ground === 0, 1.0025);
+      T('firm', ground >= 2, 0.9975);
+      T('bigstage', race.grade === 'g1', 1.003);
+      T('hill', HILL.includes(course.venue) && !course.straight, 1.003);
+      T('flat', FLAT.includes(course.venue), 1.003);
+      T('tight', course.L <= 330, 1.003);
+      T('wide', course.L >= 450 && !course.straight, 1.003);
+      T('summer', month >= 6 && month <= 8, 1.003);
+      T('winter', month === 12 || month <= 2, 1.003);
+      T('gate', true, 1);
+      T('temper', true, 1);
       // 右回り・左回りの得意不得意（直線コースは関係なし）
       const turnMul = e.turn && !course.straight ? (e.turn === course.dir ? 1.004 : 0.994) : 1;
-      const aptMul = (0.93 + 0.07 * e.aptitude[distCat] / 100) * (0.96 + 0.04 * e.aptitude[race.surface] / 100) * turnMul;
+      const aptMul = (0.93 + 0.07 * e.aptitude[distCat] / 100) * (0.96 + 0.04 * e.aptitude[race.surface] / 100) * turnMul * jockeyMul * traitMul;
       const groundMul = 1 - ground * 0.006 * (1 - Math.min(s.power, 120) / 130);
       const condMul = (0.98 + 0.02 * e.condition / 100) * (1 - 0.025 * e.fatigue / 100);
       const form = 1 + Util.gauss() * 0.004 * (1.2 - s.intelligence / 250);
@@ -361,16 +401,17 @@ const Race = {
         .sort((a, b) => Skills.priority(b) - Skills.priority(a));
       const maxHp = 300 + s.stamina * 22 + s.guts * 4;
       // アクシデント：賢さが低い・調子が悪いほど起きやすい
-      const careless = Util.clamp(1.25 - s.intelligence / 160, 0.35, 1.2) * (e.condition < 45 ? 1.4 : 1);
-      const late = Math.random() < 0.06 * careless;
-      const kakari = Math.random() < 0.07 * careless * (fx.kakari || 1);
+      const careless = Util.clamp(1.25 - s.intelligence / 160, 0.35, 1.2) * (e.condition < 45 ? 1.4 : 1) * Util.clamp(1.35 - jk.skill / 150, 0.65, 1.1);
+      const late = Math.random() < 0.06 * careless * (jt === 'start' ? 0.2 : 1) * (tr.includes('gate') ? 0.2 : 1);
+      const kakari = Math.random() < 0.07 * careless * (fx.kakari || 1) * (jt === 'calm' ? 0.35 : 1) * (tr.includes('temper') ? 2.5 : 1);
       return {
         e, gate, fx, pos: late ? -(3 + Math.random() * 5) : 0, v: 0, hp: maxHp, maxHp,
         mul: aptMul * groundMul * condMul * form,
         skills, usedSkills: new Set(), active: [],
         finished: false, time: null, exhaustedLogged: false,
         late, kakariAt: kakari ? startEnd * 0.6 + Math.random() * Math.max(50, cornerStart - startEnd) : null, kakariUntil: 0,
-        careless, blocked: false, blockUntil: 0, passing: [], t600: null
+        careless, blocked: false, blockUntil: 0, passing: [], t600: null,
+        blockMul: jt === 'path' ? 0.35 : 1, temper: tr.includes('temper'), fighter: tr.includes('fighter'), hits
       };
     });
 
@@ -396,6 +437,9 @@ const Race = {
     checkpoint('start', 'スタート', 0, `${race.name}、各馬いっせいにスタート！`);
     const incident = (t, r, kind, text) => events.push({ t: Math.round(t * 10) / 10, type: 'incident', kind, horseId: r.e.id, isPlayer: r.e.isPlayer, text });
     runners.filter(r => r.late).forEach(r => incident(0.5, r, 'late', `${name(r)}、出遅れた！`));
+    const rivalR = runners.find(r => r.e.isRival);
+    const playerR = runners.find(r => r.e.isPlayer);
+    if (rivalR) say(1.5, `宿命のライバル、${name(rivalR)}も出走しています！`, { horseId: rivalR.e.id });
     let t = 0, lastLeader = null, nextFrame = 0;
     const maxT = D / 8;
     while (runners.some(r => !r.finished) && t < maxT) {
@@ -423,7 +467,9 @@ const Race = {
       if (D - leaderPos <= 200) {
         const a = ranked[0], b = ranked[1];
         const close = a.pos - b.pos < 2.4;
-        checkpoint('r200', '残り200m', t, close ? `残り200m！ ${name(a)}と${name(b)}の叩き合い！` : `残り200m！ ${name(a)}が抜け出した！`);
+        const duel = rivalR && playerR && [a, b].includes(rivalR) && [a, b].includes(playerR);
+        checkpoint('r200', '残り200m', t, duel ? `残り200m！ 宿命のライバル対決！ ${name(a)}と${name(b)}の一騎打ち！`
+          : close ? `残り200m！ ${name(a)}と${name(b)}の叩き合い！` : `残り200m！ ${name(a)}が抜け出した！`);
       }
 
       // 最終直線での先頭交代
@@ -484,13 +530,16 @@ const Race = {
         if (phase === 'final' && !r.blocked && rank >= 3 && remain > 120) {
           const wall = ranked.some(o => o !== r && !o.finished && o.pos0 - r.pos0 > 0.4 && o.pos0 - r.pos0 < 3);
           const prone = (r.e.runningStyle === 'sashi' || r.e.runningStyle === 'oikomi' ? 1 : 0.4) * (fx.block || 1);
-          if (wall && Math.random() < 0.012 * prone * r.careless * this.DT * 2) {
+          if (wall && Math.random() < 0.012 * prone * r.careless * r.blockMul * this.DT * 2) {
             r.blocked = true;
             r.blockUntil = t + 1.5 + Math.random() * 1.5;
             incident(t, r, 'block', `${name(r)}、前が壁！ 進路がない！`);
           }
         }
         if (t < r.blockUntil) target *= 0.95;
+        // 個性：気性難は闘争心で最後にひと伸び、勝負根性は並ばれると伸びる
+        if (phase === 'final' && r.temper) target *= 1.003;
+        if (phase === 'final' && r.fighter && neighbor) { target *= 1.004; if (!r.hits.includes('fighter')) r.hits.push('fighter'); }
         if (phase === 'final' && r.hp > 0) {
           target *= 1.02 + s.guts * 0.0001; // ラストスパート
           costMul = 1.4;
@@ -513,6 +562,10 @@ const Race = {
         // 通過順と上がり3F
         marks.forEach((m, i) => { if (prev < m && r.pos >= m) r.passing[i] = ++passCount[i]; });
         if (prev < last3 && r.pos >= last3) r.t600 = t + this.DT * ((last3 - prev) / (r.pos - prev));
+        while (lapTimes.length < lapMarks.length && r.pos >= lapMarks[lapTimes.length]) {
+          const m = lapMarks[lapTimes.length];
+          lapTimes.push(t + this.DT * ((m - Math.max(prev, 0)) / Math.max(0.01, r.pos - Math.max(prev, 0))));
+        }
         if (r.pos >= D) {
           r.finished = true;
           r.time = t + this.DT * ((D - prev) / (r.pos - prev));
@@ -539,7 +592,8 @@ const Race = {
         margin: prev ? this.marginText((r.time - prev.time) * r.v / 2.4) : '',
         passing: marks.map((m, i) => r.passing[i] || runners.length),
         last3f: r.time !== null && r.t600 !== null && D >= 1000 ? Math.round((r.time - r.t600) * 10) / 10 : null,
-        pop: r.e.pop || null, odds: r.e.odds || null, order: r.e.order || 'normal'
+        pop: r.e.pop || null, odds: r.e.odds || null, order: r.e.order || 'normal',
+        hits: r.hits, jockey: r.e.jockey ? r.e.jockey.name : null, jockeyId: r.e.jockey ? r.e.jockey.id : null, isRival: !!r.e.isRival
       };
     });
     const second = final[1];
@@ -551,9 +605,10 @@ const Race = {
     return {
       raceId: race.id, name: race.name, grade: race.grade, distance: D, surface: race.surface,
       distCat, ground, venue: course.venue, course,
-      entrants: runners.map(r => ({ id: r.e.id, name: r.e.name, owner: r.e.owner || '', isPlayer: r.e.isPlayer, isGhost: !!r.e.isGhost, legendId: r.e.legendId, coat: r.e.coat, style: r.e.runningStyle, gate: r.gate + 1, pop: r.e.pop || null, odds: r.e.odds || null, order: r.e.order || 'normal' })),
+      entrants: runners.map(r => ({ id: r.e.id, name: r.e.name, owner: r.e.owner || '', isPlayer: r.e.isPlayer, isGhost: !!r.e.isGhost, legendId: r.e.legendId, isRival: !!r.e.isRival, jockey: r.e.jockey && r.e.jockey.id ? r.e.jockey.name : '', coat: r.e.coat, style: r.e.runningStyle, gate: r.gate + 1, pop: r.e.pop || null, odds: r.e.odds || null, order: r.e.order || 'normal' })),
       finish, events: events.sort((a, b) => a.t - b.t), frames,
-      phases: { startEnd, cornerStart, finalStart }, marks
+      phases: { startEnd, cornerStart, finalStart }, marks,
+      laps: lapTimes.map((v, i) => Math.round((v - (lapTimes[i - 1] || 0)) * 10) / 10)
     };
   },
 
@@ -651,6 +706,18 @@ const Race = {
     const legends = typeof Legends !== 'undefined' ? Legends.applyResult(race, result) : { met: [], beaten: [], card: null };
     if (legends.card) cards.push(Object.assign({ legend: true }, legends.card));
 
-    return { place, prize, bonus, pop: me.pop, exp, cards, levelUps, birthday, field: result.finish.length, newRecord: newRecord && !!prevRec, rightTo, legends };
+    // 騎手（進上金・コンビ）、個性の判明、ライバル、インタビュー、GⅠの記念写真
+    const jockeyId = me.jockeyId || 'j_haruno';
+    const stake = place === 1 ? Math.round(prize * Jockeys.STAKE) : 0;
+    if (stake) { Player.addMoney(-stake); rec.prizeMoney -= stake; }
+    Jockeys.afterRace(h, jockeyId, place, race.grade);
+    const traitsFound = Traits.reveal(h, me.hits);
+    const rival = Rivals.applyResult(h, result);
+    const jockeyName = (Jockeys.get(jockeyId) || {}).name || '';
+    const interview = Story.interview(result, me, jockeyName, rival);
+    const album = place === 1 && race.grade === 'g1' ? Story.addAlbum(h, race, result, me, jockeyName, interview.text) : null;
+
+    return { place, prize, bonus, stake, pop: me.pop, exp, cards, levelUps, birthday, field: result.finish.length, newRecord: newRecord && !!prevRec, rightTo, legends,
+      traitsFound, rival, interview, album, jockeyId };
   }
 };

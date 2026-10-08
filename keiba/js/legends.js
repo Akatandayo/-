@@ -398,6 +398,7 @@ const Legends = {
     STAT_KEYS.forEach(k => { stats[k] = Math.round(l.stats[k] + adj + Util.gauss() * 1.5); });
     return {
       id: Util.uid('lg_'), legendId: l.id, name: l.name, owner: '👑 名馬', isPlayer: false, isLegend: true,
+      traits: l.tier === 'S' ? ['bigstage'] : [],
       stats, aptitude: Object.assign({}, l.aptitude), runningStyle: l.style, skills: l.skills.slice(),
       condition: Util.randInt(65, 95), fatigue: 0, coat: l.coat
     };

@@ -59,7 +59,7 @@ const HallOfFame = {
       id: 'c_' + h.id, type: h.gender === 'male' ? 'sire' : 'mare', custom: true,
       name: h.name, rarity, stats,
       apt: Object.assign({}, h.aptitude),
-      style: h.runningStyle, growth: h.growthType, trait,
+      style: h.runningStyle, growth: h.growthType, trait, traits: (h.traitsKnown || []).slice(),
       skill: h.skills[0] || null,
       pedigree: { f: Horse.pedigree(h).f, m: Horse.pedigree(h).m },
       ancestors: this.ancestorsOf(h),

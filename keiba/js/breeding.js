@@ -125,6 +125,7 @@ const Breeding = {
 
     const potential = STAT_KEYS.reduce((s, k) => s + caps[k], 0) / STAT_KEYS.length;
     const horse = Horse.create({
+      traits: Traits.inherit(father, mother),
       stats, caps, aptitude, runningStyle, growthType,
       rarity: Horse.rarityFromPotential(potential),
       condition: Util.randInt(60, 85),

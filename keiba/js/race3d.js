@@ -268,6 +268,7 @@ const Race3D = {
   disposeScene() {
     const st = this.state;
     if (!st) return;
+    if (st.visionRT) st.visionRT.dispose();
     st.scene.traverse(o => {
       if (o.geometry && !o.geometry.userData.shared) o.geometry.dispose();
       const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
@@ -298,15 +299,22 @@ const Race3D = {
     scene.fog = new THREE.Fog(rainy ? 0xa9b1b8 : 0xcfe4f4, rainy ? 160 : 260, rainy ? 900 : 1500);
     const camera = new THREE.PerspectiveCamera(36, 16 / 9, 0.3, 3500);
 
-    scene.add(new THREE.HemisphereLight(0xe8f4ff, 0x4f6b2e, rainy ? 0.75 : 0.95));
+    // 季節と時間帯：冬の重賞（メインレース）は西日、夏はまぶしい日差し
+    const month = (ctx.race && ctx.race.m) || (typeof Calendar !== 'undefined' ? Calendar.month(Calendar.get().week) : 5);
+    const main = ctx.race && ['g1', 'g2', 'g3'].includes(ctx.race.grade);
+    const evening = !rainy && main && (month >= 11 || month <= 2);
+    const summer = !rainy && month >= 6 && month <= 8;
+    this.mood = evening ? 'evening' : summer ? 'summer' : 'day';
+    if (evening) { scene.background = new THREE.Color(0xe9c9a4); scene.fog = new THREE.Fog(0xf0d2b0, 260, 1500); }
+    scene.add(new THREE.HemisphereLight(evening ? 0xffe2c2 : 0xe8f4ff, 0x4f6b2e, rainy ? 0.75 : evening ? 0.8 : 0.95));
     this.layout(res.course || (typeof Race !== 'undefined' && ctx.race ? Race.courseOf(ctx.race) : null));
-    const sun = new THREE.DirectionalLight(0xfff4e0, rainy ? 0.8 : 1.7);
-    sun.position.set(260 * this.M, 420, -300);
+    const sun = new THREE.DirectionalLight(evening ? 0xffc48a : summer ? 0xfffaf0 : 0xfff4e0, rainy ? 0.8 : evening ? 1.45 : summer ? 1.9 : 1.7);
+    sun.position.set(260 * this.M, evening ? 170 : 420, -300);
     scene.add(sun);
     const fill = new THREE.DirectionalLight(0xdfeaff, rainy ? 0.45 : 0.7);   // 逆光でも馬が黒くつぶれないように
     fill.position.set(-200 * this.M, 260, 600);
     scene.add(fill);
-    this.buildSky(scene, rainy, res.ground === 1);
+    this.buildSky(scene, rainy, res.ground === 1, evening);
 
     const D = res.distance;
     const sF = this.S - this.FINISH_BACK;
@@ -322,13 +330,34 @@ const Race3D = {
     this.buildHorses(scene, st, res);
     this.buildParticles(scene, st, res.surface);
     if (rainy) this.buildRain(scene, st);
+    // ターフビジョンのライブ中継（別カメラの映像をテクスチャにする）
+    try {
+      st.visionRT = new THREE.WebGLRenderTarget(384, 216);
+      st.visionCam = new THREE.PerspectiveCamera(32, 16 / 9, 0.5, 1500);
+    } catch (e) { st.visionRT = null; }
+  },
+
+  updateVision(t, center, frame) {
+    const st = this.state;
+    if (!st.visionRT || !st.visionScr || t < 0.3 || frame % 2) return;
+    if (st.visionScr.material.map !== st.visionRT.texture) { st.visionScr.material.map = st.visionRT.texture; st.visionScr.material.needsUpdate = true; }
+    const o = this.outward(center);
+    const C = st.visionCam;
+    C.position.set(center.x + o.x * 46 - center.dx * 6, 10, center.z + o.z * 46 - center.dz * 6);
+    C.lookAt(center.x + center.dx * 6, 1.2, center.z + center.dz * 6);
+    const r = this.renderer;
+    st.visionScr.visible = false;   // 自分自身を映すとフィードバックループになるので隠す
+    r.setRenderTarget(st.visionRT);
+    r.render(st.scene, C);
+    r.setRenderTarget(null);
+    st.visionScr.visible = true;
   },
 
   // 空（グラデーションのドーム）と雲
-  buildSky(scene, rainy, cloudy) {
+  buildSky(scene, rainy, cloudy, evening) {
     const geo = new THREE.SphereGeometry(3000, 32, 16);
-    const top = new THREE.Color(rainy ? 0x7d8792 : cloudy ? 0x8fb0cc : 0x3f8fe0);
-    const hor = new THREE.Color(rainy ? 0xb5bcc3 : cloudy ? 0xd7e3ec : 0xcfe8fb);
+    const top = new THREE.Color(rainy ? 0x7d8792 : evening ? 0x5f7fb8 : cloudy ? 0x8fb0cc : 0x3f8fe0);
+    const hor = new THREE.Color(rainy ? 0xb5bcc3 : evening ? 0xffc99a : cloudy ? 0xd7e3ec : 0xcfe8fb);
     const cols = [];
     const p = geo.attributes.position;
     for (let i = 0; i < p.count; i++) {
@@ -503,6 +532,7 @@ const Race3D = {
     scr.position.z = -0.8;
     scr.rotation.y = Math.PI;
     vision.add(scr);
+    this.state.visionScr = scr;
     vision.position.set(40 * this.M, 14, W + 60);
     scene.add(vision);
     const legs = new THREE.Mesh(new THREE.BoxGeometry(2, 8, 2), new THREE.MeshLambertMaterial({ color: 0x555555 }));
@@ -765,6 +795,12 @@ const Race3D = {
       marker.position.y = 3.3;
       marker.renderOrder = 10;
       root.add(marker);
+    } else if (e.isRival && !opts.portrait) {
+      marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.textTexture('⚔ ' + e.name, { w: 512, h: 96, bg: '#6a1b9a', color: '#fff', size: 54 }), depthTest: false, transparent: true }));
+      marker.scale.set(3.6, 0.68, 1);
+      marker.position.y = 3.2;
+      marker.renderOrder = 9;
+      root.add(marker);
     }
 
     return {
@@ -922,6 +958,8 @@ const Race3D = {
         <div class="r3-card-list">${st.horses.slice().sort((a, b) => a.num - b.num).map(h => `<div class="r3-card-row ${h.e.isPlayer ? 'me' : ''}">
           <span class="num" style="background:${h.capColor};color:${this.BRACKET_TEXT[h.bracket - 1]}">${h.num}</span><img src="${h.icon}" alt="">
           <b>${h.e.legendId ? '👑' : ''}${Util.esc(h.e.name)}</b><span class="pop ${h.e.pop && h.e.pop <= 3 ? 'fav' : ''}">${h.e.pop ? h.e.pop + '人' : ''}</span><span class="odds">${h.e.odds ? h.e.odds.toFixed(1) : ''}</span></div>`).join('')}</div></div>
+      <div class="r3-board" id="r3-board"></div>
+      ${this.minimapSVG()}
       <div class="r3-photo" id="r3-photo"><div class="r3-photo-frame"><img alt=""><div class="r3-photo-line"></div></div><div class="r3-photo-label">📸 写真判定</div></div>`;
     hud.querySelectorAll('[data-cam]').forEach(b => b.addEventListener('click', () => {
       Player.data.settings.cam3d = b.dataset.cam;
@@ -945,8 +983,21 @@ const Race3D = {
     st.hud = {
       remain: hud.querySelector('#r3-remain'), time: hud.querySelector('#r3-time'), map: hud.querySelector('#r3-map'),
       bar: hud.querySelector('#r3-bar'), banner: hud.querySelector('#r3-banner'), orderKey: '',
-      card: hud.querySelector('#r3-card'), photo: hud.querySelector('#r3-photo')
+      card: hud.querySelector('#r3-card'), photo: hud.querySelector('#r3-photo'), board: hud.querySelector('#r3-board'),
+      mini: hud.querySelector('#r3-mini')
     };
+    // ミニマップの点（馬番の枠色）
+    const NS = 'http://www.w3.org/2000/svg';
+    const g = hud.querySelector('#r3-mini-dots');
+    st.horses.slice().sort((a, b) => Number(a.e.isPlayer) - Number(b.e.isPlayer)).forEach(h => {
+      const c = document.createElementNS(NS, 'circle');
+      c.setAttribute('r', h.e.isPlayer ? 13 : h.e.isRival ? 11 : 9);
+      c.setAttribute('fill', h.capColor);
+      c.setAttribute('stroke', h.e.isPlayer ? '#ff6a2a' : h.e.isRival ? '#9c27b0' : '#222');
+      c.setAttribute('stroke-width', h.e.isPlayer || h.e.isRival ? 6 : 3);
+      g.appendChild(c);
+      h.miniDot = c;
+    });
     // 位置マップの丸（馬番・枠色）
     st.horses.forEach(h => {
       const d = document.createElement('div');
@@ -984,6 +1035,36 @@ const Race3D = {
       if (typeof Voice !== 'undefined') Voice.say(`${w.e.name}、${margin}差で勝利！`, { interrupt: true });
       this._photoTimer = setTimeout(() => { el.className = 'r3-photo'; done(); }, 2200);
     }, 2000);
+  },
+
+  // コース全景のミニマップ（スタンドが下、実際の回りの向きで表示）
+  mapXY(p) { return [-p.x, -p.z]; },
+  minimapSVG() {
+    const st = this.state;
+    const P = this.P, n = 160, pts = [];
+    for (let i = 0; i <= n; i++) pts.push(this.mapXY(this.path(i / n * P, this.W / 2)));
+    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+    const pad = 40;
+    const minX = Math.min(...xs) - pad, minY = Math.min(...ys) - pad, w = Math.max(...xs) - minX + pad, h = Math.max(...ys) - minY + pad;
+    const d = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(0)} ${p[1].toFixed(0)}`).join(' ') + 'Z';
+    const [gx, gy] = this.mapXY(this.path(st.sF, this.W / 2));
+    const [sx, sy] = this.mapXY(this.path(st.sStart, this.W / 2));
+    return `<svg class="r3-mini" id="r3-mini" viewBox="${minX.toFixed(0)} ${minY.toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}">
+      <path d="${d}" class="mini-track"/><circle cx="${sx}" cy="${sy}" r="10" class="mini-start"/>
+      <rect x="${gx - 3}" y="${gy - 30}" width="6" height="60" class="mini-goal"/><g id="r3-mini-dots"></g></svg>`;
+  },
+
+  // 着順掲示板（JRA風の電光掲示板）
+  boardHTML() {
+    const st = this.state;
+    const fin = st.result.finish;
+    const num = id => (st.horses.find(h => h.e.id === id) || {}).num || '';
+    const winner = fin[0];
+    const l3 = winner.last3f;
+    return `<div class="bd-head">着順</div>
+      ${fin.slice(0, 5).map((f, i) => `<div class="bd-row"><span class="bd-pl">${i + 1}</span><span class="bd-num">${num(f.id)}</span><span class="bd-mg">${i ? Util.esc(f.margin) : ''}</span></div>`).join('')}
+      <div class="bd-time">${Race.timeText(winner.time)}<small>${l3 ? '上 ' + l3.toFixed(1) : ''}</small></div>
+      <div class="bd-lamps"><span class="lamp photo">写真</span><span class="lamp fix">確定</span></div>`;
   },
 
   banner(text, cls, ms) {
@@ -1349,6 +1430,8 @@ const Race3D = {
     }
     C.updateProjectionMatrix();
     C.lookAt(st.camLook);
+    st.frameNo = (st.frameNo || 0) + 1;
+    this.updateVision(t, center, st.frameNo);
   },
 
   updateHud(t, pos, order) {
@@ -1362,6 +1445,15 @@ const Race3D = {
     hud.remain.textContent = t < 0 ? 'ゲートイン' : remain <= 0 ? 'ゴール' : remain <= 400 ? `最後の直線 残り${Math.ceil(remain / 100) * 100}m` : `残り ${Math.ceil(remain / 100) * 100}m`;
     if (t > 0 && t < 1.2 && !st.startShown) { st.startShown = true; this.banner('スタート！', 'start', 1100); }
     hud.card.classList.toggle('show', t < -0.4);
+    // 着順掲示板：ゴール後に点灯し、少しして「確定」
+    const wft = st.winner ? st.winner.ft : 9999;
+    const photoOn = hud.photo.classList.contains('show');
+    const showBoard = t >= wft + 1.4 && !photoOn;
+    if (showBoard && !hud.board.dataset.ready) { hud.board.innerHTML = this.boardHTML(); hud.board.dataset.ready = '1'; }
+    hud.board.classList.toggle('show', showBoard);
+    const close = st.result.finish[1] && st.result.finish[1].time - st.result.finish[0].time < 0.06;
+    hud.board.classList.toggle('photo', showBoard && close && t < wft + 4);
+    hud.board.classList.toggle('fixed', showBoard && t >= wft + (close ? 4 : 3.2));
     if (lead.h.ft < 9000 && t >= lead.h.ft && !st.goalShown) {
       st.goalShown = true;
       const w = lead.h;
@@ -1374,6 +1466,13 @@ const Race3D = {
     const now = performance.now();
     if (now - st.lastHud < 120) return;
     st.lastHud = now;
+    // ミニマップの点
+    order.forEach(o => {
+      if (!o.h.miniDot) return;
+      const [x, y] = this.mapXY(this.path(st.sStart + Math.max(0, o.p), this.W / 2));
+      o.h.miniDot.setAttribute('cx', x.toFixed(0));
+      o.h.miniDot.setAttribute('cy', y.toFixed(0));
+    });
     // 左の位置マップ：先頭からの差を縦方向に
     const H = hud.map.clientHeight - 24;
     const maxGap = Math.max(24, order[order.length - 1] ? lead.p - order[order.length - 1].p : 24);

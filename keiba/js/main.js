@@ -313,6 +313,7 @@ const App = {
     this.pending = { hid, raceId, field, ground };
     const me = field.find(e => e.isPlayer);
     UI.state.order = UI.suggestOrder(h, race);
+    UI.state.jockey = Jockeys.defaultFor(h);
     if (h.turn && !Race.courseOf(race).straight && h.turn !== Race.courseOf(race).dir) warn.push(`${Race.courseOf(race).dirLabel}は少し苦手です`);
     const cat = Horse.distCat(race.distance);
     if (h.aptitude[cat] < 45) warn.push('距離適性が低いレースです');
@@ -325,8 +326,10 @@ const App = {
       ${elig.right ? '<p class="ok">🎫 優先出走権で出走！</p>' : ''}
       ${trialTo ? `<p class="rec">🎫 ${race.trial.top}着以内で「${trialTo.name}」の優先出走権！${UI.help('right')}</p>` : ''}
       <h4>出走表（${field.length}頭）<small class="muted">　${Util.esc(h.name)}は ${me.pop}番人気（単勝 ${me.odds.toFixed(1)}倍）${me.pop >= 4 ? '・勝てば大金星ボーナス！' : ''}</small></h4>
+      ${field.some(e => e.isRival) ? `<p class="rec">⚔ 宿命のライバル「${Util.esc(h.rival.name)}」${h.rival.isNew ? 'が現れた！ 同期の強敵です。' : `も出走！（対戦成績 ${h.rival.vs.win}勝${h.rival.vs.lose}敗）`}</p>` : ''}
       ${UI.entryTable(field)}
       ${UI.orderPicker(h, race)}
+      ${Jockeys.picker(h)}
       ${field.some(e => e.isLegend) ? '<p class="rec">👑 名馬が出走！ 先着するとその名馬のカードが手に入ることがあります。</p>' : ''}
       ${warn.length ? `<div class="warn">${warn.map(w => '⚠ ' + w).join('<br>')}</div>` : '<p class="ok">準備万端！</p>'}
       <div class="btn-row"><button class="btn" onclick="UI.closeModal()">やめる</button><button class="btn primary big" onclick="App.runRace()">🏁 スタート！</button></div>`);
@@ -336,12 +339,15 @@ const App = {
     const pd = this.pending;
     if (!pd) return;
     this.pending = null;
-    UI.closeModal();
     const h = Player.horse(pd.hid);
     const race = Race.get(pd.raceId);
     if (!h || !Race.eligibility(h, race).ok) return UI.toast('出走できません', 'error');
     const me = pd.field.find(e => e.isPlayer);
-    if (me) me.order = UI.state.order || 'normal';
+    const jk = Jockeys.get(UI.state.jockey) || Jockeys.get('j_haruno');
+    if (!Player.canAfford(jk.fee)) { this.pending = pd; return UI.toast('騎乗料が足りません。別の騎手を選んでね', 'error'); }
+    UI.closeModal();
+    Player.addMoney(-jk.fee);
+    if (me) { me.order = UI.state.order || 'normal'; me.jockey = Jockeys.entry(h, jk.id); }
     // 結果は先に計算・保存し、表示は後から再生する
     const result = Race.simulate(race, pd.field, pd.ground);
     const reward = Race.applyResult(h, race, result);
@@ -354,6 +360,7 @@ const App = {
   matchModal(match, h) {
     const r = match.race;
     UI.state.order = UI.suggestOrder(h, r);
+    UI.state.jockey = Jockeys.defaultFor(h);
     UI.modal(`
       <h3>${UI.gradeBadge(r.grade)} ${Util.esc(r.name)}</h3>
       <p>${r.surface === 'turf' ? '🌱芝' : '🟫ダート'} ${r.distance}m・馬場：<b>${GAME_DATA.grounds[match.ground].label}</b>
@@ -362,6 +369,7 @@ const App = {
       <h4>出走表</h4>
       ${UI.entryTable(match.field, { owner: true })}
       ${UI.orderPicker(h, r)}
+      ${Jockeys.picker(h, { free: match.kind !== 'league' })}
       <div class="btn-row"><button class="btn" onclick="UI.closeModal()">やめる</button><button class="btn primary big" onclick="App.runMatch()">🏁 スタート！</button></div>`);
   },
 
@@ -389,10 +397,15 @@ const App = {
     const m = this.pendingMatch;
     if (!m) return;
     this.pendingMatch = null;
-    UI.closeModal();
     const h = Player.horse(m.hid);
     const me = m.field.find(e => e.isPlayer);
-    if (me) me.order = UI.state.order || 'normal';
+    const jk = Jockeys.get(UI.state.jockey) || Jockeys.get('j_haruno');
+    if (m.kind === 'league') {
+      if (!Player.canAfford(jk.fee)) { this.pendingMatch = m; return UI.toast('騎乗料が足りません。別の騎手を選んでね', 'error'); }
+      Player.addMoney(-jk.fee);
+    }
+    UI.closeModal();
+    if (me) { me.order = UI.state.order || 'normal'; me.jockey = Jockeys.entry(h, jk.id); }
     if (m.kind === 'custom') {
       const result = Race.simulate(m.race, m.field, m.ground);
       const reward = Pvp.applyCustom(result, me.id, false);
@@ -402,6 +415,7 @@ const App = {
     if (!h || !Pvp.canEnter(h, { league: m.kind === 'league' }).ok) return UI.toast('出走できません', 'error');
     const result = Race.simulate(m.race, m.field, m.ground);
     const reward = m.kind === 'league' ? Pvp.applyLeague(h, m, result) : Pvp.applyFriend(h, m, result);
+    if (m.kind === 'league') { Jockeys.afterRace(h, jk.id, reward.place, 'op'); reward.fee = jk.fee; }
     Player.save();
     RaceView.start({
       result, reward, race: m.race, horseId: h.id,
@@ -414,7 +428,7 @@ const App = {
           return `${v.placeHead(reward.place, fin[0].name)}
             <div class="rating-change ${reward.delta >= 0 ? 'up' : 'down'}">レーティング ${reward.rating} <b>${reward.delta >= 0 ? '+' : ''}${reward.delta}</b></div>
             ${reward.unlocked.map(l => `<p class="center ok">🎉 ${l.icon}${l.name}が解放されました！</p>`).join('')}
-            ${v.reviewHTML()}${v.resultTable(fin)}
+            ${v.reviewHTML()}${v.resultTable(fin)}${v.lapHTML(result)}
             <h3>🎁 報酬</h3>
             <div class="rewards"><div>💰 賞金 <b>${Util.money(reward.prize)}</b></div>
               <div>✨ 経験値 <b>+${reward.exp}</b>${reward.levelUps ? ' <span class="ok">レベルアップ！</span>' : ''}</div></div>
@@ -423,7 +437,7 @@ const App = {
         }
         return `${v.placeHead(reward.place, fin[0].name)}
           ${reward.vs.length ? `<div class="vs-list">${reward.vs.map(x => `<div class="${x.won ? 'ok' : 'warn'}">${x.won ? '○ 勝ち' : '● 負け'}：${Util.esc(x.owner)}厩舎の${Util.esc(x.name)}</div>`).join('')}</div>` : ''}
-          ${v.reviewHTML()}${v.resultTable(fin)}
+          ${v.reviewHTML()}${v.resultTable(fin)}${v.lapHTML(result)}
           <p class="muted small">フレンド対戦はエキシビション（報酬・経験値・疲労なし）。何度でも挑戦できます。</p>
           ${back}`;
       }
@@ -450,6 +464,7 @@ const App = {
       resultHTML: v => `${v.placeHead(reward.place, result.finish[0].name)}
         ${v.reviewHTML()}
         ${v.resultTable(result.finish)}
+        ${v.lapHTML(result)}
         <p class="muted small center">カスタムレースはエキシビションです（賞金・経験値・疲労なし）。</p>
         <div class="btn-row">${v.three ? '<button class="btn" onclick="RaceView.replay()">🎬 ゴール前リプレイ</button>' : ''}
           ${online ? '<button class="btn primary" onclick="Online.backToLobby()">🌐 ルームに戻る</button>'

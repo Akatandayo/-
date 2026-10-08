@@ -30,6 +30,7 @@ const Pvp = {
       id: h.id, name: h.name, owner: Player.data.name, isPlayer: true,
       stats: this.capStats(h.stats, cap), aptitude: Object.assign({}, h.aptitude),
       runningStyle: h.runningStyle, skills: h.skills.slice(), turn: h.turn || '', order: 'normal',
+      traits: (h.traits || []).slice(), jockey: Jockeys.entry(h, Jockeys.defaultFor(h)),
       condition: h.condition, fatigue: h.fatigue
     };
   },
@@ -56,7 +57,7 @@ const Pvp = {
     usedNames.add(name);
     return {
       id: Util.uid('rv_'), name, owner: Util.pick(GAME_DATA.rivalOwners) + '厩舎', isPlayer: false,
-      stats: this.capStats(stats, cap), aptitude, runningStyle, skills, turn: Horse.randomTurn(), order: Race.npcOrder(runningStyle),
+      stats: this.capStats(stats, cap), aptitude, runningStyle, skills, turn: Horse.randomTurn(), order: Race.npcOrder(runningStyle), traits: Traits.random(),
       condition: Util.randInt(60, 100), fatigue: Util.randInt(0, 15)
     };
   },
@@ -144,7 +145,8 @@ const Pvp = {
       s: STAT_KEYS.map(k => h.stats[k]),
       a: [...DIST_KEYS, 'turf', 'dirt'].map(k => h.aptitude[k]),
       st: h.runningStyle, k: h.skills.slice(0, 3),
-      w: h.record.wins, rc: h.record.races, g1: h.record.g1Wins, t: h.turn || ''
+      w: h.record.wins, rc: h.record.races, g1: h.record.g1Wins, t: h.turn || '',
+      tr: (h.traitsKnown || []).slice(0, 2), j: Jockeys.defaultFor(h)
     };
     const body = this.toB64(JSON.stringify(data));
     return this.PREFIX + body + '.' + this.checksum(body);
@@ -175,6 +177,8 @@ const Pvp = {
       skills: (Array.isArray(d.k) ? d.k : []).filter(id => Skills.get(id)).slice(0, 3),
       record: { wins: num(d.w, 0, 999), races: num(d.rc, 0, 999), g1Wins: num(d.g1, 0, 999) },
       turn: d.t === 'R' || d.t === 'L' ? d.t : '',
+      traits: (Array.isArray(d.tr) ? d.tr : []).filter(id => GAME_DATA.traits[id]).slice(0, 2),
+      jockeyId: Jockeys.get(d.j) ? d.j : 'j_haruno',
       vs: { win: 0, lose: 0 },
       addedAt: Date.now()
     };
@@ -194,7 +198,8 @@ const Pvp = {
     return {
       id: 'e_' + g.id, ghostId: g.id, name: g.name, owner: g.owner + '厩舎', isPlayer: false, isGhost: true,
       stats: this.capStats(g.stats, cap), aptitude: Object.assign({}, g.aptitude),
-      runningStyle: g.runningStyle, skills: g.skills.slice(), turn: g.turn || '', order: g.order || 'normal', condition: 85, fatigue: 0
+      runningStyle: g.runningStyle, skills: g.skills.slice(), turn: g.turn || '', order: g.order || 'normal', condition: 85, fatigue: 0,
+      traits: (g.traits || []).slice(), jockey: Jockeys.entry(null, g.jockeyId || 'j_haruno')
     };
   },
 

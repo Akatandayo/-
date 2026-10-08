@@ -426,6 +426,11 @@ const UI = {
         <p class="muted small">｜の位置がこの馬の限界（素質）。調教で限界まで伸ばせます。</p>
       </section>
       <section class="panel"><h3>適性</h3>${this.aptGrid(h.aptitude, h.turn || "")}</section>
+      <section class="panel"><h3>🧬 個性${this.help('trait')}</h3>${Traits.html(h)}</section>
+      <section class="panel"><h3>🤝 チーム</h3>
+        <p>🏇 主戦騎手：${h.jockey && Jockeys.get(h.jockey) ? `<b>${Util.esc(Jockeys.get(h.jockey).name)}</b>（${Jockeys.comboLabel((h.rides || {})[h.jockey] || 0)}）` : '<span class="muted">まだいません（レースで騎手を選ぼう）</span>'}</p>
+        <p>⚔ ライバル：${h.rival ? `<b>${Util.esc(h.rival.name)}</b> <small class="muted">${Util.esc(h.rival.owner)}・${GAME_DATA.styles[h.rival.style].label}</small><br>対戦成績 <b>${h.rival.vs.win}勝${h.rival.vs.lose}敗</b>` : '<span class="muted">初めての重賞で、同期のライバルが現れます</span>'}</p>
+      </section>
       <section class="panel"><h3>脚質${this.help('style')}</h3>
         <div class="style-box"><span class="style-big">${s.icon}</span><div><b>${s.label}</b><p>${s.desc}</p></div></div>
       </section>
@@ -859,6 +864,16 @@ const UI = {
     if (d) d.textContent = `${GAME_DATA.orders[k].icon} ${GAME_DATA.orders[k].desc}`;
     if (Online.status === 'lobby') Online.setOrder(k);
   },
+  setJockey(id) {
+    const j = Jockeys.get(id);
+    if (!j || !Jockeys.unlocked(j)) return;
+    this.state.jockey = id;
+    const ctx = this.state.jockeyCtx || {};
+    const h = Player.horse(ctx.hid);
+    const el = document.querySelector('.jockey-pick');
+    if (h && el) el.outerHTML = Jockeys.picker(h, { free: ctx.free });
+  },
+
   // 馬番・人気・単勝オッズつきの出走表
   entryTable(field, opts = {}) {
     const n = field.length;
@@ -986,6 +1001,17 @@ const UI = {
           <div><small>GⅠ勝利</small><b>${p.stats.g1WinCount}</b></div>
           <div><small>レーティング</small><b>${p.pvp.rating}</b></div>
         </div>
+      </section>
+      <section class="panel"><h3>📸 思い出アルバム <small class="muted">GⅠ勝利の記念写真</small></h3>
+        ${(p.album || []).length ? `<div class="album">${p.album.map(x => Story.photoCard(x)).join('')}</div>` : '<p class="muted">GⅠを勝つと、表彰式の記念写真がここに残ります。</p>'}
+      </section>
+      <section class="panel"><h3>🏇 騎手 <small class="muted">起用した騎手の成績</small></h3>
+        <table class="hist">${GAME_DATA.jockeys.map(j => {
+          const s = (p.jockeyStats || {})[j.id];
+          const ok = Jockeys.unlocked(j);
+          return `<tr class="${ok ? '' : 'muted'}"><td><span class="jr" style="background:${Jockeys.RANK_COLOR[j.rank]}">${j.rank}</span> ${ok ? Util.esc(j.name) : '？？？'}<br><small class="muted">${ok ? GAME_DATA.jockeyTraits[j.trait].label + '・騎乗料 ' + Util.money(j.fee) : '🔒 ' + Jockeys.unlockText(j)}</small></td>
+            <td class="num">${s ? `${s.rides}騎乗 ${s.wins}勝${s.g1Wins ? `<br><small>GⅠ ${s.g1Wins}勝</small>` : ''}` : '-'}</td></tr>`;
+        }).join('')}</table>
       </section>
       ${rank('prizeMoney', '💰 獲得賞金ランキング', v => Util.money(v))}
       ${rank('wins', '🏆 勝利数ランキング', v => v + '勝')}
@@ -1353,6 +1379,33 @@ const RaceView = {
       </table></div>`;
   },
 
+  // ラップタイムとペース
+  lapHTML(result) {
+    const laps = result.laps || [];
+    if (laps.length < 3) return '';
+    const pace = Story.pace(laps);
+    return `<div class="laps"><b>⏱ ラップ</b> <span class="lap-list">${laps.map(v => v.toFixed(1)).join('-')}</span>
+      ${pace ? `<span class="pace pace-${pace.key}" title="${pace.desc}">${pace.label}</span><small class="muted">${pace.desc}</small>` : ''}</div>`;
+  },
+
+  // 騎手のコメント・個性の判明・ライバル・表彰式（JRAのレース）
+  storyHTML(reward) {
+    let html = '';
+    if (reward.rival) {
+      const r = reward.rival;
+      html += `<div class="rival-box ${r.won ? 'won' : 'lost'}">⚔ ${r.first ? '宿命のライバル登場！ ' : ''}<b>${Util.esc(r.name)}</b>（${Util.esc(r.owner)}）に${r.won ? '先着！' : '先着を許した…'}
+        <small>ライバル対決 ${r.vs.win}勝${r.vs.lose}敗</small></div>`;
+    }
+    (reward.traitsFound || []).forEach(t => { html += `<div class="trait-found">🧬 個性「${t.icon} ${t.label}」が判明！<small>${t.desc}</small></div>`; });
+    if (reward.interview && reward.interview.text) {
+      html += `<div class="interview"><div class="iv-head">🎤 ${reward.place === 1 ? '勝利騎手インタビュー' : '騎手のコメント'}：${Util.esc(reward.interview.jockey)}</div><p>「${Util.esc(reward.interview.text)}」</p></div>`;
+    }
+    if (reward.album) {
+      html += `<div class="ceremony"><h3>🏆 表彰式</h3>${Story.photoCard(reward.album)}<p class="muted small center">📸 記念写真を「記録 → 思い出アルバム」に保存しました</p></div>`;
+    }
+    return html;
+  },
+
   // レースのふり返り：自分の馬の人気・作戦・アクシデント・上がり
   reviewHTML() {
     const { result } = this.ctx;
@@ -1401,11 +1454,13 @@ const RaceView = {
         ${this.legendHTML(reward.legends)}
         ${reward.rightTo ? `<p class="center ok big-note">🎫「${reward.rightTo.name}」の優先出走権を獲得！</p>` : ''}
         ${reward.bonus ? `<p class="center ok big-note">🎯 ${reward.pop}番人気で大金星！ ボーナス +${Util.money(reward.bonus)}</p>` : ''}
+        ${this.storyHTML(reward)}
         ${this.reviewHTML()}
         ${this.resultTable(fin)}
+        ${this.lapHTML(result)}
         <h3>🎁 報酬</h3>
         <div class="rewards">
-          <div>💰 賞金 <b>${Util.money(reward.prize)}</b></div>
+          <div>💰 賞金 <b>${Util.money(reward.prize)}</b>${reward.stake ? `<small class="muted">（うち進上金 -${Util.money(reward.stake)} 支払い済み）</small>` : ''}</div>
           <div>✨ 経験値 <b>+${reward.exp}</b>${reward.levelUps ? ` <span class="ok">レベルアップ！ Lv.${h ? h.level : ''}</span>` : ''}</div>
           ${reward.birthday && h ? `<div>🎂 ${Util.esc(h.name)}は${h.age}歳になりました！</div>` : ''}
         </div>

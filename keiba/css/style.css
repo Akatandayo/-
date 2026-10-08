@@ -882,3 +882,64 @@ html, body { overflow-x: hidden; }
 @keyframes photoIn { from { transform: scale(1.2) rotate(2deg); opacity: 0; } to { transform: rotate(-1.5deg); opacity: 1; } }
 @keyframes pfBlink { 50% { opacity: .55; } }
 .r3-banner.incident { background: linear-gradient(90deg, rgba(198,40,40,.92), rgba(120,20,20,.92)); }
+
+/* ───────── v10：騎手・個性・ライバル・アルバム・掲示板 ───────── */
+.jockey-pick { background: #eef3f8; border-radius: 12px; padding: 8px 10px; margin: 8px 0; }
+.jockey-pick h4 { margin: 0 0 6px; }
+.jockey-pick .chips { flex-wrap: wrap; }
+.jockey-pick .chips button { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 5px 9px; border-radius: 10px; border: 2px solid #cdd8e3; background: #fff; font-weight: 800; font-size: 12px; color: var(--ink); min-width: 74px; }
+.jockey-pick .chips button.active { border-color: #2563eb; background: #e8f0ff; }
+.jockey-pick .chips button.locked { opacity: .45; }
+.jockey-pick .chips button small { font-size: 10px; color: var(--muted); font-weight: 700; }
+.jockey-pick p { margin: 6px 0 0; }
+.jr { display: inline-block; min-width: 18px; padding: 0 4px; border-radius: 4px; color: #fff; font-size: 10px; font-weight: 900; text-align: center; }
+.trait-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.trait { display: inline-flex; flex-direction: column; background: #fff3e0; border: 1px solid #ffcc80; border-radius: 10px; padding: 5px 10px; font-weight: 800; }
+.trait small { font-weight: 400; font-size: 11px; color: var(--muted); }
+.trait.unknown { background: #f1f1f1; border-color: #ddd; color: #888; }
+.trait.none { background: #f4f4f4; border-color: #e3e3e3; color: #888; }
+.rival-box { border-radius: 12px; padding: 8px 12px; margin: 8px 0; font-weight: 700; background: linear-gradient(90deg, #f3e5f5, #ede7f6); border-left: 5px solid #8e24aa; }
+.rival-box.won { border-left-color: #2e7d32; }
+.rival-box small { display: block; font-weight: 400; color: var(--muted); }
+.trait-found { background: #fff8e1; border: 2px dashed #ffb300; border-radius: 12px; padding: 8px 12px; margin: 8px 0; font-weight: 900; animation: popIn .5s; }
+.trait-found small { display: block; font-weight: 400; color: var(--muted); }
+.interview { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; margin: 8px 0; box-shadow: 0 2px 6px rgba(0,0,0,.06); }
+.interview .iv-head { font-weight: 900; color: #1f6b4a; font-size: 13px; }
+.interview p { margin: 4px 0 0; line-height: 1.6; }
+.laps { margin: 8px 0; font-size: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.laps .lap-list { font-family: ui-monospace, Menlo, Consolas, monospace; background: #f4f0e4; border-radius: 6px; padding: 2px 6px; word-break: break-all; }
+.pace { color: #fff; border-radius: 999px; padding: 1px 8px; font-weight: 900; }
+.pace-H { background: #d84315; } .pace-M { background: #6d4c41; } .pace-S { background: #1565c0; }
+.ceremony { background: radial-gradient(circle at 50% 0, #fff6d5, #fff 70%); border: 2px solid #f5b301; border-radius: 14px; padding: 8px 12px; margin: 10px 0; }
+.ceremony h3 { text-align: center; margin: 4px 0 8px; }
+.album { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.album-card { display: flex; gap: 10px; background: #fffdf6; border: 1px solid #ecdcae; border-radius: 12px; padding: 8px; }
+.album-photo { position: relative; flex: 0 0 96px; height: 96px; border-radius: 10px; overflow: hidden; background: linear-gradient(#bfe0ff, #8fcf7d); border: 4px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.2); transform: rotate(-2deg); }
+.album-photo .pt, .album-photo .pt img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.album-photo .trophy { position: absolute; right: 2px; bottom: 0; font-size: 26px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
+.album-info { min-width: 0; font-size: 13px; }
+.album-comment { margin: 4px 0 0; font-size: 12px; color: #5a4a2a; line-height: 1.5; }
+@keyframes popIn { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* 3D：着順掲示板 */
+.r3-board { position: absolute; right: 104px; bottom: 74px; width: 150px; background: #101010; border: 3px solid #3a3a3a; border-radius: 6px; padding: 6px 8px;
+  font-family: ui-monospace, Menlo, Consolas, monospace; color: #ffb300; opacity: 0; transform: translateY(10px); transition: opacity .4s, transform .4s; pointer-events: none; z-index: 3; }
+.r3-board.show { opacity: 1; transform: none; }
+.r3-board .bd-head { color: #fff; font-family: inherit; font-size: 11px; font-weight: 900; letter-spacing: .3em; text-align: center; border-bottom: 1px solid #333; margin-bottom: 3px; }
+.r3-board .bd-row { display: grid; grid-template-columns: 18px 34px 1fr; align-items: center; font-weight: 900; text-shadow: 0 0 6px rgba(255,179,0,.7); }
+.r3-board .bd-pl { color: #fff; font-size: 12px; text-shadow: none; }
+.r3-board .bd-num { font-size: 20px; text-align: center; }
+.r3-board .bd-mg { font-size: 11px; text-align: right; }
+.r3-board .bd-time { border-top: 1px solid #333; margin-top: 3px; padding-top: 2px; font-size: 16px; font-weight: 900; text-align: center; text-shadow: 0 0 6px rgba(255,179,0,.7); }
+.r3-board .bd-time small { display: block; font-size: 10px; }
+.r3-board .bd-lamps { display: flex; gap: 6px; justify-content: center; margin-top: 4px; }
+.r3-board .lamp { font-size: 11px; font-weight: 900; padding: 1px 6px; border-radius: 3px; background: #2a2a2a; color: #555; text-shadow: none; }
+.r3-board.photo .lamp.photo { background: #fdd835; color: #111; animation: pfBlink .8s infinite; }
+.r3-board.fixed .lamp.fix { background: #e53935; color: #fff; box-shadow: 0 0 10px #e53935; }
+
+/* 3D：コース全景のミニマップ */
+.r3-mini { position: absolute; right: 10px; top: 76px; width: 128px; height: 82px; background: rgba(6, 24, 16, .62); border-radius: 10px; padding: 4px; z-index: 2; pointer-events: none; }
+.r3-mini .mini-track { fill: none; stroke: #6fbf73; stroke-width: 22; stroke-linejoin: round; }
+.r3-mini .mini-start { fill: #fff; opacity: .8; }
+.r3-mini .mini-goal { fill: #ff5252; }
+@media (max-width: 560px) { .r3-mini { width: 92px; height: 60px; top: 62px; } .r3-board { width: 118px; right: 10px; bottom: 64px; } .r3-board .bd-num { font-size: 16px; } }
