@@ -816,6 +816,80 @@ html, body { overflow-x: hidden; }
 .lobby-list li.me { background: #fff2df; }
 .spinner { width: 38px; height: 38px; margin: 10px auto; border-radius: 50%; border: 4px solid #d5e5dc; border-top-color: #1f8a5b; animation: spin .9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ───────── v9：出走表・作戦・成績表・写真判定 ───────── */
+.entry-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 4px 0 10px; }
+.entry-table th { font-size: 11px; color: var(--muted); text-align: left; border-bottom: 2px solid var(--line); padding: 3px 4px; }
+.entry-table td { border-bottom: 1px solid var(--line); padding: 4px; vertical-align: middle; }
+.entry-table td:nth-child(2), .entry-table td:nth-child(4), .entry-table td:nth-child(5) { white-space: nowrap; }
+.entry-table td:last-child { text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
+.entry-table tr.me td { background: #ffe1d6; font-weight: 800; }
+.entry-table tr.is-legend td { background: #fff7d6; }
+.entry-table td.fav { color: #c62828; font-weight: 900; }
+.entry-table small { font-weight: 400; }
+.me-mark { color: #e8552d; font-size: 11px; }
+.waku { display: inline-block; width: 20px; height: 20px; line-height: 20px; text-align: center; border-radius: 4px; font-weight: 900; font-size: 12px; border: 1px solid rgba(0,0,0,.25); }
+.order-pick { background: #f4f0e4; border-radius: 12px; padding: 8px 10px; margin: 8px 0; }
+.order-pick h4 { margin: 0 0 6px; }
+.order-pick .chips { flex-wrap: wrap; }
+.order-pick .chips button { position: relative; padding: 7px 10px; border-radius: 999px; border: 2px solid #d9cfb8; background: #fff; font-weight: 800; font-size: 13px; color: var(--ink); }
+.order-pick .chips button.active { border-color: #e8552d; background: #fff1ea; color: #c2410c; }
+.order-pick .rec-dot { display: block; font-size: 9px; color: #1f8a5b; line-height: 1; }
+.order-pick p { margin: 6px 0 0; }
+.ev.incident { background: #ffebee; border-left: 4px solid #e53935; }
+.ev.incident.me { background: #ffcdd2; font-weight: 800; }
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.result-table td, .result-table th { white-space: nowrap; }
+.result-table td:nth-child(2) { white-space: normal; min-width: 120px; }
+.result-table td.fav { color: #c62828; font-weight: 900; }
+.result-table td.pass { font-size: 11px; color: var(--muted); }
+.result-table td.best3f { color: #d84315; font-weight: 900; }
+.result-table .gnum { display: inline-block; min-width: 18px; margin-right: 3px; font-size: 10px; color: var(--muted); }
+.result-table .ord { margin-left: 4px; }
+.review { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 8px 0 10px; }
+.review span { background: #f4f0e4; border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 700; }
+.turn-pref { font-weight: 800; padding: 4px 2px; }
+
+/* 3D：ゲートイン中の出走表 */
+.r3-card { position: absolute; left: 50%; top: 52px; transform: translate(-50%, -8px); width: min(560px, 86%); max-height: calc(100% - 130px);
+  background: rgba(8, 24, 18, .86); color: #fff; border: 1px solid rgba(255, 215, 94, .5); border-radius: 12px; padding: 8px 10px;
+  opacity: 0; pointer-events: none; transition: opacity .5s, transform .5s; overflow: hidden; z-index: 3; }
+.r3-card.show { opacity: 1; transform: translate(-50%, 0); }
+.r3-card-h { font-weight: 900; color: #ffd75e; font-size: 13px; margin-bottom: 4px; }
+.r3-card-h small { color: #fff; opacity: .8; font-weight: 700; margin-left: 6px; }
+.r3-card-list { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; }
+.r3-card-row { display: flex; align-items: center; gap: 5px; font-size: 12px; padding: 1px 0; min-width: 0; }
+.r3-card-row.me { color: #ffb38a; }
+.r3-card-row .num { min-width: 18px; height: 18px; line-height: 18px; text-align: center; border-radius: 3px; font-weight: 900; font-size: 11px; }
+.r3-card-row img { width: 18px; height: 18px; }
+.r3-card-row b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.r3-card-row .pop { font-size: 11px; opacity: .85; }
+.r3-card-row .pop.fav { color: #ff8a80; font-weight: 900; opacity: 1; }
+.r3-card-row .odds { width: 38px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 800; }
+@media (max-width: 560px) {
+  .r3-card { top: 40px; width: 94%; padding: 5px 7px; max-height: calc(100% - 96px); }
+  .r3-card-h { font-size: 11px; margin-bottom: 2px; }
+  .r3-card-list { gap: 0 8px; }
+  .r3-card-row { font-size: 10px; gap: 3px; padding: 0; }
+  .r3-card-row img, .r3-card-row .odds { display: none; }
+  .r3-card-row .num { min-width: 14px; height: 14px; line-height: 14px; font-size: 9px; }
+  .r3-card-row .pop { font-size: 9px; }
+}
+
+/* 3D：写真判定 */
+.r3-photo { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  background: rgba(0, 0, 0, .55); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 4; }
+.r3-photo.show { opacity: 1; }
+.r3-photo-frame { position: relative; width: 72%; max-width: 640px; border: 6px solid #f5f1e6; box-shadow: 0 10px 30px rgba(0,0,0,.5); transform: rotate(-1.5deg); background: #222; }
+.r3-photo.show .r3-photo-frame { animation: photoIn .35s ease-out; }
+.r3-photo-frame img { display: block; width: 100%; filter: grayscale(.85) sepia(.25) contrast(1.15); }
+.r3-photo-line { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: rgba(255, 40, 40, .85); }
+.r3-photo-label { background: #111; color: #fff; font-weight: 900; padding: 6px 16px; border-radius: 999px; font-size: 16px; animation: pfBlink 1s infinite; }
+.r3-photo.decided .r3-photo-label { animation: none; background: #c62828; font-size: 18px; }
+.r3-photo-label .num { display: inline-block; min-width: 22px; text-align: center; border-radius: 4px; padding: 0 4px; }
+@keyframes photoIn { from { transform: scale(1.2) rotate(2deg); opacity: 0; } to { transform: rotate(-1.5deg); opacity: 1; } }
+@keyframes pfBlink { 50% { opacity: .55; } }
+.r3-banner.incident { background: linear-gradient(90deg, rgba(198,40,40,.92), rgba(120,20,20,.92)); }
 </style>
 </head>
 <body>
@@ -1246,6 +1320,15 @@ GAME_DATA.venuesByMonth = [
   ['福島', '小倉'], ['新潟', '札幌'], ['中山', '阪神'], ['東京', '京都'], ['東京', '京都'], ['中山', '阪神']
 ];
 
+// 作戦（レース前に騎手へ出す指示）。効果は race.js の Race.ORDER_FX
+GAME_DATA.orders = {
+  normal: { label: 'いつも通り', icon: '🤝', desc: '脚質どおりに走る。迷ったらこれ。' },
+  push: { label: '積極策', icon: '🔥', desc: '前半から前へ。直線の短いコースで粘り込む。体力を多く使い、掛かりやすい。' },
+  hold: { label: '脚をためる', icon: '🧘', desc: '前半は控えて体力を温存し、直線で爆発。長い直線向き。前が壁になることも。' },
+  early: { label: '早めスパート', icon: '⏩', desc: '3〜4コーナーから早めに仕掛ける。スタミナ自慢・長距離向き。' },
+  inside: { label: '内を突く', icon: '↪️', desc: '最短距離を通って体力を節約。ただし直線で前が壁になりやすい。' }
+};
+
 // 競馬場のコース（実際のレイアウトのおおよその値）
 // dir：R=右回り・L=左回り、P：1周の距離(m)、L：最後の直線(m)
 // outer：外回りコース（d に含まれる距離で使う）、straight：直線コースの距離
@@ -1315,7 +1398,11 @@ GAME_DATA.glossary = {
   stamina: { title: '❤️ スタミナ', body: 'レース中の体力。長い距離では、スタミナが足りないと最後にバテて失速します。' },
   power: { title: '💪 パワー', body: '加速力に関係します。雨で馬場が重いときにも強くなります。' },
   guts: { title: '🔥 根性', body: 'バテた時や、他の馬と競り合う最終直線で粘る力です。' },
-  intelligence: { title: '🧠 賢さ', body: 'スキルが発動しやすくなり、レースでの走りも安定します。' },
+  intelligence: { title: '🧠 賢さ', body: 'スキルが発動しやすくなり、レースでの走りも安定します。賢い馬は出遅れ・掛かり・前が壁といったアクシデントも起こしにくくなります。' },
+  order: { title: '🗣 作戦', body: 'レース前に騎手へ出す指示です。<br>🔥積極策：直線が短いコースで前に残る／🧘脚をためる：長い直線で末脚爆発／⏩早めスパート：スタミナ自慢向き／↪️内を突く：体力を節約できるが前が壁になりやすい。<br>脚質とコースに合った作戦を選ぶと勝ちやすくなります（「おすすめ」が目安）。' },
+  popularity: { title: '📊 人気・単勝オッズ', body: '出走馬の強さから見積もった予想です。1番人気が一番勝ちそうな馬。4番人気以下で勝つと「大金星ボーナス」で賞金が増えます（最大+50%）。' },
+  turn: { title: '🔄 右回り・左回り', body: '馬によって得意な回りがあります（◎得意・△少し苦手）。東京・中京・新潟は左回り、それ以外は右回りです。' },
+  incident: { title: '⚠ アクシデント', body: '出遅れ：スタートで遅れる／掛かり：前半に力んで体力を使う／前が壁：直線で進路がなく減速する。賢さが高く、調子が良いほど起きにくくなります。' },
   distance: { title: '📏 距離適性', body: 'その馬が得意な距離です。★が多い距離のレースに出ると力を発揮できます。<br>スプリント（〜1400m）／マイル（〜1800m）／クラシック（〜2400m）／ロング（2401m〜）' },
   surface: { title: '🌱 馬場適性', body: '「芝」は草のコース、「ダート」は砂のコース。得意な方で走らせよう。' },
   ground: { title: '🌧️ 馬場状態', body: '良 → 稍重 → 重 → 不良 の順に、雨で地面がぬかるみます。重い馬場ではパワーがある馬が有利です。' },
@@ -3336,6 +3423,7 @@ const Player = {
       if (!h.rights) h.rights = [];
       if (!h.titles) h.titles = [];
       if (h.actedAt === undefined) h.actedAt = -1;
+      if (h.turn === undefined) h.turn = Horse.randomTurn();
       // v8：限界値アップに上限ができたので、以前のセーブで上がりすぎた限界値を整える
       if (h.capBoost === undefined) {
         h.capBoost = 0;
@@ -3443,6 +3531,7 @@ const Horse = {
       stats: Object.assign({ speed: 50, stamina: 50, power: 50, guts: 50, intelligence: 50 }, opts.stats),
       caps: Object.assign({}, opts.caps || opts.stats),
       capBoost: 0,          // アイテムで上げた限界値（上限 GAME_DATA.capBoostMax）
+      turn: opts.turn !== undefined ? opts.turn : this.randomTurn(),   // 得意な回り（R/L/''）
       aptitude: Object.assign({ sprint: 50, mile: 50, classic: 50, long: 50, turf: 50, dirt: 50 }, opts.aptitude),
       runningStyle: opts.runningStyle || 'senko',
       growthType: opts.growthType || 'normal',
@@ -3476,6 +3565,10 @@ const Horse = {
     const f = Cards.get(h.fatherId), m = Cards.get(h.motherId);
     return f && m ? Breeding.pedigreeOf(f, m) : { f: null, m: null, ff: null, fm: null, mf: null, mm: null };
   },
+
+  // 得意な回り：右回り・左回り・どちらでも
+  randomTurn() { const r = Math.random(); return r < 0.3 ? 'R' : r < 0.6 ? 'L' : ''; },
+  turnLabel(t) { return t === 'R' ? '右回り◎・左回り△' : t === 'L' ? '左回り◎・右回り△' : '右回り○・左回り○'; },
 
   distCat(distance) {
     return GAME_DATA.distances.find(d => distance <= d.max).key;
@@ -3955,6 +4048,16 @@ const Race = {
   // 脚質ごとの体力消費（前に行くほど消耗する）
   styleCost: { nige: 1.05, senko: 1.02, sashi: 1.0, oikomi: 0.98 },
 
+  // 作戦（騎手への指示）の効果。early：前半の速度、final：最後の速度、cost：体力消費、
+  // spurt：スパートを始める位置を何m早めるか、kakari：掛かりやすさ、block：前が壁になりやすさ
+  ORDER_FX: {
+    normal: {},
+    push: { early: 1.005, final: 0.99, cost: 1.07, kakari: 1.6 },
+    hold: { early: 0.996, final: 1.014, cost: 0.94, kakari: 0.6, block: 1.4 },
+    early: { spurt: 140, corner: 1.003, final: 0.993 },
+    inside: { cost: 0.965, block: 2.4 }
+  },
+
   gradeInfo(race) { return GAME_DATA.grades[race.grade]; },
 
   AGE_LABEL: { '2': '2歳', '3': '3歳', '3+': '3歳以上', '4+': '4歳以上' },
@@ -4133,16 +4236,21 @@ const Race = {
     }
     return {
       id: Util.uid('npc_'), name: Horse.randomName(), isPlayer: false,
-      stats, aptitude, runningStyle, skills,
+      stats, aptitude, runningStyle, skills, turn: Horse.randomTurn(), order: this.npcOrder(runningStyle),
       condition: Util.randInt(55, 100), fatigue: Util.randInt(0, 20)
     };
+  },
+
+  // CPUの作戦（たいていはいつも通り）
+  npcOrder(style) {
+    return Util.weighted({ normal: 70, push: style === 'nige' || style === 'senko' ? 10 : 4, hold: style === 'sashi' || style === 'oikomi' ? 10 : 4, early: 7, inside: 6 });
   },
 
   buildField(h, race) {
     const entrants = [{
       id: h.id, name: h.name, isPlayer: true,
       stats: Object.assign({}, h.stats), aptitude: Object.assign({}, h.aptitude),
-      runningStyle: h.runningStyle, skills: h.skills.slice(),
+      runningStyle: h.runningStyle, skills: h.skills.slice(), turn: h.turn || '', order: 'normal',
       condition: h.condition, fatigue: h.fatigue
     }];
     const used = new Set([h.name]);
@@ -4166,6 +4274,40 @@ const Race = {
       [entrants[i], entrants[j]] = [entrants[j], entrants[i]];
     }
     return entrants;
+  },
+
+  // ── 人気・単勝オッズ ──
+  // 能力・適性・調子・スキルから「強さ」を見積もり、ロジットで勝率にする（係数はシミュレーションで調整）
+  ODDS_K: 0.27,
+  DIST_WEIGHTS: {
+    sprint: { speed: 0.4, power: 0.25, guts: 0.15, stamina: 0.08, intelligence: 0.12 },
+    mile: { speed: 0.36, power: 0.2, guts: 0.15, stamina: 0.17, intelligence: 0.12 },
+    classic: { speed: 0.3, power: 0.17, guts: 0.15, stamina: 0.26, intelligence: 0.12 },
+    long: { speed: 0.24, power: 0.14, guts: 0.16, stamina: 0.34, intelligence: 0.12 }
+  },
+  strength(e, race, ground) {
+    const cat = Horse.distCat(race.distance);
+    const w = this.DIST_WEIGHTS[cat];
+    const s = e.stats;
+    let v = STAT_KEYS.reduce((sum, k) => sum + Math.min(s[k], 130) * w[k], 0);
+    const mul = (0.93 + 0.07 * e.aptitude[cat] / 100) * (0.96 + 0.04 * e.aptitude[race.surface] / 100)
+      * (1 - (ground || 0) * 0.006 * (1 - Math.min(s.power, 120) / 130))
+      * (0.98 + 0.02 * e.condition / 100) * (1 - 0.025 * (e.fatigue || 0) / 100);
+    v += Math.log(mul) * 160;
+    (e.skills || []).forEach(id => { const sk = Skills.get(id); if (sk) v += sk.rarity === 'UR' ? 2.2 : sk.rarity === 'SSR' ? 1.6 : 1; });
+    return v;
+  },
+  // field に pop（人気）と odds（単勝オッズ）を書き込む
+  setOdds(race, field, ground) {
+    const sc = field.map(e => this.strength(e, race, ground));
+    const mx = Math.max(...sc);
+    const ex = sc.map(v => Math.exp((v - mx) * this.ODDS_K));
+    const sum = ex.reduce((a, b) => a + b, 0);
+    const p = ex.map(v => v / sum);
+    const rank = p.map((v, i) => i).sort((a, b) => p[b] - p[a]);
+    rank.forEach((i, r) => { field[i].pop = r + 1; });
+    field.forEach((e, i) => { e.odds = Math.round(Util.clamp(0.8 / p[i], 1.1, 999.9) * 10) / 10; });
+    return field;
   },
 
   // コースのレイアウト（回り・1周・直線の長さ）。会場が無いレースは東京扱い
@@ -4228,20 +4370,35 @@ const Race = {
     const courseK = cx > 0 ? Math.min(cx, 1) * 0.012 : Math.max(cx, -0.6) * 0.006;
     const courseBias = { nige: -1, senko: -0.6, sashi: 0.6, oikomi: 1 };
 
+    // 通過順を記録する地点（おおよそのコーナー）と、上がり3Fの起点
+    const marks = [...new Set([D * 0.3, D * 0.55, D - Math.min(course.L, D * 0.35) - 200, D - Math.min(course.L, D * 0.35)]
+      .map(Math.round).filter(m => m > 100 && m < D - 100))].sort((a, b) => a - b);
+    const passCount = marks.map(() => 0);
+    const last3 = Math.max(0, D - 600);
+
     const runners = entrants.map((e, gate) => {
       const s = e.stats;
-      const aptMul = (0.93 + 0.07 * e.aptitude[distCat] / 100) * (0.96 + 0.04 * e.aptitude[race.surface] / 100);
+      const fx = this.ORDER_FX[e.order] || this.ORDER_FX.normal;
+      // 右回り・左回りの得意不得意（直線コースは関係なし）
+      const turnMul = e.turn && !course.straight ? (e.turn === course.dir ? 1.004 : 0.994) : 1;
+      const aptMul = (0.93 + 0.07 * e.aptitude[distCat] / 100) * (0.96 + 0.04 * e.aptitude[race.surface] / 100) * turnMul;
       const groundMul = 1 - ground * 0.006 * (1 - Math.min(s.power, 120) / 130);
       const condMul = (0.98 + 0.02 * e.condition / 100) * (1 - 0.025 * e.fatigue / 100);
       const form = 1 + Util.gauss() * 0.004 * (1.2 - s.intelligence / 250);
       const skills = e.skills.map(id => Skills.get(id)).filter(Boolean)
         .sort((a, b) => Skills.priority(b) - Skills.priority(a));
       const maxHp = 300 + s.stamina * 22 + s.guts * 4;
+      // アクシデント：賢さが低い・調子が悪いほど起きやすい
+      const careless = Util.clamp(1.25 - s.intelligence / 160, 0.35, 1.2) * (e.condition < 45 ? 1.4 : 1);
+      const late = Math.random() < 0.06 * careless;
+      const kakari = Math.random() < 0.07 * careless * (fx.kakari || 1);
       return {
-        e, gate, pos: 0, v: 0, hp: maxHp, maxHp,
+        e, gate, fx, pos: late ? -(3 + Math.random() * 5) : 0, v: 0, hp: maxHp, maxHp,
         mul: aptMul * groundMul * condMul * form,
         skills, usedSkills: new Set(), active: [],
-        finished: false, time: null, exhaustedLogged: false
+        finished: false, time: null, exhaustedLogged: false,
+        late, kakariAt: kakari ? startEnd * 0.6 + Math.random() * Math.max(50, cornerStart - startEnd) : null, kakariUntil: 0,
+        careless, blocked: false, blockUntil: 0, passing: [], t600: null
       };
     });
 
@@ -4265,6 +4422,8 @@ const Race = {
     const name = r => r.e.name;
 
     checkpoint('start', 'スタート', 0, `${race.name}、各馬いっせいにスタート！`);
+    const incident = (t, r, kind, text) => events.push({ t: Math.round(t * 10) / 10, type: 'incident', kind, horseId: r.e.id, isPlayer: r.e.isPlayer, text });
+    runners.filter(r => r.late).forEach(r => incident(0.5, r, 'late', `${name(r)}、出遅れた！`));
     let t = 0, lastLeader = null, nextFrame = 0;
     const maxT = D / 8;
     while (runners.some(r => !r.finished) && t < maxT) {
@@ -4302,10 +4461,12 @@ const Race = {
       lastLeader = ranked[0];
 
       // ── 各馬の移動 ──
+      ranked.forEach(r => { r.pos0 = r.pos; });   // この刻みの開始位置（前が壁の判定用）
       ranked.forEach((r, idx) => {
         if (r.finished) return;
         const s = r.e.stats;
-        const phase = phaseAt(r.pos);
+        const fx = r.fx;
+        const phase = phaseAt(r.pos + (fx.spurt || 0));   // 早仕掛けは早めにスパート
         const rank = idx + 1;
         const remain = D - r.pos;
 
@@ -4335,8 +4496,29 @@ const Race = {
         const sp = stylePhaseAt(r.pos);
         let target = base * this.styleMult[r.e.runningStyle][sp] * r.mul * skillMul;
         if (sp === 'final') target *= 1 + courseK * courseBias[r.e.runningStyle];
+        // 作戦
+        if ((sp === 'start' || sp === 'mid') && fx.early) target *= fx.early;
+        if (sp === 'corner' && fx.corner) target *= fx.corner;
+        if (phase === 'final' && fx.final) target *= fx.final;
         target *= 1 + Util.gauss() * 0.002;
-        let costMul = 1;
+        let costMul = fx.cost || 1;
+        // 掛かり：前半に力んで体力を使ってしまう
+        if (r.kakariAt !== null && r.pos >= r.kakariAt && !r.kakariUntil) {
+          r.kakariUntil = t + 6 + Math.random() * 4;
+          incident(t, r, 'kakari', `${name(r)}、掛かっている！ 折り合いがつかない！`);
+        }
+        if (t < r.kakariUntil) { target *= 1.02; costMul *= 1.7; }
+        // 前が壁：直線で前の馬にふさがれる（差し・追込や内を突く作戦で起きやすい）
+        if (phase === 'final' && !r.blocked && rank >= 3 && remain > 120) {
+          const wall = ranked.some(o => o !== r && !o.finished && o.pos0 - r.pos0 > 0.4 && o.pos0 - r.pos0 < 3);
+          const prone = (r.e.runningStyle === 'sashi' || r.e.runningStyle === 'oikomi' ? 1 : 0.4) * (fx.block || 1);
+          if (wall && Math.random() < 0.012 * prone * r.careless * this.DT * 2) {
+            r.blocked = true;
+            r.blockUntil = t + 1.5 + Math.random() * 1.5;
+            incident(t, r, 'block', `${name(r)}、前が壁！ 進路がない！`);
+          }
+        }
+        if (t < r.blockUntil) target *= 0.95;
         if (phase === 'final' && r.hp > 0) {
           target *= 1.02 + s.guts * 0.0001; // ラストスパート
           costMul = 1.4;
@@ -4356,6 +4538,9 @@ const Race = {
         r.hp -= move * 0.75 * Math.pow(r.v / 16.5, 2) * costMul * this.styleCost[r.e.runningStyle];
         const prev = r.pos;
         r.pos += move;
+        // 通過順と上がり3F
+        marks.forEach((m, i) => { if (prev < m && r.pos >= m) r.passing[i] = ++passCount[i]; });
+        if (prev < last3 && r.pos >= last3) r.t600 = t + this.DT * ((last3 - prev) / (r.pos - prev));
         if (r.pos >= D) {
           r.finished = true;
           r.time = t + this.DT * ((D - prev) / (r.pos - prev));
@@ -4379,7 +4564,10 @@ const Race = {
         id: r.e.id, name: r.e.name, isPlayer: r.e.isPlayer, legendId: r.e.legendId, place: i + 1,
         style: r.e.runningStyle,
         time: r.time,
-        margin: prev ? this.marginText((r.time - prev.time) * r.v / 2.4) : ''
+        margin: prev ? this.marginText((r.time - prev.time) * r.v / 2.4) : '',
+        passing: marks.map((m, i) => r.passing[i] || runners.length),
+        last3f: r.time !== null && r.t600 !== null && D >= 1000 ? Math.round((r.time - r.t600) * 10) / 10 : null,
+        pop: r.e.pop || null, odds: r.e.odds || null, order: r.e.order || 'normal'
       };
     });
     const second = final[1];
@@ -4391,9 +4579,9 @@ const Race = {
     return {
       raceId: race.id, name: race.name, grade: race.grade, distance: D, surface: race.surface,
       distCat, ground, venue: course.venue, course,
-      entrants: runners.map(r => ({ id: r.e.id, name: r.e.name, owner: r.e.owner || '', isPlayer: r.e.isPlayer, isGhost: !!r.e.isGhost, legendId: r.e.legendId, coat: r.e.coat, style: r.e.runningStyle, gate: r.gate + 1 })),
+      entrants: runners.map(r => ({ id: r.e.id, name: r.e.name, owner: r.e.owner || '', isPlayer: r.e.isPlayer, isGhost: !!r.e.isGhost, legendId: r.e.legendId, coat: r.e.coat, style: r.e.runningStyle, gate: r.gate + 1, pop: r.e.pop || null, odds: r.e.odds || null, order: r.e.order || 'normal' })),
       finish, events: events.sort((a, b) => a.t - b.t), frames,
-      phases: { startEnd, cornerStart, finalStart }
+      phases: { startEnd, cornerStart, finalStart }, marks
     };
   },
 
@@ -4421,7 +4609,11 @@ const Race = {
     const me = result.finish.find(f => f.isPlayer);
     const place = me.place;
     const g = this.gradeInfo(race);
-    const prize = Math.round((race.prize || g.prize) * (this.PRIZE_RATE[place - 1] || 0));
+    const basePrize = Math.round((race.prize || g.prize) * (this.PRIZE_RATE[place - 1] || 0));
+    // 大金星ボーナス：4番人気以下で勝つと賞金が増える（最大+50%）
+    const upset = place === 1 && me.pop >= 4 ? Math.min(0.5, 0.06 * (me.pop - 3)) : 0;
+    const bonus = Math.round(basePrize * upset);
+    const prize = basePrize + bonus;
     const exp = Math.round(g.exp * (place === 1 ? 1.5 : place <= 3 ? 1.1 : 0.7));
 
     const rec = h.record;
@@ -4487,7 +4679,7 @@ const Race = {
     const legends = typeof Legends !== 'undefined' ? Legends.applyResult(race, result) : { met: [], beaten: [], card: null };
     if (legends.card) cards.push(Object.assign({ legend: true }, legends.card));
 
-    return { place, prize, exp, cards, levelUps, birthday, field: result.finish.length, newRecord: newRecord && !!prevRec, rightTo, legends };
+    return { place, prize, bonus, pop: me.pop, exp, cards, levelUps, birthday, field: result.finish.length, newRecord: newRecord && !!prevRec, rightTo, legends };
   }
 };
 </script>
@@ -4523,7 +4715,7 @@ const Pvp = {
     return {
       id: h.id, name: h.name, owner: Player.data.name, isPlayer: true,
       stats: this.capStats(h.stats, cap), aptitude: Object.assign({}, h.aptitude),
-      runningStyle: h.runningStyle, skills: h.skills.slice(),
+      runningStyle: h.runningStyle, skills: h.skills.slice(), turn: h.turn || '', order: 'normal',
       condition: h.condition, fatigue: h.fatigue
     };
   },
@@ -4550,7 +4742,7 @@ const Pvp = {
     usedNames.add(name);
     return {
       id: Util.uid('rv_'), name, owner: Util.pick(GAME_DATA.rivalOwners) + '厩舎', isPlayer: false,
-      stats: this.capStats(stats, cap), aptitude, runningStyle, skills,
+      stats: this.capStats(stats, cap), aptitude, runningStyle, skills, turn: Horse.randomTurn(), order: Race.npcOrder(runningStyle),
       condition: Util.randInt(60, 100), fatigue: Util.randInt(0, 15)
     };
   },
@@ -4577,7 +4769,8 @@ const Pvp = {
     const used = new Set([h.name]);
     const field = [this.playerEntrant(h, league.statCap)];
     while (field.length < this.FIELD) field.push(this.makeRival(league.npc, course, league.statCap, used, league.id === 'gold'));
-    return { kind: 'league', league, race, field: this.shuffle(field), ground: Race.rollGround(race) };
+    const ground = Race.rollGround(race);
+    return { kind: 'league', league, race, field: Race.setOdds(race, this.shuffle(field), ground), ground };
   },
 
   applyLeague(h, match, result) {
@@ -4637,7 +4830,7 @@ const Pvp = {
       s: STAT_KEYS.map(k => h.stats[k]),
       a: [...DIST_KEYS, 'turf', 'dirt'].map(k => h.aptitude[k]),
       st: h.runningStyle, k: h.skills.slice(0, 3),
-      w: h.record.wins, rc: h.record.races, g1: h.record.g1Wins
+      w: h.record.wins, rc: h.record.races, g1: h.record.g1Wins, t: h.turn || ''
     };
     const body = this.toB64(JSON.stringify(data));
     return this.PREFIX + body + '.' + this.checksum(body);
@@ -4667,6 +4860,7 @@ const Pvp = {
       runningStyle: GAME_DATA.styles[d.st] ? d.st : 'senko',
       skills: (Array.isArray(d.k) ? d.k : []).filter(id => Skills.get(id)).slice(0, 3),
       record: { wins: num(d.w, 0, 999), races: num(d.rc, 0, 999), g1Wins: num(d.g1, 0, 999) },
+      turn: d.t === 'R' || d.t === 'L' ? d.t : '',
       vs: { win: 0, lose: 0 },
       addedAt: Date.now()
     };
@@ -4686,7 +4880,7 @@ const Pvp = {
     return {
       id: 'e_' + g.id, ghostId: g.id, name: g.name, owner: g.owner + '厩舎', isPlayer: false, isGhost: true,
       stats: this.capStats(g.stats, cap), aptitude: Object.assign({}, g.aptitude),
-      runningStyle: g.runningStyle, skills: g.skills.slice(), condition: 85, fatigue: 0
+      runningStyle: g.runningStyle, skills: g.skills.slice(), turn: g.turn || '', order: g.order || 'normal', condition: 85, fatigue: 0
     };
   },
 
@@ -4702,7 +4896,8 @@ const Pvp = {
     // 足りない枠はCPUで埋める（参加馬の平均くらいの強さ）
     const avg = field.reduce((s, e) => s + STAT_KEYS.reduce((t, k) => t + e.stats[k], 0) / 5, 0) / field.length;
     while (field.length < this.FIELD) field.push(this.makeRival(avg - 3, course, cap, used, false));
-    return { kind: 'friend', race, field: this.shuffle(field), ground: Race.rollGround(race), cap };
+    const ground = Race.rollGround(race);
+    return { kind: 'friend', race, field: Race.setOdds(race, this.shuffle(field), ground), ground, cap };
   },
 
   applyFriend(h, match, result) {
@@ -4781,7 +4976,7 @@ const Pvp = {
     const lv = this.CPU_LEVELS[spec.cpu].lv;
     if (lv) while (field.length < spec.field) field.push(this.makeRival(lv, race, cap, used, spec.cpu === 'strong'));
     const ground = spec.ground >= 0 ? spec.ground : Race.rollGround(race);
-    return { kind: 'custom', spec, race, field: this.shuffle(field), ground };
+    return { kind: 'custom', spec, race, field: Race.setOdds(race, this.shuffle(field), ground), ground };
   },
 
   // 結果の記録（エキシビションなので経験値・賞金はなし）
@@ -5398,6 +5593,8 @@ const Race3D = {
 
   unmount() {
     this.sound.stop();
+    clearTimeout(this._photoTimer);
+    if (typeof Voice !== 'undefined') Voice.stop();
     if (typeof Fanfare !== 'undefined') Fanfare.stop();
     if (this._ro) this._ro.disconnect();
     if (this.renderer && this.renderer.domElement.parentNode) this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
@@ -5926,6 +6123,87 @@ const Race3D = {
       scene.add(h.root);
       return h;
     });
+    st.winner = st.horses.find(h => h.e.id === res.finish[0].id);
+    if (['g1', 'g2', 'g3'].includes(st.race.grade)) this.buildConfetti(scene, st);
+  },
+
+  // 重賞の勝利で舞う紙吹雪（ゴール板の上から）
+  buildConfetti(scene, st) {
+    const N = st.race.grade === 'g1' ? 700 : 300;
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(N * 3), col = new Float32Array(N * 3), vel = new Float32Array(N * 3);
+    const palette = [0xffd54f, 0xff7043, 0x4fc3f7, 0x81c784, 0xf06292, 0xffffff, 0xba68c8].map(c => new THREE.Color(c));
+    const g = this.path(st.sF, this.W / 2);
+    for (let i = 0; i < N; i++) {
+      pos[i * 3] = g.x + (Math.random() - 0.5) * 50; pos[i * 3 + 1] = -100; pos[i * 3 + 2] = g.z + (Math.random() - 0.5) * 50;
+      const c = palette[i % palette.length];
+      col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    const pts = new THREE.Points(geo, new THREE.PointsMaterial({ size: 0.32, vertexColors: true, transparent: true, opacity: 0.95 }));
+    pts.frustumCulled = false;
+    scene.add(pts);
+    st.confetti = { pts, pos, vel, N, g, started: false };
+  },
+  updateConfetti(t, dt) {
+    const C = this.state.confetti;
+    if (!C) return;
+    const ft = this.state.winner ? this.state.winner.ft : 9999;
+    if (!C.started && t >= ft + 0.3 && t < ft + 2) {
+      C.started = true;
+      for (let i = 0; i < C.N; i++) {
+        C.pos[i * 3] = C.g.x + (Math.random() - 0.5) * 60; C.pos[i * 3 + 1] = 8 + Math.random() * 22; C.pos[i * 3 + 2] = C.g.z + (Math.random() - 0.5) * 50;
+        C.vel[i * 3] = (Math.random() - 0.5) * 1.5; C.vel[i * 3 + 1] = -(1.2 + Math.random() * 1.8); C.vel[i * 3 + 2] = (Math.random() - 0.5) * 1.5;
+      }
+    }
+    if (t < ft) { if (C.started) { C.started = false; for (let i = 0; i < C.N; i++) C.pos[i * 3 + 1] = -100; C.pts.geometry.attributes.position.needsUpdate = true; } return; }
+    if (!C.started || dt <= 0) return;
+    const now = performance.now() / 1000;
+    for (let i = 0; i < C.N; i++) {
+      if (C.pos[i * 3 + 1] < 0.05) continue;
+      C.pos[i * 3] += (C.vel[i * 3] + Math.sin(now * 2 + i) * 0.8) * dt;
+      C.pos[i * 3 + 1] += C.vel[i * 3 + 1] * dt;
+      C.pos[i * 3 + 2] += (C.vel[i * 3 + 2] + Math.cos(now * 1.7 + i) * 0.8) * dt;
+    }
+    C.pts.geometry.attributes.position.needsUpdate = true;
+  },
+
+  // アクシデントのアイコン（馬の頭上に出す）
+  _iconTex: {},
+  incidentTexture(kind) {
+    if (this._iconTex[kind]) return this._iconTex[kind];
+    const label = { late: '出遅れ', kakari: '掛かり', block: '前が壁' }[kind] || '!';
+    const c = document.createElement('canvas');
+    c.width = 256; c.height = 96;
+    const g = c.getContext('2d');
+    g.fillStyle = kind === 'block' ? '#6d4c41' : kind === 'late' ? '#455a64' : '#c62828';
+    g.beginPath(); g.roundRect ? g.roundRect(4, 4, 248, 88, 40) : g.rect(4, 4, 248, 88); g.fill();
+    g.fillStyle = '#fff';
+    g.font = '900 52px "Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(label, 128, 50);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return (this._iconTex[kind] = t);
+  },
+  onIncident(e) {
+    const st = this.state;
+    if (!st) return;
+    const h = st.horses.find(x => x.e.id === e.horseId);
+    if (!h) return;
+    if (!h.incident) {
+      h.incident = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthTest: false }));
+      h.incident.renderOrder = 11;
+      h.incident.scale.set(2.6, 0.98, 1);
+      h.incident.position.y = h.marker ? 4.3 : 3.5;
+      h.root.add(h.incident);
+    }
+    h.incident.material.map = this.incidentTexture(e.kind);
+    h.incident.material.needsUpdate = true;
+    h.incident.visible = true;
+    h.incidentUntil = performance.now() + 2600;
+    if (e.isPlayer) this.banner(`<span class="sk">⚠ ${Util.esc(e.text)}</span>`, 'incident', 1800);
   },
 
   // 蹄で跳ね上げる芝・砂
@@ -5975,8 +6253,13 @@ const Race3D = {
       <div class="r3-banner" id="r3-banner"></div>
       <div class="r3-bar" id="r3-bar"></div>
       <button class="r3-camtoggle" onclick="this.nextElementSibling.classList.toggle('open')" aria-label="カメラ">🎥</button>
-      <div class="r3-cams">${cams.map(([k, l]) => { const [ic, tx] = l.split(' '); return `<button class="${cam === k ? 'active' : ''}" data-cam="${k}" title="${tx}">${ic}<span class="lbl"> ${tx}</span></button>`; }).join('')}<button data-sound="1" title="音">${this.sound.enabled() ? '🔊' : '🔇'}</button><button data-full="1" title="全画面">⛶</button></div>
-      <div class="r3-replay" id="r3-replay">REPLAY</div>`;
+      <div class="r3-cams">${cams.map(([k, l]) => { const [ic, tx] = l.split(' '); return `<button class="${cam === k ? 'active' : ''}" data-cam="${k}" title="${tx}">${ic}<span class="lbl"> ${tx}</span></button>`; }).join('')}<button data-sound="1" title="音">${this.sound.enabled() ? '🔊' : '🔇'}</button><button data-voice="1" title="実況音声">${Player.data.settings.voice === false ? '🔕' : '🎙'}</button><button data-full="1" title="全画面">⛶</button></div>
+      <div class="r3-replay" id="r3-replay">REPLAY</div>
+      <div class="r3-card" id="r3-card"><div class="r3-card-h">出走表 <small>${Util.esc(race.name)}</small></div>
+        <div class="r3-card-list">${st.horses.slice().sort((a, b) => a.num - b.num).map(h => `<div class="r3-card-row ${h.e.isPlayer ? 'me' : ''}">
+          <span class="num" style="background:${h.capColor};color:${this.BRACKET_TEXT[h.bracket - 1]}">${h.num}</span><img src="${h.icon}" alt="">
+          <b>${h.e.legendId ? '👑' : ''}${Util.esc(h.e.name)}</b><span class="pop ${h.e.pop && h.e.pop <= 3 ? 'fav' : ''}">${h.e.pop ? h.e.pop + '人' : ''}</span><span class="odds">${h.e.odds ? h.e.odds.toFixed(1) : ''}</span></div>`).join('')}</div></div>
+      <div class="r3-photo" id="r3-photo"><div class="r3-photo-frame"><img alt=""><div class="r3-photo-line"></div></div><div class="r3-photo-label">📸 写真判定</div></div>`;
     hud.querySelectorAll('[data-cam]').forEach(b => b.addEventListener('click', () => {
       Player.data.settings.cam3d = b.dataset.cam;
       Player.save();
@@ -5985,6 +6268,11 @@ const Race3D = {
       hud.querySelector('.r3-cams').classList.remove('open');
     }));
     hud.querySelector('[data-sound]').addEventListener('click', () => this.toggleSound());
+    hud.querySelector('[data-voice]').addEventListener('click', e => {
+      const on = Voice.toggle();
+      e.currentTarget.textContent = on ? '🎙' : '🔕';
+      UI.toast(on ? '🎙 実況の読み上げ ON' : '🔕 実況の読み上げ OFF');
+    });
     hud.querySelector('[data-full]').addEventListener('click', () => {
       const el = container;
       if (document.fullscreenElement) document.exitFullscreen();
@@ -5993,7 +6281,8 @@ const Race3D = {
     });
     st.hud = {
       remain: hud.querySelector('#r3-remain'), time: hud.querySelector('#r3-time'), map: hud.querySelector('#r3-map'),
-      bar: hud.querySelector('#r3-bar'), banner: hud.querySelector('#r3-banner'), orderKey: ''
+      bar: hud.querySelector('#r3-bar'), banner: hud.querySelector('#r3-banner'), orderKey: '',
+      card: hud.querySelector('#r3-card'), photo: hud.querySelector('#r3-photo')
     };
     // 位置マップの丸（馬番・枠色）
     st.horses.forEach(h => {
@@ -6005,6 +6294,33 @@ const Race3D = {
       st.hud.map.appendChild(d);
       h.dot = d;
     });
+  },
+
+  // 写真判定：ゴールの瞬間の画面を止めて写真のように見せ、少し待ってから1着を発表
+  photoFinish(w, s, done) {
+    const st = this.state, el = st.hud.photo;
+    try {
+      this.renderer.render(st.scene, st.camera);   // 描画直後でないと画面を読み取れないので、もう一度描く
+      el.querySelector('img').src = this.renderer.domElement.toDataURL('image/jpeg', 0.85);
+    } catch (e) { done(); return; }
+    // 赤い線を画面上のゴールラインの位置に合わせる
+    const gp = this.path(st.sF, this.W / 2);
+    const v = new THREE.Vector3(gp.x, 0.5, gp.z).project(st.camera);
+    const line = el.querySelector('.r3-photo-line');
+    line.style.left = Util.clamp((v.x + 1) / 2 * 100, 0, 100) + '%';
+    line.style.display = Math.abs(v.x) <= 1 && v.z < 1 ? '' : 'none';
+    const label = el.querySelector('.r3-photo-label');
+    label.innerHTML = '📸 写真判定';
+    el.className = 'r3-photo show';
+    if (typeof Voice !== 'undefined') Voice.say('ゴール！ 写真判定です', { interrupt: true });
+    clearTimeout(this._photoTimer);
+    const margin = (st.result.finish[1] || {}).margin || 'ハナ';
+    this._photoTimer = setTimeout(() => {
+      label.innerHTML = `<span class="num" style="background:${w.capColor};color:${this.BRACKET_TEXT[w.bracket - 1]}">${w.num}</span> ${Util.esc(w.e.name)} が${Util.esc(margin)}差で1着！`;
+      el.classList.add('decided');
+      if (typeof Voice !== 'undefined') Voice.say(`${w.e.name}、${margin}差で勝利！`, { interrupt: true });
+      this._photoTimer = setTimeout(() => { el.className = 'r3-photo'; done(); }, 2200);
+    }, 2000);
   },
 
   banner(text, cls, ms) {
@@ -6167,6 +6483,13 @@ const Race3D = {
       h.speed += (Util.clamp(sp, 0, 22) - h.speed) * 0.2;
       h.prevPos = p;
       this.animateHorse(h, t, realDt * animScale, D - p);
+      if (h.incident && h.incident.visible && realNow > h.incidentUntil) h.incident.visible = false;
+      // 勝った騎手はゴール後に手を挙げてガッツポーズ
+      if (h === st.winner && t > h.ft + 0.7) {
+        const k = Util.clamp((t - h.ft - 0.7) / 0.4, 0, 1);
+        h.arms[0].rotation.z = -0.55 + k * (2.1 + 0.25 * Math.sin(realNow / 140));
+        h.jockey.rotation.z = -0.25 * k;
+      } else if (h === st.winner) h.jockey.rotation.z = 0;
       if (h.aura.visible) {
         const left = h.auraUntil - realNow;
         if (left <= 0) h.aura.visible = false;
@@ -6179,6 +6502,7 @@ const Race3D = {
       if (h.speed > 6 && t > 0) this.emit(h, a);
     });
     this.updateParticles(realDt * animScale);
+    this.updateConfetti(t, realDt);
     this.updateSound(t, pos, order, realDt);
     if (st.rain) this.updateRain(realDt);
 
@@ -6374,12 +6698,15 @@ const Race3D = {
     hud.time.textContent = t < 0 ? '0.0' : Race.timeText(Math.min(t, lead.h.ft < 9000 && t > lead.h.ft ? lead.h.ft : t));
     hud.remain.textContent = t < 0 ? 'ゲートイン' : remain <= 0 ? 'ゴール' : remain <= 400 ? `最後の直線 残り${Math.ceil(remain / 100) * 100}m` : `残り ${Math.ceil(remain / 100) * 100}m`;
     if (t > 0 && t < 1.2 && !st.startShown) { st.startShown = true; this.banner('スタート！', 'start', 1100); }
+    hud.card.classList.toggle('show', t < -0.4);
     if (lead.h.ft < 9000 && t >= lead.h.ft && !st.goalShown) {
       st.goalShown = true;
       const w = lead.h;
       const second = order[1];
       const close = second && second.h.ft - w.ft < 0.06;
-      this.banner(`${close ? '<small>写真判定…</small>' : ''}<span class="gw"><span class="num" style="background:${w.capColor};color:${this.BRACKET_TEXT[w.bracket - 1]}">${w.num}</span>${Util.esc(w.e.name)}</span><small>1着でゴールイン！</small>`, 'goal', 3000);
+      const winBanner = () => this.banner(`<span class="gw"><span class="num" style="background:${w.capColor};color:${this.BRACKET_TEXT[w.bracket - 1]}">${w.num}</span>${Util.esc(w.e.name)}</span><small>1着でゴールイン！</small>`, 'goal', 3000);
+      if (close && !st.replaying) this.photoFinish(w, second.h, winBanner);
+      else winBanner();
     }
     const now = performance.now();
     if (now - st.lastHud < 120) return;
@@ -6620,6 +6947,7 @@ const Online = {
       this.status = 'lobby';
       this.myId = 'host';
       const g = Pvp.importCode(Pvp.exportCode(horse));
+      g.order = UI.state.order || 'normal';
       this.members = [{ id: 'host', owner: Player.data.name, horse: this.horseInfo(g), ghost: g, ready: true, host: true }];
       this.refresh();
     });
@@ -6672,10 +7000,13 @@ const Online = {
         this.members.push(m);
         UI.toast(`🙌 ${Util.esc(g.owner)}さんが参加しました`);
       }
+      g.order = GAME_DATA.orders[msg.order] ? msg.order : 'normal';
       Object.assign(m, { owner: g.owner, horse: this.horseInfo(g), ghost: g, ready: true });
       this.broadcastLobby();
     } else if (!m) {
       return;
+    } else if (msg.t === 'order') {
+      m.ghost.order = GAME_DATA.orders[msg.order] ? msg.order : 'normal';
     } else if (msg.t === 'ready') {
       m.ready = true;
       this.broadcastLobby();
@@ -6703,6 +7034,7 @@ const Online = {
     if (!me) return;
     this.myHorseId = h.id;
     me.ghost = Pvp.importCode(Pvp.exportCode(h));
+    me.ghost.order = UI.state.order || 'normal';
     me.horse = this.horseInfo(me.ghost);
     this.broadcastLobby();
   },
@@ -6723,7 +7055,7 @@ const Online = {
     this._timer = setTimeout(() => { if (this.status === 'connecting') this.fail('ルームに接続できませんでした。コードを確認してね'); }, this.TIMEOUT);
     peer.on('open', () => {
       const conn = this.conn = peer.connect(this.PREFIX + code, { reliable: true });
-      conn.on('open', () => conn.send({ t: 'hello', v: this.VERSION, entry: Pvp.exportCode(horse) }));
+      conn.on('open', () => conn.send({ t: 'hello', v: this.VERSION, entry: Pvp.exportCode(horse), order: UI.state.order }));
       conn.on('data', msg => this.onGuestData(msg));
       conn.on('close', () => { if (this.conn === conn && this.status === 'lobby') this.fail('ホストとの接続が切れました'); });
     });
@@ -6756,7 +7088,13 @@ const Online = {
     if (this.role === 'host') return this.setHostHorse(h);
     if (this.role !== 'guest' || !this.conn) return;
     this.myHorseId = h.id;
-    this.conn.send({ t: 'hello', v: this.VERSION, entry: Pvp.exportCode(h) });
+    this.conn.send({ t: 'hello', v: this.VERSION, entry: Pvp.exportCode(h), order: UI.state.order });
+  },
+
+  // 作戦を変える（ロビーにいる間）
+  setOrder(k) {
+    if (this.role === 'host') { const me = this.members.find(m => m.id === 'host'); if (me) me.ghost.order = k; }
+    else if (this.role === 'guest' && this.conn) { try { this.conn.send({ t: 'order', order: k }); } catch (e) { /* noop */ } }
   },
 
   // ── レース開始（ホスト） ──
@@ -6813,6 +7151,60 @@ const Online = {
     if (!silent && wasActive) { UI.toast('ルームを退出しました'); this.refresh(); }
   }
 };
+</script>
+<script>
+// 実況の読み上げ（ブラウザの音声合成 Web Speech API）
+// 日本語の声がある端末だけで動く。3D表示・等倍再生のときに、チェックポイント・自分の馬の出来事・ゴールを読み上げる。
+'use strict';
+
+const Voice = {
+  voice: null,
+  lastAt: 0,
+
+  supported() { return typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined'; },
+  enabled() { return this.supported() && Player.data.settings.voice !== false && Player.data.settings.sound3d !== false; },
+
+  pick() {
+    if (!this.supported()) return null;
+    const vs = speechSynthesis.getVoices() || [];
+    this.voice = vs.find(v => /^ja/i.test(v.lang) && /Kyoko|Haruka|Nanami|Google/i.test(v.name)) || vs.find(v => /^ja/i.test(v.lang)) || null;
+    return this.voice;
+  },
+
+  // 読み上げ用に絵文字や記号を取る
+  clean(text) {
+    return String(text).replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '').replace(/[「」『』]/g, '').replace(/！/g, '！ ').trim();
+  },
+
+  // opts.interrupt：今の読み上げを止めて読む（大事な実況）。それ以外は話し中なら読まない
+  say(text, opts = {}) {
+    if (!this.enabled() || (typeof RaceView !== 'undefined' && !RaceView.voiceOk())) return;
+    if (!this.voice && !this.pick()) return;
+    const busy = speechSynthesis.speaking || speechSynthesis.pending;
+    if (busy && !opts.interrupt) return;
+    if (busy) speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(this.clean(text));
+    u.lang = 'ja-JP';
+    u.voice = this.voice;
+    u.rate = opts.rate || 1.25;
+    u.pitch = 1.05;
+    u.volume = 1;
+    speechSynthesis.speak(u);
+    this.lastAt = performance.now();
+  },
+
+  stop() { if (this.supported()) speechSynthesis.cancel(); },
+
+  toggle() {
+    Player.data.settings.voice = Player.data.settings.voice === false;
+    Player.save();
+    if (!Player.data.settings.voice) this.stop();
+    return Player.data.settings.voice;
+  }
+};
+if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+  speechSynthesis.onvoiceschanged = () => Voice.pick();
+}
 </script>
 <script>
 // 画面描画（ゲームロジックは持たない。操作は App.* を呼ぶ）
@@ -6937,11 +7329,12 @@ const UI = {
       ${caps ? `<polygon points="${poly(caps)}" class="rc"/>` : ''}<polygon points="${poly(stats)}" class="rs"/>${labels}</svg>`;
   },
 
-  aptGrid(apt) {
+  aptGrid(apt, turn) {
     const d = GAME_DATA.distances.map(x => `<div class="apt"><span>${x.label}</span><b>${Util.stars(apt[x.key])}</b><small>${Util.aptMark(apt[x.key])}</small></div>`).join('');
     const s = GAME_DATA.surfaces.map(x => `<div class="apt"><span>${x.icon}${x.label}</span><b>${Util.stars(apt[x.key])}</b><small>${Util.aptMark(apt[x.key])}</small></div>`).join('');
     return `<div class="apt-title">距離${this.help('distance')}</div><div class="apt-grid">${d}</div>
-      <div class="apt-title">馬場${this.help('surface')}</div><div class="apt-grid">${s}</div>`;
+      <div class="apt-title">馬場${this.help('surface')}</div><div class="apt-grid">${s}</div>
+      ${turn !== undefined ? `<div class="apt-title">回り${this.help('turn')}</div><div class="turn-pref">🔄 ${Horse.turnLabel(turn)}</div>` : ''}`;
   },
 
   // 種牡馬・繁殖牝馬カード
@@ -7241,7 +7634,7 @@ const UI = {
         ${STAT_KEYS.map(k => this.statRow(k, h.stats[k], h.caps[k])).join('')}
         <p class="muted small">｜の位置がこの馬の限界（素質）。調教で限界まで伸ばせます。</p>
       </section>
-      <section class="panel"><h3>適性</h3>${this.aptGrid(h.aptitude)}</section>
+      <section class="panel"><h3>適性</h3>${this.aptGrid(h.aptitude, h.turn || "")}</section>
       <section class="panel"><h3>脚質${this.help('style')}</h3>
         <div class="style-box"><span class="style-big">${s.icon}</span><div><b>${s.label}</b><p>${s.desc}</p></div></div>
       </section>
@@ -7649,6 +8042,47 @@ const UI = {
       </section>`;
   },
 
+  // ─────────── 出走表・作戦（レース前の共通部品） ───────────
+  // 作戦のおすすめ：脚質とコースから
+  suggestOrder(h, race) {
+    const L = Race.courseOf(race).L;
+    const cat = Horse.distCat(race.distance);
+    if (h.runningStyle === 'nige' || h.runningStyle === 'senko') return L <= 330 ? 'push' : cat === 'long' ? 'early' : 'normal';
+    if (L >= 450) return 'hold';
+    if (cat === 'long' && h.stats.stamina >= h.stats.speed) return 'early';
+    return 'normal';
+  },
+  orderPicker(h, race) {
+    const st = this.state;
+    if (!GAME_DATA.orders[st.order]) st.order = 'normal';
+    const rec = this.suggestOrder(h, race);
+    const o = GAME_DATA.orders[st.order];
+    return `<div class="order-pick"><h4>🗣 作戦 ${this.help('order')}</h4>
+      <div class="chips">${Object.entries(GAME_DATA.orders).map(([k, v]) => `<button class="${st.order === k ? 'active' : ''}" onclick="UI.setOrder('${k}')">${v.icon}${v.label}${k === rec ? '<small class="rec-dot">おすすめ</small>' : ''}</button>`).join('')}</div>
+      <p class="muted small" id="order-desc">${o.icon} ${o.desc}</p></div>`;
+  },
+  setOrder(k) {
+    this.state.order = k;
+    document.querySelectorAll('.order-pick .chips button').forEach((b, i) => b.classList.toggle('active', Object.keys(GAME_DATA.orders)[i] === k));
+    const d = this.el('order-desc');
+    if (d) d.textContent = `${GAME_DATA.orders[k].icon} ${GAME_DATA.orders[k].desc}`;
+    if (Online.status === 'lobby') Online.setOrder(k);
+  },
+  // 馬番・人気・単勝オッズつきの出走表
+  entryTable(field, opts = {}) {
+    const n = field.length;
+    return `<table class="entry-table"><thead><tr><th>枠</th><th>馬番</th><th>馬名</th><th>人気</th><th>単勝</th></tr></thead><tbody>
+      ${field.map((e, i) => {
+        const b = Race3D.bracketOf(i + 1, n);
+        const st = GAME_DATA.styles[e.runningStyle];
+        return `<tr class="${e.isPlayer ? 'me' : ''} ${e.isLegend ? 'is-legend' : ''}">
+          <td><span class="waku" style="background:${Race3D.BRACKET_COLORS[b - 1]};color:${Race3D.BRACKET_TEXT[b - 1]}">${b}</span></td><td>${i + 1}</td>
+          <td>${st ? st.icon : ''} ${e.isLegend ? '👑' : ''}${Util.esc(e.name)}${e.isPlayer ? ' <b class="me-mark">◀ あなた</b>' : ''}
+            ${e.isLegend ? `<br><small>${Util.esc(Legends.get(e.legendId).wins)}</small>` : opts.owner && e.owner ? `<br><small class="muted">${Util.esc(e.owner)}</small>` : ''}</td>
+          <td class="${e.pop <= 3 ? 'fav' : ''}">${e.pop ? e.pop + '番人気' : '-'}</td><td>${e.odds ? e.odds.toFixed(1) : '-'}</td></tr>`;
+      }).join('')}</tbody></table>`;
+  },
+
   // ─────────── カスタムレース（ひとり／オンライン） ───────────
   customView(h) {
     const st = this.state;
@@ -7708,6 +8142,7 @@ const UI = {
         <ol class="entry-list wide lobby-list">${on.members.map(m => `<li class="${m.id === on.myId ? 'me' : ''}">
           ${m.host ? '🏠' : '🙋'} ${GAME_DATA.styles[m.horse.style] ? GAME_DATA.styles[m.horse.style].icon : ''} <b>${Util.esc(m.horse.name)}</b>
           <small class="muted">${Util.esc(m.owner)}厩舎・総合 ${Util.grade(m.horse.overall)}${m.ready ? '' : '・📺 観戦中'}</small></li>`).join('')}</ol>
+        ${this.orderPicker(h, Pvp.customRace(spec))}
         ${host ? `<button class="btn primary big" onclick="Online.start()">🏁 レーススタート！</button>
           <p class="muted small">${on.members.length < 2 ? '参加者を待っています。ひとりでもスタートできます。' : 'みんなそろったらスタート！'}</p>`
           : '<p class="ok center">⏳ ホストがスタートするのを待っています…</p>'}
@@ -7998,7 +8433,24 @@ const RaceView = {
     }).join('');
   },
 
+  // 実況の読み上げをしてよいか（3D・等倍・再生中のみ）
+  voiceOk() { return !!this.three && !this.skipping && !this.done && !this.replaying && this.speed() === 1 && this.clock >= -0.5; },
+
+  speak(e) {
+    if (typeof Voice === 'undefined' || !this.voiceOk()) return;
+    const fin = this.ctx.result.finish;
+    if (e.type === 'checkpoint') {
+      if (e.key === 'goal' && fin[1] && fin[1].time - fin[0].time < 0.06) return;   // 写真判定のときは結果を言わない
+      Voice.say(e.text, { interrupt: ['start', 'r400', 'r200', 'goal'].includes(e.key) });
+    } else if (e.type === 'incident') {
+      if (e.isPlayer || Math.random() < 0.5) Voice.say(e.text, { interrupt: e.isPlayer });
+    } else if (e.type === 'skill') {
+      if (e.isPlayer) Voice.say(`${e.sub.split(' ')[0]}、${e.text.replace(/発動！/, '')}！`);
+    } else Voice.say(e.text);
+  },
+
   eventHTML(e) {
+    if (e.type === 'incident') return `<div class="ev incident ${e.isPlayer ? 'me' : ''}">⚠ ${Util.esc(e.text)}</div>`;
     if (e.type === 'checkpoint') return `<div class="ev cp"><span class="cp-label">── ${e.label} ──</span><br>${Util.esc(e.text)}</div>`;
     if (e.type === 'skill') {
       return `<div class="ev skill ${e.isPlayer ? 'me' : ''}">${e.text}<br><small>${Util.esc(e.sub)}${e.isPlayer && !e.matched ? '（脚質不一致）' : ''}</small></div>`;
@@ -8010,6 +8462,11 @@ const RaceView = {
     const log = UI.el('rl-log');
     if (!log) return;
     log.insertAdjacentHTML('afterbegin', this.eventHTML(e));
+    if (!this.skipping) this.speak(e);
+    if (e.type === 'incident' && !this.skipping) {
+      if (this.three) Race3D.onIncident(e);
+      else if (e.isPlayer) UI.toast(`⚠ ${Util.esc(e.text)}`, 'skill-toast');
+    }
     if (e.type === 'skill' && !this.skipping) {
       const el = UI.el('rn-' + e.horseId);
       if (el) {
@@ -8026,6 +8483,7 @@ const RaceView = {
   skip() {
     this.stop();
     Fanfare.stop();
+    if (typeof Voice !== 'undefined') Voice.stop();
     const events = this.ctx.result.events;
     this.skipping = true;
     while (this.idx < events.length) { this.apply(events[this.idx]); this.idx++; }
@@ -8053,6 +8511,8 @@ const RaceView = {
     st.goalShown = false;
     st.startShown = true;
     st.shot = null;
+    st.replaying = true;
+    this.replaying = true;
     const rp = UI.el('r3-replay');
     if (rp) rp.classList.add('show');
     UI.el('r3').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -8065,7 +8525,7 @@ const RaceView = {
       last = ts;
       try { Race3D.render(t, this.positionsAt(t), t > ft - 2 && t < ft + 0.6 ? 0.4 : 1); } catch (e) { this.fallback2d(); return; }
       if (t < ft + 3) this.raf = requestAnimationFrame(loop);
-      else if (rp) rp.classList.remove('show');
+      else { if (rp) rp.classList.remove('show'); st.replaying = false; this.replaying = false; }
     };
     this.raf = requestAnimationFrame(loop);
   },
@@ -8083,14 +8543,38 @@ const RaceView = {
     this.raf = requestAnimationFrame(loop);
   },
 
+  // 成績表：着順・馬番・人気・タイム・着差・通過順・上がり3F（最速は🔥）
   resultTable(fin) {
-    return `<table class="hist">
-        <tr><th>着</th><th>馬名</th><th>タイム</th><th>着差</th></tr>
+    const l3 = fin.map(f => f.last3f).filter(v => v);
+    const best = l3.length ? Math.min(...l3) : null;
+    const hasPass = fin.some(f => f.passing && f.passing.length);
+    return `<div class="table-scroll"><table class="hist result-table">
+        <tr><th>着</th><th>馬名</th><th>人気</th><th>タイム</th><th>着差</th>${hasPass ? '<th>通過</th>' : ''}<th>上がり</th></tr>
         ${fin.map(f => {
           const e = this.entrant(f.id) || {};
-          return `<tr class="${f.isPlayer ? 'me' : ''} ${f.legendId ? 'is-legend' : ''}"><td>${f.place}</td><td>${GAME_DATA.styles[f.style].icon} ${f.legendId ? '👑' : ''}${Util.esc(f.name)}${e.owner && !f.legendId ? `<br><small class="muted">${Util.esc(e.owner)}</small>` : ''}</td><td>${Race.timeText(f.time)}</td><td>${f.margin}</td></tr>`;
+          const ord = f.order && f.order !== 'normal' && GAME_DATA.orders[f.order] ? `<span class="ord" title="作戦：${GAME_DATA.orders[f.order].label}">${GAME_DATA.orders[f.order].icon}</span>` : '';
+          return `<tr class="${f.isPlayer ? 'me' : ''} ${f.legendId ? 'is-legend' : ''}"><td>${f.place}</td>
+            <td><span class="gnum">${e.gate || ''}</span>${GAME_DATA.styles[f.style].icon} ${f.legendId ? '👑' : ''}${Util.esc(f.name)}${f.isPlayer ? ord : ''}${e.owner && !f.legendId ? `<br><small class="muted">${Util.esc(e.owner)}</small>` : ''}</td>
+            <td class="${f.pop && f.pop <= 3 ? 'fav' : ''}">${f.pop || '-'}</td><td>${Race.timeText(f.time)}</td><td>${f.margin}</td>
+            ${hasPass ? `<td class="pass">${(f.passing || []).join('-')}</td>` : ''}
+            <td class="${f.last3f && f.last3f === best ? 'best3f' : ''}">${f.last3f ? f.last3f.toFixed(1) + (f.last3f === best ? '🔥' : '') : '-'}</td></tr>`;
         }).join('')}
-      </table>`;
+      </table></div>`;
+  },
+
+  // レースのふり返り：自分の馬の人気・作戦・アクシデント・上がり
+  reviewHTML() {
+    const { result } = this.ctx;
+    const me = result.finish.find(f => f.isPlayer);
+    if (!me) return '';
+    const notes = [];
+    if (me.pop) notes.push(`📊 ${me.pop}番人気（単勝 ${me.odds ? me.odds.toFixed(1) : '-'}倍）`);
+    if (me.order && GAME_DATA.orders[me.order]) notes.push(`🗣 作戦：${GAME_DATA.orders[me.order].icon}${GAME_DATA.orders[me.order].label}`);
+    if (me.passing && me.passing.length) notes.push(`🔁 通過順 ${me.passing.join('-')}`);
+    const l3 = result.finish.map(f => f.last3f).filter(v => v);
+    if (me.last3f) notes.push(`⏱ 上がり3F ${me.last3f.toFixed(1)}（${l3.filter(v => v < me.last3f).length + 1}位）`);
+    result.events.filter(e => e.type === 'incident' && e.isPlayer).forEach(e => notes.push(`⚠ ${Util.esc(e.text)}`));
+    return `<div class="review">${notes.map(n => `<span>${n}</span>`).join('')}</div>`;
   },
 
   // 名馬との対決結果
@@ -8125,6 +8609,8 @@ const RaceView = {
         ${reward.newRecord ? '<p class="center ok">⏱ コースレコード更新！</p>' : ''}
         ${this.legendHTML(reward.legends)}
         ${reward.rightTo ? `<p class="center ok big-note">🎫「${reward.rightTo.name}」の優先出走権を獲得！</p>` : ''}
+        ${reward.bonus ? `<p class="center ok big-note">🎯 ${reward.pop}番人気で大金星！ ボーナス +${Util.money(reward.bonus)}</p>` : ''}
+        ${this.reviewHTML()}
         ${this.resultTable(fin)}
         <h3>🎁 報酬</h3>
         <div class="rewards">
@@ -8457,9 +8943,13 @@ const App = {
     const field = Race.buildField(h, race);
     const trialTo = race.trial ? Race.get(race.trial.to) : null;
     const ground = Race.rollGround(race);
-    this.pending = { hid, raceId, field, ground };
-    const cat = Horse.distCat(race.distance);
+    Race.setOdds(race, field, ground);
     const warn = [];
+    this.pending = { hid, raceId, field, ground };
+    const me = field.find(e => e.isPlayer);
+    UI.state.order = UI.suggestOrder(h, race);
+    if (h.turn && !Race.courseOf(race).straight && h.turn !== Race.courseOf(race).dir) warn.push(`${Race.courseOf(race).dirLabel}は少し苦手です`);
+    const cat = Horse.distCat(race.distance);
     if (h.aptitude[cat] < 45) warn.push('距離適性が低いレースです');
     if (h.aptitude[race.surface] < 45) warn.push('馬場適性が低いレースです');
     if (h.fatigue >= 50) warn.push('疲れがたまっています');
@@ -8469,8 +8959,9 @@ const App = {
       <p>📅 ${Calendar.fullLabel()}・📍${race.venue}<br>${race.surface === 'turf' ? '🌱芝' : '🟫ダート'} ${race.distance}m・${Race.AGE_LABEL[race.ages]}${race.female ? '牝馬' : ''}・馬場：<b>${GAME_DATA.grounds[ground].label}</b>${UI.help('ground')}<br>🔄 ${Race.courseText(race)}${Race.courseHint(race) ? `<small class="muted">（${Race.courseHint(race)}）</small>` : ''}</p>
       ${elig.right ? '<p class="ok">🎫 優先出走権で出走！</p>' : ''}
       ${trialTo ? `<p class="rec">🎫 ${race.trial.top}着以内で「${trialTo.name}」の優先出走権！${UI.help('right')}</p>` : ''}
-      <h4>出走メンバー（${field.length}頭）</h4>
-      <ol class="entry-list">${field.map(e => `<li class="${e.isPlayer ? 'me' : ''} ${e.isLegend ? 'is-legend' : ''}">${GAME_DATA.styles[e.runningStyle].icon} ${e.isLegend ? '👑' : ''}${Util.esc(e.name)}${e.isPlayer ? ' ← あなたの馬' : ''}${e.isLegend ? `<small>${Util.esc(Legends.get(e.legendId).wins)}</small>` : ''}</li>`).join('')}</ol>
+      <h4>出走表（${field.length}頭）<small class="muted">　${Util.esc(h.name)}は ${me.pop}番人気（単勝 ${me.odds.toFixed(1)}倍）${me.pop >= 4 ? '・勝てば大金星ボーナス！' : ''}</small></h4>
+      ${UI.entryTable(field)}
+      ${UI.orderPicker(h, race)}
       ${field.some(e => e.isLegend) ? '<p class="rec">👑 名馬が出走！ 先着するとその名馬のカードが手に入ることがあります。</p>' : ''}
       ${warn.length ? `<div class="warn">${warn.map(w => '⚠ ' + w).join('<br>')}</div>` : '<p class="ok">準備万端！</p>'}
       <div class="btn-row"><button class="btn" onclick="UI.closeModal()">やめる</button><button class="btn primary big" onclick="App.runRace()">🏁 スタート！</button></div>`);
@@ -8484,6 +8975,8 @@ const App = {
     const h = Player.horse(pd.hid);
     const race = Race.get(pd.raceId);
     if (!h || !Race.eligibility(h, race).ok) return UI.toast('出走できません', 'error');
+    const me = pd.field.find(e => e.isPlayer);
+    if (me) me.order = UI.state.order || 'normal';
     // 結果は先に計算・保存し、表示は後から再生する
     const result = Race.simulate(race, pd.field, pd.ground);
     const reward = Race.applyResult(h, race, result);
@@ -8495,13 +8988,15 @@ const App = {
   // ── 対戦（リーグ戦・フレンド対戦） ──
   matchModal(match, h) {
     const r = match.race;
+    UI.state.order = UI.suggestOrder(h, r);
     UI.modal(`
       <h3>${UI.gradeBadge(r.grade)} ${Util.esc(r.name)}</h3>
       <p>${r.surface === 'turf' ? '🌱芝' : '🟫ダート'} ${r.distance}m・馬場：<b>${GAME_DATA.grounds[match.ground].label}</b>
         ${match.league && match.league.statCap ? `・能力上限 ${match.league.statCap}` : match.cap ? `・能力上限 ${match.cap}` : ''}</p>
-      <h4>対戦相手</h4>
-      <ol class="entry-list wide">${match.field.map(e => `<li class="${e.isPlayer ? 'me' : ''}">${GAME_DATA.styles[e.runningStyle].icon} ${Util.esc(e.name)}
-        <small class="muted">${e.isPlayer ? 'あなた' : Util.esc(e.owner || '')}${e.isGhost ? '（フレンド）' : ''}</small></li>`).join('')}</ol>
+      ${r.venue ? `<p class="muted small">🔄 ${Util.esc(r.venue)} ${Race.courseText(r)}${Race.courseHint(r) ? '（' + Race.courseHint(r) + '）' : ''}</p>` : ''}
+      <h4>出走表</h4>
+      ${UI.entryTable(match.field, { owner: true })}
+      ${UI.orderPicker(h, r)}
       <div class="btn-row"><button class="btn" onclick="UI.closeModal()">やめる</button><button class="btn primary big" onclick="App.runMatch()">🏁 スタート！</button></div>`);
   },
 
@@ -8531,6 +9026,14 @@ const App = {
     this.pendingMatch = null;
     UI.closeModal();
     const h = Player.horse(m.hid);
+    const me = m.field.find(e => e.isPlayer);
+    if (me) me.order = UI.state.order || 'normal';
+    if (m.kind === 'custom') {
+      const result = Race.simulate(m.race, m.field, m.ground);
+      const reward = Pvp.applyCustom(result, me.id, false);
+      Player.save();
+      return this.playCustom(m.race, result, reward, m.hid, false);
+    }
     if (!h || !Pvp.canEnter(h, { league: m.kind === 'league' }).ok) return UI.toast('出走できません', 'error');
     const result = Race.simulate(m.race, m.field, m.ground);
     const reward = m.kind === 'league' ? Pvp.applyLeague(h, m, result) : Pvp.applyFriend(h, m, result);
@@ -8546,7 +9049,7 @@ const App = {
           return `${v.placeHead(reward.place, fin[0].name)}
             <div class="rating-change ${reward.delta >= 0 ? 'up' : 'down'}">レーティング ${reward.rating} <b>${reward.delta >= 0 ? '+' : ''}${reward.delta}</b></div>
             ${reward.unlocked.map(l => `<p class="center ok">🎉 ${l.icon}${l.name}が解放されました！</p>`).join('')}
-            ${v.resultTable(fin)}
+            ${v.reviewHTML()}${v.resultTable(fin)}
             <h3>🎁 報酬</h3>
             <div class="rewards"><div>💰 賞金 <b>${Util.money(reward.prize)}</b></div>
               <div>✨ 経験値 <b>+${reward.exp}</b>${reward.levelUps ? ' <span class="ok">レベルアップ！</span>' : ''}</div></div>
@@ -8555,7 +9058,7 @@ const App = {
         }
         return `${v.placeHead(reward.place, fin[0].name)}
           ${reward.vs.length ? `<div class="vs-list">${reward.vs.map(x => `<div class="${x.won ? 'ok' : 'warn'}">${x.won ? '○ 勝ち' : '● 負け'}：${Util.esc(x.owner)}厩舎の${Util.esc(x.name)}</div>`).join('')}</div>` : ''}
-          ${v.resultTable(fin)}
+          ${v.reviewHTML()}${v.resultTable(fin)}
           <p class="muted small">フレンド対戦はエキシビション（報酬・経験値・疲労なし）。何度でも挑戦できます。</p>
           ${back}`;
       }
@@ -8572,17 +9075,15 @@ const App = {
     const h = Player.horse(UI.state.raceHorse);
     if (!h) return;
     const spec = Pvp.sanitizeSpec(UI.state.customSpec);
-    const match = Pvp.buildCustomMatch(spec, [Pvp.playerEntrant(h, spec.cap || null)]);
-    const result = Race.simulate(match.race, match.field, match.ground);
-    const reward = Pvp.applyCustom(result, h.id, false);
-    Player.save();
-    this.playCustom(match.race, result, reward, h.id, false);
+    this.pendingMatch = Object.assign(Pvp.buildCustomMatch(spec, [Pvp.playerEntrant(h, spec.cap || null)]), { hid: h.id });
+    this.matchModal(this.pendingMatch, h);
   },
 
   playCustom(race, result, reward, hid, online) {
     RaceView.start({
       result, reward, race, horseId: hid,
       resultHTML: v => `${v.placeHead(reward.place, result.finish[0].name)}
+        ${v.reviewHTML()}
         ${v.resultTable(result.finish)}
         <p class="muted small center">カスタムレースはエキシビションです（賞金・経験値・疲労なし）。</p>
         <div class="btn-row">${v.three ? '<button class="btn" onclick="RaceView.replay()">🎬 ゴール前リプレイ</button>' : ''}

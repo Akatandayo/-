@@ -29,7 +29,7 @@ const Pvp = {
     return {
       id: h.id, name: h.name, owner: Player.data.name, isPlayer: true,
       stats: this.capStats(h.stats, cap), aptitude: Object.assign({}, h.aptitude),
-      runningStyle: h.runningStyle, skills: h.skills.slice(),
+      runningStyle: h.runningStyle, skills: h.skills.slice(), turn: h.turn || '', order: 'normal',
       condition: h.condition, fatigue: h.fatigue
     };
   },
@@ -56,7 +56,7 @@ const Pvp = {
     usedNames.add(name);
     return {
       id: Util.uid('rv_'), name, owner: Util.pick(GAME_DATA.rivalOwners) + '厩舎', isPlayer: false,
-      stats: this.capStats(stats, cap), aptitude, runningStyle, skills,
+      stats: this.capStats(stats, cap), aptitude, runningStyle, skills, turn: Horse.randomTurn(), order: Race.npcOrder(runningStyle),
       condition: Util.randInt(60, 100), fatigue: Util.randInt(0, 15)
     };
   },
@@ -83,7 +83,8 @@ const Pvp = {
     const used = new Set([h.name]);
     const field = [this.playerEntrant(h, league.statCap)];
     while (field.length < this.FIELD) field.push(this.makeRival(league.npc, course, league.statCap, used, league.id === 'gold'));
-    return { kind: 'league', league, race, field: this.shuffle(field), ground: Race.rollGround(race) };
+    const ground = Race.rollGround(race);
+    return { kind: 'league', league, race, field: Race.setOdds(race, this.shuffle(field), ground), ground };
   },
 
   applyLeague(h, match, result) {
@@ -143,7 +144,7 @@ const Pvp = {
       s: STAT_KEYS.map(k => h.stats[k]),
       a: [...DIST_KEYS, 'turf', 'dirt'].map(k => h.aptitude[k]),
       st: h.runningStyle, k: h.skills.slice(0, 3),
-      w: h.record.wins, rc: h.record.races, g1: h.record.g1Wins
+      w: h.record.wins, rc: h.record.races, g1: h.record.g1Wins, t: h.turn || ''
     };
     const body = this.toB64(JSON.stringify(data));
     return this.PREFIX + body + '.' + this.checksum(body);
@@ -173,6 +174,7 @@ const Pvp = {
       runningStyle: GAME_DATA.styles[d.st] ? d.st : 'senko',
       skills: (Array.isArray(d.k) ? d.k : []).filter(id => Skills.get(id)).slice(0, 3),
       record: { wins: num(d.w, 0, 999), races: num(d.rc, 0, 999), g1Wins: num(d.g1, 0, 999) },
+      turn: d.t === 'R' || d.t === 'L' ? d.t : '',
       vs: { win: 0, lose: 0 },
       addedAt: Date.now()
     };
@@ -192,7 +194,7 @@ const Pvp = {
     return {
       id: 'e_' + g.id, ghostId: g.id, name: g.name, owner: g.owner + '厩舎', isPlayer: false, isGhost: true,
       stats: this.capStats(g.stats, cap), aptitude: Object.assign({}, g.aptitude),
-      runningStyle: g.runningStyle, skills: g.skills.slice(), condition: 85, fatigue: 0
+      runningStyle: g.runningStyle, skills: g.skills.slice(), turn: g.turn || '', order: g.order || 'normal', condition: 85, fatigue: 0
     };
   },
 
@@ -208,7 +210,8 @@ const Pvp = {
     // 足りない枠はCPUで埋める（参加馬の平均くらいの強さ）
     const avg = field.reduce((s, e) => s + STAT_KEYS.reduce((t, k) => t + e.stats[k], 0) / 5, 0) / field.length;
     while (field.length < this.FIELD) field.push(this.makeRival(avg - 3, course, cap, used, false));
-    return { kind: 'friend', race, field: this.shuffle(field), ground: Race.rollGround(race), cap };
+    const ground = Race.rollGround(race);
+    return { kind: 'friend', race, field: Race.setOdds(race, this.shuffle(field), ground), ground, cap };
   },
 
   applyFriend(h, match, result) {
@@ -287,7 +290,7 @@ const Pvp = {
     const lv = this.CPU_LEVELS[spec.cpu].lv;
     if (lv) while (field.length < spec.field) field.push(this.makeRival(lv, race, cap, used, spec.cpu === 'strong'));
     const ground = spec.ground >= 0 ? spec.ground : Race.rollGround(race);
-    return { kind: 'custom', spec, race, field: this.shuffle(field), ground };
+    return { kind: 'custom', spec, race, field: Race.setOdds(race, this.shuffle(field), ground), ground };
   },
 
   // 結果の記録（エキシビションなので経験値・賞金はなし）

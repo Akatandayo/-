@@ -109,6 +109,7 @@ const Online = {
       this.status = 'lobby';
       this.myId = 'host';
       const g = Pvp.importCode(Pvp.exportCode(horse));
+      g.order = UI.state.order || 'normal';
       this.members = [{ id: 'host', owner: Player.data.name, horse: this.horseInfo(g), ghost: g, ready: true, host: true }];
       this.refresh();
     });
@@ -161,10 +162,13 @@ const Online = {
         this.members.push(m);
         UI.toast(`🙌 ${Util.esc(g.owner)}さんが参加しました`);
       }
+      g.order = GAME_DATA.orders[msg.order] ? msg.order : 'normal';
       Object.assign(m, { owner: g.owner, horse: this.horseInfo(g), ghost: g, ready: true });
       this.broadcastLobby();
     } else if (!m) {
       return;
+    } else if (msg.t === 'order') {
+      m.ghost.order = GAME_DATA.orders[msg.order] ? msg.order : 'normal';
     } else if (msg.t === 'ready') {
       m.ready = true;
       this.broadcastLobby();
@@ -192,6 +196,7 @@ const Online = {
     if (!me) return;
     this.myHorseId = h.id;
     me.ghost = Pvp.importCode(Pvp.exportCode(h));
+    me.ghost.order = UI.state.order || 'normal';
     me.horse = this.horseInfo(me.ghost);
     this.broadcastLobby();
   },
@@ -212,7 +217,7 @@ const Online = {
     this._timer = setTimeout(() => { if (this.status === 'connecting') this.fail('ルームに接続できませんでした。コードを確認してね'); }, this.TIMEOUT);
     peer.on('open', () => {
       const conn = this.conn = peer.connect(this.PREFIX + code, { reliable: true });
-      conn.on('open', () => conn.send({ t: 'hello', v: this.VERSION, entry: Pvp.exportCode(horse) }));
+      conn.on('open', () => conn.send({ t: 'hello', v: this.VERSION, entry: Pvp.exportCode(horse), order: UI.state.order }));
       conn.on('data', msg => this.onGuestData(msg));
       conn.on('close', () => { if (this.conn === conn && this.status === 'lobby') this.fail('ホストとの接続が切れました'); });
     });
@@ -245,7 +250,13 @@ const Online = {
     if (this.role === 'host') return this.setHostHorse(h);
     if (this.role !== 'guest' || !this.conn) return;
     this.myHorseId = h.id;
-    this.conn.send({ t: 'hello', v: this.VERSION, entry: Pvp.exportCode(h) });
+    this.conn.send({ t: 'hello', v: this.VERSION, entry: Pvp.exportCode(h), order: UI.state.order });
+  },
+
+  // 作戦を変える（ロビーにいる間）
+  setOrder(k) {
+    if (this.role === 'host') { const me = this.members.find(m => m.id === 'host'); if (me) me.ghost.order = k; }
+    else if (this.role === 'guest' && this.conn) { try { this.conn.send({ t: 'order', order: k }); } catch (e) { /* noop */ } }
   },
 
   // ── レース開始（ホスト） ──

@@ -808,3 +808,77 @@ html, body { overflow-x: hidden; }
 .lobby-list li.me { background: #fff2df; }
 .spinner { width: 38px; height: 38px; margin: 10px auto; border-radius: 50%; border: 4px solid #d5e5dc; border-top-color: #1f8a5b; animation: spin .9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ───────── v9：出走表・作戦・成績表・写真判定 ───────── */
+.entry-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 4px 0 10px; }
+.entry-table th { font-size: 11px; color: var(--muted); text-align: left; border-bottom: 2px solid var(--line); padding: 3px 4px; }
+.entry-table td { border-bottom: 1px solid var(--line); padding: 4px; vertical-align: middle; }
+.entry-table td:nth-child(2), .entry-table td:nth-child(4), .entry-table td:nth-child(5) { white-space: nowrap; }
+.entry-table td:last-child { text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
+.entry-table tr.me td { background: #ffe1d6; font-weight: 800; }
+.entry-table tr.is-legend td { background: #fff7d6; }
+.entry-table td.fav { color: #c62828; font-weight: 900; }
+.entry-table small { font-weight: 400; }
+.me-mark { color: #e8552d; font-size: 11px; }
+.waku { display: inline-block; width: 20px; height: 20px; line-height: 20px; text-align: center; border-radius: 4px; font-weight: 900; font-size: 12px; border: 1px solid rgba(0,0,0,.25); }
+.order-pick { background: #f4f0e4; border-radius: 12px; padding: 8px 10px; margin: 8px 0; }
+.order-pick h4 { margin: 0 0 6px; }
+.order-pick .chips { flex-wrap: wrap; }
+.order-pick .chips button { position: relative; padding: 7px 10px; border-radius: 999px; border: 2px solid #d9cfb8; background: #fff; font-weight: 800; font-size: 13px; color: var(--ink); }
+.order-pick .chips button.active { border-color: #e8552d; background: #fff1ea; color: #c2410c; }
+.order-pick .rec-dot { display: block; font-size: 9px; color: #1f8a5b; line-height: 1; }
+.order-pick p { margin: 6px 0 0; }
+.ev.incident { background: #ffebee; border-left: 4px solid #e53935; }
+.ev.incident.me { background: #ffcdd2; font-weight: 800; }
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.result-table td, .result-table th { white-space: nowrap; }
+.result-table td:nth-child(2) { white-space: normal; min-width: 120px; }
+.result-table td.fav { color: #c62828; font-weight: 900; }
+.result-table td.pass { font-size: 11px; color: var(--muted); }
+.result-table td.best3f { color: #d84315; font-weight: 900; }
+.result-table .gnum { display: inline-block; min-width: 18px; margin-right: 3px; font-size: 10px; color: var(--muted); }
+.result-table .ord { margin-left: 4px; }
+.review { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 8px 0 10px; }
+.review span { background: #f4f0e4; border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 700; }
+.turn-pref { font-weight: 800; padding: 4px 2px; }
+
+/* 3D：ゲートイン中の出走表 */
+.r3-card { position: absolute; left: 50%; top: 52px; transform: translate(-50%, -8px); width: min(560px, 86%); max-height: calc(100% - 130px);
+  background: rgba(8, 24, 18, .86); color: #fff; border: 1px solid rgba(255, 215, 94, .5); border-radius: 12px; padding: 8px 10px;
+  opacity: 0; pointer-events: none; transition: opacity .5s, transform .5s; overflow: hidden; z-index: 3; }
+.r3-card.show { opacity: 1; transform: translate(-50%, 0); }
+.r3-card-h { font-weight: 900; color: #ffd75e; font-size: 13px; margin-bottom: 4px; }
+.r3-card-h small { color: #fff; opacity: .8; font-weight: 700; margin-left: 6px; }
+.r3-card-list { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; }
+.r3-card-row { display: flex; align-items: center; gap: 5px; font-size: 12px; padding: 1px 0; min-width: 0; }
+.r3-card-row.me { color: #ffb38a; }
+.r3-card-row .num { min-width: 18px; height: 18px; line-height: 18px; text-align: center; border-radius: 3px; font-weight: 900; font-size: 11px; }
+.r3-card-row img { width: 18px; height: 18px; }
+.r3-card-row b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.r3-card-row .pop { font-size: 11px; opacity: .85; }
+.r3-card-row .pop.fav { color: #ff8a80; font-weight: 900; opacity: 1; }
+.r3-card-row .odds { width: 38px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 800; }
+@media (max-width: 560px) {
+  .r3-card { top: 40px; width: 94%; padding: 5px 7px; max-height: calc(100% - 96px); }
+  .r3-card-h { font-size: 11px; margin-bottom: 2px; }
+  .r3-card-list { gap: 0 8px; }
+  .r3-card-row { font-size: 10px; gap: 3px; padding: 0; }
+  .r3-card-row img, .r3-card-row .odds { display: none; }
+  .r3-card-row .num { min-width: 14px; height: 14px; line-height: 14px; font-size: 9px; }
+  .r3-card-row .pop { font-size: 9px; }
+}
+
+/* 3D：写真判定 */
+.r3-photo { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  background: rgba(0, 0, 0, .55); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 4; }
+.r3-photo.show { opacity: 1; }
+.r3-photo-frame { position: relative; width: 72%; max-width: 640px; border: 6px solid #f5f1e6; box-shadow: 0 10px 30px rgba(0,0,0,.5); transform: rotate(-1.5deg); background: #222; }
+.r3-photo.show .r3-photo-frame { animation: photoIn .35s ease-out; }
+.r3-photo-frame img { display: block; width: 100%; filter: grayscale(.85) sepia(.25) contrast(1.15); }
+.r3-photo-line { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: rgba(255, 40, 40, .85); }
+.r3-photo-label { background: #111; color: #fff; font-weight: 900; padding: 6px 16px; border-radius: 999px; font-size: 16px; animation: pfBlink 1s infinite; }
+.r3-photo.decided .r3-photo-label { animation: none; background: #c62828; font-size: 18px; }
+.r3-photo-label .num { display: inline-block; min-width: 22px; text-align: center; border-radius: 4px; padding: 0 4px; }
+@keyframes photoIn { from { transform: scale(1.2) rotate(2deg); opacity: 0; } to { transform: rotate(-1.5deg); opacity: 1; } }
+@keyframes pfBlink { 50% { opacity: .55; } }
+.r3-banner.incident { background: linear-gradient(90deg, rgba(198,40,40,.92), rgba(120,20,20,.92)); }

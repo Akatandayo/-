@@ -308,9 +308,13 @@ const App = {
     const field = Race.buildField(h, race);
     const trialTo = race.trial ? Race.get(race.trial.to) : null;
     const ground = Race.rollGround(race);
-    this.pending = { hid, raceId, field, ground };
-    const cat = Horse.distCat(race.distance);
+    Race.setOdds(race, field, ground);
     const warn = [];
+    this.pending = { hid, raceId, field, ground };
+    const me = field.find(e => e.isPlayer);
+    UI.state.order = UI.suggestOrder(h, race);
+    if (h.turn && !Race.courseOf(race).straight && h.turn !== Race.courseOf(race).dir) warn.push(`${Race.courseOf(race).dirLabel}は少し苦手です`);
+    const cat = Horse.distCat(race.distance);
     if (h.aptitude[cat] < 45) warn.push('距離適性が低いレースです');
     if (h.aptitude[race.surface] < 45) warn.push('馬場適性が低いレースです');
     if (h.fatigue >= 50) warn.push('疲れがたまっています');
@@ -320,8 +324,9 @@ const App = {
       <p>📅 ${Calendar.fullLabel()}・📍${race.venue}<br>${race.surface === 'turf' ? '🌱芝' : '🟫ダート'} ${race.distance}m・${Race.AGE_LABEL[race.ages]}${race.female ? '牝馬' : ''}・馬場：<b>${GAME_DATA.grounds[ground].label}</b>${UI.help('ground')}<br>🔄 ${Race.courseText(race)}${Race.courseHint(race) ? `<small class="muted">（${Race.courseHint(race)}）</small>` : ''}</p>
       ${elig.right ? '<p class="ok">🎫 優先出走権で出走！</p>' : ''}
       ${trialTo ? `<p class="rec">🎫 ${race.trial.top}着以内で「${trialTo.name}」の優先出走権！${UI.help('right')}</p>` : ''}
-      <h4>出走メンバー（${field.length}頭）</h4>
-      <ol class="entry-list">${field.map(e => `<li class="${e.isPlayer ? 'me' : ''} ${e.isLegend ? 'is-legend' : ''}">${GAME_DATA.styles[e.runningStyle].icon} ${e.isLegend ? '👑' : ''}${Util.esc(e.name)}${e.isPlayer ? ' ← あなたの馬' : ''}${e.isLegend ? `<small>${Util.esc(Legends.get(e.legendId).wins)}</small>` : ''}</li>`).join('')}</ol>
+      <h4>出走表（${field.length}頭）<small class="muted">　${Util.esc(h.name)}は ${me.pop}番人気（単勝 ${me.odds.toFixed(1)}倍）${me.pop >= 4 ? '・勝てば大金星ボーナス！' : ''}</small></h4>
+      ${UI.entryTable(field)}
+      ${UI.orderPicker(h, race)}
       ${field.some(e => e.isLegend) ? '<p class="rec">👑 名馬が出走！ 先着するとその名馬のカードが手に入ることがあります。</p>' : ''}
       ${warn.length ? `<div class="warn">${warn.map(w => '⚠ ' + w).join('<br>')}</div>` : '<p class="ok">準備万端！</p>'}
       <div class="btn-row"><button class="btn" onclick="UI.closeModal()">やめる</button><button class="btn primary big" onclick="App.runRace()">🏁 スタート！</button></div>`);
@@ -335,6 +340,8 @@ const App = {
     const h = Player.horse(pd.hid);
     const race = Race.get(pd.raceId);
     if (!h || !Race.eligibility(h, race).ok) return UI.toast('出走できません', 'error');
+    const me = pd.field.find(e => e.isPlayer);
+    if (me) me.order = UI.state.order || 'normal';
     // 結果は先に計算・保存し、表示は後から再生する
     const result = Race.simulate(race, pd.field, pd.ground);
     const reward = Race.applyResult(h, race, result);
@@ -346,13 +353,15 @@ const App = {
   // ── 対戦（リーグ戦・フレンド対戦） ──
   matchModal(match, h) {
     const r = match.race;
+    UI.state.order = UI.suggestOrder(h, r);
     UI.modal(`
       <h3>${UI.gradeBadge(r.grade)} ${Util.esc(r.name)}</h3>
       <p>${r.surface === 'turf' ? '🌱芝' : '🟫ダート'} ${r.distance}m・馬場：<b>${GAME_DATA.grounds[match.ground].label}</b>
         ${match.league && match.league.statCap ? `・能力上限 ${match.league.statCap}` : match.cap ? `・能力上限 ${match.cap}` : ''}</p>
-      <h4>対戦相手</h4>
-      <ol class="entry-list wide">${match.field.map(e => `<li class="${e.isPlayer ? 'me' : ''}">${GAME_DATA.styles[e.runningStyle].icon} ${Util.esc(e.name)}
-        <small class="muted">${e.isPlayer ? 'あなた' : Util.esc(e.owner || '')}${e.isGhost ? '（フレンド）' : ''}</small></li>`).join('')}</ol>
+      ${r.venue ? `<p class="muted small">🔄 ${Util.esc(r.venue)} ${Race.courseText(r)}${Race.courseHint(r) ? '（' + Race.courseHint(r) + '）' : ''}</p>` : ''}
+      <h4>出走表</h4>
+      ${UI.entryTable(match.field, { owner: true })}
+      ${UI.orderPicker(h, r)}
       <div class="btn-row"><button class="btn" onclick="UI.closeModal()">やめる</button><button class="btn primary big" onclick="App.runMatch()">🏁 スタート！</button></div>`);
   },
 
@@ -382,6 +391,14 @@ const App = {
     this.pendingMatch = null;
     UI.closeModal();
     const h = Player.horse(m.hid);
+    const me = m.field.find(e => e.isPlayer);
+    if (me) me.order = UI.state.order || 'normal';
+    if (m.kind === 'custom') {
+      const result = Race.simulate(m.race, m.field, m.ground);
+      const reward = Pvp.applyCustom(result, me.id, false);
+      Player.save();
+      return this.playCustom(m.race, result, reward, m.hid, false);
+    }
     if (!h || !Pvp.canEnter(h, { league: m.kind === 'league' }).ok) return UI.toast('出走できません', 'error');
     const result = Race.simulate(m.race, m.field, m.ground);
     const reward = m.kind === 'league' ? Pvp.applyLeague(h, m, result) : Pvp.applyFriend(h, m, result);
@@ -397,7 +414,7 @@ const App = {
           return `${v.placeHead(reward.place, fin[0].name)}
             <div class="rating-change ${reward.delta >= 0 ? 'up' : 'down'}">レーティング ${reward.rating} <b>${reward.delta >= 0 ? '+' : ''}${reward.delta}</b></div>
             ${reward.unlocked.map(l => `<p class="center ok">🎉 ${l.icon}${l.name}が解放されました！</p>`).join('')}
-            ${v.resultTable(fin)}
+            ${v.reviewHTML()}${v.resultTable(fin)}
             <h3>🎁 報酬</h3>
             <div class="rewards"><div>💰 賞金 <b>${Util.money(reward.prize)}</b></div>
               <div>✨ 経験値 <b>+${reward.exp}</b>${reward.levelUps ? ' <span class="ok">レベルアップ！</span>' : ''}</div></div>
@@ -406,7 +423,7 @@ const App = {
         }
         return `${v.placeHead(reward.place, fin[0].name)}
           ${reward.vs.length ? `<div class="vs-list">${reward.vs.map(x => `<div class="${x.won ? 'ok' : 'warn'}">${x.won ? '○ 勝ち' : '● 負け'}：${Util.esc(x.owner)}厩舎の${Util.esc(x.name)}</div>`).join('')}</div>` : ''}
-          ${v.resultTable(fin)}
+          ${v.reviewHTML()}${v.resultTable(fin)}
           <p class="muted small">フレンド対戦はエキシビション（報酬・経験値・疲労なし）。何度でも挑戦できます。</p>
           ${back}`;
       }
@@ -423,17 +440,15 @@ const App = {
     const h = Player.horse(UI.state.raceHorse);
     if (!h) return;
     const spec = Pvp.sanitizeSpec(UI.state.customSpec);
-    const match = Pvp.buildCustomMatch(spec, [Pvp.playerEntrant(h, spec.cap || null)]);
-    const result = Race.simulate(match.race, match.field, match.ground);
-    const reward = Pvp.applyCustom(result, h.id, false);
-    Player.save();
-    this.playCustom(match.race, result, reward, h.id, false);
+    this.pendingMatch = Object.assign(Pvp.buildCustomMatch(spec, [Pvp.playerEntrant(h, spec.cap || null)]), { hid: h.id });
+    this.matchModal(this.pendingMatch, h);
   },
 
   playCustom(race, result, reward, hid, online) {
     RaceView.start({
       result, reward, race, horseId: hid,
       resultHTML: v => `${v.placeHead(reward.place, result.finish[0].name)}
+        ${v.reviewHTML()}
         ${v.resultTable(result.finish)}
         <p class="muted small center">カスタムレースはエキシビションです（賞金・経験値・疲労なし）。</p>
         <div class="btn-row">${v.three ? '<button class="btn" onclick="RaceView.replay()">🎬 ゴール前リプレイ</button>' : ''}

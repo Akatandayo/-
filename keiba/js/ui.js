@@ -120,11 +120,12 @@ const UI = {
       ${caps ? `<polygon points="${poly(caps)}" class="rc"/>` : ''}<polygon points="${poly(stats)}" class="rs"/>${labels}</svg>`;
   },
 
-  aptGrid(apt) {
+  aptGrid(apt, turn) {
     const d = GAME_DATA.distances.map(x => `<div class="apt"><span>${x.label}</span><b>${Util.stars(apt[x.key])}</b><small>${Util.aptMark(apt[x.key])}</small></div>`).join('');
     const s = GAME_DATA.surfaces.map(x => `<div class="apt"><span>${x.icon}${x.label}</span><b>${Util.stars(apt[x.key])}</b><small>${Util.aptMark(apt[x.key])}</small></div>`).join('');
     return `<div class="apt-title">距離${this.help('distance')}</div><div class="apt-grid">${d}</div>
-      <div class="apt-title">馬場${this.help('surface')}</div><div class="apt-grid">${s}</div>`;
+      <div class="apt-title">馬場${this.help('surface')}</div><div class="apt-grid">${s}</div>
+      ${turn !== undefined ? `<div class="apt-title">回り${this.help('turn')}</div><div class="turn-pref">🔄 ${Horse.turnLabel(turn)}</div>` : ''}`;
   },
 
   // 種牡馬・繁殖牝馬カード
@@ -424,7 +425,7 @@ const UI = {
         ${STAT_KEYS.map(k => this.statRow(k, h.stats[k], h.caps[k])).join('')}
         <p class="muted small">｜の位置がこの馬の限界（素質）。調教で限界まで伸ばせます。</p>
       </section>
-      <section class="panel"><h3>適性</h3>${this.aptGrid(h.aptitude)}</section>
+      <section class="panel"><h3>適性</h3>${this.aptGrid(h.aptitude, h.turn || "")}</section>
       <section class="panel"><h3>脚質${this.help('style')}</h3>
         <div class="style-box"><span class="style-big">${s.icon}</span><div><b>${s.label}</b><p>${s.desc}</p></div></div>
       </section>
@@ -832,6 +833,47 @@ const UI = {
       </section>`;
   },
 
+  // ─────────── 出走表・作戦（レース前の共通部品） ───────────
+  // 作戦のおすすめ：脚質とコースから
+  suggestOrder(h, race) {
+    const L = Race.courseOf(race).L;
+    const cat = Horse.distCat(race.distance);
+    if (h.runningStyle === 'nige' || h.runningStyle === 'senko') return L <= 330 ? 'push' : cat === 'long' ? 'early' : 'normal';
+    if (L >= 450) return 'hold';
+    if (cat === 'long' && h.stats.stamina >= h.stats.speed) return 'early';
+    return 'normal';
+  },
+  orderPicker(h, race) {
+    const st = this.state;
+    if (!GAME_DATA.orders[st.order]) st.order = 'normal';
+    const rec = this.suggestOrder(h, race);
+    const o = GAME_DATA.orders[st.order];
+    return `<div class="order-pick"><h4>🗣 作戦 ${this.help('order')}</h4>
+      <div class="chips">${Object.entries(GAME_DATA.orders).map(([k, v]) => `<button class="${st.order === k ? 'active' : ''}" onclick="UI.setOrder('${k}')">${v.icon}${v.label}${k === rec ? '<small class="rec-dot">おすすめ</small>' : ''}</button>`).join('')}</div>
+      <p class="muted small" id="order-desc">${o.icon} ${o.desc}</p></div>`;
+  },
+  setOrder(k) {
+    this.state.order = k;
+    document.querySelectorAll('.order-pick .chips button').forEach((b, i) => b.classList.toggle('active', Object.keys(GAME_DATA.orders)[i] === k));
+    const d = this.el('order-desc');
+    if (d) d.textContent = `${GAME_DATA.orders[k].icon} ${GAME_DATA.orders[k].desc}`;
+    if (Online.status === 'lobby') Online.setOrder(k);
+  },
+  // 馬番・人気・単勝オッズつきの出走表
+  entryTable(field, opts = {}) {
+    const n = field.length;
+    return `<table class="entry-table"><thead><tr><th>枠</th><th>馬番</th><th>馬名</th><th>人気</th><th>単勝</th></tr></thead><tbody>
+      ${field.map((e, i) => {
+        const b = Race3D.bracketOf(i + 1, n);
+        const st = GAME_DATA.styles[e.runningStyle];
+        return `<tr class="${e.isPlayer ? 'me' : ''} ${e.isLegend ? 'is-legend' : ''}">
+          <td><span class="waku" style="background:${Race3D.BRACKET_COLORS[b - 1]};color:${Race3D.BRACKET_TEXT[b - 1]}">${b}</span></td><td>${i + 1}</td>
+          <td>${st ? st.icon : ''} ${e.isLegend ? '👑' : ''}${Util.esc(e.name)}${e.isPlayer ? ' <b class="me-mark">◀ あなた</b>' : ''}
+            ${e.isLegend ? `<br><small>${Util.esc(Legends.get(e.legendId).wins)}</small>` : opts.owner && e.owner ? `<br><small class="muted">${Util.esc(e.owner)}</small>` : ''}</td>
+          <td class="${e.pop <= 3 ? 'fav' : ''}">${e.pop ? e.pop + '番人気' : '-'}</td><td>${e.odds ? e.odds.toFixed(1) : '-'}</td></tr>`;
+      }).join('')}</tbody></table>`;
+  },
+
   // ─────────── カスタムレース（ひとり／オンライン） ───────────
   customView(h) {
     const st = this.state;
@@ -891,6 +933,7 @@ const UI = {
         <ol class="entry-list wide lobby-list">${on.members.map(m => `<li class="${m.id === on.myId ? 'me' : ''}">
           ${m.host ? '🏠' : '🙋'} ${GAME_DATA.styles[m.horse.style] ? GAME_DATA.styles[m.horse.style].icon : ''} <b>${Util.esc(m.horse.name)}</b>
           <small class="muted">${Util.esc(m.owner)}厩舎・総合 ${Util.grade(m.horse.overall)}${m.ready ? '' : '・📺 観戦中'}</small></li>`).join('')}</ol>
+        ${this.orderPicker(h, Pvp.customRace(spec))}
         ${host ? `<button class="btn primary big" onclick="Online.start()">🏁 レーススタート！</button>
           <p class="muted small">${on.members.length < 2 ? '参加者を待っています。ひとりでもスタートできます。' : 'みんなそろったらスタート！'}</p>`
           : '<p class="ok center">⏳ ホストがスタートするのを待っています…</p>'}
@@ -1181,7 +1224,24 @@ const RaceView = {
     }).join('');
   },
 
+  // 実況の読み上げをしてよいか（3D・等倍・再生中のみ）
+  voiceOk() { return !!this.three && !this.skipping && !this.done && !this.replaying && this.speed() === 1 && this.clock >= -0.5; },
+
+  speak(e) {
+    if (typeof Voice === 'undefined' || !this.voiceOk()) return;
+    const fin = this.ctx.result.finish;
+    if (e.type === 'checkpoint') {
+      if (e.key === 'goal' && fin[1] && fin[1].time - fin[0].time < 0.06) return;   // 写真判定のときは結果を言わない
+      Voice.say(e.text, { interrupt: ['start', 'r400', 'r200', 'goal'].includes(e.key) });
+    } else if (e.type === 'incident') {
+      if (e.isPlayer || Math.random() < 0.5) Voice.say(e.text, { interrupt: e.isPlayer });
+    } else if (e.type === 'skill') {
+      if (e.isPlayer) Voice.say(`${e.sub.split(' ')[0]}、${e.text.replace(/発動！/, '')}！`);
+    } else Voice.say(e.text);
+  },
+
   eventHTML(e) {
+    if (e.type === 'incident') return `<div class="ev incident ${e.isPlayer ? 'me' : ''}">⚠ ${Util.esc(e.text)}</div>`;
     if (e.type === 'checkpoint') return `<div class="ev cp"><span class="cp-label">── ${e.label} ──</span><br>${Util.esc(e.text)}</div>`;
     if (e.type === 'skill') {
       return `<div class="ev skill ${e.isPlayer ? 'me' : ''}">${e.text}<br><small>${Util.esc(e.sub)}${e.isPlayer && !e.matched ? '（脚質不一致）' : ''}</small></div>`;
@@ -1193,6 +1253,11 @@ const RaceView = {
     const log = UI.el('rl-log');
     if (!log) return;
     log.insertAdjacentHTML('afterbegin', this.eventHTML(e));
+    if (!this.skipping) this.speak(e);
+    if (e.type === 'incident' && !this.skipping) {
+      if (this.three) Race3D.onIncident(e);
+      else if (e.isPlayer) UI.toast(`⚠ ${Util.esc(e.text)}`, 'skill-toast');
+    }
     if (e.type === 'skill' && !this.skipping) {
       const el = UI.el('rn-' + e.horseId);
       if (el) {
@@ -1209,6 +1274,7 @@ const RaceView = {
   skip() {
     this.stop();
     Fanfare.stop();
+    if (typeof Voice !== 'undefined') Voice.stop();
     const events = this.ctx.result.events;
     this.skipping = true;
     while (this.idx < events.length) { this.apply(events[this.idx]); this.idx++; }
@@ -1236,6 +1302,8 @@ const RaceView = {
     st.goalShown = false;
     st.startShown = true;
     st.shot = null;
+    st.replaying = true;
+    this.replaying = true;
     const rp = UI.el('r3-replay');
     if (rp) rp.classList.add('show');
     UI.el('r3').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1248,7 +1316,7 @@ const RaceView = {
       last = ts;
       try { Race3D.render(t, this.positionsAt(t), t > ft - 2 && t < ft + 0.6 ? 0.4 : 1); } catch (e) { this.fallback2d(); return; }
       if (t < ft + 3) this.raf = requestAnimationFrame(loop);
-      else if (rp) rp.classList.remove('show');
+      else { if (rp) rp.classList.remove('show'); st.replaying = false; this.replaying = false; }
     };
     this.raf = requestAnimationFrame(loop);
   },
@@ -1266,14 +1334,38 @@ const RaceView = {
     this.raf = requestAnimationFrame(loop);
   },
 
+  // 成績表：着順・馬番・人気・タイム・着差・通過順・上がり3F（最速は🔥）
   resultTable(fin) {
-    return `<table class="hist">
-        <tr><th>着</th><th>馬名</th><th>タイム</th><th>着差</th></tr>
+    const l3 = fin.map(f => f.last3f).filter(v => v);
+    const best = l3.length ? Math.min(...l3) : null;
+    const hasPass = fin.some(f => f.passing && f.passing.length);
+    return `<div class="table-scroll"><table class="hist result-table">
+        <tr><th>着</th><th>馬名</th><th>人気</th><th>タイム</th><th>着差</th>${hasPass ? '<th>通過</th>' : ''}<th>上がり</th></tr>
         ${fin.map(f => {
           const e = this.entrant(f.id) || {};
-          return `<tr class="${f.isPlayer ? 'me' : ''} ${f.legendId ? 'is-legend' : ''}"><td>${f.place}</td><td>${GAME_DATA.styles[f.style].icon} ${f.legendId ? '👑' : ''}${Util.esc(f.name)}${e.owner && !f.legendId ? `<br><small class="muted">${Util.esc(e.owner)}</small>` : ''}</td><td>${Race.timeText(f.time)}</td><td>${f.margin}</td></tr>`;
+          const ord = f.order && f.order !== 'normal' && GAME_DATA.orders[f.order] ? `<span class="ord" title="作戦：${GAME_DATA.orders[f.order].label}">${GAME_DATA.orders[f.order].icon}</span>` : '';
+          return `<tr class="${f.isPlayer ? 'me' : ''} ${f.legendId ? 'is-legend' : ''}"><td>${f.place}</td>
+            <td><span class="gnum">${e.gate || ''}</span>${GAME_DATA.styles[f.style].icon} ${f.legendId ? '👑' : ''}${Util.esc(f.name)}${f.isPlayer ? ord : ''}${e.owner && !f.legendId ? `<br><small class="muted">${Util.esc(e.owner)}</small>` : ''}</td>
+            <td class="${f.pop && f.pop <= 3 ? 'fav' : ''}">${f.pop || '-'}</td><td>${Race.timeText(f.time)}</td><td>${f.margin}</td>
+            ${hasPass ? `<td class="pass">${(f.passing || []).join('-')}</td>` : ''}
+            <td class="${f.last3f && f.last3f === best ? 'best3f' : ''}">${f.last3f ? f.last3f.toFixed(1) + (f.last3f === best ? '🔥' : '') : '-'}</td></tr>`;
         }).join('')}
-      </table>`;
+      </table></div>`;
+  },
+
+  // レースのふり返り：自分の馬の人気・作戦・アクシデント・上がり
+  reviewHTML() {
+    const { result } = this.ctx;
+    const me = result.finish.find(f => f.isPlayer);
+    if (!me) return '';
+    const notes = [];
+    if (me.pop) notes.push(`📊 ${me.pop}番人気（単勝 ${me.odds ? me.odds.toFixed(1) : '-'}倍）`);
+    if (me.order && GAME_DATA.orders[me.order]) notes.push(`🗣 作戦：${GAME_DATA.orders[me.order].icon}${GAME_DATA.orders[me.order].label}`);
+    if (me.passing && me.passing.length) notes.push(`🔁 通過順 ${me.passing.join('-')}`);
+    const l3 = result.finish.map(f => f.last3f).filter(v => v);
+    if (me.last3f) notes.push(`⏱ 上がり3F ${me.last3f.toFixed(1)}（${l3.filter(v => v < me.last3f).length + 1}位）`);
+    result.events.filter(e => e.type === 'incident' && e.isPlayer).forEach(e => notes.push(`⚠ ${Util.esc(e.text)}`));
+    return `<div class="review">${notes.map(n => `<span>${n}</span>`).join('')}</div>`;
   },
 
   // 名馬との対決結果
@@ -1308,6 +1400,8 @@ const RaceView = {
         ${reward.newRecord ? '<p class="center ok">⏱ コースレコード更新！</p>' : ''}
         ${this.legendHTML(reward.legends)}
         ${reward.rightTo ? `<p class="center ok big-note">🎫「${reward.rightTo.name}」の優先出走権を獲得！</p>` : ''}
+        ${reward.bonus ? `<p class="center ok big-note">🎯 ${reward.pop}番人気で大金星！ ボーナス +${Util.money(reward.bonus)}</p>` : ''}
+        ${this.reviewHTML()}
         ${this.resultTable(fin)}
         <h3>🎁 報酬</h3>
         <div class="rewards">

@@ -20,6 +20,7 @@ const Horse = {
       stats: Object.assign({ speed: 50, stamina: 50, power: 50, guts: 50, intelligence: 50 }, opts.stats),
       caps: Object.assign({}, opts.caps || opts.stats),
       capBoost: 0,          // アイテムで上げた限界値（上限 GAME_DATA.capBoostMax）
+      turn: opts.turn !== undefined ? opts.turn : this.randomTurn(),   // 得意な回り（R/L/''）
       aptitude: Object.assign({ sprint: 50, mile: 50, classic: 50, long: 50, turf: 50, dirt: 50 }, opts.aptitude),
       runningStyle: opts.runningStyle || 'senko',
       growthType: opts.growthType || 'normal',
@@ -53,6 +54,10 @@ const Horse = {
     const f = Cards.get(h.fatherId), m = Cards.get(h.motherId);
     return f && m ? Breeding.pedigreeOf(f, m) : { f: null, m: null, ff: null, fm: null, mf: null, mm: null };
   },
+
+  // 得意な回り：右回り・左回り・どちらでも
+  randomTurn() { const r = Math.random(); return r < 0.3 ? 'R' : r < 0.6 ? 'L' : ''; },
+  turnLabel(t) { return t === 'R' ? '右回り◎・左回り△' : t === 'L' ? '左回り◎・右回り△' : '右回り○・左回り○'; },
 
   distCat(distance) {
     return GAME_DATA.distances.find(d => distance <= d.max).key;

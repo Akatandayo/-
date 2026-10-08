@@ -20,6 +20,16 @@ const Race = {
   // 脚質ごとの体力消費（前に行くほど消耗する）
   styleCost: { nige: 1.05, senko: 1.02, sashi: 1.0, oikomi: 0.98 },
 
+  // 作戦（騎手への指示）の効果。early：前半の速度、final：最後の速度、cost：体力消費、
+  // spurt：スパートを始める位置を何m早めるか、kakari：掛かりやすさ、block：前が壁になりやすさ
+  ORDER_FX: {
+    normal: {},
+    push: { early: 1.005, final: 0.99, cost: 1.07, kakari: 1.6 },
+    hold: { early: 0.996, final: 1.014, cost: 0.94, kakari: 0.6, block: 1.4 },
+    early: { spurt: 140, corner: 1.003, final: 0.993 },
+    inside: { cost: 0.965, block: 2.4 }
+  },
+
   gradeInfo(race) { return GAME_DATA.grades[race.grade]; },
 
   AGE_LABEL: { '2': '2歳', '3': '3歳', '3+': '3歳以上', '4+': '4歳以上' },
@@ -198,16 +208,21 @@ const Race = {
     }
     return {
       id: Util.uid('npc_'), name: Horse.randomName(), isPlayer: false,
-      stats, aptitude, runningStyle, skills,
+      stats, aptitude, runningStyle, skills, turn: Horse.randomTurn(), order: this.npcOrder(runningStyle),
       condition: Util.randInt(55, 100), fatigue: Util.randInt(0, 20)
     };
+  },
+
+  // CPUの作戦（たいていはいつも通り）
+  npcOrder(style) {
+    return Util.weighted({ normal: 70, push: style === 'nige' || style === 'senko' ? 10 : 4, hold: style === 'sashi' || style === 'oikomi' ? 10 : 4, early: 7, inside: 6 });
   },
 
   buildField(h, race) {
     const entrants = [{
       id: h.id, name: h.name, isPlayer: true,
       stats: Object.assign({}, h.stats), aptitude: Object.assign({}, h.aptitude),
-      runningStyle: h.runningStyle, skills: h.skills.slice(),
+      runningStyle: h.runningStyle, skills: h.skills.slice(), turn: h.turn || '', order: 'normal',
       condition: h.condition, fatigue: h.fatigue
     }];
     const used = new Set([h.name]);
@@ -231,6 +246,40 @@ const Race = {
       [entrants[i], entrants[j]] = [entrants[j], entrants[i]];
     }
     return entrants;
+  },
+
+  // ── 人気・単勝オッズ ──
+  // 能力・適性・調子・スキルから「強さ」を見積もり、ロジットで勝率にする（係数はシミュレーションで調整）
+  ODDS_K: 0.27,
+  DIST_WEIGHTS: {
+    sprint: { speed: 0.4, power: 0.25, guts: 0.15, stamina: 0.08, intelligence: 0.12 },
+    mile: { speed: 0.36, power: 0.2, guts: 0.15, stamina: 0.17, intelligence: 0.12 },
+    classic: { speed: 0.3, power: 0.17, guts: 0.15, stamina: 0.26, intelligence: 0.12 },
+    long: { speed: 0.24, power: 0.14, guts: 0.16, stamina: 0.34, intelligence: 0.12 }
+  },
+  strength(e, race, ground) {
+    const cat = Horse.distCat(race.distance);
+    const w = this.DIST_WEIGHTS[cat];
+    const s = e.stats;
+    let v = STAT_KEYS.reduce((sum, k) => sum + Math.min(s[k], 130) * w[k], 0);
+    const mul = (0.93 + 0.07 * e.aptitude[cat] / 100) * (0.96 + 0.04 * e.aptitude[race.surface] / 100)
+      * (1 - (ground || 0) * 0.006 * (1 - Math.min(s.power, 120) / 130))
+      * (0.98 + 0.02 * e.condition / 100) * (1 - 0.025 * (e.fatigue || 0) / 100);
+    v += Math.log(mul) * 160;
+    (e.skills || []).forEach(id => { const sk = Skills.get(id); if (sk) v += sk.rarity === 'UR' ? 2.2 : sk.rarity === 'SSR' ? 1.6 : 1; });
+    return v;
+  },
+  // field に pop（人気）と odds（単勝オッズ）を書き込む
+  setOdds(race, field, ground) {
+    const sc = field.map(e => this.strength(e, race, ground));
+    const mx = Math.max(...sc);
+    const ex = sc.map(v => Math.exp((v - mx) * this.ODDS_K));
+    const sum = ex.reduce((a, b) => a + b, 0);
+    const p = ex.map(v => v / sum);
+    const rank = p.map((v, i) => i).sort((a, b) => p[b] - p[a]);
+    rank.forEach((i, r) => { field[i].pop = r + 1; });
+    field.forEach((e, i) => { e.odds = Math.round(Util.clamp(0.8 / p[i], 1.1, 999.9) * 10) / 10; });
+    return field;
   },
 
   // コースのレイアウト（回り・1周・直線の長さ）。会場が無いレースは東京扱い
@@ -293,20 +342,35 @@ const Race = {
     const courseK = cx > 0 ? Math.min(cx, 1) * 0.012 : Math.max(cx, -0.6) * 0.006;
     const courseBias = { nige: -1, senko: -0.6, sashi: 0.6, oikomi: 1 };
 
+    // 通過順を記録する地点（おおよそのコーナー）と、上がり3Fの起点
+    const marks = [...new Set([D * 0.3, D * 0.55, D - Math.min(course.L, D * 0.35) - 200, D - Math.min(course.L, D * 0.35)]
+      .map(Math.round).filter(m => m > 100 && m < D - 100))].sort((a, b) => a - b);
+    const passCount = marks.map(() => 0);
+    const last3 = Math.max(0, D - 600);
+
     const runners = entrants.map((e, gate) => {
       const s = e.stats;
-      const aptMul = (0.93 + 0.07 * e.aptitude[distCat] / 100) * (0.96 + 0.04 * e.aptitude[race.surface] / 100);
+      const fx = this.ORDER_FX[e.order] || this.ORDER_FX.normal;
+      // 右回り・左回りの得意不得意（直線コースは関係なし）
+      const turnMul = e.turn && !course.straight ? (e.turn === course.dir ? 1.004 : 0.994) : 1;
+      const aptMul = (0.93 + 0.07 * e.aptitude[distCat] / 100) * (0.96 + 0.04 * e.aptitude[race.surface] / 100) * turnMul;
       const groundMul = 1 - ground * 0.006 * (1 - Math.min(s.power, 120) / 130);
       const condMul = (0.98 + 0.02 * e.condition / 100) * (1 - 0.025 * e.fatigue / 100);
       const form = 1 + Util.gauss() * 0.004 * (1.2 - s.intelligence / 250);
       const skills = e.skills.map(id => Skills.get(id)).filter(Boolean)
         .sort((a, b) => Skills.priority(b) - Skills.priority(a));
       const maxHp = 300 + s.stamina * 22 + s.guts * 4;
+      // アクシデント：賢さが低い・調子が悪いほど起きやすい
+      const careless = Util.clamp(1.25 - s.intelligence / 160, 0.35, 1.2) * (e.condition < 45 ? 1.4 : 1);
+      const late = Math.random() < 0.06 * careless;
+      const kakari = Math.random() < 0.07 * careless * (fx.kakari || 1);
       return {
-        e, gate, pos: 0, v: 0, hp: maxHp, maxHp,
+        e, gate, fx, pos: late ? -(3 + Math.random() * 5) : 0, v: 0, hp: maxHp, maxHp,
         mul: aptMul * groundMul * condMul * form,
         skills, usedSkills: new Set(), active: [],
-        finished: false, time: null, exhaustedLogged: false
+        finished: false, time: null, exhaustedLogged: false,
+        late, kakariAt: kakari ? startEnd * 0.6 + Math.random() * Math.max(50, cornerStart - startEnd) : null, kakariUntil: 0,
+        careless, blocked: false, blockUntil: 0, passing: [], t600: null
       };
     });
 
@@ -330,6 +394,8 @@ const Race = {
     const name = r => r.e.name;
 
     checkpoint('start', 'スタート', 0, `${race.name}、各馬いっせいにスタート！`);
+    const incident = (t, r, kind, text) => events.push({ t: Math.round(t * 10) / 10, type: 'incident', kind, horseId: r.e.id, isPlayer: r.e.isPlayer, text });
+    runners.filter(r => r.late).forEach(r => incident(0.5, r, 'late', `${name(r)}、出遅れた！`));
     let t = 0, lastLeader = null, nextFrame = 0;
     const maxT = D / 8;
     while (runners.some(r => !r.finished) && t < maxT) {
@@ -367,10 +433,12 @@ const Race = {
       lastLeader = ranked[0];
 
       // ── 各馬の移動 ──
+      ranked.forEach(r => { r.pos0 = r.pos; });   // この刻みの開始位置（前が壁の判定用）
       ranked.forEach((r, idx) => {
         if (r.finished) return;
         const s = r.e.stats;
-        const phase = phaseAt(r.pos);
+        const fx = r.fx;
+        const phase = phaseAt(r.pos + (fx.spurt || 0));   // 早仕掛けは早めにスパート
         const rank = idx + 1;
         const remain = D - r.pos;
 
@@ -400,8 +468,29 @@ const Race = {
         const sp = stylePhaseAt(r.pos);
         let target = base * this.styleMult[r.e.runningStyle][sp] * r.mul * skillMul;
         if (sp === 'final') target *= 1 + courseK * courseBias[r.e.runningStyle];
+        // 作戦
+        if ((sp === 'start' || sp === 'mid') && fx.early) target *= fx.early;
+        if (sp === 'corner' && fx.corner) target *= fx.corner;
+        if (phase === 'final' && fx.final) target *= fx.final;
         target *= 1 + Util.gauss() * 0.002;
-        let costMul = 1;
+        let costMul = fx.cost || 1;
+        // 掛かり：前半に力んで体力を使ってしまう
+        if (r.kakariAt !== null && r.pos >= r.kakariAt && !r.kakariUntil) {
+          r.kakariUntil = t + 6 + Math.random() * 4;
+          incident(t, r, 'kakari', `${name(r)}、掛かっている！ 折り合いがつかない！`);
+        }
+        if (t < r.kakariUntil) { target *= 1.02; costMul *= 1.7; }
+        // 前が壁：直線で前の馬にふさがれる（差し・追込や内を突く作戦で起きやすい）
+        if (phase === 'final' && !r.blocked && rank >= 3 && remain > 120) {
+          const wall = ranked.some(o => o !== r && !o.finished && o.pos0 - r.pos0 > 0.4 && o.pos0 - r.pos0 < 3);
+          const prone = (r.e.runningStyle === 'sashi' || r.e.runningStyle === 'oikomi' ? 1 : 0.4) * (fx.block || 1);
+          if (wall && Math.random() < 0.012 * prone * r.careless * this.DT * 2) {
+            r.blocked = true;
+            r.blockUntil = t + 1.5 + Math.random() * 1.5;
+            incident(t, r, 'block', `${name(r)}、前が壁！ 進路がない！`);
+          }
+        }
+        if (t < r.blockUntil) target *= 0.95;
         if (phase === 'final' && r.hp > 0) {
           target *= 1.02 + s.guts * 0.0001; // ラストスパート
           costMul = 1.4;
@@ -421,6 +510,9 @@ const Race = {
         r.hp -= move * 0.75 * Math.pow(r.v / 16.5, 2) * costMul * this.styleCost[r.e.runningStyle];
         const prev = r.pos;
         r.pos += move;
+        // 通過順と上がり3F
+        marks.forEach((m, i) => { if (prev < m && r.pos >= m) r.passing[i] = ++passCount[i]; });
+        if (prev < last3 && r.pos >= last3) r.t600 = t + this.DT * ((last3 - prev) / (r.pos - prev));
         if (r.pos >= D) {
           r.finished = true;
           r.time = t + this.DT * ((D - prev) / (r.pos - prev));
@@ -444,7 +536,10 @@ const Race = {
         id: r.e.id, name: r.e.name, isPlayer: r.e.isPlayer, legendId: r.e.legendId, place: i + 1,
         style: r.e.runningStyle,
         time: r.time,
-        margin: prev ? this.marginText((r.time - prev.time) * r.v / 2.4) : ''
+        margin: prev ? this.marginText((r.time - prev.time) * r.v / 2.4) : '',
+        passing: marks.map((m, i) => r.passing[i] || runners.length),
+        last3f: r.time !== null && r.t600 !== null && D >= 1000 ? Math.round((r.time - r.t600) * 10) / 10 : null,
+        pop: r.e.pop || null, odds: r.e.odds || null, order: r.e.order || 'normal'
       };
     });
     const second = final[1];
@@ -456,9 +551,9 @@ const Race = {
     return {
       raceId: race.id, name: race.name, grade: race.grade, distance: D, surface: race.surface,
       distCat, ground, venue: course.venue, course,
-      entrants: runners.map(r => ({ id: r.e.id, name: r.e.name, owner: r.e.owner || '', isPlayer: r.e.isPlayer, isGhost: !!r.e.isGhost, legendId: r.e.legendId, coat: r.e.coat, style: r.e.runningStyle, gate: r.gate + 1 })),
+      entrants: runners.map(r => ({ id: r.e.id, name: r.e.name, owner: r.e.owner || '', isPlayer: r.e.isPlayer, isGhost: !!r.e.isGhost, legendId: r.e.legendId, coat: r.e.coat, style: r.e.runningStyle, gate: r.gate + 1, pop: r.e.pop || null, odds: r.e.odds || null, order: r.e.order || 'normal' })),
       finish, events: events.sort((a, b) => a.t - b.t), frames,
-      phases: { startEnd, cornerStart, finalStart }
+      phases: { startEnd, cornerStart, finalStart }, marks
     };
   },
 
@@ -486,7 +581,11 @@ const Race = {
     const me = result.finish.find(f => f.isPlayer);
     const place = me.place;
     const g = this.gradeInfo(race);
-    const prize = Math.round((race.prize || g.prize) * (this.PRIZE_RATE[place - 1] || 0));
+    const basePrize = Math.round((race.prize || g.prize) * (this.PRIZE_RATE[place - 1] || 0));
+    // 大金星ボーナス：4番人気以下で勝つと賞金が増える（最大+50%）
+    const upset = place === 1 && me.pop >= 4 ? Math.min(0.5, 0.06 * (me.pop - 3)) : 0;
+    const bonus = Math.round(basePrize * upset);
+    const prize = basePrize + bonus;
     const exp = Math.round(g.exp * (place === 1 ? 1.5 : place <= 3 ? 1.1 : 0.7));
 
     const rec = h.record;
@@ -552,6 +651,6 @@ const Race = {
     const legends = typeof Legends !== 'undefined' ? Legends.applyResult(race, result) : { met: [], beaten: [], card: null };
     if (legends.card) cards.push(Object.assign({ legend: true }, legends.card));
 
-    return { place, prize, exp, cards, levelUps, birthday, field: result.finish.length, newRecord: newRecord && !!prevRec, rightTo, legends };
+    return { place, prize, bonus, pop: me.pop, exp, cards, levelUps, birthday, field: result.finish.length, newRecord: newRecord && !!prevRec, rightTo, legends };
   }
 };

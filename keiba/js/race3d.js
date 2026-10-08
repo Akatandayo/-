@@ -256,6 +256,8 @@ const Race3D = {
 
   unmount() {
     this.sound.stop();
+    clearTimeout(this._photoTimer);
+    if (typeof Voice !== 'undefined') Voice.stop();
     if (typeof Fanfare !== 'undefined') Fanfare.stop();
     if (this._ro) this._ro.disconnect();
     if (this.renderer && this.renderer.domElement.parentNode) this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
@@ -784,6 +786,87 @@ const Race3D = {
       scene.add(h.root);
       return h;
     });
+    st.winner = st.horses.find(h => h.e.id === res.finish[0].id);
+    if (['g1', 'g2', 'g3'].includes(st.race.grade)) this.buildConfetti(scene, st);
+  },
+
+  // 重賞の勝利で舞う紙吹雪（ゴール板の上から）
+  buildConfetti(scene, st) {
+    const N = st.race.grade === 'g1' ? 700 : 300;
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(N * 3), col = new Float32Array(N * 3), vel = new Float32Array(N * 3);
+    const palette = [0xffd54f, 0xff7043, 0x4fc3f7, 0x81c784, 0xf06292, 0xffffff, 0xba68c8].map(c => new THREE.Color(c));
+    const g = this.path(st.sF, this.W / 2);
+    for (let i = 0; i < N; i++) {
+      pos[i * 3] = g.x + (Math.random() - 0.5) * 50; pos[i * 3 + 1] = -100; pos[i * 3 + 2] = g.z + (Math.random() - 0.5) * 50;
+      const c = palette[i % palette.length];
+      col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    const pts = new THREE.Points(geo, new THREE.PointsMaterial({ size: 0.32, vertexColors: true, transparent: true, opacity: 0.95 }));
+    pts.frustumCulled = false;
+    scene.add(pts);
+    st.confetti = { pts, pos, vel, N, g, started: false };
+  },
+  updateConfetti(t, dt) {
+    const C = this.state.confetti;
+    if (!C) return;
+    const ft = this.state.winner ? this.state.winner.ft : 9999;
+    if (!C.started && t >= ft + 0.3 && t < ft + 2) {
+      C.started = true;
+      for (let i = 0; i < C.N; i++) {
+        C.pos[i * 3] = C.g.x + (Math.random() - 0.5) * 60; C.pos[i * 3 + 1] = 8 + Math.random() * 22; C.pos[i * 3 + 2] = C.g.z + (Math.random() - 0.5) * 50;
+        C.vel[i * 3] = (Math.random() - 0.5) * 1.5; C.vel[i * 3 + 1] = -(1.2 + Math.random() * 1.8); C.vel[i * 3 + 2] = (Math.random() - 0.5) * 1.5;
+      }
+    }
+    if (t < ft) { if (C.started) { C.started = false; for (let i = 0; i < C.N; i++) C.pos[i * 3 + 1] = -100; C.pts.geometry.attributes.position.needsUpdate = true; } return; }
+    if (!C.started || dt <= 0) return;
+    const now = performance.now() / 1000;
+    for (let i = 0; i < C.N; i++) {
+      if (C.pos[i * 3 + 1] < 0.05) continue;
+      C.pos[i * 3] += (C.vel[i * 3] + Math.sin(now * 2 + i) * 0.8) * dt;
+      C.pos[i * 3 + 1] += C.vel[i * 3 + 1] * dt;
+      C.pos[i * 3 + 2] += (C.vel[i * 3 + 2] + Math.cos(now * 1.7 + i) * 0.8) * dt;
+    }
+    C.pts.geometry.attributes.position.needsUpdate = true;
+  },
+
+  // アクシデントのアイコン（馬の頭上に出す）
+  _iconTex: {},
+  incidentTexture(kind) {
+    if (this._iconTex[kind]) return this._iconTex[kind];
+    const label = { late: '出遅れ', kakari: '掛かり', block: '前が壁' }[kind] || '!';
+    const c = document.createElement('canvas');
+    c.width = 256; c.height = 96;
+    const g = c.getContext('2d');
+    g.fillStyle = kind === 'block' ? '#6d4c41' : kind === 'late' ? '#455a64' : '#c62828';
+    g.beginPath(); g.roundRect ? g.roundRect(4, 4, 248, 88, 40) : g.rect(4, 4, 248, 88); g.fill();
+    g.fillStyle = '#fff';
+    g.font = '900 52px "Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(label, 128, 50);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return (this._iconTex[kind] = t);
+  },
+  onIncident(e) {
+    const st = this.state;
+    if (!st) return;
+    const h = st.horses.find(x => x.e.id === e.horseId);
+    if (!h) return;
+    if (!h.incident) {
+      h.incident = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthTest: false }));
+      h.incident.renderOrder = 11;
+      h.incident.scale.set(2.6, 0.98, 1);
+      h.incident.position.y = h.marker ? 4.3 : 3.5;
+      h.root.add(h.incident);
+    }
+    h.incident.material.map = this.incidentTexture(e.kind);
+    h.incident.material.needsUpdate = true;
+    h.incident.visible = true;
+    h.incidentUntil = performance.now() + 2600;
+    if (e.isPlayer) this.banner(`<span class="sk">⚠ ${Util.esc(e.text)}</span>`, 'incident', 1800);
   },
 
   // 蹄で跳ね上げる芝・砂
@@ -833,8 +916,13 @@ const Race3D = {
       <div class="r3-banner" id="r3-banner"></div>
       <div class="r3-bar" id="r3-bar"></div>
       <button class="r3-camtoggle" onclick="this.nextElementSibling.classList.toggle('open')" aria-label="カメラ">🎥</button>
-      <div class="r3-cams">${cams.map(([k, l]) => { const [ic, tx] = l.split(' '); return `<button class="${cam === k ? 'active' : ''}" data-cam="${k}" title="${tx}">${ic}<span class="lbl"> ${tx}</span></button>`; }).join('')}<button data-sound="1" title="音">${this.sound.enabled() ? '🔊' : '🔇'}</button><button data-full="1" title="全画面">⛶</button></div>
-      <div class="r3-replay" id="r3-replay">REPLAY</div>`;
+      <div class="r3-cams">${cams.map(([k, l]) => { const [ic, tx] = l.split(' '); return `<button class="${cam === k ? 'active' : ''}" data-cam="${k}" title="${tx}">${ic}<span class="lbl"> ${tx}</span></button>`; }).join('')}<button data-sound="1" title="音">${this.sound.enabled() ? '🔊' : '🔇'}</button><button data-voice="1" title="実況音声">${Player.data.settings.voice === false ? '🔕' : '🎙'}</button><button data-full="1" title="全画面">⛶</button></div>
+      <div class="r3-replay" id="r3-replay">REPLAY</div>
+      <div class="r3-card" id="r3-card"><div class="r3-card-h">出走表 <small>${Util.esc(race.name)}</small></div>
+        <div class="r3-card-list">${st.horses.slice().sort((a, b) => a.num - b.num).map(h => `<div class="r3-card-row ${h.e.isPlayer ? 'me' : ''}">
+          <span class="num" style="background:${h.capColor};color:${this.BRACKET_TEXT[h.bracket - 1]}">${h.num}</span><img src="${h.icon}" alt="">
+          <b>${h.e.legendId ? '👑' : ''}${Util.esc(h.e.name)}</b><span class="pop ${h.e.pop && h.e.pop <= 3 ? 'fav' : ''}">${h.e.pop ? h.e.pop + '人' : ''}</span><span class="odds">${h.e.odds ? h.e.odds.toFixed(1) : ''}</span></div>`).join('')}</div></div>
+      <div class="r3-photo" id="r3-photo"><div class="r3-photo-frame"><img alt=""><div class="r3-photo-line"></div></div><div class="r3-photo-label">📸 写真判定</div></div>`;
     hud.querySelectorAll('[data-cam]').forEach(b => b.addEventListener('click', () => {
       Player.data.settings.cam3d = b.dataset.cam;
       Player.save();
@@ -843,6 +931,11 @@ const Race3D = {
       hud.querySelector('.r3-cams').classList.remove('open');
     }));
     hud.querySelector('[data-sound]').addEventListener('click', () => this.toggleSound());
+    hud.querySelector('[data-voice]').addEventListener('click', e => {
+      const on = Voice.toggle();
+      e.currentTarget.textContent = on ? '🎙' : '🔕';
+      UI.toast(on ? '🎙 実況の読み上げ ON' : '🔕 実況の読み上げ OFF');
+    });
     hud.querySelector('[data-full]').addEventListener('click', () => {
       const el = container;
       if (document.fullscreenElement) document.exitFullscreen();
@@ -851,7 +944,8 @@ const Race3D = {
     });
     st.hud = {
       remain: hud.querySelector('#r3-remain'), time: hud.querySelector('#r3-time'), map: hud.querySelector('#r3-map'),
-      bar: hud.querySelector('#r3-bar'), banner: hud.querySelector('#r3-banner'), orderKey: ''
+      bar: hud.querySelector('#r3-bar'), banner: hud.querySelector('#r3-banner'), orderKey: '',
+      card: hud.querySelector('#r3-card'), photo: hud.querySelector('#r3-photo')
     };
     // 位置マップの丸（馬番・枠色）
     st.horses.forEach(h => {
@@ -863,6 +957,33 @@ const Race3D = {
       st.hud.map.appendChild(d);
       h.dot = d;
     });
+  },
+
+  // 写真判定：ゴールの瞬間の画面を止めて写真のように見せ、少し待ってから1着を発表
+  photoFinish(w, s, done) {
+    const st = this.state, el = st.hud.photo;
+    try {
+      this.renderer.render(st.scene, st.camera);   // 描画直後でないと画面を読み取れないので、もう一度描く
+      el.querySelector('img').src = this.renderer.domElement.toDataURL('image/jpeg', 0.85);
+    } catch (e) { done(); return; }
+    // 赤い線を画面上のゴールラインの位置に合わせる
+    const gp = this.path(st.sF, this.W / 2);
+    const v = new THREE.Vector3(gp.x, 0.5, gp.z).project(st.camera);
+    const line = el.querySelector('.r3-photo-line');
+    line.style.left = Util.clamp((v.x + 1) / 2 * 100, 0, 100) + '%';
+    line.style.display = Math.abs(v.x) <= 1 && v.z < 1 ? '' : 'none';
+    const label = el.querySelector('.r3-photo-label');
+    label.innerHTML = '📸 写真判定';
+    el.className = 'r3-photo show';
+    if (typeof Voice !== 'undefined') Voice.say('ゴール！ 写真判定です', { interrupt: true });
+    clearTimeout(this._photoTimer);
+    const margin = (st.result.finish[1] || {}).margin || 'ハナ';
+    this._photoTimer = setTimeout(() => {
+      label.innerHTML = `<span class="num" style="background:${w.capColor};color:${this.BRACKET_TEXT[w.bracket - 1]}">${w.num}</span> ${Util.esc(w.e.name)} が${Util.esc(margin)}差で1着！`;
+      el.classList.add('decided');
+      if (typeof Voice !== 'undefined') Voice.say(`${w.e.name}、${margin}差で勝利！`, { interrupt: true });
+      this._photoTimer = setTimeout(() => { el.className = 'r3-photo'; done(); }, 2200);
+    }, 2000);
   },
 
   banner(text, cls, ms) {
@@ -1025,6 +1146,13 @@ const Race3D = {
       h.speed += (Util.clamp(sp, 0, 22) - h.speed) * 0.2;
       h.prevPos = p;
       this.animateHorse(h, t, realDt * animScale, D - p);
+      if (h.incident && h.incident.visible && realNow > h.incidentUntil) h.incident.visible = false;
+      // 勝った騎手はゴール後に手を挙げてガッツポーズ
+      if (h === st.winner && t > h.ft + 0.7) {
+        const k = Util.clamp((t - h.ft - 0.7) / 0.4, 0, 1);
+        h.arms[0].rotation.z = -0.55 + k * (2.1 + 0.25 * Math.sin(realNow / 140));
+        h.jockey.rotation.z = -0.25 * k;
+      } else if (h === st.winner) h.jockey.rotation.z = 0;
       if (h.aura.visible) {
         const left = h.auraUntil - realNow;
         if (left <= 0) h.aura.visible = false;
@@ -1037,6 +1165,7 @@ const Race3D = {
       if (h.speed > 6 && t > 0) this.emit(h, a);
     });
     this.updateParticles(realDt * animScale);
+    this.updateConfetti(t, realDt);
     this.updateSound(t, pos, order, realDt);
     if (st.rain) this.updateRain(realDt);
 
@@ -1232,12 +1361,15 @@ const Race3D = {
     hud.time.textContent = t < 0 ? '0.0' : Race.timeText(Math.min(t, lead.h.ft < 9000 && t > lead.h.ft ? lead.h.ft : t));
     hud.remain.textContent = t < 0 ? 'ゲートイン' : remain <= 0 ? 'ゴール' : remain <= 400 ? `最後の直線 残り${Math.ceil(remain / 100) * 100}m` : `残り ${Math.ceil(remain / 100) * 100}m`;
     if (t > 0 && t < 1.2 && !st.startShown) { st.startShown = true; this.banner('スタート！', 'start', 1100); }
+    hud.card.classList.toggle('show', t < -0.4);
     if (lead.h.ft < 9000 && t >= lead.h.ft && !st.goalShown) {
       st.goalShown = true;
       const w = lead.h;
       const second = order[1];
       const close = second && second.h.ft - w.ft < 0.06;
-      this.banner(`${close ? '<small>写真判定…</small>' : ''}<span class="gw"><span class="num" style="background:${w.capColor};color:${this.BRACKET_TEXT[w.bracket - 1]}">${w.num}</span>${Util.esc(w.e.name)}</span><small>1着でゴールイン！</small>`, 'goal', 3000);
+      const winBanner = () => this.banner(`<span class="gw"><span class="num" style="background:${w.capColor};color:${this.BRACKET_TEXT[w.bracket - 1]}">${w.num}</span>${Util.esc(w.e.name)}</span><small>1着でゴールイン！</small>`, 'goal', 3000);
+      if (close && !st.replaying) this.photoFinish(w, second.h, winBanner);
+      else winBanner();
     }
     const now = performance.now();
     if (now - st.lastHud < 120) return;

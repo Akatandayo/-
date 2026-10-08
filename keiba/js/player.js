@@ -44,6 +44,7 @@ const Player = {
       if (!h.rights) h.rights = [];
       if (!h.titles) h.titles = [];
       if (h.actedAt === undefined) h.actedAt = -1;
+      if (h.turn === undefined) h.turn = Horse.randomTurn();
       // v8：限界値アップに上限ができたので、以前のセーブで上がりすぎた限界値を整える
       if (h.capBoost === undefined) {
         h.capBoost = 0;
