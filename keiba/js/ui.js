@@ -20,7 +20,9 @@ const UI = {
     league: 'bronze',
     friendPick: [],
     friendCourse: 1,
-    friendCap: 0
+    friendCap: 0,
+    customSpec: null,
+    joinCode: ''
   },
 
   el(id) { return document.getElementById(id); },
@@ -282,6 +284,7 @@ const UI = {
       ['🃏', 'カード', "UI.state.cardTab='owned';UI.show('cards')", `${totalCards}枚`],
       ['🛒', 'ショップ', "UI.state.cardTab='shop';UI.show('cards')", 'パック・アイテム'],
       ['⚔', '対戦', "UI.state.raceMode='league';UI.show('race')", `R ${p.pvp.rating}`],
+      ['🌐', 'カスタム', "UI.state.raceMode='custom';UI.show('race')", Online.status === 'lobby' ? `ルーム ${Online.code}` : 'オンライン対戦'],
       ['👑', '名馬', "UI.state.cardTab='dex';UI.state.cardType='legend';UI.show('cards')", `${ls.cards}/${ls.total}`],
       ['🏛', '殿堂', "UI.show('hof')", `${p.hallOfFame.length}頭`],
       ['📊', '記録', "UI.show('records')", 'ランキング'],
@@ -474,7 +477,8 @@ const UI = {
       </section>
       <section class="panel">
         <h3>🎒 アイテムを使う</h3>
-        ${items.length ? `<div class="item-list">${items.map(c => `<button class="item-btn" onclick="App.useItem('${h.id}','${c.id}')">
+        <p class="muted small">⬆ 限界値アップ：あと+${Training.capRoom(h)}（1頭につき合計+${GAME_DATA.capBoostMax}まで）</p>
+        ${items.length ? `<div class="item-list">${items.map(c => `<button class="item-btn" ${c.use.allCaps && !c.use.allStats && !Training.capRoom(h) ? 'disabled' : ''} onclick="App.useItem('${h.id}','${c.id}')">
           ${this.rarity(c.rarity)} ${c.icon} <b>${c.name}</b> ×${Player.count(c.id)}<small>${c.desc}</small></button>`).join('')}</div>`
           : '<p class="muted">アイテムカードを持っていません。レースやショップで手に入ります。</p>'}
       </section>`;
@@ -568,16 +572,21 @@ const UI = {
 
   shopView() {
     const items = GAME_DATA.items.filter(i => i.price);
-    return `<p class="muted">所持金：<b>${Util.money(Player.data.money)}</b></p>
+    const left = c => Player.shopLeft(c);
+    const buyBtn = (c, fn, cls) => left(c) <= 0
+      ? `<button class="btn ${cls}" disabled>売り切れ（来週入荷）</button>`
+      : `<button class="btn ${cls} primary" ${Player.canAfford(c.price) ? '' : 'disabled'} onclick="App.${fn}('${c.id}')">💰 ${Util.money(c.price)}</button><small class="muted">今週あと${left(c)}</small>`;
+    return `<p class="muted">所持金：<b>${Util.money(Player.data.money)}</b>　<small>🗓 商品は毎週入荷します（1週間に買える数に限りあり）</small></p>
       <h3 class="sub-title">🃏 カードパック</h3>
       <div class="packs">${GAME_DATA.packs.map(pk => `<div class="pack">
         <div class="pack-icon">${pk.icon}</div><b>${pk.name}</b><small>${pk.desc}</small>
-        <button class="btn primary" ${Player.canAfford(pk.price) ? '' : 'disabled'} onclick="App.buyPack('${pk.id}')">💰 ${Util.money(pk.price)}</button>
+        ${buyBtn(pk, 'buyPack', '')}
       </div>`).join('')}</div>
       <h3 class="sub-title">🎒 アイテム</h3>
+      <p class="muted small">🌟特別調教・🧪素質の霊薬（限界値アップ）は非売品。レースやミッションの報酬で手に入ります。</p>
       <div class="cgrid">${items.map(c => this.itemCard(c, {
         count: Player.count(c.id),
-        extra: `<button class="btn small primary" ${Player.canAfford(c.price) ? '' : 'disabled'} onclick="App.buy('${c.id}')">💰 ${Util.money(c.price)}</button>`
+        extra: buyBtn(c, 'buy', 'small')
       })).join('')}</div>`;
   },
 
@@ -646,12 +655,13 @@ const UI = {
     const st = this.state;
     if (p.horses.length && (!st.raceHorse || !Player.horse(st.raceHorse))) st.raceHorse = p.horses[0].id;
     const h = Player.horse(st.raceHorse);
-    const modes = [['week', '🏇 今週'], ['calendar', '📅 日程'], ['league', '⚔ リーグ'], ['friend', '🤝 対戦']];
+    const modes = [['week', '🏇 今週'], ['calendar', '📅 日程'], ['league', '⚔リーグ'], ['friend', '🤝対戦'], ['custom', '🌐カスタム']];
     const head = `<h2 class="screen-title">🏇 レース <small>📅 ${Calendar.fullLabel()}</small></h2>
       <div class="seg">${modes.map(([k, l]) => `<button class="${st.raceMode === k ? 'active' : ''}" onclick="UI.state.raceMode='${k}';UI.render()">${l}</button>`).join('')}</div>
       ${h ? `<div class="chips horse-pick">${p.horses.map(x => `<button class="${x.id === h.id ? 'active' : ''}" onclick="UI.state.raceHorse='${x.id}';UI.render()">${Horse.acted(x) ? '✅' : ''}${Util.esc(x.name)}</button>`).join('')}</div>` : ''}`;
     if (st.raceMode === 'league') return head + this.leagueView(h);
     if (st.raceMode === 'friend') return head + this.friendView(h);
+    if (st.raceMode === 'custom') return head + this.customView(h);
     if (st.raceMode === 'calendar') return head + this.calendarView(h);
     return head + this.weekView(h);
   },
@@ -692,7 +702,7 @@ const UI = {
     const trialTo = race.trial ? Race.get(race.trial.to) : null;
     return `<div class="race-row ${elig.ok ? '' : 'locked'} ${race.grade === 'g1' ? 'g1row' : ''}">
       <div class="rr-head">${this.gradeBadge(race.grade)}<b>${race.name}</b>${race.female ? '<span class="tag">牝馬限定</span>' : ''}${elig.right ? '<span class="tag right">🎫 優先出走権</span>' : ''}</div>
-      <div class="rr-info">📍${race.venue} ${sl.icon}${sl.label}${race.distance}m（${dl.label}）・${Race.AGE_LABEL[race.ages]}・${race.field}頭・1着 ${Util.money(race.prize)}</div>
+      <div class="rr-info">📍${race.venue} ${sl.icon}${sl.label}${race.distance}m（${dl.label}・${Race.courseOf(race).dirLabel}）・${Race.AGE_LABEL[race.ages]}・${race.field}頭・1着 ${Util.money(race.prize)}</div>
       ${trialTo ? `<div class="rr-info">🎫 ${race.trial.top}着以内で「${trialTo.name}」の優先出走権</div>` : ''}
       <div class="rr-apt">この馬の適性：距離 <b>${Util.stars(h.aptitude[cat])}</b> 馬場 <b>${Util.stars(h.aptitude[race.surface])}</b></div>
       ${elig.ok ? `<button class="btn primary" ${acted ? 'disabled' : ''} onclick="App.prepareRace('${h.id}','${race.id}')">${acted ? '今週は行動済み' : '出走する'}</button>` : `<div class="lock">🔒 ${elig.reason}</div>`}
@@ -735,7 +745,7 @@ const UI = {
     const trialTo = r.trial ? Race.get(r.trial.to) : null;
     return `<div class="cal-race ${r.grade}">
       <div>${this.gradeBadge(r.grade)}<b>${r.name}</b>${r.crown ? ` <span class="tag">${GAME_DATA.crowns[r.crown].title}</span>` : ''}</div>
-      <div class="muted small">📍${r.venue} ${r.surface === 'turf' ? '芝' : 'ダート'}${r.distance}m・${Race.AGE_LABEL[r.ages]}${r.f ? '牝馬' : ''}・1着 ${Util.money(r.prize)}${trialTo ? `・🎫${r.trial.top}着以内→${trialTo.name}` : ''}</div>
+      <div class="muted small">📍${r.venue} ${r.surface === 'turf' ? '芝' : 'ダート'}${r.distance}m（${Race.courseOf(r).dirLabel}）・${Race.AGE_LABEL[r.ages]}${r.f ? '牝馬' : ''}・1着 ${Util.money(r.prize)}${trialTo ? `・🎫${r.trial.top}着以内→${trialTo.name}` : ''}</div>
       ${status}
     </div>`;
   },
@@ -761,10 +771,10 @@ const UI = {
   leagueView(h) {
     const pvp = Player.data.pvp;
     const st = this.state;
-    const can = Pvp.canEnter(h);
+    const can = Pvp.canEnter(h, { league: true });
     return `<section class="panel pvp-head">
         <div class="rating">レーティング <b>${pvp.rating}</b> <small>最高 ${pvp.best}・${pvp.matches}戦${pvp.wins}勝</small></div>
-        <p class="muted small">CPUのライバル馬主7人と8頭立てで対戦。順位でレーティングが上下し、上位リーグが解放されます。週は進みません（疲労+${Pvp.FATIGUE}）。</p>
+        <p class="muted small">CPUのライバル馬主7人と8頭立てで対戦。順位でレーティングが上下し、上位リーグが解放されます。1頭につき週1回（今週の行動を使います・疲労+${Pvp.FATIGUE}）。</p>
       </section>
       <div class="league-list">${GAME_DATA.leagues.map(l => {
         const open = Pvp.isUnlocked(l);
@@ -819,6 +829,75 @@ const UI = {
         <div class="chips">${GAME_DATA.leagueCourses.map((c, i) => `<button class="${st.friendCourse === i ? 'active' : ''}" onclick="UI.state.friendCourse=${i};UI.render()">${c.surface === 'turf' ? '芝' : 'ダ'}${c.distance}m</button>`).join('')}</div>
         <div class="chips" style="margin-top:6px">${caps.map(([v, l]) => `<button class="${st.friendCap === v ? 'active' : ''}" onclick="UI.state.friendCap=${v};UI.render()">能力 ${l}</button>`).join('')}</div>
         ${can.ok ? `<button class="btn primary big" onclick="App.prepareFriend('${h.id}')">🏁 対戦スタート（${Util.esc(h.name)}）</button>` : `<p class="lock">🔒 ${can.reason}</p>`}
+      </section>`;
+  },
+
+  // ─────────── カスタムレース（ひとり／オンライン） ───────────
+  customView(h) {
+    const st = this.state;
+    const spec = st.customSpec = Pvp.sanitizeSpec(st.customSpec || Pvp.CUSTOM_DEFAULT);
+    if (Online.status === 'lobby' || Online.status === 'connecting') return this.lobbyView(h);
+    const sel = (key, opts) => `<select onchange="App.setSpec('${key}',this.value)">${opts.map(([v, l]) => `<option value="${v}" ${String(spec[key]) === String(v) ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+    const venues = Object.entries(GAME_DATA.courses).map(([v, c]) => [v, `${v}（${c.dir === 'L' ? '左' : '右'}回り）`]);
+    const course = Race.courseOf(Pvp.customRace(spec));
+    const hint = Race.courseHint(Pvp.customRace(spec));
+    const c = Player.data.custom || { races: 0, wins: 0, online: 0, onlineWins: 0 };
+    return `<section class="panel custom-panel">
+        <h3>🛠 カスタムレースを作る</h3>
+        <div class="custom-form">
+          <label>レース名<input maxlength="16" value="${Util.esc(spec.name)}" onchange="App.setSpec('name',this.value)"></label>
+          <label>競馬場${sel('venue', venues)}</label>
+          <label>コース${sel('surface', [['turf', '🌱 芝'], ['dirt', '🟫 ダート']])}</label>
+          <label>距離${sel('distance', Pvp.customDistances(spec.venue, spec.surface).map(d => [d, d + 'm' + (course.straight && d === spec.distance ? '（直線）' : '')]))}</label>
+          <label>格${sel('grade', Object.entries(Pvp.CUSTOM_GRADES))}</label>
+          <label>馬場状態${sel('ground', [[-1, 'ランダム'], ...GAME_DATA.grounds.map(g => [g.key, g.label])])}</label>
+          <label>能力上限${sel('cap', Pvp.CUSTOM_CAPS.map(v => [v, v ? '最大' + v : 'なし']))}</label>
+          <label>頭数${sel('field', Array.from({ length: 17 }, (_, i) => [i + 2, (i + 2) + '頭']))}</label>
+          <label>CPUの馬${sel('cpu', Object.entries(Pvp.CPU_LEVELS).map(([k, v]) => [k, v.label]))}</label>
+          <label>👑 名馬${sel('legends', [0, 1, 2, 3].map(n => [n, n ? n + '頭' : 'なし']))}</label>
+        </div>
+        <p class="course-note">🔄 ${Pvp.specText(spec)}<br><small class="muted">${Util.esc(course.note || '')}${hint ? '・' + hint : ''}</small></p>
+        <button class="btn primary big" onclick="App.customSolo()">🏁 ひとりで走る（${Util.esc(h.name)}）</button>
+      </section>
+      <section class="panel online-panel">
+        <h3>🌐 オンラインで走る</h3>
+        <p class="muted small">ルームを作って6文字のルームコードをフレンドに送ると、同じレースをリアルタイムで一緒に観戦できます（最大${spec.field}頭）。足りない枠はCPU・名馬で埋まります。</p>
+        ${Online.available() ? '' : '<p class="warn">⚠ オンライン機能を読み込めませんでした。</p>'}
+        ${Online.status === 'error' ? `<p class="warn">⚠ ${Util.esc(Online.error)}</p>` : ''}
+        <button class="btn primary" ${Online.available() ? '' : 'disabled'} onclick="App.customHost()">🏠 この条件でルームを作る</button>
+        <div class="join-row"><input id="join-code" maxlength="6" autocomplete="off" placeholder="ルームコード" value="${Util.esc(st.joinCode || '')}" oninput="UI.state.joinCode=this.value">
+          <button class="btn primary" ${Online.available() ? '' : 'disabled'} onclick="App.customJoin()">🚪 参加する</button></div>
+        <p class="muted small">出走馬：<b>${Util.esc(h.name)}</b>（上のボタンで変更）。カスタムレースはエキシビション：賞金・経験値・疲労はありません。</p>
+      </section>
+      <p class="muted small light">カスタムレース ${c.races}戦${c.wins}勝（うちオンライン ${c.online}戦${c.onlineWins}勝）</p>`;
+  },
+
+  lobbyView(h) {
+    const on = Online;
+    if (on.status === 'connecting') {
+      return `<section class="panel center"><div class="spinner"></div><p>${on.role === 'host' ? 'ルームを作っています…' : `ルーム ${Util.esc(on.code)} に接続中…`}</p>
+        <button class="btn" onclick="App.customLeave()">やめる</button></section>`;
+    }
+    const spec = on.spec;
+    const host = on.role === 'host';
+    const me = on.members.find(m => m.id === on.myId);
+    const url = on.inviteUrl();
+    return `<section class="panel lobby">
+        <div class="room-code"><span>ルームコード</span><b id="room-code">${Util.esc(on.code)}</b><button class="btn small" onclick="App.copyRoom()">📋 コピー</button></div>
+        ${url ? `<p class="muted small center">招待リンク：<a href="${Util.esc(url)}" target="_blank" rel="noopener">${Util.esc(url)}</a></p>` : ''}
+        <div class="lobby-spec">${UI.gradeBadge(spec.grade)} <b>${Util.esc(spec.name)}</b><br>
+          <small>${Util.esc(Pvp.specText(spec))}・馬場 ${spec.ground >= 0 ? GAME_DATA.grounds[spec.ground].label : 'ランダム'}・能力上限 ${spec.cap || 'なし'}・CPU ${Pvp.CPU_LEVELS[spec.cpu].label}・名馬 ${spec.legends}頭</small></div>
+        <h4>参加者 ${on.members.length}/${spec.field}</h4>
+        <ol class="entry-list wide lobby-list">${on.members.map(m => `<li class="${m.id === on.myId ? 'me' : ''}">
+          ${m.host ? '🏠' : '🙋'} ${GAME_DATA.styles[m.horse.style] ? GAME_DATA.styles[m.horse.style].icon : ''} <b>${Util.esc(m.horse.name)}</b>
+          <small class="muted">${Util.esc(m.owner)}厩舎・総合 ${Util.grade(m.horse.overall)}${m.ready ? '' : '・📺 観戦中'}</small></li>`).join('')}</ol>
+        ${host ? `<button class="btn primary big" onclick="Online.start()">🏁 レーススタート！</button>
+          <p class="muted small">${on.members.length < 2 ? '参加者を待っています。ひとりでもスタートできます。' : 'みんなそろったらスタート！'}</p>`
+          : '<p class="ok center">⏳ ホストがスタートするのを待っています…</p>'}
+        <div class="btn-row">
+          ${me && me.horse.name !== h.name ? `<button class="btn" onclick="App.customChangeHorse()">🔄 出走馬を${Util.esc(h.name)}に変更</button>` : ''}
+          <button class="btn danger" onclick="App.customLeave()">${host ? 'ルームを解散' : '退出する'}</button>
+        </div>
       </section>`;
   },
 

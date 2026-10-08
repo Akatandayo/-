@@ -1,11 +1,13 @@
 // 3Dレース演出（Three.js）
 // Race.simulate() の結果（frames = 0.5秒ごとの位置、events = 実況）を描画するだけで、レースの計算はしない。
-// コースは楕円（直線2本＋コーナー2つ）。距離に応じてスタート地点を決め、ゴールはホームストレッチに置く。
+// コースは楕円（直線2本＋コーナー2つ）。競馬場ごとに1周の距離・直線の長さ・回り（右/左）を変える。
+// 距離に応じてスタート地点を決め、ゴールはホームストレッチに置く。
 'use strict';
 
 const Race3D = {
-  S: 450,          // 直線の長さ(m)
+  S: 450,          // 直線の長さ(m)（レースごとに layout() で決める）
   R: 160,          // コーナー半径(m)
+  M: 1,            // 1=右回り、-1=左回り（x軸で鏡写しにする）
   W: 26,           // コース幅(m)
   FINISH_BACK: 70, // ホームストレッチの終わりからゴールまで(m)
   renderer: null,
@@ -31,6 +33,20 @@ const Race3D = {
 
   get P() { return 2 * this.S + 2 * Math.PI * this.R; },
 
+  // 実際のコースに近い楕円を作る：ホームストレッチ＝最後の直線＋ゴール後の部分
+  layout(course) {
+    if (!course) { this.S = 450; this.R = 160; this.M = 1; return; }
+    if (course.straight) {
+      // 直線コース：スタートからゴールまで1本の直線
+      this.S = course.L + this.FINISH_BACK + 140;
+      this.R = 120;
+    } else {
+      this.S = course.L + this.FINISH_BACK;
+      this.R = Math.max(80, (course.P - 2 * this.S) / (2 * Math.PI));
+    }
+    this.M = course.dir === 'L' ? -1 : 1;
+  },
+
   supported() {
     if (this.failed || typeof THREE === 'undefined') return false;
     try {
@@ -41,6 +57,12 @@ const Race3D = {
 
   // ── コース上の位置（s：周回上の距離、lane：内ラチからの距離） ──
   path(s, lane) {
+    const p = this.pathR(s, lane), M = this.M;
+    if (M !== 1) { p.x *= M; p.dx *= M; }
+    return p;
+  },
+  // 右回りの楕円（左回りは path() で左右を反転する）
+  pathR(s, lane) {
     const S = this.S, R = this.R, P = this.P, T = Math.PI * R;
     s = ((s % P) + P) % P;
     if (s < S) return { x: -S / 2 + s, z: -lane, dx: 1, dz: 0 };
@@ -55,6 +77,8 @@ const Race3D = {
     const a = s / R, r = R + lane;
     return { x: -S / 2 - r * Math.sin(a), z: R + r * Math.cos(a), dx: -Math.cos(a), dz: -Math.sin(a) };
   },
+  // 進行方向に対して外側（スタンド側）を向く単位ベクトル
+  outward(p) { return { x: p.dz * this.M, z: -p.dx * this.M }; },
   yaw(p) { return Math.atan2(-p.dz, p.dx); },
 
   hash(str) {
@@ -273,11 +297,12 @@ const Race3D = {
     const camera = new THREE.PerspectiveCamera(36, 16 / 9, 0.3, 3500);
 
     scene.add(new THREE.HemisphereLight(0xe8f4ff, 0x4f6b2e, rainy ? 0.75 : 0.95));
+    this.layout(res.course || (typeof Race !== 'undefined' && ctx.race ? Race.courseOf(ctx.race) : null));
     const sun = new THREE.DirectionalLight(0xfff4e0, rainy ? 0.8 : 1.7);
-    sun.position.set(260, 420, -300);
+    sun.position.set(260 * this.M, 420, -300);
     scene.add(sun);
     const fill = new THREE.DirectionalLight(0xdfeaff, rainy ? 0.45 : 0.7);   // 逆光でも馬が黒くつぶれないように
-    fill.position.set(-200, 260, 600);
+    fill.position.set(-200 * this.M, 260, 600);
     scene.add(fill);
     this.buildSky(scene, rainy, res.ground === 1);
 
@@ -368,7 +393,8 @@ const Race3D = {
     const pond = new THREE.Mesh(new THREE.CircleGeometry(1, 40), new THREE.MeshLambertMaterial({ color: 0x5f9fc7 }));
     pond.rotation.x = -Math.PI / 2;
     pond.scale.set(110, 45, 1);
-    pond.position.set(-40, 0.01, R + 20);
+    pond.scale.x = Math.min(110, S * 0.3 + R * 0.3);
+    pond.position.set(-40 * this.M, 0.01, R + 20);
     scene.add(pond);
 
     // 走路（芝は刈り込みの縞、ダートは砂）
@@ -443,26 +469,27 @@ const Race3D = {
 
     // スタンド（ホームストレッチの外側）
     const stand = new THREE.Group();
+    const sw = Math.min(420, S + 40);   // スタンドの幅（直線が短いコースは小さめ）
     const crowdTex = this.crowdTexture();
-    crowdTex.repeat.set(12, 1);
+    crowdTex.repeat.set(Math.round(12 * Math.min(420, S + 40) / 420), 1);
     for (let tier = 0; tier < 6; tier++) {
-      const step = new THREE.Mesh(new THREE.BoxGeometry(420, 2.2, 6),
+      const step = new THREE.Mesh(new THREE.BoxGeometry(sw, 2.2, 6),
         [new THREE.MeshLambertMaterial({ color: 0xbfc4c9 }), new THREE.MeshLambertMaterial({ color: 0xbfc4c9 }),
           new THREE.MeshLambertMaterial({ color: 0xd8dde1 }), new THREE.MeshLambertMaterial({ color: 0xbfc4c9 }),
           new THREE.MeshLambertMaterial({ color: 0xbfc4c9 }), new THREE.MeshLambertMaterial({ map: crowdTex })]);
-      step.position.set(10, 1.1 + tier * 2.2, -W - 22 - tier * 5);
+      step.position.set(10 * this.M, 1.1 + tier * 2.2, -W - 22 - tier * 5);
       stand.add(step);
     }
-    const back = new THREE.Mesh(new THREE.BoxGeometry(420, 30, 8), new THREE.MeshLambertMaterial({ color: 0xe6e8ea }));
-    back.position.set(10, 15, -W - 56);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(sw, 30, 8), new THREE.MeshLambertMaterial({ color: 0xe6e8ea }));
+    back.position.set(10 * this.M, 15, -W - 56);
     stand.add(back);
-    const roof = new THREE.Mesh(new THREE.BoxGeometry(430, 1.2, 42), new THREE.MeshLambertMaterial({ color: 0x8a96a3 }));
-    roof.position.set(10, 30, -W - 38);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(sw + 10, 1.2, 42), new THREE.MeshLambertMaterial({ color: 0x8a96a3 }));
+    roof.position.set(10 * this.M, 30, -W - 38);
     roof.rotation.x = -0.08;
     stand.add(roof);
     const venue = (this.state.race.venue || '馬主カード') + '競馬場';
     const sign = new THREE.Mesh(new THREE.PlaneGeometry(90, 9), new THREE.MeshBasicMaterial({ map: this.textTexture(venue, { w: 1024, h: 102, bg: '#0f3d2e', color: '#f5b301', size: 70 }) }));
-    sign.position.set(10, 25, -W - 51.9);
+    sign.position.set(10 * this.M, 25, -W - 51.9);
     stand.add(sign);
     scene.add(stand);
 
@@ -474,10 +501,10 @@ const Race3D = {
     scr.position.z = -0.8;
     scr.rotation.y = Math.PI;
     vision.add(scr);
-    vision.position.set(40, 14, W + 60);
+    vision.position.set(40 * this.M, 14, W + 60);
     scene.add(vision);
     const legs = new THREE.Mesh(new THREE.BoxGeometry(2, 8, 2), new THREE.MeshLambertMaterial({ color: 0x555555 }));
-    legs.position.set(40, 3, W + 60);
+    legs.position.set(40 * this.M, 3, W + 60);
     scene.add(legs);
 
     // 木（インスタンス描画）
@@ -799,7 +826,7 @@ const Race3D = {
     const cams = [['auto', '🎬 自動'], ['side', '📺 横'], ['chase', '🏇 追走'], ['top', '🚁 上空'], ['pov', '👀 騎手']];
     const cam = Player.data.settings.cam3d || 'auto';
     hud.innerHTML = `
-      <div class="r3-title">${UI.gradeBadge(race.grade)}<b>${Util.esc(race.name)}</b><small>${race.venue ? Util.esc(race.venue) + ' ' : ''}${res.surface === 'turf' ? '芝' : 'ダート'}${res.distance}m・${ground}</small></div>
+      <div class="r3-title">${UI.gradeBadge(race.grade)}<b>${Util.esc(race.name)}</b><small>${race.venue ? Util.esc(race.venue) + ' ' : ''}${res.surface === 'turf' ? '芝' : 'ダート'}${res.distance}m（${Util.esc(Race.courseText(race).split('・')[0])}）・${ground}</small></div>
       <div class="r3-remain" id="r3-remain">ゲートイン</div>
       <div class="r3-time" id="r3-time">0.0</div>
       <div class="r3-map" id="r3-map"><div class="r3-map-line"></div></div>
@@ -960,6 +987,8 @@ const Race3D = {
     // ゲートの扉
     const open = Util.clamp(t / 0.35, 0, 1);
     st.doors.forEach(d => { d.rotation.y = open * 1.6; d.position.x = open * 0.5; });
+    // ゲートはスタート後に片付ける（長い距離で周回してきた馬がゲートを通り抜けないように）
+    st.gate.visible = t < 7;
 
     // 進路（ラチ沿いに寄せつつ、前の馬とぶつからない位置を探す）
     const order = st.horses.map((h, i) => ({ h, p: pos[i], i })).sort((a, b) => b.p - a.p);
@@ -1112,7 +1141,7 @@ const Race3D = {
     const top = order.slice(0, Math.min(6, order.length));
     const cS = top.reduce((s, o) => s + o.p, 0) / top.length;
     const center = this.path(st.sStart + cS, this.W * 0.3);
-    const out = (p) => ({ x: p.dz, z: -p.dx });     // 外向き
+    const out = (p) => this.outward(p);     // 外向き（スタンド側）
 
     let shot, cam, look;
     if (mode === 'auto') {

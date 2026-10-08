@@ -44,6 +44,12 @@ const Player = {
       if (!h.rights) h.rights = [];
       if (!h.titles) h.titles = [];
       if (h.actedAt === undefined) h.actedAt = -1;
+      // v8：限界値アップに上限ができたので、以前のセーブで上がりすぎた限界値を整える
+      if (h.capBoost === undefined) {
+        h.capBoost = 0;
+        const max = 110 + GAME_DATA.capBoostMax;
+        STAT_KEYS.forEach(k => { h.caps[k] = Math.min(h.caps[k], max); h.stats[k] = Math.min(h.stats[k], h.caps[k]); });
+      }
     });
   },
 
@@ -53,6 +59,18 @@ const Player = {
     Save.reset();
     this.data = this.createNew();
     this.save();
+  },
+
+  // ── ショップの在庫（1週間ごとに入荷） ──
+  shopLeft(item) {
+    if (!item.stock) return Infinity;
+    const s = this.data.shop;
+    const bought = s && s.week === Calendar.abs() ? s.bought[item.id] || 0 : 0;
+    return Math.max(0, item.stock - bought);
+  },
+  shopBuy(item) {
+    if (!this.data.shop || this.data.shop.week !== Calendar.abs()) this.data.shop = { week: Calendar.abs(), bought: {} };
+    this.data.shop.bought[item.id] = (this.data.shop.bought[item.id] || 0) + 1;
   },
 
   // ── お金 ──

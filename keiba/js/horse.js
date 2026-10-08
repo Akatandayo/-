@@ -19,6 +19,7 @@ const Horse = {
       exp: 0,
       stats: Object.assign({ speed: 50, stamina: 50, power: 50, guts: 50, intelligence: 50 }, opts.stats),
       caps: Object.assign({}, opts.caps || opts.stats),
+      capBoost: 0,          // アイテムで上げた限界値（上限 GAME_DATA.capBoostMax）
       aptitude: Object.assign({ sprint: 50, mile: 50, classic: 50, long: 50, turf: 50, dirt: 50 }, opts.aptitude),
       runningStyle: opts.runningStyle || 'senko',
       growthType: opts.growthType || 'normal',

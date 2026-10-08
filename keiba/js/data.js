@@ -206,23 +206,26 @@ GAME_DATA.skills = [
 ];
 
 // ───────── アイテムカード ─────────
+// price：ショップの値段（null は非売品）、stock：ショップで1週間に買える数
+// 限界値を上げるアイテム（allCaps）は非売品。1頭あたり capBoostMax までしか上げられない。
+GAME_DATA.capBoostMax = 6;
 GAME_DATA.items = [
-  { id: 'i_speedtr', name: 'スピードトレーニング', rarity: 'N', icon: '⚡', price: 600,
+  { id: 'i_speedtr', name: 'スピードトレーニング', rarity: 'N', icon: '⚡', price: 800, stock: 2,
     desc: 'スピード調教の効果が2倍。', use: { train: 'speed', mult: 2 } },
-  { id: 'i_stamtr', name: 'スタミナトレーニング', rarity: 'N', icon: '❤️', price: 600,
+  { id: 'i_stamtr', name: 'スタミナトレーニング', rarity: 'N', icon: '❤️', price: 800, stock: 2,
     desc: 'スタミナ調教の効果が2倍。', use: { train: 'stamina', mult: 2 } },
-  { id: 'i_powtr', name: 'パワートレーニング', rarity: 'N', icon: '💪', price: 600,
+  { id: 'i_powtr', name: 'パワートレーニング', rarity: 'N', icon: '💪', price: 800, stock: 2,
     desc: 'パワー調教の効果が2倍。', use: { train: 'power', mult: 2 } },
-  { id: 'i_refresh', name: 'リフレッシュ', rarity: 'N', icon: '🛁', price: 500,
+  { id: 'i_refresh', name: 'リフレッシュ', rarity: 'N', icon: '🛁', price: 600, stock: 2,
     desc: '疲労を40回復し、調子を上げる。週は進まない。', use: { fatigue: -40, condition: 20 } },
-  { id: 'i_carrot', name: '特上にんじん', rarity: 'R', icon: '🥕', price: 1200,
+  { id: 'i_carrot', name: '特上にんじん', rarity: 'R', icon: '🥕', price: 1500, stock: 1,
     desc: '調子が絶好調になる。', use: { condition: 100 } },
-  { id: 'i_exp', name: '経験値ブック', rarity: 'R', icon: '📘', price: 1500,
-    desc: '経験値+300。', use: { exp: 300 } },
-  { id: 'i_special', name: '特別調教', rarity: 'SR', icon: '🌟', price: 4000,
-    desc: '全能力+3（限界も+2）。', use: { allStats: 3, allCaps: 2 } },
+  { id: 'i_exp', name: '経験値ブック', rarity: 'R', icon: '📘', price: 3000, stock: 1,
+    desc: '経験値+200。', use: { exp: 200 } },
+  { id: 'i_special', name: '特別調教', rarity: 'SR', icon: '🌟', price: null,
+    desc: '全能力+2、限界値+1。（限界値アップは1頭につき合計+6まで）', use: { allStats: 2, allCaps: 1 } },
   { id: 'i_potential', name: '素質の霊薬', rarity: 'SSR', icon: '🧪', price: null,
-    desc: '全能力の限界値+6。秘められた力が目覚める。', use: { allCaps: 6 } }
+    desc: '全能力の限界値+3。（限界値アップは1頭につき合計+6まで）', use: { allCaps: 3 } }
 ];
 
 // ───────── 路線 ─────────
@@ -390,6 +393,22 @@ GAME_DATA.venuesByMonth = [
   ['福島', '小倉'], ['新潟', '札幌'], ['中山', '阪神'], ['東京', '京都'], ['東京', '京都'], ['中山', '阪神']
 ];
 
+// 競馬場のコース（実際のレイアウトのおおよその値）
+// dir：R=右回り・L=左回り、P：1周の距離(m)、L：最後の直線(m)
+// outer：外回りコース（d に含まれる距離で使う）、straight：直線コースの距離
+GAME_DATA.courses = {
+  '東京': { dir: 'L', turf: { P: 2083, L: 526 }, dirt: { P: 1899, L: 502 }, note: '広いコースと長い直線。ゴール前に坂' },
+  '中山': { dir: 'R', turf: { P: 1667, L: 310 }, outer: { P: 1840, L: 310, d: [1200, 1600, 2200] }, dirt: { P: 1493, L: 308 }, note: '小回りで、ゴール前に急坂' },
+  '京都': { dir: 'R', turf: { P: 1783, L: 328 }, outer: { P: 1894, L: 404, d: [1600, 1800, 2200, 2400, 3000, 3200] }, dirt: { P: 1608, L: 329 }, note: '3コーナーの坂を下って直線へ' },
+  '阪神': { dir: 'R', turf: { P: 1689, L: 357 }, outer: { P: 2089, L: 474, d: [1600, 1800, 2400, 2600] }, dirt: { P: 1518, L: 353 }, note: 'ゴール前に急坂' },
+  '中京': { dir: 'L', turf: { P: 1706, L: 413 }, dirt: { P: 1530, L: 411 }, note: '直線に坂があるタフなコース' },
+  '新潟': { dir: 'L', turf: { P: 1623, L: 359 }, outer: { P: 2223, L: 659, d: [1400, 1600, 1800, 2000] }, straight: 1000, dirt: { P: 1473, L: 354 }, note: '外回りは日本一長い直線' },
+  '福島': { dir: 'R', turf: { P: 1600, L: 292 }, dirt: { P: 1445, L: 296 }, note: '小回りの平坦コース' },
+  '小倉': { dir: 'R', turf: { P: 1615, L: 293 }, dirt: { P: 1445, L: 291 }, note: '平坦な小回り' },
+  '札幌': { dir: 'R', turf: { P: 1641, L: 266 }, dirt: { P: 1487, L: 264 }, note: '洋芝の大きなコーナー' },
+  '函館': { dir: 'R', turf: { P: 1627, L: 262 }, dirt: { P: 1476, L: 260 }, note: '洋芝・JRAで一番短い直線' }
+};
+
 // 三冠などの称号
 GAME_DATA.crowns = {
   classic: { title: '三冠馬', desc: '皐月賞・日本ダービー・菊花賞' },
@@ -497,11 +516,11 @@ GAME_DATA.nicks = [
 
 // ───────── カードパック ─────────
 GAME_DATA.packs = [
-  { id: 'p_basic', name: 'ベーシックパック', icon: '📦', price: 3000, count: 3, table: 'op',
+  { id: 'p_basic', name: 'ベーシックパック', icon: '📦', price: 3000, stock: 3, count: 3, table: 'op',
     desc: 'カード3枚入り。N〜SSRが出る。' },
-  { id: 'p_premium', name: 'プレミアムパック', icon: '🎁', price: 12000, count: 5, table: 'g2', guarantee: 'SR',
+  { id: 'p_premium', name: 'プレミアムパック', icon: '🎁', price: 12000, stock: 1, count: 5, table: 'g2', guarantee: 'SR',
     desc: 'カード5枚入り。SR以上1枚確定！URも出る。' },
-  { id: 'p_blood', name: '血統パック', icon: '🧬', price: 8000, count: 3, table: 'g3', types: ['sire', 'mare'],
+  { id: 'p_blood', name: '血統パック', icon: '🧬', price: 8000, stock: 1, count: 3, table: 'g3', types: ['sire', 'mare'],
     desc: '種牡馬・繁殖牝馬カードだけが3枚入り。' }
 ];
 

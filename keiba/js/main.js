@@ -11,8 +11,10 @@ const App = {
     document.querySelectorAll('.nav-btn').forEach(b => {
       b.addEventListener('click', () => UI.show(b.dataset.nav));
     });
-    UI.show('home');
+    // 招待リンク（#room=XXXXXX）から開いたらカスタムレース画面へ
+    UI.show(Online.checkInvite() && Player.data.horses.length ? 'race' : 'home');
     if (!Player.data.tutorialDone) this.welcome();
+    window.addEventListener('beforeunload', () => Online.leave(true));
     // 登録した写真・ファンファーレを読み込む
     Media.init().then(() => { if (UI.state.screen !== 'raceView') UI.render(); });
   },
@@ -206,7 +208,8 @@ const App = {
     if (!h) return;
     const res = Training.useItem(h, itemId);
     if (!res) return UI.toast('アイテムを使えません', 'error');
-    UI.toast(`${res.item.icon} ${res.item.name} を使った！ ${this.gainText(res.gains)}`);
+    if (res.error) return UI.toast(res.error, 'error');
+    UI.toast(`${res.item.icon} ${res.item.name} を使った！ ${this.gainText(res.gains)}${res.capAdd ? ` 限界値+${res.capAdd}` : ''}`);
     this.afterWeek(h, res);
     this.commit();
   },
@@ -314,7 +317,7 @@ const App = {
     if (!h.skills.length) warn.push('スキルが装備されていません');
     UI.modal(`
       <h3>${UI.gradeBadge(race.grade)} ${race.name}</h3>
-      <p>📅 ${Calendar.fullLabel()}・📍${race.venue}<br>${race.surface === 'turf' ? '🌱芝' : '🟫ダート'} ${race.distance}m・${Race.AGE_LABEL[race.ages]}${race.female ? '牝馬' : ''}・馬場：<b>${GAME_DATA.grounds[ground].label}</b>${UI.help('ground')}</p>
+      <p>📅 ${Calendar.fullLabel()}・📍${race.venue}<br>${race.surface === 'turf' ? '🌱芝' : '🟫ダート'} ${race.distance}m・${Race.AGE_LABEL[race.ages]}${race.female ? '牝馬' : ''}・馬場：<b>${GAME_DATA.grounds[ground].label}</b>${UI.help('ground')}<br>🔄 ${Race.courseText(race)}${Race.courseHint(race) ? `<small class="muted">（${Race.courseHint(race)}）</small>` : ''}</p>
       ${elig.right ? '<p class="ok">🎫 優先出走権で出走！</p>' : ''}
       ${trialTo ? `<p class="rec">🎫 ${race.trial.top}着以内で「${trialTo.name}」の優先出走権！${UI.help('right')}</p>` : ''}
       <h4>出走メンバー（${field.length}頭）</h4>
@@ -357,7 +360,7 @@ const App = {
     const h = Player.horse(hid);
     const league = Pvp.league(UI.state.league);
     if (!h || !league || !Pvp.isUnlocked(league)) return;
-    const can = Pvp.canEnter(h);
+    const can = Pvp.canEnter(h, { league: true });
     if (!can.ok) return UI.toast(can.reason, 'error');
     this.pendingMatch = Object.assign(Pvp.buildLeagueMatch(h, league.id), { hid });
     this.matchModal(this.pendingMatch, h);
@@ -379,7 +382,7 @@ const App = {
     this.pendingMatch = null;
     UI.closeModal();
     const h = Player.horse(m.hid);
-    if (!h || !Pvp.canEnter(h).ok) return UI.toast('出走できません', 'error');
+    if (!h || !Pvp.canEnter(h, { league: m.kind === 'league' }).ok) return UI.toast('出走できません', 'error');
     const result = Race.simulate(m.race, m.field, m.ground);
     const reward = m.kind === 'league' ? Pvp.applyLeague(h, m, result) : Pvp.applyFriend(h, m, result);
     Player.save();
@@ -404,10 +407,67 @@ const App = {
         return `${v.placeHead(reward.place, fin[0].name)}
           ${reward.vs.length ? `<div class="vs-list">${reward.vs.map(x => `<div class="${x.won ? 'ok' : 'warn'}">${x.won ? '○ 勝ち' : '● 負け'}：${Util.esc(x.owner)}厩舎の${Util.esc(x.name)}</div>`).join('')}</div>` : ''}
           ${v.resultTable(fin)}
-          <p class="muted small">フレンド対戦は報酬なし（経験値+${reward.exp}）。何度でも挑戦できます。</p>
+          <p class="muted small">フレンド対戦はエキシビション（報酬・経験値・疲労なし）。何度でも挑戦できます。</p>
           ${back}`;
       }
     });
+  },
+
+  // ── カスタムレース ──
+  setSpec(key, value) {
+    UI.state.customSpec = Pvp.sanitizeSpec(Object.assign({}, UI.state.customSpec, { [key]: value }));
+    UI.render();
+  },
+
+  customSolo() {
+    const h = Player.horse(UI.state.raceHorse);
+    if (!h) return;
+    const spec = Pvp.sanitizeSpec(UI.state.customSpec);
+    const match = Pvp.buildCustomMatch(spec, [Pvp.playerEntrant(h, spec.cap || null)]);
+    const result = Race.simulate(match.race, match.field, match.ground);
+    const reward = Pvp.applyCustom(result, h.id, false);
+    Player.save();
+    this.playCustom(match.race, result, reward, h.id, false);
+  },
+
+  playCustom(race, result, reward, hid, online) {
+    RaceView.start({
+      result, reward, race, horseId: hid,
+      resultHTML: v => `${v.placeHead(reward.place, result.finish[0].name)}
+        ${v.resultTable(result.finish)}
+        <p class="muted small center">カスタムレースはエキシビションです（賞金・経験値・疲労なし）。</p>
+        <div class="btn-row">${v.three ? '<button class="btn" onclick="RaceView.replay()">🎬 ゴール前リプレイ</button>' : ''}
+          ${online ? '<button class="btn primary" onclick="Online.backToLobby()">🌐 ルームに戻る</button>'
+            : `<button class="btn" onclick="App.customSolo()">🔁 もう一度</button><button class="btn primary" onclick="UI.state.raceMode='custom';UI.show('race')">🛠 カスタムレースへ</button>`}</div>`
+    });
+  },
+
+  customHost() {
+    const h = Player.horse(UI.state.raceHorse);
+    if (h) Online.host(UI.state.customSpec, h);
+  },
+
+  customJoin() {
+    const h = Player.horse(UI.state.raceHorse);
+    const el = UI.el('join-code');
+    if (el) UI.state.joinCode = el.value;
+    if (h) Online.join(UI.state.joinCode, h);
+  },
+
+  customLeave() { Online.leave(); },
+
+  customChangeHorse() {
+    const h = Player.horse(UI.state.raceHorse);
+    if (!h) return;
+    Online.changeHorse(h);
+    UI.toast(`🔄 出走馬を${Util.esc(h.name)}に変更しました`);
+  },
+
+  copyRoom() {
+    const text = Online.inviteUrl() || Online.code;
+    const done = () => UI.toast('📋 コピーしました。フレンドに送ろう！');
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => UI.toast(`ルームコード：${Online.code}`));
+    else UI.toast(`ルームコード：${Online.code}`);
   },
 
   showCode(hid) {
@@ -497,8 +557,11 @@ const App = {
   // ── カード ──
   buy(id) {
     const c = Cards.get(id);
-    if (!c || !c.price || !Player.canAfford(c.price)) return UI.toast('お金が足りません', 'error');
+    if (!c || !c.price) return;
+    if (Player.shopLeft(c) <= 0) return UI.toast('今週の入荷分は売り切れです。来週また来てね', 'error');
+    if (!Player.canAfford(c.price)) return UI.toast('お金が足りません', 'error');
     Player.addMoney(-c.price);
+    Player.shopBuy(c);
     Player.addCard(id);
     UI.toast(`🛒 ${c.name} を購入しました`);
     this.commit();
@@ -506,8 +569,11 @@ const App = {
 
   buyPack(id) {
     const pk = GAME_DATA.packs.find(x => x.id === id);
-    if (!pk || !Player.canAfford(pk.price)) return UI.toast('お金が足りません', 'error');
+    if (!pk) return;
+    if (Player.shopLeft(pk) <= 0) return UI.toast('今週の入荷分は売り切れです。来週また来てね', 'error');
+    if (!Player.canAfford(pk.price)) return UI.toast('お金が足りません', 'error');
     Player.addMoney(-pk.price);
+    Player.shopBuy(pk);
     const cards = Cards.openPack(pk).map(c => {
       const isNew = !Player.data.seenCards.includes(c.id);
       Player.addCard(c.id);
@@ -519,7 +585,7 @@ const App = {
       ${['SSR', 'UR'].includes(best) ? `<p class="ok">🌈 ${best}が出た！</p>` : ''}
       <div class="cgrid reveal-grid">${RaceView.cardsHTML(cards)}</div>
       <div class="btn-row"><button class="btn" onclick="UI.closeModal()">OK</button>
-      <button class="btn primary" ${Player.canAfford(pk.price) ? '' : 'disabled'} onclick="App.buyPack('${pk.id}')">もう1パック（${Util.money(pk.price)}）</button></div></div>`);
+      <button class="btn primary" ${Player.canAfford(pk.price) && Player.shopLeft(pk) > 0 ? '' : 'disabled'} onclick="App.buyPack('${pk.id}')">もう1パック（${Util.money(pk.price)}・今週あと${Player.shopLeft(pk)}）</button></div></div>`);
   },
 
   cardDetail(id) {
@@ -626,6 +692,8 @@ const App = {
     UI.modal(`<h3>⚙ 設定</h3>
       <label>厩舎の名前<input id="set-name" maxlength="12" value="${Util.esc(Player.data.name)}"></label>
       <label class="check-row"><input type="checkbox" id="set-legends" ${Player.data.settings.legends !== false ? 'checked' : ''}> 👑 実在の名馬をライバルとして出走させる</label>
+      <label>🌐 オンラインの接続サーバー<small class="muted">（空欄＝PeerJSの公開サーバー。自前の PeerServer を使うときだけ入力）</small><input id="set-peer" placeholder="例：example.com:9000/myapp" value="${Util.esc(Player.data.settings.peerServer || '')}"></label>
+      <label>👑 名馬の強さ<select id="set-legend-level">${Object.entries(Legends.LEVELS).map(([k, v]) => `<option value="${k}" ${Legends.level() === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label>
       <button class="btn primary" onclick="App.saveSettings()">保存</button>
       <div class="btn-row"><button class="btn" onclick="App.fanfareSettings()">🎺 ファンファーレ設定</button><button class="btn" onclick="App.photoCredits()">📷 写真クレジット</button></div>
       <hr>
@@ -637,6 +705,8 @@ const App = {
     const v = (UI.el('set-name').value || '').trim().slice(0, 12);
     if (v) Player.data.name = v;
     Player.data.settings.legends = UI.el('set-legends').checked;
+    Player.data.settings.legendLevel = UI.el('set-legend-level').value;
+    Player.data.settings.peerServer = (UI.el('set-peer').value || '').trim().slice(0, 120);
     UI.closeModal();
     this.commit();
   },

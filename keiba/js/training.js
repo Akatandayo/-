@@ -97,11 +97,15 @@ const Training = {
     return { menu: best, reason: `${lead} ${label}中心に調整します。` };
   },
 
-  // アイテム使用
+  // 限界値アップの残り（1頭あたりの上限まで）
+  capRoom(h) { return Math.max(0, GAME_DATA.capBoostMax - (h.capBoost || 0)); },
+
+  // アイテム使用（使えないときは { error } を返す）
   useItem(h, itemId) {
     const item = Cards.get(itemId);
     if (!item || item.type !== 'item') return null;
-    if (item.use.train && !this.canTrain(h).ok) return null;
+    if (item.use.train && !this.canTrain(h).ok) return { error: this.canTrain(h).reason };
+    if (item.use.allCaps && !item.use.allStats && this.capRoom(h) <= 0) return { error: `この馬の限界値はもう上げられません（1頭につき合計+${GAME_DATA.capBoostMax}まで）` };
     if (!Player.removeCard(itemId)) return null;
     const u = item.use;
     let result;
@@ -112,7 +116,12 @@ const Training = {
       if (u.fatigue) h.fatigue = Util.clamp(h.fatigue + u.fatigue, 0, 100);
       if (u.condition) h.condition = Util.clamp(h.condition + u.condition, 0, 100);
       if (u.exp) result.levelUps = Horse.addExp(h, u.exp);
-      if (u.allCaps) STAT_KEYS.forEach(k => { h.caps[k] += u.allCaps; });
+      if (u.allCaps) {
+        const add = Math.min(u.allCaps, this.capRoom(h));
+        h.capBoost = (h.capBoost || 0) + add;
+        STAT_KEYS.forEach(k => { h.caps[k] += add; });
+        result.capAdd = add;
+      }
       if (u.allStats) STAT_KEYS.forEach(k => {
         const add = Math.min(u.allStats, h.caps[k] - h.stats[k]);
         if (add > 0) { h.stats[k] += add; result.gains[k] = add; }

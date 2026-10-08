@@ -11,7 +11,7 @@ const Race = {
 
   // 脚質ごとの区間速度補正
   styleMult: {
-    nige: { start: 1.025, mid: 1.01, corner: 0.998, final: 0.988 },
+    nige: { start: 1.025, mid: 1.01, corner: 0.998, final: 0.985 },
     senko: { start: 1.015, mid: 1.005, corner: 1.002, final: 0.995 },
     sashi: { start: 0.993, mid: 0.997, corner: 1.008, final: 1.018 },
     oikomi: { start: 0.982, mid: 0.992, corner: 1.012, final: 1.03 }
@@ -233,6 +233,34 @@ const Race = {
     return entrants;
   },
 
+  // コースのレイアウト（回り・1周・直線の長さ）。会場が無いレースは東京扱い
+  courseOf(race) {
+    const venue = GAME_DATA.courses[race.venue] ? race.venue : '東京';
+    const v = GAME_DATA.courses[venue];
+    const turf = race.surface !== 'dirt';
+    let c = turf ? v.turf : v.dirt, part = '';
+    if (turf && v.straight && race.distance === v.straight) {
+      return { venue, dir: v.dir, P: race.distance + 400, L: race.distance, straight: true, label: '直線', dirLabel: '直線', note: '直線だけを走る千直コース' };
+    }
+    if (turf && v.outer) {
+      if (v.outer.d.includes(race.distance)) { c = v.outer; part = '外回り'; } else part = '内回り';
+    }
+    return { venue, dir: v.dir, P: c.P, L: c.L, straight: false, label: part, dirLabel: v.dir === 'L' ? '左回り' : '右回り', note: v.note };
+  },
+  courseText(race) {
+    const c = this.courseOf(race);
+    return `${c.dirLabel}${c.label && !c.straight ? '・' + c.label : ''}・直線${c.L}m`;
+  },
+  // 直線の長さによる脚質の有利・不利（simulate の courseK と同じ基準）
+  courseHint(race) {
+    const c = this.courseOf(race);
+    if (c.straight) return 'スタートからゴールまで一直線のスピード勝負';
+    const L = c.L;
+    if (L >= 450) return '直線が長く、差し・追込が届きやすい';
+    if (L <= 320) return '直線が短く、逃げ・先行が有利';
+    return '';
+  },
+
   // 馬場状態：梅雨（6〜7月）は雨が多く、馬場が重くなりやすい
   rollGround(race) {
     const m = race.m || Calendar.month(Calendar.get().week);
@@ -259,6 +287,11 @@ const Race = {
       const p = pos / D;
       return p < 0.15 ? 'start' : p < 0.6 ? 'mid' : p < 0.75 ? 'corner' : 'final';
     };
+    // コース補正：直線が長いほど差し・追込、短いほど逃げ・先行が有利
+    const course = this.courseOf(race);
+    const cx = course.straight ? 0 : (course.L - 400) / 250;
+    const courseK = cx > 0 ? Math.min(cx, 1) * 0.012 : Math.max(cx, -0.6) * 0.006;
+    const courseBias = { nige: -1, senko: -0.6, sashi: 0.6, oikomi: 1 };
 
     const runners = entrants.map((e, gate) => {
       const s = e.stats;
@@ -364,7 +397,9 @@ const Race = {
         // 目標速度
         let base = 16 + s.speed * 0.012;
         if (phase === 'final') base = 16 + s.speed * 0.0135 + s.guts * 0.0015;
-        let target = base * this.styleMult[r.e.runningStyle][stylePhaseAt(r.pos)] * r.mul * skillMul;
+        const sp = stylePhaseAt(r.pos);
+        let target = base * this.styleMult[r.e.runningStyle][sp] * r.mul * skillMul;
+        if (sp === 'final') target *= 1 + courseK * courseBias[r.e.runningStyle];
         target *= 1 + Util.gauss() * 0.002;
         let costMul = 1;
         if (phase === 'final' && r.hp > 0) {
@@ -420,7 +455,7 @@ const Race = {
 
     return {
       raceId: race.id, name: race.name, grade: race.grade, distance: D, surface: race.surface,
-      distCat, ground,
+      distCat, ground, venue: course.venue, course,
       entrants: runners.map(r => ({ id: r.e.id, name: r.e.name, owner: r.e.owner || '', isPlayer: r.e.isPlayer, isGhost: !!r.e.isGhost, legendId: r.e.legendId, coat: r.e.coat, style: r.e.runningStyle, gate: r.gate + 1 })),
       finish, events: events.sort((a, b) => a.t - b.t), frames,
       phases: { startEnd, cornerStart, finalStart }

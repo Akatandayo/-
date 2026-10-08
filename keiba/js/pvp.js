@@ -1,5 +1,5 @@
-// 対戦：リーグ戦（CPU馬主との対戦・レーティング）と、対戦コードによるフレンド対戦
-// どちらもレース計算は Race.simulate を使い、オートで決着する。
+// 対戦：リーグ戦（CPU馬主との対戦・レーティング）、対戦コードによるフレンド対戦、カスタムレース
+// どれもレース計算は Race.simulate を使い、オートで決着する。
 'use strict';
 
 const Pvp = {
@@ -10,8 +10,10 @@ const Pvp = {
 
   isUnlocked(league) { return Player.data.pvp.rating >= league.minRating; },
 
-  canEnter(h) {
+  // league：リーグ戦は賞金・カードがもらえるので、調教やレースと同じく週1回の行動を使う
+  canEnter(h, opts = {}) {
     if (Horse.mustRetire(h)) return { ok: false, reason: '引退の時期です' };
+    if (opts.league && Horse.acted(h)) return { ok: false, reason: '今週はもう行動しました（リーグ戦は週1回）' };
     if (h.fatigue >= 80) return { ok: false, reason: '疲れすぎ。休ませよう' };
     return { ok: true };
   },
@@ -60,7 +62,8 @@ const Pvp = {
   },
 
   makeRace(id, name, grade, course) {
-    return { id, name, grade, distance: course.distance, surface: course.surface, field: this.FIELD };
+    const venue = course.venue || Util.pick(Object.keys(GAME_DATA.courses));
+    return { id, name, grade, venue, distance: course.distance, surface: course.surface, field: course.field || this.FIELD };
   },
 
   shuffle(arr) {
@@ -108,6 +111,7 @@ const Pvp = {
     const exp = place === 1 ? 60 : place <= 3 ? 40 : 25;
     const levelUps = Horse.addExp(h, exp);
     h.fatigue = Util.clamp(h.fatigue + this.FATIGUE, 0, 100);
+    Horse.act(h);
     // 新しいリーグ解放の判定
     const unlocked = GAME_DATA.leagues.filter(l => before < l.minRating && pvp.rating >= l.minRating);
     return { place, prize, exp, cards, levelUps, field: result.finish.length, rating: pvp.rating, delta, unlocked };
@@ -219,9 +223,80 @@ const Pvp = {
       g.vs[won ? 'win' : 'lose']++;
       vs.push({ name: g.name, owner: g.owner, won });
     });
-    const exp = 20;
-    const levelUps = Horse.addExp(h, exp);
-    h.fatigue = Util.clamp(h.fatigue + this.FATIGUE, 0, 100);
-    return { place: me.place, prize: 0, exp, cards: [], levelUps, field: result.finish.length, vs };
+    // 何度でも遊べるエキシビションなので、経験値・疲労なし
+    return { place: me.place, prize: 0, exp: 0, cards: [], levelUps: 0, field: result.finish.length, vs };
+  },
+
+  // ── カスタムレース（ひとりで／オンラインでみんなと） ──
+  CUSTOM_DEFAULT: { name: 'カスタムレース', venue: '東京', surface: 'turf', distance: 2400, grade: 'g1', ground: -1, cap: 0, field: 12, cpu: 'normal', legends: 1 },
+  CPU_LEVELS: { none: { label: 'なし', lv: 0 }, weak: { label: '弱い', lv: 58 }, normal: { label: 'ふつう', lv: 70 }, strong: { label: '強い', lv: 80 } },
+  CUSTOM_GRADES: { g1: 'GⅠ', g2: 'GⅡ', g3: 'GⅢ', op: 'OP' },
+  CUSTOM_CAPS: [0, 70, 85, 100],
+
+  customDistances(venue, surface) {
+    const v = GAME_DATA.courses[venue] || {};
+    if (surface === 'dirt') return [1000, 1200, 1400, 1600, 1700, 1800, 2000, 2100, 2400];
+    return [...(v.straight ? [v.straight] : []), 1200, 1400, 1600, 1800, 2000, 2200, 2400, 2500, 3000, 3200, 3600];
+  },
+
+  // 受け取った設定を安全な値にそろえる（オンラインで送られてきた設定にも使う）
+  sanitizeSpec(s = {}) {
+    const d = this.CUSTOM_DEFAULT;
+    const out = {};
+    out.name = String(s.name || d.name).replace(/[<>&"']/g, '').slice(0, 16) || d.name;
+    out.venue = GAME_DATA.courses[s.venue] ? s.venue : d.venue;
+    out.surface = s.surface === 'dirt' ? 'dirt' : 'turf';
+    const ds = this.customDistances(out.venue, out.surface);
+    out.distance = ds.includes(Number(s.distance)) ? Number(s.distance) : ds.reduce((a, b) => (Math.abs(b - Number(s.distance || d.distance)) < Math.abs(a - Number(s.distance || d.distance)) ? b : a));
+    out.grade = this.CUSTOM_GRADES[s.grade] ? s.grade : d.grade;
+    out.ground = [0, 1, 2, 3].includes(Number(s.ground)) ? Number(s.ground) : -1;
+    out.cap = this.CUSTOM_CAPS.includes(Number(s.cap)) ? Number(s.cap) : 0;
+    out.field = Util.clamp(Math.round(Number(s.field) || d.field), 2, 18);
+    out.cpu = this.CPU_LEVELS[s.cpu] ? s.cpu : d.cpu;
+    out.legends = Util.clamp(Math.round(Number(s.legends) || 0), 0, 3);
+    return out;
+  },
+
+  customRace(spec) {
+    return {
+      id: 'custom', kind: 'custom', name: spec.name, grade: spec.grade, venue: spec.venue,
+      surface: spec.surface, distance: spec.distance, field: spec.field
+    };
+  },
+
+  specText(spec) {
+    return `${spec.venue} ${spec.surface === 'turf' ? '芝' : 'ダート'}${spec.distance}m（${Race.courseText(this.customRace(spec))}）`;
+  },
+
+  // humans：人間の出走馬（自分・オンラインの参加者）。残りを名馬とCPUで埋める
+  buildCustomMatch(spec, humans) {
+    spec = this.sanitizeSpec(spec);
+    const race = this.customRace(spec);
+    const cap = spec.cap || null;
+    const field = humans.slice(0, spec.field);
+    const used = new Set(field.map(e => e.name));
+    if (spec.legends && typeof Legends !== 'undefined') {
+      Legends.pickCustom(race, spec.legends).forEach(l => {
+        if (field.length >= spec.field || used.has(l.name)) return;
+        used.add(l.name);
+        const e = Legends.entrant(l, race);
+        e.stats = this.capStats(e.stats, cap);
+        field.push(e);
+      });
+    }
+    const lv = this.CPU_LEVELS[spec.cpu].lv;
+    if (lv) while (field.length < spec.field) field.push(this.makeRival(lv, race, cap, used, spec.cpu === 'strong'));
+    const ground = spec.ground >= 0 ? spec.ground : Race.rollGround(race);
+    return { kind: 'custom', spec, race, field: this.shuffle(field), ground };
+  },
+
+  // 結果の記録（エキシビションなので経験値・賞金はなし）
+  applyCustom(result, myId, online) {
+    const me = result.finish.find(f => f.id === myId);
+    const c = Player.data.custom || (Player.data.custom = { races: 0, wins: 0, online: 0, onlineWins: 0 });
+    c.races++;
+    if (online) c.online++;
+    if (me && me.place === 1) { c.wins++; if (online) c.onlineWins++; }
+    return { place: me ? me.place : 0, prize: 0, exp: 0, cards: [], levelUps: 0, field: result.finish.length };
   }
 };

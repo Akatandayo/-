@@ -258,7 +258,12 @@ GAME_DATA.legendList = [
 ];
 
 const Legends = {
-  TIER: { S: { base: 94, rarity: 'UR' }, A: { base: 89, rarity: 'SSR' }, B: { base: 85, rarity: 'SR' } },
+  // 格ごとの基礎能力（v8で弱体化：育てた馬がきちんと勝負になる強さに）
+  TIER: { S: { base: 90, rarity: 'UR' }, A: { base: 86, rarity: 'SSR' }, B: { base: 82, rarity: 'SR' } },
+  // 名馬の強さ（設定）と、レースの格による補正
+  LEVELS: { easy: { label: 'やさしい', adj: -4 }, normal: { label: 'ふつう', adj: 0 }, hard: { label: '手ごわい', adj: 4 } },
+  GRADE_ADJ: { g1: 0, g2: -3, g3: -5 },
+  level() { return this.LEVELS[Player.data.settings.legendLevel] ? Player.data.settings.legendLevel : 'normal'; },
   DIST_CODE: { s: 'sprint', m: 'mile', c: 'classic', l: 'long' },
   STYLE_SKILLS: {
     nige: ['k_escape', 'k_keeplead', 'k_rocket'],
@@ -298,16 +303,12 @@ const Legends = {
       });
       aptitude.turf = surf === 'd' ? 45 : surf === 'b' ? 88 : 96;
       aptitude.dirt = surf === 't' ? 40 : surf === 'b' ? 88 : 96;
+      // スキルは2つ（固有スキル＋脚質スキル）
       const pool = this.STYLE_SKILLS[style];
-      const skills = [];
-      if (sig) skills.push(sig);
-      skills.push(pool[0]);
-      if (ds.includes('long')) skills.push('k_stayer');
-      else if (ds.includes('sprint')) skills.push('k_sprintking');
-      else skills.push(tier === 'B' ? pool[1] : 'k_tataki');
+      const skills = [sig || (ds.includes('long') ? 'k_stayer' : ds.includes('sprint') ? 'k_sprintking' : pool[1]), pool[0]];
       return {
         id, name, gender: sex === 'f' ? 'female' : 'male', style, surf, dists: ds, tier, wins, coat,
-        stats, aptitude, skills: [...new Set(skills)].slice(0, 3), rarity: this.TIER[tier].rarity
+        stats, aptitude, skills: [...new Set(skills)], rarity: this.TIER[tier].rarity
       };
     });
     return this._list;
@@ -362,8 +363,8 @@ const Legends = {
   // このレースに出てくる名馬を選ぶ（重賞のみ、適性が合う馬）
   pickFor(race) {
     if (!this.enabled() || race.kind !== 'graded' || race.ages === '2') return [];
-    const n = race.grade === 'g1' ? 1 + (Math.random() < 0.6 ? 1 : 0) + (Math.random() < 0.25 ? 1 : 0)
-      : race.grade === 'g2' ? (Math.random() < 0.6 ? 1 : 0) : (Math.random() < 0.35 ? 1 : 0);
+    const n = race.grade === 'g1' ? 1 + (Math.random() < 0.3 ? 1 : 0)
+      : race.grade === 'g2' ? (Math.random() < 0.4 ? 1 : 0) : (Math.random() < 0.2 ? 1 : 0);
     if (!n) return [];
     const cat = Horse.distCat(race.distance);
     const cands = this.all().filter(l => (!race.female || l.gender === 'female')
@@ -381,14 +382,24 @@ const Legends = {
     return out;
   },
 
+  // カスタムレース用：指定した数だけ、コースに合う名馬を選ぶ
+  pickCustom(race, n) {
+    const cat = Horse.distCat(race.distance);
+    const fit = this.all().filter(l => l.aptitude[cat] >= 72 && l.aptitude[race.surface] >= 80);
+    const cands = (fit.length >= n ? fit : this.all()).slice();
+    const out = [];
+    while (out.length < n && cands.length) out.push(cands.splice(Math.floor(Math.random() * cands.length), 1)[0]);
+    return out;
+  },
+
   entrant(l, race) {
-    const adj = Race.ageAdjust(race);
+    const adj = Race.ageAdjust(race) + (this.GRADE_ADJ[race.grade] || 0) + this.LEVELS[this.level()].adj;
     const stats = {};
     STAT_KEYS.forEach(k => { stats[k] = Math.round(l.stats[k] + adj + Util.gauss() * 1.5); });
     return {
       id: Util.uid('lg_'), legendId: l.id, name: l.name, owner: '👑 名馬', isPlayer: false, isLegend: true,
       stats, aptitude: Object.assign({}, l.aptitude), runningStyle: l.style, skills: l.skills.slice(),
-      condition: Util.randInt(80, 100), fatigue: 0, coat: l.coat
+      condition: Util.randInt(65, 95), fatigue: 0, coat: l.coat
     };
   },
 
