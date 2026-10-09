@@ -107,7 +107,10 @@ h3.sh{font-family:var(--font-serif);font-size:14px;font-weight:600;margin:14px 0
 /* ---------- board ---------- */
 #board{position:absolute;inset:0;overflow:hidden;touch-action:none;background:#050706;cursor:grab;user-select:none;-webkit-user-select:none}
 #board.panning{cursor:grabbing}
-#world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+#world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform;background:radial-gradient(ellipse at 50% 45%,#17221e,#0a0f0d 70%,#060807);box-shadow:0 0 0 1px rgba(201,167,102,.12),0 30px 80px rgba(0,0,0,.6)}
+#boardEmpty{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;text-align:center;max-width:min(360px,86%);padding:18px 20px;border:1px dashed var(--line2);border-radius:var(--r2);background:rgba(10,14,12,.82);color:var(--ink2);font-size:13px}
+#boardEmpty b{display:block;font-family:var(--font-serif);color:var(--brass);font-size:15px;letter-spacing:.1em;margin-bottom:6px}
+body.bcast #boardEmpty{display:none}
 #bgImg{position:absolute;left:0;top:0;transition:opacity .9s ease;pointer-events:none;-webkit-user-drag:none}
 #bgImg2{position:absolute;left:0;top:0;opacity:0;transition:opacity .9s ease;pointer-events:none}
 #grid{position:absolute;left:0;top:0;pointer-events:none;opacity:.22}
@@ -373,8 +376,8 @@ body.bcast:hover #bcastBadge{opacity:1}
 
 /* ---------- responsive ---------- */
 @media (max-width:1180px){
-  #app{grid-template-columns:52px 320px 1fr 330px}
-  #app.side-closed{grid-template-columns:52px 0 1fr 330px}
+  #app{grid-template-columns:52px 300px 1fr 310px}
+  #app.side-closed{grid-template-columns:52px 0 1fr 310px}
 }
 @media (max-width:900px){
   :root{--topbar:46px}
@@ -456,6 +459,7 @@ body.bcast:hover #bcastBadge{opacity:1}
       <div id="fxBoard"><canvas id="fxCanvas"></canvas><div class="vign" id="vign"></div><div class="lbox t" id="lboxT"></div><div class="lbox b" id="lboxB"></div></div>
       <div id="subs" aria-live="polite"></div>
       <div id="sceneTitle"></div>
+      <div id="boardEmpty" class="hidden"></div>
       <div id="audioGate"></div>
       <div id="boardHud">
         <button class="btn sm icon" type="button" data-zoom="in" title="拡大"><svg class="i"><use href="#i-plus"/></svg></button>
@@ -487,7 +491,8 @@ body.bcast:hover #bcastBadge{opacity:1}
         <button type="button" class="btn xs" data-quick="RES(">RES</button>
         <button type="button" class="btn xs" data-quick="choice[,]">choice</button>
         <span class="grow"></span>
-        <button type="button" class="btn xs ghost" id="logBtn" title="ログ出力">ログ出力</button>
+        <button type="button" class="btn xs ghost" data-act="diceHelp" title="ダイスコマンド一覧" aria-label="ダイスコマンド一覧">?</button>
+        <button type="button" class="btn xs ghost" id="logBtn" title="ログ出力">ログ</button>
       </div>
     </form>
   </section>
@@ -533,6 +538,9 @@ body.bcast:hover #bcastBadge{opacity:1}
 </svg>
 <script>
 "use strict";
+/* claude.ai Artifact として公開する場合の capabilities 宣言例:
+   { room: { topics: { m: "interact" } }, db: {}, assets: {}, downloads: {} }
+   （同期メッセージは topic "m" のみを使用。room 未許可時は BroadcastChannel / ソロにフォールバック） */
 /* =====================================================================
    深淵卓 — CoC6版オンラインセッションツール
    構成: Util / Store(IDB) / Dice(純粋関数) / CoC(キャラ) / Iachara(取込)
@@ -671,7 +679,7 @@ const Dice = (() => {
   }
   const OUT_LABEL = { success: '成功', fail: '失敗', crit: '決定的成功', fumble: '致命的失敗', special: 'スペシャル' };
   function cmpTest(a, op, b) { switch (op) { case '<=': return a <= b; case '>=': return a >= b; case '<': return a < b; case '>': return a > b; case '=': case '==': return a === b; case '!=': case '<>': return a !== b; } return false; }
-  function splitComment(rest) { const m = /^(\S+)(?:\s+([\s\S]*))?$/.exec(rest); return m ? { cmd: m[1], comment: (m[2] || '').trim() } : { cmd: rest, comment: '' }; }
+  function splitComment(rest) { const m = /^([^\s【「]+)\s*([\s\S]*)$/.exec(rest); return m ? { cmd: m[1], comment: (m[2] || '').trim() } : { cmd: rest, comment: '' }; }
 
   // 1コマンドを評価（secret/repeat 除く）
   function rollOne(raw, cfg) {
@@ -2357,6 +2365,9 @@ const Board = {
     U.$('#world').style.width = W + 'px'; U.$('#world').style.height = H + 'px';
     const fg = U.$('#fgImg'); const fu = v.fg ? Assets.url(v.fg) : '';
     if (fu) { if (fg.getAttribute('src') !== fu) fg.src = fu; fg.style.opacity = String(v.fgOpacity ?? .6); fg.style.display = ''; } else { fg.style.opacity = '0'; fg.removeAttribute('src'); fg.style.display = 'none'; }
+    const emp = U.$('#boardEmpty');
+    if (!v.bg && !App.bcast) { emp.classList.remove('hidden'); emp.innerHTML = `<b>背景が未設定です</b>${App.isGM() ? '素材ライブラリに画像をドロップし「背景に」を押すか、シーンに背景を設定してください。<div class="row" style="justify-content:center;margin-top:10px"><button class="btn sm pri" type="button" data-act="panel" data-p="assets">素材を追加</button></div>' : 'GMが背景を設定するまでお待ちください。'}`; }
+    else emp.classList.add('hidden');
     const sc = App.S.scenes.find(s => s.id === v.sceneId);
     U.$('#sceneTitle').textContent = sc ? sc.name : '';
     U.$('#sceneTitle').style.display = sc ? '' : 'none';
@@ -2875,9 +2886,10 @@ const Panels = {
       <label class="chk"><input type="checkbox" ${s.special ? 'checked' : ''} data-bind="set:special">スペシャル判定（技能値の1/5以下）</label><br>
       <label class="chk"><input type="checkbox" ${s.sanFumbleMax ? 'checked' : ''} data-bind="set:sanFumbleMax">SANチェックのファンブルで失敗時最大値を減少</label>` : ''}
       <h3 class="sh">データ</h3>
+      <div class="row" style="margin-bottom:6px"><button class="btn sm" type="button" data-act="diceHelp">ダイスコマンド一覧</button><button class="btn sm" type="button" data-act="selfTest">自己テスト</button></div>
       <div class="row"><button class="btn sm" type="button" data-act="exportRoom">JSONエクスポート</button><button class="btn sm" type="button" data-act="importRoom"${gm ? '' : ' disabled title="GMのみ"'}>JSONインポート</button><button class="btn sm" type="button" data-act="logModal">ログ出力(HTML)</button></div>
       ${gm ? `<div class="row" style="margin-top:6px"><button class="btn xs danger" type="button" data-act="chatClear">チャットを全消去</button></div>` : ''}
-      ${gm ? `<h3 class="sh">GMメモ（この端末のみ・非共有）</h3><textarea class="memo gmsecret" id="gmMemo" data-fk="gmmemo" placeholder="シナリオメモ。配信画面や他の参加者には送信されません。">${E(App.gmMemo)}</textarea>` : ''}
+      ${gm && !App.bcast ? `<h3 class="sh">GMメモ（この端末のみ・非共有）</h3><textarea class="memo gmsecret" id="gmMemo" data-fk="gmmemo" placeholder="シナリオメモ。配信画面や他の参加者には送信されません。">${E(App.gmMemo)}</textarea>` : ''}
       <div class="sep"></div>
       <div class="row"><button class="btn sm" type="button" data-act="lobby">${U.icon('door')}ルームを作成・切り替え</button></div>
     </div>`;
@@ -3017,6 +3029,22 @@ const Panels = {
   async logModal() {
     const html = await this.buildLogFile();
     Modal.open({ title: 'ログ出力', body: `<p class="small" style="margin-top:0">発言者の色・アイコン・ダイス結果付きのHTMLログです（${App.S.chat.length}件）。${App.isGM() ? 'GMのためシークレットダイスも含まれます。' : 'シークレットダイスは含まれません。'}</p><iframe title="ログプレビュー" style="width:100%;height:46vh;border:1px solid var(--line2);border-radius:6px;background:#f6f1e4" sandbox=""></iframe>`, foot: `<button class="btn" type="button" id="lgCopy">${U.icon('copy')}HTMLをコピー</button><button class="btn pri" type="button" id="lgSave">HTMLファイルを保存</button>`, cls: 'wide', onMount: (m) => { m.querySelector('iframe').srcdoc = html; m.querySelector('#lgCopy').onclick = async () => UI.toast(await U.copyText(html) ? 'クリップボードにコピーしました' : 'コピーできませんでした', 'warn'); m.querySelector('#lgSave').onclick = () => FileOut.save(`log_${App.roomId}.html`, html, 'text/html'); } });
+  },
+  diceHelp() {
+    const s = App.S.room.settings;
+    const rows = [
+      ['CCB<=60 【目星】', `技能判定。01〜${String(s.crit).padStart(2, '0')}で決定的成功、${s.fumble}〜100で致命的失敗（ルーム設定で変更可）`],
+      ['CC<=60 / 1d100<=60', '同じく1D100判定（閾値は共通）'],
+      ['CCB<={SAN} / CCB<={STR}*5', 'キャラのステータス・能力値・技能を {名前} で参照'],
+      ['2d6+3 / (1d6+1)*2 / 1d3+{DB}', '加減乗除つきの合計。比較 2d6>=7 も可'],
+      ['RES(10-12)', '抵抗表ロール。成功率 = 50 + (能動 − 受動) × 5'],
+      ['SAN 0/1d3 【対象】', 'SANチェック。現在SANで判定し、減少を自動ロールしてSANを減算（5以上でアイデア→一時的狂気、累計で不定の狂気）'],
+      ['SAN<=55 1/1d6', 'SAN値を明示して判定'],
+      ['choice[A,B,C]', 'ランダムに1つ選択'],
+      ['x3 CCB<=50', '繰り返し（rep3 も可、最大30回）'],
+      ['S接頭辞（SCCB<=50, S2d6）', 'シークレットダイス。GMと本人のみ結果が見え、他の人には「シークレットダイス」と表示'],
+    ];
+    Modal.open({ title: 'ダイスコマンド（CoC6版 / BCDice風）', body: `<table class="skilltbl" style="font-size:13px"><tbody>${rows.map(([c, d]) => `<tr><td style="width:42%;font-family:var(--font-mono);color:var(--brass);padding:6px 4px;vertical-align:top">${E(c)}</td><td style="padding:6px 4px">${E(d)}</td></tr>`).join('')}</tbody></table><p class="small muted">コマンドの後ろに空白を空けて書いた文字はコメントになります。全角でも入力できます。チャットパレットはクリックで送信、Shift+クリックで入力欄へ。</p>`, foot: `<button class="btn" type="button" data-act="selfTest">自己テストを実行</button><button class="btn pri" type="button" data-act="modalClose">閉じる</button>` });
   },
   broadcastModal() {
     const base = location.href.split('#')[0];
@@ -3274,6 +3302,8 @@ const Act = {
   exportRoom() { FileOut.exportRoom(); },
   importRoom() { if (!needGM()) return; FileOut.importRoom(); },
   logModal() { Panels.logModal(); },
+  selfTest() { const r = window.__cocTest.selfTest(); Modal.open({ title: `ダイス・取込 自己テスト（${r.passed}/${r.total} 合格）`, body: `<div class="markers"><ul style="max-height:60vh">${r.results.map(x => `<li><span style="color:${x.ok ? 'var(--ok)' : 'var(--fumble)'};font-weight:700;width:40px">${x.ok ? 'PASS' : 'FAIL'}</span><span class="grow" style="font-family:var(--font-ui)">${U.esc(x.name)}${x.err ? ' — ' + U.esc(x.err) : ''}</span></li>`).join('')}</ul></div><p class="tiny muted">コンソールからは <span class="kbd">__cocTest.selfTest()</span> で実行できます。</p>` }); },
+  diceHelp() { Panels.diceHelp(); },
   async chatClear() { if (!needGM()) return; if (await Modal.confirm('チャットログを全て消去しますか？（先にログ出力を推奨）', { ok: '消去', danger: true })) App.dispatch('chat.clear', {}); Chat.renderAll(); },
 };
 
@@ -3329,6 +3359,42 @@ window.__cocTest = {
   get state() { return App.S; }, get me() { return App.me; }, sync: () => Sync.status(), peers: () => [...Sync.peers.values()],
   send: (t) => Chat.send(t), join: (o) => App.join(o), dispatch: (t, p) => App.dispatch(t, p),
   modules: { Dice, CoC, Iachara, State, Sync, App, Seq },
+  selfTest() {
+    const F = (v) => { let i = 0; const a = [].concat(v); return () => a[i++ % a.length]; };
+    const R = (s, o) => Dice.roll(s, Object.assign({ crit: 5, fumble: 96 }, o || {}));
+    const cases = [
+      ['CCB<=60 で 03 は決定的成功', () => R('CCB<=60', { rng: F(0.02) }).outcome === 'crit'],
+      ['CCB<=60 で 05 は決定的成功（境界）', () => R('CCB<=60', { rng: F(0.04) }).outcome === 'crit'],
+      ['CCB<=60 で 06 は成功', () => R('CCB<=60', { rng: F(0.05) }).outcome === 'success'],
+      ['CCB<=60 で 60 は成功（境界）', () => R('CCB<=60', { rng: F(0.59) }).outcome === 'success'],
+      ['CCB<=60 で 61 は失敗', () => R('CCB<=60', { rng: F(0.60) }).outcome === 'fail'],
+      ['CCB<=60 で 96 は致命的失敗', () => R('CCB<=60', { rng: F(0.95) }).outcome === 'fumble'],
+      ['CC<=60 / 1d100<=60 も判定', () => R('CC<=60', { rng: F(0.3) }).outcome === 'success' && R('1d100<=60', { rng: F(0.99) }).outcome === 'fumble'],
+      ['閾値変更（クリ1/ファン100）', () => R('CCB<=60', { rng: F(0.02), crit: 1, fumble: 100 }).outcome === 'success' && R('CCB<=60', { rng: F(0.97), crit: 1, fumble: 100 }).outcome === 'fail'],
+      ['2d6+3 の合計', () => R('2d6+3', { rng: F([0, 0.99]) }).value === 10],
+      ['(1d6+1)*2 の式', () => R('(1d6+1)*2', { rng: F(0.5) }).value === 10],
+      ['RES(10-12) は成功率40%', () => R('RES(10-12)', { rng: F(0.39) }).target === 40 && R('RES(10-12)', { rng: F(0.39) }).outcome === 'success'],
+      ['RES(20-8) は自動成功', () => R('RES(20-8)').outcome === 'success'],
+      ['choice[a,b,c]', () => R('choice[a,b,c]', { rng: F(0.99) }).value === 'c'],
+      ['x3 CCB<=50 は3回', () => R('x3 CCB<=50', { rng: F([0.1, 0.6, 0.2]) }).successes === 2],
+      ['S接頭辞はシークレット', () => R('SCCB<=50', { rng: F(0.1) }).secret === true && R('S2d6').secret === true],
+      ['SAN 0/1d3 失敗で1d3減少', () => { const r = R('SAN 0/1d3', { rng: F([0.9, 0.99]), san: 60 }); return r.kind === 'san' && r.outcome === 'fail' && r.loss === 3 && r.after === 57; }],
+      ['SAN 1/1d6 成功で1減少', () => R('SAN<=55 1/1d6', { rng: F([0.1]) }).loss === 1],
+      ['SANファンブルは最大値', () => R('SAN 1/1d10', { rng: F([0.99]), san: 50 }).loss === 10],
+      ['{SAN} 参照の展開', () => R('CCB<={SAN}', { rng: F(0.1), resolve: k => k === 'SAN' ? 65 : undefined }).target === 65],
+      ['{STR}*5 の展開', () => R('CCB<={STR}*5', { rng: F(0.1), resolve: k => k === 'STR' ? 12 : undefined }).target === 60],
+      ['未定義パラメータはエラー', () => R('CCB<={謎}', { resolve: () => undefined }).ok === false],
+      ['空白なしのコメント CCB<=60【目星】', () => { const r = R('CCB<=60【目星】', { rng: F(0.3) }); return r.target === 60 && r.comment === '【目星】'; }],
+      ['全角コマンドも解釈', () => R('ＣＣＢ＜＝５０', { rng: F(0.1) }).target === 50],
+      ['通常の文章はダイスにならない', () => R('こんにちは') === null && R('Sorry') === null && R('SAN値ピンチ') === null && R('3人で行こう') === null],
+      ['いあきゃらJSON取込', () => { const c = Iachara.parseAny(Iachara.SAMPLE_JSON); return c.name.startsWith('神代') && c.status.length === 3 && c.skills.some(s => s.name === '目星' && s.value === 75); }],
+      ['いあきゃらテキスト取込', () => { const c = Iachara.parseAny(Iachara.SAMPLE_TEXT); return CoC.abilMap(c).STR === 13 && c.skills.length >= 10; }],
+      ['ココフォリア駒形式へ往復変換', () => { const c = Iachara.parseAny(Iachara.SAMPLE_JSON); const o = Iachara.toCcfolia(c); const c2 = Iachara.fromCcfolia(JSON.parse(JSON.stringify(o))); return o.kind === 'character' && c2.name === c.name && c2.params.length === c.params.length; }],
+      ['6版派生値', () => { const d = CoC.derived({ STR: 12, CON: 11, POW: 13, DEX: 10, APP: 10, SIZ: 14, INT: 15, EDU: 20 }); return d.HP === 13 && d.SAN === 65 && d.知識 === 99 && d.DB === '+1D4'; }],
+    ];
+    const results = cases.map(([name, f]) => { let ok = false, err = ''; try { ok = !!f(); } catch (e) { err = e.message; } return { name, ok, err }; });
+    return { passed: results.filter(r => r.ok).length, total: results.length, results };
+  },
 };
 
 /* ------------------------------ Boot ------------------------------ */
