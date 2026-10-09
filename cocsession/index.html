@@ -107,6 +107,7 @@ h3.sh{font-family:var(--font-serif);font-size:14px;font-weight:600;margin:14px 0
 /* ---------- board ---------- */
 #board{position:absolute;inset:0;overflow:hidden;touch-action:none;background:#050706;cursor:grab;user-select:none;-webkit-user-select:none}
 #board.panning{cursor:grabbing}
+#world.cam{transition:transform 1.4s cubic-bezier(.4,0,.2,1)}
 #world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform;background:radial-gradient(ellipse at 50% 45%,#17221e,#0a0f0d 70%,#060807);box-shadow:0 0 0 1px rgba(201,167,102,.12),0 30px 80px rgba(0,0,0,.6)}
 #boardEmpty{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;text-align:center;max-width:min(360px,86%);padding:18px 20px;border:1px dashed var(--line2);border-radius:var(--r2);background:rgba(10,14,12,.82);color:var(--ink2);font-size:13px}
 #boardEmpty b{display:block;font-family:var(--font-serif);color:var(--brass);font-size:15px;letter-spacing:.1em;margin-bottom:6px}
@@ -117,11 +118,11 @@ body.bcast #boardEmpty{display:none}
 #tokens{position:absolute;left:0;top:0}
 .tok{position:absolute;display:flex;flex-direction:column;align-items:center;touch-action:none;cursor:grab;transition:left .12s linear,top .12s linear}
 .tok.dragging{transition:none;z-index:20;cursor:grabbing}
-.tok .face{width:100%;aspect-ratio:1;border-radius:50%;border:2px solid var(--c,#999);background:#111 center/cover no-repeat;box-shadow:0 3px 10px rgba(0,0,0,.6),0 0 0 3px rgba(0,0,0,.4)}
+.tok .face{width:100%;aspect-ratio:1;border-radius:50%;border:3px solid var(--c,#999);background:#111 center/cover no-repeat;display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--font-serif);color:var(--c,#ddd);box-shadow:0 3px 10px rgba(0,0,0,.6),0 0 0 3px rgba(0,0,0,.4)}
 .tok.sel .face{box-shadow:0 0 0 3px var(--focus),0 3px 10px rgba(0,0,0,.6)}
-.tok .nm{margin-top:4px;font-size:20px;font-weight:700;padding:0 6px;background:rgba(5,8,7,.8);border-radius:3px;white-space:nowrap;color:#f3ead4;max-width:180px;overflow:hidden;text-overflow:ellipsis}
+.tok .nm{margin-top:5px;font-size:24px;font-weight:700;padding:0 6px;background:rgba(5,8,7,.8);border-radius:3px;white-space:nowrap;color:#f3ead4;max-width:180px;overflow:hidden;text-overflow:ellipsis}
 .tok .bars{width:100%;display:flex;flex-direction:column;gap:3px;margin-top:3px}
-.tok .bars .bar{height:8px}
+.tok .bars .bar{height:10px}
 .bar{height:5px;background:rgba(0,0,0,.6);border-radius:3px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--bc,#86c493);transition:width .4s}
 .tok.locked{cursor:default}
@@ -194,7 +195,7 @@ body.bcast #boardEmpty{display:none}
 @keyframes wobble{0%,100%{filter:none}20%{filter:blur(1.5px) hue-rotate(-25deg) saturate(1.6)}45%{filter:blur(.4px) contrast(1.4)}70%{filter:blur(2px) hue-rotate(15deg)}}
 
 /* dice fx */
-.dicefx{left:50%;top:44%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:6px;opacity:0;transition:opacity .25s}
+.dicefx{left:50%;top:44%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:6px;opacity:0;transition:opacity .25s;background:radial-gradient(ellipse at center,rgba(8,12,10,.94),rgba(6,9,8,.86));border:1px solid var(--brass2);border-radius:14px;padding:16px 40px 18px;box-shadow:0 20px 60px rgba(0,0,0,.75);min-width:min(320px,86vw)}
 .dicefx.on{opacity:1}
 .dicefx .who{font-size:13px;color:var(--ink2);background:rgba(0,0,0,.7);padding:2px 12px;border-radius:99px;letter-spacing:.06em}
 .dicefx .num{font-family:var(--font-serif);font-weight:800;font-size:clamp(70px,14vw,150px);line-height:1;color:#f6eedb;text-shadow:0 0 30px rgba(0,0,0,1),0 0 4px #000;letter-spacing:.04em;font-variant-numeric:tabular-nums}
@@ -334,8 +335,8 @@ body.bcast #boardEmpty{display:none}
 .modal .mh h3{margin:0;font-family:var(--font-serif);font-size:17px;letter-spacing:.08em;color:var(--brass);flex:1;min-width:0}
 .modal .mb{padding:14px;overflow:auto;min-height:0}
 .modal .mf{padding:10px 14px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
-#toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:95;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;width:min(92vw,520px)}
-.toast{background:#18221e;border:1px solid var(--line2);border-left:3px solid var(--accent);padding:8px 14px;border-radius:6px;box-shadow:var(--shadow);font-size:13px;animation:tin .25s ease-out;pointer-events:auto;max-width:100%}
+#toasts{position:fixed;left:50%;transform:translateX(-50%);top:calc(var(--topbar) + 10px);z-index:95;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;width:min(92vw,520px)}
+.toast{pointer-events:none!important;opacity:.97;background:#18221e;border:1px solid var(--line2);border-left:3px solid var(--accent);padding:8px 14px;border-radius:6px;box-shadow:var(--shadow);font-size:13px;animation:tin .25s ease-out;pointer-events:auto;max-width:100%}
 .toast.err{border-left-color:var(--fumble)}
 .toast.warn{border-left-color:var(--crit)}
 @keyframes tin{from{opacity:0;transform:translateY(8px)}}
@@ -401,7 +402,6 @@ body.bcast:hover #bcastBadge{opacity:1}
   .modal .mb{padding:12px}
   #topbar{gap:6px;padding:0 6px}
   .stand{height:60%}
-  #toasts{bottom:calc(var(--navh) + 14px)}
   #connText{max-width:72px;overflow:hidden;text-overflow:ellipsis;display:inline-block}
 }
 @media (max-width:420px){
@@ -411,6 +411,37 @@ body.bcast:hover #bcastBadge{opacity:1}
 @media (prefers-reduced-motion:reduce){
   .tok{transition:none}
   .toast{animation:none}
+}
+.icwrap{display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--font-serif);font-weight:700}
+.icwrap img,.tok .face img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;-webkit-user-drag:none;pointer-events:none}
+.ini{font-family:var(--font-serif);font-weight:700;line-height:1}
+.charcard .ic.icwrap{font-size:20px}
+.msg.ghost{background:linear-gradient(90deg,rgba(120,0,10,.18),transparent);animation:tin .6s}
+.msg.ghost .tx{color:#e3a0a0;font-family:var(--font-serif);letter-spacing:.1em;filter:blur(.3px)}
+.msg.ghost.fade{transition:opacity 1.4s,filter 1.4s;opacity:0;filter:blur(6px)}
+#bcastStatus{position:absolute;inset:0;z-index:9;display:flex;align-items:center;justify-content:center;background:rgba(5,7,6,.9);padding:20px}
+#bcastStatus .box{max-width:620px;border:1px solid var(--brass2);border-radius:12px;padding:22px 26px;background:var(--panel);font-size:15px;line-height:1.8}
+#bcastStatus h4{margin:0 0 8px;font-family:var(--font-serif);color:var(--brass);font-size:20px;letter-spacing:.1em}
+#bcastStatus ol{margin:8px 0 0;padding-left:1.3em}
+.qr{background:#fff;padding:8px;border-radius:6px;display:inline-block;line-height:0}
+.qr img,.qr canvas{width:148px;height:148px}
+@media (max-width:900px){
+  .btn,.btn.sm,.btn.xs{min-height:40px;min-width:40px}
+  #connPill{min-height:40px}
+  .seg button{min-width:40px}
+  select{min-height:40px!important}
+  input[type=range]{height:40px}
+  .btn.icon,.btn.sm.icon{min-width:40px}
+  .stat .pm button{width:40px;height:40px;font-size:16px}
+  .stat{grid-template-columns:34px 1fr auto}
+  .chips button,.seg button,.subtabs button{min-height:40px}
+  .ctabs button{min-height:44px}
+  #palette button{min-height:40px}
+  input[type=text],input[type=number],input:not([type]),select{min-height:40px}
+  input[type=checkbox],input[type=radio]{width:22px;height:22px}
+  label.chk{min-height:40px}
+  #composer select{min-height:40px}
+  .tok .nm{font-size:26px}
 }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -458,13 +489,14 @@ body.bcast:hover #bcastBadge{opacity:1}
       <div id="standLayer"></div>
       <div id="fxBoard"><canvas id="fxCanvas"></canvas><div class="vign" id="vign"></div><div class="lbox t" id="lboxT"></div><div class="lbox b" id="lboxB"></div></div>
       <div id="subs" aria-live="polite"></div>
+      <div id="bcastStatus" class="hidden" role="status"></div>
       <div id="sceneTitle"></div>
       <div id="boardEmpty" class="hidden"></div>
       <div id="audioGate"></div>
       <div id="boardHud">
         <button class="btn sm icon" type="button" data-zoom="in" title="拡大"><svg class="i"><use href="#i-plus"/></svg></button>
         <button class="btn sm icon" type="button" data-zoom="out" title="縮小"><svg class="i"><use href="#i-minus"/></svg></button>
-        <button class="btn sm icon" type="button" data-zoom="fit" title="全体表示"><svg class="i"><use href="#i-fit"/></svg></button>
+        <button class="btn sm icon" type="button" data-zoom="fit" title="表示を合わせる（駒中心 ⇔ 盤面全体）"><svg class="i"><use href="#i-fit"/></svg></button>
       </div>
     </div>
   </main>
@@ -669,6 +701,7 @@ const Dice = (() => {
   function maxOf(src) { return evalExpr(src, () => 0.999999).value; }
   function judge(v, target, cfg) {
     const crit = cfg.crit ?? 5, fum = cfg.fumble ?? 96;
+    if (v >= 100) return 'fumble'; // 出目100は目標値に関わらず失敗（致命的失敗）
     if (v <= target) {
       if (v <= crit) return 'crit';
       if (cfg.special && v <= Math.floor(target / 5)) return 'special';
@@ -707,7 +740,7 @@ const Dice = (() => {
       return { kind: 'res', cmd: `RES(${a}-${b})`, comment, target, value: v, d100: true, outcome, text: `RES(${a}-${b}) ＞ ${head} ＞ ${v} ＞ ${OUT_LABEL[outcome]}` };
     }
     // SAN check: SAN 0/1d3, SAN<=60 1/1d6, SANC(0/1d3), SC 1/1d4
-    if ((m = /^(?:SANC?|SC)\s*(?:<=\s*([0-9+\-*/()]+))?\s*(?:\(\s*([^)\s/]+)\s*\/\s*([^)\s]+)\s*\)|([^\s/]+)\/(\S+))?\s*([\s\S]*)$/i.exec(s)) && /^(SANC?|SC)(\s|<|\(|$)/i.test(s)) {
+    if ((m = /^(?:SANC?|SC)\s*(?:<=\s*([0-9+\-*/()]+))?\s*(?:\(\s*([^)\s/]+)\s*\/\s*([^)\s]+)\s*\)|([^\s/]+)\/(\S+))?\s*([\s\S]*)$/i.exec(s)) && /^(SANC?|SC)(\s|<|\(|\d|$)/i.test(s)) {
       const succF = m[2] || m[4], failF = m[3] || m[5];
       let cur = m[1] != null ? evalExpr(m[1], rng).value : cfg.san;
       if (cur == null || isNaN(cur)) throw new Error('現在SANが不明です（キャラを選択するか SAN<=60 のように指定）');
@@ -730,7 +763,9 @@ const Dice = (() => {
       const v = 1 + Math.floor(rng() * 100);
       if (!m[4]) return { kind: 'sum', cmd: m[1].toUpperCase(), comment: sp.comment, value: v, d100: true, text: `(1D100) ＞ ${v}` };
       const t = evalExpr(m[4], rng).value;
-      const outcome = (m[3] === '<=' || m[3] === '<') ? judge(v, m[3] === '<' ? t - 1 : t, cfg) : (cmpTest(v, m[3], t) ? 'success' : 'fail');
+      // BCDice準拠: CC は 1クリティカル/100ファンブル（ルーム設定 ccCrit/ccFumble）、CCB はルーム設定の閾値
+      const jc = /^CCB$/i.test(m[1]) ? cfg : Object.assign({}, cfg, { crit: cfg.ccCrit ?? 1, fumble: cfg.ccFumble ?? 100 });
+      const outcome = (m[3] === '<=' || m[3] === '<') ? judge(v, m[3] === '<' ? t - 1 : t, jc) : (cmpTest(v, m[3], t) ? 'success' : 'fail');
       return { kind: 'check', cmd: `${m[1].toUpperCase()}${m[3]}${t}`, comment: sp.comment, target: t, value: v, d100: true, outcome, text: `(1D100${m[3]}${t}) ＞ ${v} ＞ ${OUT_LABEL[outcome]}` };
     }
     // 一般式（比較つき可）
@@ -767,7 +802,7 @@ const Dice = (() => {
     let secret = false, rep = 1, m;
     for (let guard = 0; guard < 3; guard++) {
       if ((m = /^(?:x|rep)(\d+)\s+([\s\S]+)$/i.exec(s))) { rep = U.clamp(parseInt(m[1], 10), 1, 30); s = m[2]; continue; }
-      if (/^S/i.test(s) && !/^(SAN|SC\b|SC\s|SC\(|SC<)/i.test(s)) {
+      if (/^S/i.test(s) && !/^(SAN|SC\b|SC\s|SC\(|SC<|SC\d)/i.test(s)) {
         const rest = s.slice(1);
         if (/^(CCB?|RES|choice|\d*D|x\d|rep\d|SAN|SC)/i.test(rest)) { secret = true; s = rest; continue; }
       }
@@ -821,7 +856,7 @@ const CoC = (() => {
       const st = (ch.status || []).find(s => s.label === k || s.label.toUpperCase() === k.toUpperCase());
       if (st) return st.value;
       const p = (ch.params || []).find(s => s.label === k || s.label.toUpperCase() === k.toUpperCase());
-      if (p) { const n = parseInt(p.value, 10); return isNaN(n) ? p.value : n; }
+      if (p) { const v = String(p.value).trim(); if (/^[+-]?\d+$/.test(v)) return parseInt(v, 10); if (/^[+-]?\d*d\d+([+-]\d*d?\d+)*$/i.test(v)) return v.toUpperCase(); return v === '' || v === 'なし' ? 0 : v; }
       const sk = (ch.skills || []).find(s => s.name === k || s.name.replace(/[（(].*$/, '') === k);
       if (sk) return sk.value;
       const a = abilMap(ch); const d = derived(a);
@@ -1182,17 +1217,17 @@ const Demo = (() => {
     s.bgm = { id: assetId('demo:bgm-drone'), vol: .7, ts: Date.now(), on: false };
     // キャラ
     const haruka = Iachara.fromCcfolia(JSON.parse(Iachara.SAMPLE_JSON));
-    haruka.id = 'c_haruka'; haruka.icon = assetId('demo:haruka'); haruka.owner = '探索者'; haruka.board = { x: 520, y: 600, on: true };
+    haruka.id = 'c_haruka'; haruka.icon = assetId('demo:haruka'); haruka.owner = null; haruka.demoPL = true; haruka.board = { x: 520, y: 600, on: true };
     haruka.faces = [{ label: '通常', asset: assetId('demo:haruka-n') }, { label: '驚き', asset: assetId('demo:haruka-s') }, { label: '恐怖', asset: assetId('demo:haruka-f') }];
     const toru = Iachara.fromText(Iachara.SAMPLE_TEXT);
-    toru.id = 'c_toru'; toru.icon = assetId('demo:toru'); toru.owner = '探索者'; toru.color = '#d8a46a'; toru.board = { x: 720, y: 640, on: true };
+    toru.id = 'c_toru'; toru.icon = assetId('demo:toru'); toru.owner = null; toru.demoPL = true; toru.color = '#d8a46a'; toru.board = { x: 720, y: 640, on: true };
     toru.faces = [{ label: '通常', asset: assetId('demo:toru-n') }, { label: '恐怖', asset: assetId('demo:toru-f') }];
-    const gonzo = Iachara.normalize({ id: 'c_gonzo', name: '老漁師 権蔵', color: '#9fb3a8', memo: 'NPC。港の古老。何かを隠している。', status: [{ label: 'HP', value: 10, max: 10 }, { label: 'MP', value: 12, max: 12 }, { label: 'SAN', value: 40, max: 99 }], params: [{ label: 'STR', value: '11' }, { label: 'CON', value: '9' }, { label: 'POW', value: '12' }, { label: 'DEX', value: '8' }, { label: 'APP', value: '7' }, { label: 'SIZ', value: '12' }, { label: 'INT', value: '13' }, { label: 'EDU', value: '9' }], skills: [{ name: '言いくるめ', value: 60 }, { name: '水泳', value: 75 }, { name: 'クトゥルフ神話', value: 12 }], commands: '', faces: [{ label: '通常', asset: assetId('demo:gonzo-n') }], icon: assetId('demo:gonzo'), owner: 'GM', board: { x: 1020, y: 560, on: true }, hideStatus: true });
+    const gonzo = Iachara.normalize({ id: 'c_gonzo', name: '老漁師 権蔵', color: '#9fb3a8', memo: 'NPC。港の古老。何かを隠している。', status: [{ label: 'HP', value: 10, max: 10 }, { label: 'MP', value: 12, max: 12 }, { label: 'SAN', value: 40, max: 99 }], params: [{ label: 'STR', value: '11' }, { label: 'CON', value: '9' }, { label: 'POW', value: '12' }, { label: 'DEX', value: '8' }, { label: 'APP', value: '7' }, { label: 'SIZ', value: '12' }, { label: 'INT', value: '13' }, { label: 'EDU', value: '9' }], skills: [{ name: '言いくるめ', value: 60 }, { name: '水泳', value: 75 }, { name: 'クトゥルフ神話', value: 12 }], commands: '', faces: [{ label: '通常', asset: assetId('demo:gonzo-n') }], icon: assetId('demo:gonzo'), owner: null, npc: true, board: { x: 1020, y: 560, on: true }, hideStatus: true });
     gonzo.commands = CoC.palette(gonzo);
     for (const c of [haruka, toru, gonzo]) { c.size = 3; s.chars[c.id] = c; s.order.push(c.id); }
     s.handouts = [
       { id: 'h_diary', title: '祖母の日記（抜粋）', body: '昭和二十八年 八月十四日\n霧の濃い晩、浜に「客人」が上がった。\n父は客人に酒を振る舞い、何かを約束した。\n――潮が三度満ちる夜には、決して海を見てはならない。', image: assetId('demo:letter'), to: 'all', revealed: false },
-      { id: 'h_secret', title: '秘匿HO：神代 遥', body: 'あなたは幼い頃、一度だけ海の底で「誰か」と話したことがある。\nその記憶を、あなたは誰にも話していない。', image: null, to: ['探索者'], revealed: false },
+      { id: 'h_secret', title: '秘匿HO：神代 遥', body: 'あなたは幼い頃、一度だけ海の底で「誰か」と話したことがある。\nその記憶を、あなたは誰にも話していない。', image: null, to: [], toChars: ['c_haruka'], revealed: false },
     ];
     s.seqs = presets().map(p => Object.assign({}, p, { id: 'q_' + U.uid(6), steps: p.steps.map(st => Object.assign({}, st)) }));
     const now = Date.now();
@@ -1216,7 +1251,7 @@ const State = (() => {
   function empty(id, name) {
     return {
       v: 1, rev: 0, updated: Date.now(),
-      room: { id, name: name || id, createdAt: Date.now(), settings: { crit: 5, fumble: 96, special: false, sanFumbleMax: true, grid: true, gridSize: 50, snap: true, sanFxScope: 'self', novel: false } },
+      room: { id, name: name || id, createdAt: Date.now(), settings: { crit: 5, fumble: 96, ccCrit: 1, ccFumble: 100, kwFx: true, special: false, sanFumbleMax: true, grid: true, gridSize: 50, snap: true, sanFxScope: 'self', novel: false } },
       chars: {}, order: [], assets: {}, scenes: [], view: { sceneId: null, bg: null, fg: null, fgOpacity: .6, w: 1600, h: 1000 },
       chat: [], handouts: [], seqs: [], fx: FX0(), bgm: { id: null, vol: .7, ts: 0, on: false },
       markers: [], timer: { running: false, start: 0, acc: 0 }, brk: { on: false, msg: '', until: 0 },
@@ -1228,7 +1263,7 @@ const State = (() => {
     'char.add'(s, p) { s.chars[p.char.id] = p.char; if (!s.order.includes(p.char.id)) s.order.push(p.char.id); },
     'char.update'(s, p) { const c = s.chars[p.id]; if (c) Object.assign(c, p.patch); },
     'char.del'(s, p) { delete s.chars[p.id]; s.order = s.order.filter(x => x !== p.id); },
-    'char.stat'(s, p) { const c = s.chars[p.id]; if (!c) return; const st = c.status.find(x => x.label === p.label); if (!st) return; if (p.value != null) st.value = p.value; if (p.max != null) st.max = p.max; if (p.sanLoss) { c.sanLossSession = (c.sanLossSession || 0) + p.sanLoss; } if (p.madness !== undefined) c.madness = p.madness; },
+    'char.stat'(s, p) { const c = s.chars[p.id]; if (!c) return; const st = c.status.find(x => x.label === p.label); if (!st) return; if (p.secretPub && !c.secretStat) c.secretStat = p.secretPub; if (p.clearSecret) delete c.secretStat; if (p.value != null) st.value = p.value; if (p.max != null) st.max = p.max; if (p.sanLoss) { c.sanLossSession = (c.sanLossSession || 0) + p.sanLoss; } if (p.madness !== undefined) c.madness = p.madness; },
     'char.move'(s, p) { const c = s.chars[p.id]; if (c) { c.board = Object.assign({}, c.board, { x: p.x, y: p.y }); } },
     'char.order'(s, p) { s.order = p.order.filter(id => s.chars[id]); },
     'asset.add'(s, p) { s.assets[p.meta.id] = p.meta; },
@@ -1241,7 +1276,9 @@ const State = (() => {
     'view.set'(s, p) { Object.assign(s.view, p); },
     'chat.add'(s, p) { if (!s.chat.some(m => m.id === p.msg.id)) s.chat.push(p.msg); if (s.chat.length > 5000) s.chat.splice(0, s.chat.length - 5000); },
     'chat.clear'(s, p) { s.chat = p.tab ? s.chat.filter(m => m.tab !== p.tab) : []; },
-    'ho.add'(s, p) { s.handouts.push(p.ho); },
+    'ho.add'(s, p) { if (!s.handouts.some(h => h.id === p.ho.id)) s.handouts.push(p.ho); },
+    'ho.put'(s, p) { const i = s.handouts.findIndex(h => h.id === p.ho.id); if (i >= 0) s.handouts[i] = p.ho; else s.handouts.push(p.ho); },
+    'chat.reveal'(s, p) { for (const m of p.msgs) { const i = s.chat.findIndex(x => x.id === m.id); if (i >= 0) s.chat[i] = m; else s.chat.push(m); } },
     'ho.update'(s, p) { const h = find(s.handouts, p.id); if (h) Object.assign(h, p.patch); },
     'ho.del'(s, p) { s.handouts = s.handouts.filter(x => x.id !== p.id); },
     'seq.add'(s, p) { s.seqs.push(p.seq); },
@@ -1257,7 +1294,23 @@ const State = (() => {
   };
   function apply(s, op) { const f = R[op.type]; if (!f) return false; try { f(s, op.p || {}); } catch (e) { return false; } s.rev = (s.rev || 0) + 1; s.updated = op.ts || Date.now(); return true; }
   function migrate(s) { const e = empty(s.room?.id || 'room', s.room?.name); for (const k of Object.keys(e)) if (s[k] === undefined) s[k] = e[k]; s.room.settings = Object.assign(e.room.settings, s.room.settings || {}); s.fx = Object.assign(FX0(), s.fx || {}); s.view = Object.assign(e.view, s.view || {}); return s; }
-  return { empty, apply, migrate, FX0, R };
+  // 受け手ごとの閲覧用ビュー（秘匿データを除外）。role==='GM' は全量
+  function redactMsg(m) { return { id: m.id, ts: m.ts, tab: m.tab, sys: m.sys, secret: true, redacted: true, rel: m.rel, from: m.from ? { pid: m.from.pid, name: m.from.name, color: m.from.color, charId: m.from.charId } : undefined, text: '' }; }
+  function viewFor(S, pid, role) {
+    if (role === 'GM') return S;
+    const o = JSON.parse(JSON.stringify(S));
+    o.seqs = [];
+    const owns = (cid) => { const c = o.chars[cid]; return c && c.owner && c.owner === pid; };
+    o.handouts = o.handouts.filter(h => h.revealed && (h.to === 'all' || (Array.isArray(h.to) && h.to.includes(pid)) || (h.toChars || []).some(owns)));
+    o.chat = o.chat.map(m => m.secret && !m.redacted && !(m.from && m.from.pid === pid) ? redactMsg(m) : m);
+    for (const c of Object.values(o.chars)) {
+      if (c.secretStat) { if (c.owner !== pid) { const st = c.status.find(x => x.label === 'SAN'); if (st && c.secretStat.SAN != null) st.value = c.secretStat.SAN; c.madness = c.secretStat.madness ?? null; c.sanLossSession = c.secretStat.loss ?? c.sanLossSession; } delete c.secretStat; }
+      if (c.invisible) delete o.chars[c.id];
+    }
+    o.order = o.order.filter(id => o.chars[id]);
+    return o;
+  }
+  return { empty, apply, migrate, FX0, R, viewFor, redactMsg };
 })();
 
 /* ------------------------------ Caps（claude.ai Artifact ケイパビリティ） ------------------------------ */
@@ -1369,7 +1422,7 @@ const Chunker = {
     const size = b64 ? payload.length : json.length * (b64 ? 1 : 1);
     if ((b64 ? new TextEncoder().encode(json).length : json.length) <= max) return [msg];
     const n = Math.ceil(payload.length / max), cid = U.uid(10), out = [];
-    for (let i = 0; i < n; i++) out.push({ k: 'chunk', id: cid + ':' + i, cid, i, n, b: b64 ? 1 : 0, d: payload.slice(i * max, (i + 1) * max), room: msg.room, from: msg.from });
+    for (let i = 0; i < n; i++) out.push({ k: 'chunk', id: cid + ':' + i, cid, i, n, b: b64 ? 1 : 0, d: payload.slice(i * max, (i + 1) * max), room: msg.room, from: msg.from, to: msg.to, exclude: msg.exclude });
     void size; return out;
   },
 };
@@ -1427,11 +1480,17 @@ class PeerTransport {
   retryHost() { if (this.closed) return; try { this.peer && this.peer.destroy(); } catch (e) { } this.conns.clear(); this.mode = 'connecting'; this.onChange(); setTimeout(() => this.becomeHost(), 800 + Math.random() * 1500); }
   addConn(c, toHost) {
     c.on('open', () => { this.conns.add(c); this.onChange(); if (toHost) Sync.hello(true); });
-    c.on('data', (d) => { if (this.mode === 'host') for (const o of this.conns) if (o !== c && o.open) { try { o.send(d); } catch (e) { } } this.onMsg(d, this); });
+    c.on('data', (d) => {
+      if (d && d.from && !c._pid) c._pid = d.from;
+      if (this.mode === 'host') for (const o of this.conns) if (o !== c && o.open && PeerTransport.addressed(d, o._pid)) { try { o.send(d); } catch (e) { } }
+      this.onMsg(d, this);
+    });
     c.on('close', () => { this.conns.delete(c); this.onChange(); if (toHost && !this.closed) this.retryHost(); });
     c.on('error', () => { });
   }
-  send(m) { const parts = Chunker.split(m, 60000, false); for (const c of this.conns) if (c.open) for (const p of parts) { try { c.send(p); } catch (e) { } } }
+  // ホストは宛先（to/exclude）に該当する接続にだけ送る。クライアントはホスト経由
+  static addressed(d, pid) { if (!pid || !d) return true; if (d.to && ![].concat(d.to).includes(pid)) return false; if (d.exclude && d.exclude.includes(pid)) return false; return true; }
+  send(m) { const parts = Chunker.split(m, 60000, false); for (const c of this.conns) if (c.open && (this.mode !== 'host' || PeerTransport.addressed(m, c._pid))) for (const p of parts) { try { c.send(p); } catch (e) { } } }
   close() { this.closed = true; try { this.peer && this.peer.destroy(); } catch (e) { } this.conns.clear(); }
   peerCount() { return this.conns.size; }
 }
@@ -1473,11 +1532,12 @@ const ArtifactPersist = {
     this.busy = true;
     try {
       const S = App.S; const rid = App.roomId;
-      const core = Object.assign({}, S, { chat: [] });
-      const pages = Math.ceil(S.chat.length / 150);
+      const pub = State.viewFor(S, '__public__', 'PUBLIC');
+      const core = Object.assign({}, pub, { chat: [] });
+      const pages = Math.ceil(pub.chat.length / 150);
       await db.doc(this.docPath(rid)).set({ rev: S.rev, saved: Date.now(), state: JSON.stringify(core), chatPages: pages });
       for (let p = 0; p < pages; p++) {
-        const slice = S.chat.slice(p * 150, (p + 1) * 150); const key = rid + ':' + p; const sig = slice.length + ':' + (slice[slice.length - 1]?.id || '');
+        const slice = pub.chat.slice(p * 150, (p + 1) * 150); const key = rid + ':' + p; const sig = slice.length + ':' + (slice[slice.length - 1]?.id || '');
         if (this.lastChatPages[key] === sig) continue;
         await db.doc(this.docPath(rid) + '/chat/p' + p).set({ msgs: JSON.stringify(slice) });
         this.lastChatPages[key] = sig;
@@ -1548,6 +1608,7 @@ const Sync = {
     if (!msg || typeof msg !== 'object') return;
     if (msg.k === 'chunk') {
       if (this.seen.has(msg.id)) return; this.mark(msg.id);
+      if ((msg.to && ![].concat(msg.to).includes(App.me.pid)) || (msg.exclude && msg.exclude.includes(App.me.pid))) return;
       let c = this.chunks.get(msg.cid); if (!c) { c = { n: msg.n, parts: new Array(msg.n), got: 0, b: msg.b, t: Date.now() }; this.chunks.set(msg.cid, c); }
       if (c.parts[msg.i] == null) { c.parts[msg.i] = msg.d; c.got++; }
       if (c.got === c.n) { this.chunks.delete(msg.cid); try { const s = c.parts.join(''); this.receive(JSON.parse(c.b ? U.b64utf8(s) : s), via); } catch (e) { } }
@@ -1557,7 +1618,8 @@ const Sync = {
     if (msg.room !== App.roomId || !msg.id || this.seen.has(msg.id) || msg.from === App.me.pid) return;
     this.mark(msg.id);
     if (msg.from) { const p = this.peers.get(msg.from); if (p) p.last = Date.now(); }
-    if (msg.to && msg.to !== App.me.pid) return;
+    if (msg.to && ![].concat(msg.to).includes(App.me.pid)) return;
+    if (msg.exclude && msg.exclude.includes(App.me.pid)) return;
     try { this.handle(msg); } catch (e) { console.warn('sync handle', e); }
   },
   handle(m) {
@@ -1569,7 +1631,7 @@ const Sync = {
       case 'hello': {
         this.touch(m);
         const settled = !this.awaiting || Date.now() - this.joinedAt > 1500;
-        if (App.S && settled && (m.any || this.isResponder(m.from))) this.send({ k: 'snap', to: m.from, state: App.S, fresh: this.awaiting, prov: App.provisional, role: App.me.role });
+        if (App.S && settled && (m.any || this.isResponder(m.from))) this.send({ k: 'snap', to: m.from, state: State.viewFor(App.S, m.from, m.role), fresh: this.awaiting, prov: App.provisional, role: App.me.role });
         this.presence();
         break;
       }
@@ -1594,19 +1656,35 @@ const Sync = {
     }
   },
   touch(m) {
-    const was = this.peers.has(m.from);
-    this.peers.set(m.from, { pid: m.from, name: String(m.name || '?').slice(0, 40), role: m.role, last: Date.now(), bcast: !!m.bcast, hasState: m.hasState !== false });
-    if (!was) UI.renderConn();
+    const was = this.peers.get(m.from);
+    this.peers.set(m.from, { pid: m.from, name: String(m.name || '?').slice(0, 40), role: m.role, last: Date.now(), bcast: !!m.bcast, hasState: m.hasState !== false, jt: m.jt || 0 });
+    if (!was && App.provisional && !this.awaiting && m.hasState !== false && !m.bcast) setTimeout(() => this.hello(true), 50);
+    if (!was || was.name !== m.name || was.role !== m.role) { UI.renderConn(); if (App.S) { UI.invalidate('room'); UI.invalidate('ho'); } }
+    if (!App.bcast && !m.bcast && m.name === App.me.name && m.from !== App.me.pid) this.dedupeName();
   },
+  // 同名参加者がいれば、後から来た側が自動で連番を付ける
+  dedupeName() {
+    if (App.bcast) return;
+    const mine = App.joinedAt || 0;
+    const clash = [...this.peers.values()].find(p => !p.bcast && p.name === App.me.name && ((p.jt || 0) < mine || ((p.jt || 0) === mine && p.pid < App.me.pid)));
+    if (!clash) return;
+    const base = App.me.name.replace(/\(\d+\)$/, ''); const used = new Set([...this.peers.values()].map(p => p.name));
+    let n = 2; while (used.has(`${base}(${n})`)) n++;
+    const old = App.me.name; App.me.name = `${base}(${n})`;
+    UI.toast(`同じ名前の参加者がいるため「${App.me.name}」として参加します`, 'warn');
+    for (const c of Object.values(App.S?.chars || {})) if (c.owner === App.me.pid && c.ownerName === old) App.dispatch('char.update', { id: c.id, patch: { ownerName: App.me.name } });
+    this.presence(); try { Session.save(); } catch (e) { } UI.renderTop && Chat.renderSpeakers(); UI.invalidate('room');
+  },
+  gmPids(othersOnly) { const out = [...this.peers.values()].filter(p => p.role === 'GM' && !p.bcast).map(p => p.pid); if (!othersOnly && App.me.role === 'GM' && !App.bcast) out.push(App.me.pid); return out; },
   expire() { const now = Date.now(); let ch = false; for (const [k, p] of this.peers) if (now - p.last > 13000) { this.peers.delete(k); ch = true; } if (ch) UI.renderConn(); },
-  presence() { this.send({ k: 'pres', name: App.me.name, role: App.me.role, bcast: App.bcast, hasState: !!App.S, rev: App.S?.rev || 0 }); },
+  presence() { this.send({ k: 'pres', name: App.me.name, role: App.me.role, bcast: App.bcast, hasState: !!App.S, rev: App.S?.rev || 0, jt: App.joinedAt || 0 }); },
   candidates(exclude) { const c = [{ pid: App.me.pid, role: App.me.role, bcast: App.bcast }]; for (const p of this.peers.values()) if (p.pid !== exclude && p.hasState) c.push(p); return c.sort((a, b) => ((b.role === 'GM') - (a.role === 'GM')) || ((a.bcast ? 1 : 0) - (b.bcast ? 1 : 0)) || (a.pid < b.pid ? -1 : 1)); },
   isResponder(exclude) { return this.candidates(exclude)[0].pid === App.me.pid; },
   isHost() { return this.candidates()[0].pid === App.me.pid; },
   hello(again) {
     if (!App.roomId) return;
     const self = this;
-    const mk = (x) => Object.assign({ k: 'hello', name: App.me.name, role: App.me.role, bcast: App.bcast, hasState: !self.awaiting }, x || {});
+    const mk = (x) => Object.assign({ k: 'hello', name: App.me.name, role: App.me.role, bcast: App.bcast, hasState: !self.awaiting, jt: App.joinedAt || 0 }, x || {});
     if (again && !(App.provisional && !this.awaiting && this.peers.size === 0)) { this.send(mk({ any: this.awaiting || App.provisional })); return; }
     this.helloTimers.forEach(clearTimeout); this.helloTimers = [];
     this.awaiting = true; this.joinedAt = Date.now();
@@ -1644,14 +1722,44 @@ const App = {
   async loadPrefs() { try { const p = await Store.get('kv', 'prefs'); if (p && typeof p === 'object') Object.assign(this.prefs, p); } catch (e) { } try { if (matchMedia('(prefers-reduced-motion: reduce)').matches && !(await Store.get('kv', 'prefsTouched'))) { this.prefs.reduce = true; this.prefs.fx = .4; } } catch (e) { } },
   savePrefs: U.debounce(() => { Store.set('kv', 'prefs', App.prefs); Store.set('kv', 'prefsTouched', true); }, 300),
   isGM() { return this.me.role === 'GM'; },
-  canEditChar(c) { return !!c && (this.isGM() || (c.owner && c.owner === this.me.name)); },
+  canEditChar(c) { return !!c && (this.isGM() || (!!c.owner && c.owner === this.me.pid)); },
+  ownsChar(c) { return !!c && !!c.owner && c.owner === this.me.pid; },
   fxLevel() { return this.prefs.reduce ? Math.min(.35, this.prefs.fx) : this.prefs.fx; },
-  dispatch(type, p) {
+  dispatch(type, p, opts = {}) {
     if (!this.S) return;
     const op = { id: U.uid(12), type, p, ts: Date.now(), by: this.me.pid };
     this.applyOp(op, false);
-    Sync.send({ k: 'op', op });
+    const route = opts.route !== undefined ? opts.route : this.route(type);
+    if (route === 'local') return;
+    Sync.send(Object.assign({ k: 'op', op }, route || {}));
+    if (type === 'ho.add' || type === 'ho.update') this.pushHandout(p.ho ? p.ho.id : p.id);
   },
+  // GM専用データ（シーケンス・未配布ハンドアウト）は GM にのみ送る
+  route(type) {
+    if (type.startsWith('seq.') || type === 'ho.add' || type === 'ho.update') return { to: Sync.gmPids(true) };
+    return null;
+  },
+  recipients(h) {
+    const out = new Set(Array.isArray(h.to) ? h.to : []);
+    for (const cid of (h.toChars || [])) { const c = this.S.chars[cid]; if (c && c.owner) out.add(c.owner); }
+    return [...out];
+  },
+  pushHandout(id) {
+    const h = this.S?.handouts.find(x => x.id === id); if (!h || !h.revealed) return;
+    const op = { id: U.uid(12), type: 'ho.put', p: { ho: U.clone(h) }, ts: Date.now(), by: this.me.pid };
+    if (h.to === 'all') Sync.send({ k: 'op', op, exclude: Sync.gmPids(false) });
+    else { const to = this.recipients(h).filter(x => x !== this.me.pid); if (to.length) Sync.send({ k: 'op', op, to }); }
+  },
+  // 秘匿操作: allow（本人+GM）には完全版、それ以外には公開版（pPub が null なら送らない）
+  dispatchPrivate(type, pFull, pPub, allow) {
+    if (!this.S) return;
+    const op = { id: U.uid(12), type, p: pFull, ts: Date.now(), by: this.me.pid };
+    this.applyOp(op, false);
+    const others = allow.filter(x => x !== this.me.pid);
+    if (others.length) Sync.send({ k: 'op', op, to: others });
+    if (pPub) Sync.send({ k: 'op', op: Object.assign({}, op, { id: op.id + 'p', p: pPub }), exclude: allow });
+  },
+  secretAllow() { return [...new Set([this.me.pid, ...Sync.gmPids(false)])]; },
   applyOp(op, remote) {
     if (!this.S || !op) return;
     if (!State.apply(this.S, op)) return;
@@ -1661,6 +1769,7 @@ const App = {
   afterOp(op, remote) {
     const t = op.type;
     if (t === 'chat.add') Chat.onChat(op.p.msg, remote);
+    if (t === 'chat.reveal') { Chat.renderAll(); if (remote) for (const m of op.p.msgs) if (m.dice && !m.rel) DiceFx.show(m); }
     if (t === 'view.set') Board.renderBg();
     if (t === 'fx.set') FX.applyState();
     if (t === 'bgm.set') Snd.syncBgm();
@@ -1672,18 +1781,32 @@ const App = {
   },
   persist: U.debounce(() => {
     if (!App.S || !App.roomId) return;
-    Store.set('rooms', App.roomId, App.S);
+    Store.set('rooms', App.roomId + '@' + App.me.pid, { state: App.S, pid: App.me.pid, role: App.me.role, at: Date.now() });
     ArtifactPersist.schedule();
   }, 700),
+  async loadLocal(rid) {
+    try {
+      const mine = await Store.get('rooms', rid + '@' + this.me.pid);
+      if (mine && mine.state && mine.state.room) return State.migrate(mine.state);
+      const keys = (await Store.keys('rooms')).filter(k => String(k).startsWith(rid + '@'));
+      let best = null;
+      for (const k of keys) { const v = await Store.get('rooms', k); if (!v || !v.state) continue; const score = (v.role === 'GM' ? 1e13 : 0) + (v.at || 0); if (!best || score > best.score) best = { v, score }; }
+      if (!best) return null;
+      const st = State.migrate(best.v.state);
+      // 別タブ（別の参加者）が保存した状態は、自分の立場で見える範囲に絞る
+      return this.isGM() && best.v.role === 'GM' ? st : State.viewFor(st, this.me.pid, this.me.role);
+    } catch (e) { return null; }
+  },
   saveLast() { if (this.bcast) return; Store.set('kv', 'last', { roomId: this.roomId, name: this.me.name, role: this.me.role, p2p: Sync.p2pWanted }); },
   async join(o) {
     const rid = U.normRoomId(o.roomId) || U.uid(6);
     Sync.disconnect(); Seq.stop(); Overlay.clear();
     this.roomId = rid; this.joinMode = o.mode; this.warnedEmpty = false;
+    this.me.pid = Session.pidFor(rid); this.joinedAt = Session.joinedAt(rid);
     this.me.name = String(o.name || '名無し').slice(0, 30); this.me.role = ['GM', 'PL', 'VIEW'].includes(o.role) ? o.role : 'PL';
     let st = null; this.emptyFallback = false;
     if (o.mode === 'create' || o.mode === 'auto') { st = o.demo ? Demo.state(rid, o.roomName) : State.empty(rid, o.roomName); this.provisional = false; }
-    else { st = await Store.get('rooms', rid); if (st && typeof st === 'object' && st.room) st = State.migrate(st); else st = null; this.provisional = true; }
+    else { st = await this.loadLocal(rid); this.provisional = true; }
     if (!st) { st = State.empty(rid, o.roomName || rid); this.emptyFallback = true; }
     if (o.mode === 'create' || o.mode === 'auto') st.timer = { running: true, start: Date.now(), acc: 0 };
     if (o.mode === 'create' && !o.demo) { st.scenes.push({ id: 's_' + U.uid(6), name: 'シーン1', bg: null, fg: null, fgOpacity: .6, bgm: null, fx: State.FX0() }); st.view.sceneId = st.scenes[0].id; st.seqs = Demo.presets().map(p => Object.assign({}, p, { id: 'q_' + U.uid(6) })); }
@@ -1699,14 +1822,32 @@ const App = {
     this.persist();
     if (!this.bcast) { try { history.replaceState(null, '', '#room=' + rid); } catch (e) { } }
   },
+  // 受信したスナップショットに、手元にだけある秘匿データ（自分の秘匿発言・GM専用データ）を戻す
+  mergeLocal(snap, local) {
+    if (!local || !local.room || local.room.id !== snap.room.id) return snap;
+    const loc = new Map((local.chat || []).map(m => [m.id, m]));
+    snap.chat = snap.chat.map(m => { const l = loc.get(m.id); return m.redacted && l && !l.redacted ? l : m; });
+    if (this.isGM()) {
+      const qs = new Set(snap.seqs.map(q => q.id)); for (const q of (local.seqs || [])) if (!qs.has(q.id)) snap.seqs.push(q);
+      const hs = new Set(snap.handouts.map(h => h.id)); for (const h of (local.handouts || [])) if (!hs.has(h.id)) snap.handouts.push(h);
+      for (const c of Object.values(local.chars || {})) { const t = snap.chars[c.id]; if (c.secretStat && t && !t.secretStat) { t.status = c.status; t.madness = c.madness; t.secretStat = c.secretStat; } }
+    }
+    return snap;
+  },
   adoptSnapshot(state, fromRole) {
     if (!state || !state.room) return;
-    this.S = State.migrate(U.clone(state)); this.provisional = false; this.emptyFallback = false;
-    if (Sync.autoDemo && this.me.role === 'GM' && fromRole === 'GM' && !this.bcast) {
-      this.me.role = 'PL'; this.me.name = '探索者';
-      UI.toast('既に開いているタブ（GM）のデモルームに「探索者」(PL) として参加しました。名前と役割はルーム設定で変更できます。');
+    const local = this.S;
+    const switchPL = Sync.autoDemo && this.me.role === 'GM' && fromRole === 'GM' && !this.bcast;
+    if (switchPL) { this.me.role = 'PL'; this.me.name = '探索者'; }
+    this.S = this.mergeLocal(State.migrate(U.clone(state)), switchPL ? null : local); this.provisional = false; this.emptyFallback = false;
+    if (switchPL) {
+      Sync.dedupeName();
+      // デモ探索者を自分の持ちキャラにする
+      for (const c of Object.values(this.S.chars)) if (c.demoPL && !c.owner) this.dispatch('char.update', { id: c.id, patch: { owner: this.me.pid, ownerName: this.me.name } });
+      UI.toast(`既に開いているタブ（GM）のデモルームに「${this.me.name}」(PL) として参加しました。名前と役割はルーム設定で変更できます。`);
       Sync.presence(); this.saveLast();
     } else if (!this.bcast) UI.toast('ルームの最新状態を同期しました');
+    if (this.bcast) Broadcast.connected();
     UI.fullRender(); Assets.ensureAll(); Snd.syncBgm(); FX.applyState(); Overlay.renderBreak(); this.persist();
   },
   async onNoSnapshot() {
@@ -1735,8 +1876,8 @@ const App = {
     if (ref[0] === '@') { const key = ref.slice(1); const a = Object.values(this.S.assets).find(x => x.gen === key); return a ? a.id : null; }
     return this.S.assets[ref] ? ref : null;
   },
-  visibleHandout(h) { if (!h) return false; if (h.to === 'all') return true; if (this.bcast) return false; if (this.isGM()) return true; return Array.isArray(h.to) && h.to.includes(this.me.name); },
-  canSeeSecret(msg) { if (this.bcast) return false; if (this.prefs.safe) return false; if (this.isGM()) return true; return !!msg.from && (msg.from.pid === this.me.pid || msg.from.player === this.me.name); },
+  visibleHandout(h) { if (!h) return false; if (h.to === 'all') return true; if (this.bcast) return false; if (this.isGM()) return true; return this.recipients(h).includes(this.me.pid); },
+  canSeeSecret(msg) { if (msg.redacted) return false; if (this.bcast) return false; if (this.prefs.safe) return false; if (this.isGM()) return true; return !!msg.from && msg.from.pid === this.me.pid; },
 };
 
 /* ------------------------------ Snd（BGM/SE） ------------------------------ */
@@ -1763,6 +1904,9 @@ const Snd = {
     const url = Assets.url(id);
     if (!url) { this.pendingId = id; return; }
     const a = new window.Audio(url); a.loop = true; a.volume = 0; a.preload = 'auto';
+    // 後から参加した人も、再生開始時刻(ts)から経過した位置で同期再生
+    const ts = App.S.bgm.ts || 0;
+    a.addEventListener('loadedmetadata', () => { try { if (ts && isFinite(a.duration) && a.duration > 1) { const off = ((Date.now() - ts) / 1000) % a.duration; if (off > .8) a.currentTime = off; } } catch (e) { } }, { once: true });
     a.play().then(() => { }).catch(() => { this.unlocked = false; UI.renderAudioGate(); });
     this.cur = a; this.curId = id; this.pendingId = null;
     this.fade(a, this.vol('bgm') * (App.S.bgm.vol ?? .7), ms);
@@ -1860,12 +2004,33 @@ const FX = {
   handleRemote(fx, from) {
     if (!fx || typeof fx !== 'object') return;
     switch (fx.t) {
-      case 'seq': Seq.play(fx.seq, false); break;
+      case 'seq': Seq.playQueued(fx.seq, false); break;
+      case 'halluc': Halluc.show(fx); break;
       case 'se': Snd.se(fx.id); break;
       case 'san': SanFx.show(fx); break;
       case 'ho': Overlay.handoutReveal(fx.id); break;
-      case 'stop': Seq.stop(); break;
+      case 'stop': FxQ.stopAll(true); break;
     }
+  },
+};
+
+/* ------------------------------ FxQ（演出キュー：全演出を直列再生） ------------------------------ */
+const FxQ = {
+  q: Promise.resolve(), gen: 0, len: 0,
+  ok(g) { return g === this.gen; },
+  add(fn) {
+    const g = this.gen; this.len++;
+    const run = () => { if (g !== this.gen) return; return Promise.race([Promise.resolve().then(() => fn(g)), U.sleep(60000)]).catch(e => console.warn('fx', e)); };
+    this.q = this.q.then(run, run).then(() => { this.len = Math.max(0, this.len - 1); });
+    return this.q;
+  },
+  // Esc / 停止ボタン: 再生中・待機中の演出をすべて即停止
+  stopAll(quiet) {
+    this.gen++; this.q = Promise.resolve(); this.len = 0;
+    Seq.token = null; Seq.playingId = null; Seq.step = -1;
+    Overlay.clear(); FX.localNoise = 0; FX.localHb = 0; FX.localTone = null; FX.localGlitch = false; FX.applyState();
+    const r = U.$('#appRoot'); if (r) { r.style.filter = ''; r.classList.remove('wobble'); } U.$('#app')?.classList.remove('shake');
+    UI.markStep(); if (!quiet) UI.toast('演出を停止しました');
   },
 };
 
@@ -1891,8 +2056,10 @@ const Overlay = {
     const r = U.$('#app'); r.classList.remove('shake'); void r.offsetWidth; r.style.setProperty('--d', (ms || 600) + 'ms'); r.style.setProperty('--p', Math.round((power || 10) * App.fxLevel()) + 'px'); r.classList.add('shake');
     setTimeout(() => r.classList.remove('shake'), (ms || 600) + 50);
   },
-  novelQ: Promise.resolve(),
+  // キュー経由（チャットのノベル表示）
+  novelQueued(speaker, text, speed, hold) { return FxQ.add(() => this.novel(speaker, text, speed, hold)); },
   novel(speaker, text, speed = 40, hold = 2000) {
+    const g = FxQ.gen;
     const run = async () => {
       const box = this.add('novelbox', `${speaker ? `<div class="who">${U.esc(speaker)}</div>` : ''}<div class="txt"></div>`);
       const br = U.$('#board').getBoundingClientRect();
@@ -1901,13 +2068,12 @@ const Overlay = {
       const chars = [...String(text || '')];
       const sp = App.prefs.reduce ? 0 : speed;
       let skip = false; const sk = () => { skip = true; }; box.style.pointerEvents = 'auto'; box.addEventListener('click', sk);
-      for (let i = 0; i < chars.length; i++) { if (skip || !sp) { tx.textContent = chars.join(''); break; } tx.textContent += chars[i]; await U.sleep(chars[i] === '\n' ? sp * 6 : /[、。！？…―]/.test(chars[i]) ? sp * 4 : sp); }
+      for (let i = 0; i < chars.length; i++) { if (!FxQ.ok(g)) break; if (skip || !sp) { tx.textContent = chars.join(''); break; } tx.textContent += chars[i]; await U.sleep(chars[i] === '\n' ? sp * 6 : /[、。！？…―]/.test(chars[i]) ? sp * 4 : sp); }
       tx.insertAdjacentHTML('beforeend', '<span class="caret"></span>');
       await U.sleep(hold);
       box.classList.remove('on'); await U.sleep(400); box.remove();
     };
-    this.novelQ = this.novelQ.then(run, run);
-    return this.novelQ;
+    return run();
   },
   async title(chapter, title, sub, ms = 4500) {
     const t = this.add('titlecard', `<div class="ch">${U.esc(chapter || '')}</div><div class="tt">${U.esc(title || '')}</div><div class="ln"></div><div class="st">${U.esc(sub || '')}</div>`);
@@ -1983,8 +2149,9 @@ const Seq = {
     if (!App.isGM()) { UI.toast('演出の全体再生はGMのみ可能です', 'warn'); return; }
     const payload = { id: seq.id, name: seq.name, steps: seq.steps };
     FX.send({ t: 'seq', seq: payload });
-    this.play(payload, true);
+    this.playQueued(payload, true);
   },
+  playQueued(seq, init) { return FxQ.add(() => this.play(seq, init)); },
   async play(seq, init) {
     if (!seq || !Array.isArray(seq.steps)) return;
     const tok = {}; this.token = tok; this.playingId = seq.id;
@@ -2041,17 +2208,15 @@ const Seq = {
 
 /* ------------------------------ DiceFx（d100演出・クリティカル/ファンブル） ------------------------------ */
 const DiceFx = {
-  q: Promise.resolve(),
   show(msg) {
     const d = msg.dice; if (!d || !d.ok) return;
     if (!App.prefs.diceFx && !App.bcast) return;
     if (App.fxLevel() < .05 && !App.bcast) return;
     const single = d.kind === 'repeat' ? null : d;
-    const run = async () => {
+    FxQ.add(async (g) => {
       if (single && typeof single.value === 'number') await this.big(msg, single);
-      if (d.outcome === 'crit' || d.outcome === 'fumble') await this.critical(msg, d.outcome);
-    };
-    this.q = this.q.then(run, run);
+      if (FxQ.ok(g) && (d.outcome === 'crit' || d.outcome === 'fumble')) await this.critical(msg, d.outcome);
+    });
   },
   async big(msg, d) {
     const name = msg.from?.name || '';
@@ -2087,18 +2252,17 @@ const SanFx = {
     const scope = App.S?.room.settings.sanFxScope || 'self';
     if (scope === 'all' || App.bcast) return true;
     const ch = App.S?.chars[fx.charId];
-    return fx.by === App.me.pid || (ch && ch.owner && ch.owner === App.me.name) || fx.player === App.me.name;
+    return fx.by === App.me.pid || (ch && ch.owner === App.me.pid);
   },
   show(fx) {
     if (!this.shouldShow(fx)) return;
-    // ダイス演出の後に再生
-    const go = () => this.play(fx);
-    DiceFx.q = DiceFx.q.then(go, go);
+    // ダイス演出の後に直列で再生
+    FxQ.add(() => this.play(fx));
   },
   play(fx) {
     const L = App.fxLevel(); const loss = fx.loss || 0;
     const sev = fx.madness ? 3 : loss >= 6 ? 2.5 : loss >= 3 ? 2 : loss >= 1 ? 1 : 0;
-    if (!sev) return;
+    if (!sev) return Promise.resolve();
     // 歪み
     this.distort(sev * 9 * Math.max(.3, L), sev >= 2 ? 3200 : 1800);
     // 囁き
@@ -2111,7 +2275,9 @@ const SanFx = {
       const el = Overlay.add('sanfx', `<div class="big">${label}</div><div class="sub">${U.esc(fx.name || '')}${fx.detail ? '<br>' + U.esc(fx.detail) : ''}</div>`);
       requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('on')));
       setTimeout(() => { el.classList.remove('on'); setTimeout(() => el.remove(), 600); FX.localTone = null; FX.localGlitch = false; FX.applyState(); }, 5200);
+      return U.sleep(5900);
     }
+    return U.sleep(sev >= 2 ? 3400 : 2000);
   },
   distort(scale, ms) {
     if (App.prefs.reduce) { const r = U.$('#appRoot'); r.classList.remove('wobble'); void r.offsetWidth; r.classList.add('wobble'); setTimeout(() => r.classList.remove('wobble'), 3000); return; }
@@ -2121,6 +2287,75 @@ const SanFx = {
     const t0 = performance.now();
     const step = (now) => { const k = (now - t0) / ms; if (k >= 1) { root.style.filter = ''; disp.setAttribute('scale', '0'); return; } const env = Math.sin(Math.PI * k); disp.setAttribute('scale', String((scale * env).toFixed(1))); turb.setAttribute('baseFrequency', `${(.01 + .006 * Math.sin(now / 300)).toFixed(4)} ${(.03 + .01 * Math.cos(now / 410)).toFixed(4)}`); requestAnimationFrame(step); };
     requestAnimationFrame(step);
+  },
+};
+
+/* ------------------------------ KwFx（発言キーワード連動の自動演出） ------------------------------ */
+const KwFx = {
+  RULES: [
+    [/雷|稲妻|落雷|雷鳴/, 'thunder'], [/悲鳴|絶叫|叫び声/, 'scream'], [/心臓|鼓動|心音/, 'heart'],
+    [/囁|ささや|声がする|声が聞こえ/, 'whisper'], [/血|鮮血|血まみれ/, 'blood'], [/真っ暗|暗闇|灯りが消え|明かりが消え/, 'dark'],
+  ],
+  check(msg) {
+    const st = App.S?.room.settings; if (!st || st.kwFx === false || msg.tab !== 'main') return;
+    if (App.fxLevel() < .1 && !App.bcast) return;
+    const rule = this.RULES.find(([re]) => re.test(msg.text || '')); if (!rule) return;
+    FxQ.add(() => this.run(rule[1]));
+  },
+  run(kind) {
+    const A = (k) => App.resolveAsset('@demo:' + k);
+    switch (kind) {
+      case 'thunder': Overlay.flash('#e4ecff', 500); Snd.se(A('se-thunder')); Overlay.shake(450, 6); return U.sleep(900);
+      case 'scream': Overlay.shake(700, 11); Overlay.flash('#7a0010', 500); return U.sleep(800);
+      case 'heart': Snd.se(A('se-heart')); FX.localHb = .9; FX.applyState(); return U.sleep(2400).then(() => { FX.localHb = 0; FX.applyState(); });
+      case 'whisper': Snd.se(A('se-whisper')); Overlay.whisper(SanFx.WHISPERS.slice().sort(() => Math.random() - .5).slice(0, 3).join('\n'), 3000); return U.sleep(1200);
+      case 'blood': for (let i = 0; i < 8; i++) FX.bloods.push({ x: Math.random() * FX.w, len: 0, w: 2 + Math.random() * 5, v: .08 + Math.random() * .08, max: FX.h * (.1 + Math.random() * .3), a: 1 }); FX.ensureLoop(); return U.sleep(600);
+      case 'dark': Overlay.blackout(true, 500); return U.sleep(1300).then(() => Overlay.blackout(false, 900));
+    }
+  },
+};
+
+/* ------------------------------ Halluc（個別幻覚：画面ごとに違うものを見せる） ------------------------------ */
+const Halluc = {
+  POOL: [
+    { w: '後ろにいる\n振り向くな', ghost: 'ずっと見ていたよ', tone: 'red' },
+    { w: 'おかえり\nおかえり\nおかえり', ghost: '……おかえり', tone: 'cold' },
+    { w: '水の音\nしずく\nしずく', ghost: '海が呼んでいる', tone: 'cold' },
+    { w: '名前を呼ばれた\nあなたの名前を', ghost: '（あなたの名前を呼ぶ声がした）', tone: 'mono' },
+    { w: 'いあ いあ\nくとぅるふ\nふたぐん', ghost: "ph'nglui mglw'nafh", tone: 'red' },
+    { w: '指が一本多い\n数えて\nもう一度', ghost: '数えてごらん', tone: 'sepia' },
+  ],
+  show(fx) {
+    if (App.bcast && fx.mode !== 'all') return; // 配信画面には個別幻覚は映さない
+    if (!App.prefs.sanFx && !App.bcast) return;
+    let h;
+    if (fx.text) h = { w: fx.text, ghost: fx.text.split('\n')[0], tone: 'red' };
+    else { const k = U.hashStr(App.me.pid + ':' + (fx.seed || 0)) % this.POOL.length; h = this.POOL[k]; }
+    FxQ.add(async () => {
+      FX.localTone = h.tone; FX.localNoise = .25; FX.applyState();
+      SanFx.distort(10 * Math.max(.3, App.fxLevel()), 2600);
+      Overlay.whisper(h.w, 4200);
+      // 自分のチャット欄にだけ現れる「誰でもない者」の発言（同期しない）
+      const log = U.$('#chatLog');
+      if (log && !App.bcast) { log.insertAdjacentHTML('beforeend', `<div class="msg ghost"><div class="av icwrap" style="color:#a33"><span class="ini">？</span></div><div class="bd"><div class="hd"><span class="nm" style="color:#c44">？？？</span><span class="tm">--:--</span></div><div class="tx">${U.esc(h.ghost)}</div></div></div>`); Chat.scrollBottom(); const g = log.lastElementChild; setTimeout(() => { g.classList.add('fade'); setTimeout(() => g.remove(), 1500); }, 9000); }
+      await U.sleep(3800);
+      FX.localTone = null; FX.localNoise = 0; FX.applyState();
+    });
+  },
+};
+
+/* ------------------------------ Icon（外部URL優先・失敗時フォールバック） ------------------------------ */
+const Icon = {
+  urls(ch) { if (!ch) return []; const out = []; if (ch.iconUrl && /^https?:|^data:|^\/_blob\//.test(ch.iconUrl)) out.push(ch.iconUrl); if (ch.icon) { const u = Assets.url(ch.icon); if (u) out.push(u); } return out; },
+  inner(urls, name) { const init = U.esc(String(name || '?').replace(/^[\s　]+/, '').slice(0, 1)); return urls.length ? `<img alt="" src="${U.esc(urls[0])}" data-fb="${U.esc(urls.slice(1).join('|'))}" data-init="${init}" referrerpolicy="no-referrer" draggable="false">` : `<span class="ini">${init}</span>`; },
+  html(urls, name, color, cls) { return `<div class="${cls} icwrap" style="color:${U.esc(color || '#9aa49e')}">${this.inner(urls, name)}</div>`; },
+  install() {
+    document.addEventListener('error', (e) => {
+      const im = e.target; if (!im || im.tagName !== 'IMG' || im.dataset.init === undefined) return;
+      const fb = (im.dataset.fb || '').split('|').filter(Boolean);
+      if (fb.length) { im.dataset.fb = fb.slice(1).join('|'); im.src = fb[0]; return; }
+      const sp = document.createElement('span'); sp.className = 'ini'; sp.textContent = im.dataset.init; im.replaceWith(sp);
+    }, true);
   },
 };
 
@@ -2233,13 +2468,14 @@ const UI = {
     const a = t.dataset.act; const f = Act[a];
     if (f) { e.preventDefault(); try { f(t, e); } catch (err) { console.error(err); this.toast('エラー: ' + err.message, 'err'); } }
   },
-  onChange(e) { const t = e.target; if (t.dataset && t.dataset.bind) { try { Bind.apply(t); } catch (err) { console.error(err); } } },
+  onChange(e) { const t = e.target; if (t.dataset && t.dataset.actChange && Act[t.dataset.actChange]) { try { Act[t.dataset.actChange](t, e); } catch (err) { console.error(err); } return; } if (t.dataset && t.dataset.bind) { try { Bind.apply(t); } catch (err) { console.error(err); } } },
   onInput(e) { const t = e.target; if (t.dataset && t.dataset.live) { try { Bind.live(t); } catch (err) { } } },
   onKey(e) {
     if (e.key === 'Escape') {
       if (U.$('#modalWrap').classList.contains('on')) { Modal.close(); return; }
       if (App.bcast && App.bcastInTab) { Broadcast.exit(); return; }
       const ho = U.$('#ovl .hoReveal'); if (ho) { ho.click(); return; }
+      FxQ.stopAll(); return;
     }
     const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || '') || document.activeElement?.isContentEditable;
     if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -2285,16 +2521,45 @@ const Board = {
     b.addEventListener('pointercancel', (e) => this.up(e));
     b.addEventListener('wheel', (e) => { if (App.bcast) return; e.preventDefault(); const r = b.getBoundingClientRect(); this.zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * .0015)); }, { passive: false });
     b.addEventListener('dblclick', (e) => { const t = e.target.closest('.tok'); if (t && !App.bcast) Panels.openChar(t.dataset.id); });
-    U.$('#boardHud').addEventListener('click', (e) => { const z = e.target.closest('[data-zoom]'); if (!z) return; const r = b.getBoundingClientRect(); if (z.dataset.zoom === 'fit') this.fit(); else this.zoomAt(r.width / 2, r.height / 2, z.dataset.zoom === 'in' ? 1.25 : .8); });
+    U.$('#boardHud').addEventListener('click', (e) => { const z = e.target.closest('[data-zoom]'); if (!z) return; const r = b.getBoundingClientRect(); if (z.dataset.zoom === 'fit') this.fit(this.fitMode === 'tokens' ? 'all' : 'tokens'); else this.zoomAt(r.width / 2, r.height / 2, z.dataset.zoom === 'in' ? 1.25 : .8); });
     new ResizeObserver(() => this.onResize()).observe(b);
+    window.addEventListener('orientationchange', () => setTimeout(() => this.fit(this.fitMode), 350));
   },
-  onResize() { if (!this.fitted || App.bcast) this.fit(); },
+  onResize() { if (this.fitted || App.bcast) this.fit(this.fitMode); },
   applyT() { const t = `translate(${this.px}px,${this.py}px) scale(${this.z})`; const w = U.$('#world'); w.style.transform = t; w.style.setProperty('--wt', t); },
-  fit() {
+  // 既定: 駒を中心に大きめに表示（駒がなければ盤面全体）。mode==='all' で全体表示
+  fit(mode) {
     if (!App.S) return; const b = U.$('#board').getBoundingClientRect(); if (b.width < 10) return;
+    this.fitMode = mode || 'tokens';
     const v = App.S.view; const W = v.w || 1600, H = v.h || 1000;
-    this.z = App.bcast ? Math.max(b.width / W, b.height / H) : Math.min(b.width / W, b.height / H);
-    this.px = (b.width - W * this.z) / 2; this.py = (b.height - H * this.z) / 2; this.fitted = true; this.applyT();
+    let box = { x: 0, y: 0, w: W, h: H };
+    const gs = App.S.room.settings.gridSize || 50;
+    const toks = App.S.order.map(id => App.S.chars[id]).filter(c => c && c.board && c.board.on !== false && (!c.invisible || App.isGM()));
+    if (this.fitMode === 'tokens' && toks.length && !App.bcast) {
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      for (const c of toks) { const sz = (c.size || 2) * gs; x0 = Math.min(x0, c.board.x); y0 = Math.min(y0, c.board.y); x1 = Math.max(x1, c.board.x + sz); y1 = Math.max(y1, c.board.y + sz * 1.45); }
+      const pad = gs * 2; x0 -= pad; y0 -= pad; x1 += pad; y1 += pad;
+      const minW = Math.min(W, 760), minH = Math.min(H, 480);
+      let bw = Math.max(x1 - x0, minW), bh = Math.max(y1 - y0, minH);
+      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+      const ar = b.width / b.height; if (bw / bh < ar) bw = bh * ar; else bh = bw / ar;
+      box = { x: cx - bw / 2, y: cy - bh / 2, w: bw, h: bh };
+    }
+    this.z = App.bcast ? Math.max(b.width / W, b.height / H) : U.clamp(Math.min(b.width / box.w, b.height / box.h), .1, 2.2);
+    if (App.bcast) { box = { x: 0, y: 0, w: W, h: H }; }
+    this.px = b.width / 2 - (box.x + box.w / 2) * this.z; this.py = b.height / 2 - (box.y + box.h / 2) * this.z;
+    this.fitted = true; this.applyT();
+  },
+  // 配信画面の自動カメラワーク：発言者の駒へ寄って、しばらくして戻る
+  focusChar(cid) {
+    if (!App.bcast || App.prefs.reduce || this.noCam) return;
+    const c = App.S.chars[cid]; if (!c || !c.board || c.board.on === false) return;
+    const b = U.$('#board').getBoundingClientRect(); const gs = App.S.room.settings.gridSize || 50; const sz = (c.size || 2) * gs;
+    const base = Math.max(b.width / (App.S.view.w || 1600), b.height / (App.S.view.h || 1000));
+    const z = base * 1.6; const cx = c.board.x + sz / 2, cy = c.board.y + sz / 2;
+    const w = U.$('#world'); w.classList.add('cam');
+    this.z = z; this.px = b.width * .4 - cx * z; this.py = b.height * .45 - cy * z; this.applyT();
+    clearTimeout(this.camT); this.camT = setTimeout(() => { this.fit(); setTimeout(() => w.classList.remove('cam'), 1600); }, 7000);
   },
   zoomAt(x, y, k) { const nz = U.clamp(this.z * k, .15, 5); k = nz / this.z; this.px = x - (x - this.px) * k; this.py = y - (y - this.py) * k; this.z = nz; this.fitted = false; this.applyT(); },
   toWorld(cx, cy) { const r = U.$('#board').getBoundingClientRect(); return { x: (cx - r.left - this.px) / this.z, y: (cy - r.top - this.py) / this.z }; },
@@ -2396,9 +2661,9 @@ const Board = {
       el.style.setProperty('--c', ch.color || '#999');
       el.classList.toggle('locked', !App.canEditChar(ch)); el.classList.toggle('sel', L.sel === id);
       el.style.opacity = ch.invisible ? '.5' : '1';
-      const face = el.querySelector('.face'); const iu = ch.icon ? Assets.url(ch.icon) : (ch.iconUrl || '');
-      const bgv = iu ? `url("${iu}")` : 'none'; if (face.style.backgroundImage !== bgv) face.style.backgroundImage = bgv;
-      face.textContent = iu ? '' : (ch.name || '?').slice(0, 1); face.style.display = 'flex'; face.style.alignItems = 'center'; face.style.justifyContent = 'center'; face.style.fontSize = (size * .4) + 'px'; face.style.fontFamily = 'var(--font-serif)';
+      const face = el.querySelector('.face'); const urls = Icon.urls(ch); const key = urls.join('|') + '#' + ch.name;
+      if (face.dataset.key !== key) { face.dataset.key = key; face.innerHTML = Icon.inner(urls, ch.name); }
+      face.style.fontSize = (size * .4) + 'px';
       el.querySelector('.nm').textContent = ch.name;
       el.setAttribute('aria-label', `駒 ${ch.name}`);
       const bars = el.querySelector('.bars');
@@ -2426,7 +2691,7 @@ const Board = {
     const lay = U.$('#standLayer'); if (!App.S) return;
     if (App.prefs.stand === false && !App.bcast) { lay.innerHTML = ''; return; }
     const list = L.stands.filter(s => App.S.chars[s.charId]);
-    const html = list.map((s, i) => { const ch = App.S.chars[s.charId]; const f = (ch.faces || [])[s.face] || (ch.faces || [])[0]; const url = f ? (f.asset ? Assets.url(f.asset) : f.url) : ''; if (!url) return ''; const last = i === list.length - 1; return `<div class="stand ${last ? 'r' : 'l dim'}${animate && last ? ' enter' : ''}" data-cid="${U.esc(ch.id)}"><img alt="${U.esc(ch.name)}" src="${U.esc(url)}"></div>`; }).join('');
+    const html = list.map((s, i) => { const ch = App.S.chars[s.charId]; const f = (ch.faces || [])[s.face] || (ch.faces || [])[0]; const au = f && f.asset ? Assets.url(f.asset) : ''; const url = f ? (f.url || au) : ''; if (!url) return ''; const last = i === list.length - 1; return `<div class="stand ${last ? 'r' : 'l dim'}${animate && last ? ' enter' : ''}" data-cid="${U.esc(ch.id)}"><img alt="${U.esc(ch.name)}" src="${U.esc(url)}" data-fb="${U.esc(f.url && au ? au : '')}" data-init="" referrerpolicy="no-referrer"></div>`; }).join('');
     lay.innerHTML = html;
     if (animate) requestAnimationFrame(() => requestAnimationFrame(() => U.$$('.stand.enter', lay).forEach(x => x.classList.remove('enter'))));
   },
@@ -2459,7 +2724,7 @@ const Chat = {
   },
   speakerChar() { return L.speaker ? App.S?.chars[L.speaker] : null; },
   speakerName() { const c = this.speakerChar(); return c ? c.name : App.me.name; },
-  controllable() { if (!App.S) return []; return App.S.order.map(id => App.S.chars[id]).filter(c => c && (App.isGM() || c.owner === App.me.name || (!c.owner && App.me.role === 'PL'))); },
+  controllable() { if (!App.S) return []; return App.S.order.map(id => App.S.chars[id]).filter(c => c && (App.isGM() || App.ownsChar(c))); },
   renderSpeakers() {
     if (!App.S) return;
     const list = this.controllable(); if (L.speaker && !list.find(c => c.id === L.speaker)) L.speaker = '';
@@ -2480,7 +2745,7 @@ const Chat = {
     const res = CoC.resolver(ch);
     p.innerHTML = `<div class="tiny muted" style="padding:2px 8px 4px">${U.esc(ch.name)} のチャットパレット（クリックで送信 / Shift+クリックで入力欄へ）</div>` + lines.map(l => { const shown = l.replace(/\{([^{}]+)\}/g, (a, k) => { const v = res(k); return v == null ? a : `${a}(${v})`; }); return `<button type="button" data-cmd="${U.esc(l)}" title="${U.esc(shown)}">${U.esc(shown)}</button>`; }).join('');
   },
-  cfg(ch) { const s = App.S.room.settings; const san = ch ? CoC.getStatus(ch, 'SAN') : null; return { crit: s.crit, fumble: s.fumble, special: s.special, sanFumbleMax: s.sanFumbleMax, san: san ? san.value : undefined, resolve: ch ? CoC.resolver(ch) : null }; },
+  cfg(ch) { const s = App.S.room.settings; const san = ch ? CoC.getStatus(ch, 'SAN') : null; return { crit: s.crit, fumble: s.fumble, ccCrit: s.ccCrit, ccFumble: s.ccFumble, special: s.special, sanFumbleMax: s.sanFumbleMax, san: san ? san.value : undefined, resolve: ch ? CoC.resolver(ch) : null }; },
   send(text) {
     if (!App.S) return;
     const inp = U.$('#chatInput'); const fromInput = text == null;
@@ -2492,44 +2757,69 @@ const Chat = {
     if (r && r.ok === false) { UI.toast(r.error, 'err'); return; }
     const from = { pid: App.me.pid, player: App.me.name, name: ch ? ch.name : App.me.name, charId: ch ? ch.id : null, color: ch ? ch.color : (App.isGM() ? '#c9a766' : '#86aecb'), face: ch ? L.face : null };
     const msg = { id: 'm_' + U.uid(10), ts: Date.now(), tab: L.chatTab, from, text: raw };
-    if (r) { msg.dice = r; msg.secret = !!r.secret; if (lines.length > 1) msg.text = raw; }
-    App.dispatch('chat.add', { msg });
+    if (r) { msg.dice = r; msg.secret = !!r.secret; }
+    if (msg.secret) App.dispatchPrivate('chat.add', { msg }, { msg: State.redactMsg(msg) }, App.secretAllow());
+    else App.dispatch('chat.add', { msg });
     if (fromInput) { this.lastSent = raw; inp.value = ''; inp.style.height = ''; }
     if (r) this.postRoll(msg, ch);
   },
-  sys(text, tab = 'main', extra) { App.dispatch('chat.add', { msg: Object.assign({ id: 'm_' + U.uid(10), ts: Date.now(), tab, sys: true, text }, extra || {}) }); },
+  sys(text, tab = 'main', extra) {
+    const msg = Object.assign({ id: 'm_' + U.uid(10), ts: Date.now(), tab, sys: true, text }, extra || {});
+    if (msg.secret) App.dispatchPrivate('chat.add', { msg }, { msg: State.redactMsg(msg) }, App.secretAllow());
+    else App.dispatch('chat.add', { msg });
+  },
   postRoll(msg, ch) {
-    const r = msg.dice; const who = msg.from.name;
-    if (!r.secret) {
+    const r = msg.dice; const who = msg.from.name; const secret = !!r.secret;
+    if (!secret) {
       if (r.outcome === 'crit') App.addMarker(`決定的成功：${who} ${r.comment || r.cmd}`, true);
       if (r.outcome === 'fumble') App.addMarker(`致命的失敗：${who} ${r.comment || r.cmd}`, true);
     }
-    if (r.kind === 'san' && r.hasFormula && ch) {
-      const st = CoC.getStatus(ch, 'SAN'); if (!st) return;
-      const before = st.value, after = Math.max(0, before - r.loss);
-      const lossTotal = (ch.sanLossSession || 0) + r.loss;
-      let madness = null, detail = '';
-      const sys = [];
-      if (r.loss > 0) sys.push(`${ch.name} のSAN値 ${before} → ${after}（-${r.loss}）`);
-      if (after <= 0) { madness = 'perm'; detail = 'SAN値が0になった。探索者は永久に正気を失った…'; }
-      else if (ch.sanStart && lossTotal >= Math.ceil(ch.sanStart / 5) && !(ch.madness === 'indef')) { madness = 'indef'; const k = 1 + Math.floor(U.cryptoRng() * 10); detail = `不定の狂気表(1D10=${k})：${CoC.INDEF_INSANITY[k - 1]}`; }
-      else if (r.loss >= 5) {
-        const ab = CoC.abilMap(ch); const idea = ab.INT * 5 || CoC.resolver(ch)('アイデア') || 50;
-        const ir = Dice.roll(`CCB<=${idea} 【アイデア（一時的狂気判定）】`, this.cfg(ch));
-        if (ir && ir.ok) {
-          App.dispatch('chat.add', { msg: { id: 'm_' + U.uid(10), ts: Date.now() + 1, tab: msg.tab, from: msg.from, text: `CCB<=${idea} 【アイデア（一時的狂気判定）】`, dice: ir, secret: r.secret } });
-          if (['success', 'crit', 'special'].includes(ir.outcome)) { madness = 'temp'; const k = 1 + Math.floor(U.cryptoRng() * 10); detail = `一時的狂気表(1D10=${k})：${CoC.TEMP_INSANITY[k - 1]}（1D10+4ラウンド）`; }
-          else sys.push('アイデアロールに失敗――理解が追いつかず、正気を保った。');
-        }
+    if (!(r.kind === 'san' && r.hasFormula && ch)) return;
+    const st = CoC.getStatus(ch, 'SAN'); if (!st) return;
+    const before = st.value, after = Math.max(0, before - r.loss);
+    const lossTotal = (ch.sanLossSession || 0) + r.loss;
+    const sysx = secret ? { secret: true, rel: msg.id, from: { pid: App.me.pid, name: who } } : null;
+    // 1) SAN値の変化を先に表示
+    this.sys(r.loss > 0 ? `${ch.name} のSAN値 ${before} → ${after}（-${r.loss}）` : `${ch.name} のSAN値 ${before}（減少なし）`, msg.tab, sysx);
+    let madness = null, detail = '';
+    if (after <= 0) { madness = 'perm'; detail = 'SAN値が0になった。探索者は永久に正気を失った…'; }
+    else if (ch.sanStart && lossTotal >= Math.ceil(ch.sanStart / 5) && ch.madness !== 'indef') { madness = 'indef'; const k = 1 + Math.floor(U.cryptoRng() * 10); detail = `不定の狂気表(1D10=${k})：${CoC.INDEF_INSANITY[k - 1]}`; }
+    else if (r.loss >= 5) {
+      // 2) 5以上の減少 → アイデアロール
+      const ab = CoC.abilMap(ch); const idea = ab.INT * 5 || CoC.resolver(ch)('アイデア') || 50;
+      const cmd = `${secret ? 'S' : ''}CCB<=${idea} 【アイデア（一時的狂気判定）】`;
+      const ir = Dice.roll(cmd, this.cfg(ch));
+      if (ir && ir.ok) {
+        const im = { id: 'm_' + U.uid(10), ts: Date.now() + 1, tab: msg.tab, from: msg.from, text: cmd, dice: ir, secret, rel: secret ? msg.id : undefined };
+        if (secret) App.dispatchPrivate('chat.add', { msg: im }, { msg: State.redactMsg(im) }, App.secretAllow()); else App.dispatch('chat.add', { msg: im });
+        if (['success', 'crit', 'special'].includes(ir.outcome)) { madness = 'temp'; const k = 1 + Math.floor(U.cryptoRng() * 10); detail = `一時的狂気表(1D10=${k})：${CoC.TEMP_INSANITY[k - 1]}（1D10+4ラウンド）`; }
+        else this.sys('アイデアロールに失敗――理解が追いつかず、正気を保った。', msg.tab, sysx);
       }
-      App.dispatch('char.stat', { id: ch.id, label: 'SAN', value: after, sanLoss: r.loss, madness: madness || ch.madness || null });
-      if (madness) sys.push(`【${madness === 'temp' ? '一時的狂気' : madness === 'indef' ? '不定の狂気' : '永久的狂気'}】${ch.name}　${detail}`);
-      for (const s of sys) this.sys(s, msg.tab, r.secret ? { secret: true, from: { pid: App.me.pid, player: App.me.name } } : null);
-      if (r.loss > 0 && !r.secret) App.addMarker(`SAN減少 -${r.loss}：${ch.name}${madness ? '（' + (madness === 'temp' ? '一時的狂気' : madness === 'indef' ? '不定の狂気' : '永久的狂気') + '）' : ''}`, true);
-      const fx = { t: 'san', charId: ch.id, by: App.me.pid, player: App.me.name, name: ch.name, loss: r.loss, madness, detail };
-      if (!r.secret) FX.send(fx);
-      SanFx.show(fx);
     }
+    // 3) ステータス更新（秘匿時は本人とGMのみ）
+    const stP = { id: ch.id, label: 'SAN', value: after, sanLoss: r.loss, madness: madness || ch.madness || null };
+    if (secret) { stP.secretPub = ch.secretStat || { SAN: before, madness: ch.madness || null, loss: ch.sanLossSession || 0 }; App.dispatchPrivate('char.stat', stP, null, App.secretAllow()); }
+    else App.dispatch('char.stat', stP);
+    const mlabel = madness === 'temp' ? '一時的狂気' : madness === 'indef' ? '不定の狂気' : '永久的狂気';
+    if (madness) this.sys(`【${mlabel}】${ch.name}　${detail}`, msg.tab, sysx);
+    if (r.loss > 0 && !secret) App.addMarker(`SAN減少 -${r.loss}：${ch.name}${madness ? '（' + mlabel + '）' : ''}`, true);
+    const fx = { t: 'san', charId: ch.id, by: App.me.pid, name: ch.name, loss: r.loss, madness, detail };
+    if (!secret) FX.send(fx);
+    else { const others = App.secretAllow().filter(x => x !== App.me.pid); if (others.length) Sync.send({ k: 'fx', fx, to: others }); }
+    SanFx.show(fx);
+  },
+  // GMによる秘匿ロールの公開
+  reveal(id) {
+    if (!App.isGM()) return;
+    const S = App.S; const msgs = S.chat.filter(m => (m.id === id || m.rel === id) && m.secret && !m.redacted).map(m => Object.assign(U.clone(m), { secret: false, revealed: true, dice: m.dice ? Object.assign({}, m.dice, { secret: false }) : m.dice }));
+    if (!msgs.length) return;
+    App.dispatch('chat.reveal', { msgs });
+    const main = msgs.find(m => m.id === id);
+    if (main && main.dice && main.dice.kind === 'san' && main.from?.charId) {
+      const c = S.chars[main.from.charId];
+      if (c) { const st = CoC.getStatus(c, 'SAN'); App.dispatch('char.stat', { id: c.id, label: 'SAN', value: st ? st.value : undefined, madness: c.madness || null, clearSecret: true }); const fx = { t: 'san', charId: c.id, by: main.from.pid, name: c.name, loss: main.dice.loss, madness: c.madness || null }; FX.send(fx); }
+    }
+    this.sys(`GMがシークレットダイスを公開しました`, main ? main.tab : 'main');
   },
   renderTabs() {
     U.$$('#ctabs button').forEach(b => { const t = b.dataset.t; b.classList.toggle('on', t === L.chatTab); b.setAttribute('aria-selected', String(t === L.chatTab)); const bd = b.querySelector('.badge'); const n = L.unread[t] || 0; bd.textContent = n > 99 ? '99+' : String(n); bd.classList.toggle('hidden', !n); });
@@ -2557,14 +2847,14 @@ const Chat = {
     const hidden = msg.secret && !App.canSeeSecret(msg);
     if (msg.dice && msg.dice.ok && !hidden) DiceFx.show(msg);
     if (!msg.secret && !msg.sys) Board.noteSpeaker(msg);
-    if (!msg.secret && !msg.sys && !msg.dice && msg.tab === 'main' && (App.prefs.novel || App.S.room.settings.novel)) Overlay.novel(msg.from?.name || '', msg.text, 28, Math.min(5000, 1500 + msg.text.length * 40));
+    if (!msg.secret && !msg.sys && !msg.dice && msg.tab === 'main' && (App.prefs.novel || App.S.room.settings.novel)) Overlay.novelQueued(msg.from?.name || '', msg.text, 28, Math.min(5000, 1500 + msg.text.length * 40));
+    if (!msg.secret && !msg.sys && !msg.dice) KwFx.check(msg);
+    if (App.bcast && !msg.secret && msg.tab === 'main' && msg.from?.charId) Board.focusChar(msg.from.charId);
     if (App.bcast) Broadcast.sub(msg);
   },
   avatar(m) {
     const ch = m.from?.charId ? App.S.chars[m.from.charId] : null;
-    if (ch) { const u = ch.icon ? Assets.url(ch.icon) : ch.iconUrl; if (u) return `<div class="av" style="background-image:url('${U.esc(u)}')"></div>`; }
-    const nm = m.from?.name || '・'; const c = m.from?.color || '#5b665f';
-    return `<div class="av" style="display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);color:${U.esc(c)};font-weight:700">${U.esc(nm.slice(0, 1))}</div>`;
+    return Icon.html(ch ? Icon.urls(ch) : [], m.from?.name || '・', m.from?.color, 'av');
   },
   diceHtml(d) {
     if (!d || !d.ok) return '';
@@ -2585,6 +2875,8 @@ const Chat = {
     if (hidden) body = `<div class="dres">シークレットダイス</div>`;
     else if (m.dice) { const lines = String(m.text).split('\n'); body = `<div class="tx">${U.esc(lines[0])}${m.secret ? ' <span class="tag gmsecret" style="color:var(--secret)">シークレット</span>' : ''}</div>${this.diceHtml(m.dice)}${lines.length > 1 ? `<div class="tx">${U.esc(lines.slice(1).join('\n'))}</div>` : ''}`; }
     else body = `<div class="tx">${U.esc(m.text)}</div>`;
+    if (m.secret && !hidden && App.isGM() && !App.bcast && !m.rel && m.dice) { const lines = String(m.text).split('\n'); body = `<div class="tx">${U.esc(lines[0])} <span class="tag" style="color:var(--secret)">シークレット</span> <button type="button" class="btn xs" data-act="revealMsg" data-id="${U.esc(m.id)}">全員に公開</button></div>${this.diceHtml(m.dice)}`; }
+    if (m.revealed) body = body.replace('</div>', ' <span class="tag">公開済み</span></div>');
     const ch = m.from?.charId ? App.S.chars[m.from.charId] : null; const face = ch && m.from.face != null && ch.faces?.[m.from.face] ? `<span class="tag">${U.esc(ch.faces[m.from.face].label)}</span>` : '';
     return `<div class="msg${hidden ? ' secretHidden' : ''}${m.secret && !hidden ? ' gmsecret' : ''}" data-mid="${U.esc(m.id)}">${this.avatar(m)}<div class="bd"><div class="hd"><span class="nm" style="color:${U.esc(col)}">${U.esc(name)}</span>${face}<span class="tm">${U.clock(m.ts)}</span></div>${body}</div></div>`;
   },
@@ -2598,12 +2890,14 @@ function assetOptions(kind, sel, tags, allowNone = true) {
   const o = (a) => `<option value="${E(a.id)}"${a.id === sel ? ' selected' : ''}>${E(a.name)}（${TAGS[a.tag] || a.tag}）</option>`;
   return (allowNone ? `<option value="">（なし）</option>` : '') + list.map(o).join('') + (all.length ? `<optgroup label="その他">${all.map(o).join('')}</optgroup>` : '');
 }
-function players() {
-  const s = new Set([App.me.name]);
-  for (const p of Sync.peers.values()) if (!p.bcast) s.add(p.name);
-  for (const c of Object.values(App.S.chars)) if (c.owner) s.add(c.owner);
-  return [...s].filter(Boolean);
+// 参加者一覧（pid基準）
+function participants() {
+  const m = new Map([[App.me.pid, { pid: App.me.pid, name: App.me.name, role: App.me.role, me: true }]]);
+  for (const p of Sync.peers.values()) if (!p.bcast) m.set(p.pid, { pid: p.pid, name: p.name, role: p.role });
+  for (const c of Object.values(App.S.chars)) if (c.owner && !m.has(c.owner)) m.set(c.owner, { pid: c.owner, name: (c.ownerName || '?') + '（不在）', role: 'PL', away: true });
+  return [...m.values()];
 }
+function pname(pid) { const p = participants().find(x => x.pid === pid); return p ? p.name : '（不在の参加者）'; }
 function gmOnly(html) { return App.isGM() ? html : ''; }
 function slider(bind, val, label, live = true) { return `<label class="field" style="margin:0"><span class="row" style="justify-content:space-between"><span>${label}</span><span class="tiny muted">${Math.round((val || 0) * 100)}%</span></span><input type="range" min="0" max="1" step="0.05" value="${val || 0}" data-bind="${bind}" ${live ? 'data-live="1"' : ''} aria-label="${E(label)}"></label>`; }
 
@@ -2624,7 +2918,7 @@ const Panels = {
     </div>`;
   },
   charCard(c) {
-    const can = App.canEditChar(c); const icon = c.icon ? Assets.url(c.icon) : c.iconUrl;
+    const can = App.canEditChar(c);
     const hide = c.hideStatus && !App.isGM();
     const stats = hide ? '<div class="tiny muted">ステータス非公開</div>' : (c.status || []).map((s, i) => {
       const pct = s.max ? U.clamp(s.value / s.max * 100, 0, 100) : 0; const col = s.label === 'HP' ? '#c4515a' : s.label === 'MP' ? '#5a8fc4' : '#86c493';
@@ -2632,13 +2926,13 @@ const Panels = {
     }).join('');
     const mad = c.madness ? `<span class="tag" style="color:var(--fumble);border-color:#6e2a30">${c.madness === 'temp' ? '一時的狂気' : c.madness === 'indef' ? '不定の狂気' : '永久的狂気'}</span>` : '';
     return `<div class="charcard${L.sel === c.id ? ' sel' : ''}" style="--c:${E(c.color || '#888')}">
-      <div class="ic" style="background-image:${icon ? `url('${E(icon)}')` : 'none'}" data-act="openChar" data-id="${E(c.id)}" role="button" tabindex="0" aria-label="${E(c.name)}を開く"></div>
+      <div class="ic icwrap" style="color:${E(c.color || '#ccc')}" data-act="openChar" data-id="${E(c.id)}" role="button" tabindex="0" aria-label="${E(c.name)}を開く">${Icon.inner(Icon.urls(c), c.name)}</div>
       <div class="grow">
-        <div class="row nw" style="gap:6px"><span class="nm grow" data-act="openChar" data-id="${E(c.id)}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${E(c.name)}</span>${mad}${c.owner ? `<span class="tag" title="所有者">${E(c.owner)}</span>` : ''}</div>
+        <div class="row nw" style="gap:6px"><span class="nm grow" data-act="openChar" data-id="${E(c.id)}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${E(c.name)}</span>${mad}${c.owner ? `<span class="tag" title="所有者">${E(c.owner === App.me.pid ? 'あなた' : (c.ownerName || pname(c.owner)))}</span>` : c.npc ? '<span class="tag">NPC</span>' : ''}</div>
         ${stats}
         <div class="row" style="gap:4px;margin-top:6px">
           ${can ? `<button class="btn xs" type="button" data-act="speakAs" data-id="${E(c.id)}">発言者に</button><button class="btn xs" type="button" data-act="sanFor" data-id="${E(c.id)}">SANチェック</button>` : ''}
-          ${!c.owner && App.me.role === 'PL' ? `<button class="btn xs" type="button" data-act="claimChar" data-id="${E(c.id)}">このキャラを使う</button>` : ''}
+          ${!c.owner && !c.npc && App.me.role === 'PL' ? `<button class="btn xs" type="button" data-act="claimChar" data-id="${E(c.id)}">このキャラを使う</button>` : ''}
           <button class="btn xs" type="button" data-act="openChar" data-id="${E(c.id)}">${can ? '編集' : '詳細'}</button>
           ${can ? `<button class="btn xs ghost" type="button" data-act="toggleBoard" data-id="${E(c.id)}">${c.board?.on === false ? '盤面に出す' : '盤面から外す'}</button>` : ''}
         </div>
@@ -2657,7 +2951,7 @@ const Panels = {
         <div class="row nw"><label class="field grow"><span>色</span><input type="color" value="${E(/^#[0-9a-f]{6}$/i.test(c.color) ? c.color : '#c9a766')}" ${B('color')} style="height:34px;padding:2px"></label>
         <label class="field" style="width:90px"><span>駒サイズ</span><input type="number" min="1" max="6" value="${c.size || 2}" ${B('size')} data-type="num"></label>
         <label class="field" style="width:90px"><span>イニシア</span><input type="number" value="${c.initiative || ab.DEX || 0}" ${B('initiative')} data-type="num"></label></div>
-        <label class="field"><span>所有プレイヤー（名前）</span><input type="text" list="plist" value="${E(c.owner || '')}" ${App.isGM() ? `data-bind="char:${E(c.id)}:owner" data-fk="c:owner"` : 'disabled'} placeholder="未設定ならGM/PL誰でも操作可"><datalist id="plist">${players().map(p => `<option value="${E(p)}">`).join('')}</datalist></label>
+        <label class="field"><span>所有プレイヤー</span><select ${App.isGM() ? `data-act-change="setOwner" data-id="${E(c.id)}" data-fk="c:owner"` : 'disabled'}><option value="">（未設定：PLが「このキャラを使う」で取得）</option>${participants().filter(p => p.role !== 'VIEW').map(p => `<option value="${E(p.pid)}"${p.pid === c.owner ? ' selected' : ''}>${E(p.name)}${p.me ? '（あなた）' : ''}</option>`).join('')}</select></label>
         <label class="field"><span>駒アイコン</span><div class="row nw"><select class="grow" ${B('icon')}>${assetOptions('image', c.icon, ['token', 'stand'])}</select><button class="btn sm" type="button" data-act="uploadFor" data-target="icon" data-id="${E(c.id)}"${dis}>${U.icon('upload')}</button></div></label>
         <h3 class="sh">ステータス</h3>
         <table class="skilltbl"><tbody>${(c.status || []).map((s, i) => `<tr><td class="n"><input type="text" value="${E(s.label)}" ${B('status.' + i + '.label')}></td><td class="v"><input type="number" value="${s.value}" ${B('status.' + i + '.value')} data-type="num" aria-label="現在値"></td><td class="v"><input type="number" value="${s.max}" ${B('status.' + i + '.max')} data-type="num" aria-label="最大値"></td><td>${can ? `<button class="btn xs ghost" type="button" data-act="arrDel" data-id="${E(c.id)}" data-arr="status" data-i="${i}" aria-label="削除">${U.icon('x')}</button>` : ''}</td></tr>`).join('')}</tbody></table>
@@ -2702,7 +2996,7 @@ const Panels = {
   /* ---------- 素材 ---------- */
   assets() {
     const f = L.assetFilter; const all = Object.values(App.S.assets).sort((a, b) => (b.ts || 0) - (a.ts || 0));
-    const list = all.filter(a => f === 'all' || a.tag === f);
+    const list = all.filter(a => (f === 'all' || a.tag === f) && (App.isGM() || !['handout', 'cutin'].includes(a.tag) || a.by === App.me.pid));
     const chip = (k, l) => `<button type="button" class="${f === k ? 'on' : ''}" data-act="afilter" data-f="${k}">${l}</button>`;
     const item = (a) => {
       const u = a.kind === 'image' ? Assets.url(a.id) : ''; const isBgm = App.S.bgm.id === a.id;
@@ -2771,17 +3065,22 @@ const Panels = {
       <div class="row nw" style="margin-top:6px"><input type="text" id="qCh" placeholder="章（例：第二章）" style="width:40%" data-fk="qc"><input type="text" id="qTitle" placeholder="タイトル" class="grow" data-fk="qti"><button class="btn sm" type="button" data-act="quick" data-q="title">章タイトル</button></div>
       <div class="row nw" style="margin-top:6px"><select id="qCut" class="grow" aria-label="カットイン画像">${assetOptions('image', null, ['cutin', 'stand'])}</select><input type="text" id="qCutT" placeholder="文言" style="width:38%" data-fk="qct"><button class="btn sm" type="button" data-act="quick" data-q="cutin">カットイン</button></div>
       <div class="row nw" style="margin-top:6px"><input type="text" id="qWh" placeholder="囁き文字（/区切りで複数）" class="grow" data-fk="qw"><button class="btn sm" type="button" data-act="quick" data-q="whisper">囁き</button></div>
+      <h3 class="sh">個別幻覚（プレイヤーごとに違う幻覚）</h3>
+      <div class="row nw"><select id="hlTo" class="grow" aria-label="対象">${'<option value="each">全員に別々の幻覚（ランダム）</option>' + participants().filter(p => p.role !== 'GM' && !p.me).map(p => `<option value="${E(p.pid)}">${E(p.name)} だけに見せる</option>`).join('')}</select><button class="btn sm" type="button" data-act="halluc">幻覚を見せる</button></div>
+      <input type="text" id="hlText" placeholder="任意の文言（空ならランダム。対象指定時のみ有効）" style="margin-top:6px" data-fk="hlt">
+      <p class="tiny muted">各プレイヤーの画面にだけ、囁き・色調・チャット欄に現れる「？？？」の発言を表示します（同期・記録されず、配信画面にも映りません）。</p>
+      <label class="chk"><input type="checkbox" ${S.room.settings.kwFx !== false ? 'checked' : ''} data-bind="set:kwFx">発言キーワード連動演出（「雷」「悲鳴」「心臓」「囁き」「血」「暗闇」など）</label>
       <h3 class="sh">BGM</h3>
       <div class="row nw"><select class="grow" data-bind="bgm:id" aria-label="BGM">${assetOptions('audio', S.bgm.id, ['bgm'])}</select><button class="btn sm" type="button" data-act="bgmStop">停止</button></div>
       <label class="field" style="margin-top:6px"><span>BGM音量（ルーム）</span><input type="range" min="0" max="1" step="0.05" value="${S.bgm.vol ?? .7}" data-bind="bgm:vol" data-live="1"></label>`;
       html += `<h3 class="sh">演出シーケンサー</h3>
       <p class="small muted" style="margin-top:0">ステップを組んでワンクリックで全員の画面で同時再生。</p>
       ${S.seqs.map(q => `<div class="preset"><div class="grow" style="min-width:0"><div class="n">${E(q.name)}</div><div class="d">${q.steps.length}ステップ${q.desc ? '・' + E(q.desc) : ''}</div></div><button class="btn xs pri ${Seq.playingId === q.id ? 'on' : ''}" type="button" data-act="seqPlay" data-id="${E(q.id)}" data-seqplay="${E(q.id)}">${U.icon('play')}全員</button><button class="btn xs" type="button" data-act="seqPreview" data-id="${E(q.id)}" title="自分の画面だけで確認">確認</button><button class="btn xs ghost" type="button" data-act="seqEdit" data-id="${E(q.id)}" aria-label="編集">${U.icon('edit')}</button></div>`).join('')}
-      <div class="row" style="margin-top:6px"><button class="btn sm" type="button" data-act="seqNew">${U.icon('plus')}新規シーケンス</button><select id="presetSel" aria-label="プリセット" style="width:auto;min-height:30px">${Demo.presets().map(p2 => `<option value="${p2.id}">${E(p2.name)}</option>`).join('')}</select><button class="btn sm" type="button" data-act="seqAddPreset">プリセット追加</button>${Seq.playingId ? `<button class="btn sm danger" type="button" data-act="seqStop">${U.icon('stop')}停止</button>` : ''}</div>`;
+      <div class="row" style="margin-top:6px"><button class="btn sm" type="button" data-act="seqNew">${U.icon('plus')}新規シーケンス</button><select id="presetSel" aria-label="プリセット" style="width:auto;min-height:30px">${Demo.presets().map(p2 => `<option value="${p2.id}">${E(p2.name)}</option>`).join('')}</select><button class="btn sm" type="button" data-act="seqAddPreset">プリセット追加</button><button class="btn sm danger" type="button" data-act="seqStop" title="全員の演出を停止（自分の画面は Esc でも停止）">${U.icon('stop')}全演出停止</button></div>`;
       if (sel) html += this.seqEditor(sel);
     } else {
       html += `<p class="small muted">環境エフェクトや演出シーケンスはGMが操作します。下の個人設定で、自分の画面の演出強度を調整できます。</p>`;
-      html += `<h3 class="sh">演出の確認（自分の画面のみ）</h3>${S.seqs.map(q => `<div class="preset"><div class="grow"><div class="n">${E(q.name)}</div></div><button class="btn xs" type="button" data-act="seqPreview" data-id="${E(q.id)}">確認</button></div>`).join('')}`;
+
     }
     html += `<h3 class="sh">個人設定（自分の画面）</h3>
       ${slider('pref:fx', p.fx, '演出強度', false)}
@@ -2823,25 +3122,26 @@ const Panels = {
     const S = App.S, gm = App.isGM();
     const vis = S.handouts.filter(h => gm || (App.visibleHandout(h) && h.revealed));
     const ed = gm && S.handouts.find(h => h.id === L.hoEdit);
-    const pl = players();
+    const pl = participants().filter(p => p.role !== 'GM' && p.role !== 'VIEW');
+    const toLabel = (h) => [...(Array.isArray(h.to) ? h.to : []).map(pname), ...(h.toChars || []).map(cid => (App.S.chars[cid]?.name || '?') + 'の担当者')].join('、') || '未指定';
     let html = `<div class="pscroll"><h2 class="ph">ハンドアウト</h2>`;
     if (gm) html += `<div class="row" style="margin-bottom:10px"><button class="btn sm" type="button" data-act="hoNew">${U.icon('plus')}新規ハンドアウト</button></div>`;
     html += vis.length ? vis.map(h => {
       const secret = h.to !== 'all';
-      return `<div class="preset ${secret ? 'gmsecret' : ''}"><div class="grow" style="min-width:0"><div class="n">${E(h.title)}</div><div class="d">${secret ? '秘匿：' + E((h.to || []).join('、') || '未指定') : '全体公開'}${gm ? (h.revealed ? '・配布済み' : '・未配布') : ''}</div></div>
+      return `<div class="preset ${secret ? 'gmsecret' : ''}"><div class="grow" style="min-width:0"><div class="n">${E(h.title)}</div><div class="d">${secret ? '秘匿：' + E(gm ? toLabel(h) : 'あなた宛て') : '全体公開'}${gm ? (h.revealed ? '・配布済み' : '・未配布') : ''}</div></div>
       <button class="btn xs" type="button" data-act="hoView" data-id="${E(h.id)}">見る</button>
       ${gm ? `<button class="btn xs pri" type="button" data-act="hoReveal" data-id="${E(h.id)}">公開演出で配布</button><button class="btn xs ghost" type="button" data-act="hoEdit" data-id="${E(h.id)}" aria-label="編集">${U.icon('edit')}</button>` : ''}</div>`;
     }).join('') : '<div class="empty">公開されたハンドアウトはありません</div>';
     if (ed) {
       const B = (k) => `data-bind="ho:${E(ed.id)}:${k}" data-fk="h:${k}"`;
-      const isAll = ed.to === 'all'; const tos = Array.isArray(ed.to) ? ed.to : [];
+      const isAll = ed.to === 'all'; const tos = Array.isArray(ed.to) ? ed.to : []; const tcs = ed.toChars || [];
       html += `<div class="card" style="margin-top:10px"><h3 class="sh" style="margin-top:0">ハンドアウト編集</h3>
         <label class="field"><span>タイトル</span><input type="text" value="${E(ed.title)}" ${B('title')}></label>
         <label class="field"><span>本文</span><textarea rows="6" ${B('body')}>${E(ed.body)}</textarea></label>
         <label class="field"><span>画像</span><select ${B('image')}>${assetOptions('image', ed.image, ['handout'])}</select></label>
         <div class="field"><span>公開先</span><div class="col" style="gap:4px"><label class="chk"><input type="radio" name="hoTo" ${isAll ? 'checked' : ''} data-act="hoToAll" data-id="${E(ed.id)}">全体公開</label>
-        <div class="small muted">個別（秘匿HO）：</div>${pl.map(n => `<label class="chk"><input type="checkbox" ${!isAll && tos.includes(n) ? 'checked' : ''} data-act="hoToggle" data-id="${E(ed.id)}" data-n="${E(n)}">${E(n)}</label>`).join('')}
-        <div class="row nw"><input type="text" id="hoAddName" placeholder="プレイヤー名を追加" class="grow"><button class="btn xs" type="button" data-act="hoAddName" data-id="${E(ed.id)}">追加</button></div></div></div>
+        <div class="small muted">個別（秘匿HO）— 参加者：</div>${pl.map(p => `<label class="chk"><input type="checkbox" ${!isAll && tos.includes(p.pid) ? 'checked' : ''} data-act="hoToggle" data-id="${E(ed.id)}" data-pid="${E(p.pid)}">${E(p.name)}</label>`).join('') || '<div class="tiny muted">PLが参加すると表示されます</div>'}
+        <div class="small muted">— キャラクターの担当者（後から参加しても届きます）：</div>${App.S.order.map(id => App.S.chars[id]).filter(c => c && !c.npc).map(c => `<label class="chk"><input type="checkbox" ${!isAll && tcs.includes(c.id) ? 'checked' : ''} data-act="hoToggle" data-id="${E(ed.id)}" data-cid="${E(c.id)}">${E(c.name)}</label>`).join('')}</div></div>
         <div class="row"><button class="btn xs" type="button" data-act="hoClose">閉じる</button><span class="grow"></span><button class="btn xs danger" type="button" data-act="hoDel" data-id="${E(ed.id)}">削除</button></div></div>`;
     }
     return html + '</div>';
@@ -2904,7 +3204,7 @@ const Panels = {
   /* ---------- モーダル類 ---------- */
   async lobby(prefill = {}) {
     let recent = [];
-    try { recent = (await Store.keys('rooms')).slice(-8).reverse(); } catch (e) { }
+    try { recent = [...new Set((await Store.keys('rooms')).map(k => String(k).split('@')[0]))].slice(-8).reverse(); } catch (e) { }
     const httpsP2P = location.protocol === 'https:' && !Caps.inArtifact && !/^(localhost|127\.)/.test(location.hostname);
     const rid = U.uid(6);
     Modal.open({
@@ -2968,7 +3268,7 @@ const Panels = {
   },
   addChar(ch) {
     ch.id = 'c_' + U.uid(8);
-    if (!App.isGM() || !ch.owner) ch.owner = App.isGM() ? (ch.owner || '') : App.me.name;
+    if (App.isGM()) { ch.owner = null; ch.ownerName = ''; } else { ch.owner = App.me.pid; ch.ownerName = App.me.name; }
     const n = Object.keys(App.S.chars).length; const v = App.S.view;
     ch.board = { x: Math.round((v.w || 1600) * .3 + (n % 6) * 110), y: Math.round((v.h || 1000) * .55 + Math.floor(n / 6) * 110), on: true };
     ch.size = ch.size || 2;
@@ -3030,6 +3330,14 @@ const Panels = {
     const html = await this.buildLogFile();
     Modal.open({ title: 'ログ出力', body: `<p class="small" style="margin-top:0">発言者の色・アイコン・ダイス結果付きのHTMLログです（${App.S.chat.length}件）。${App.isGM() ? 'GMのためシークレットダイスも含まれます。' : 'シークレットダイスは含まれません。'}</p><iframe title="ログプレビュー" style="width:100%;height:46vh;border:1px solid var(--line2);border-radius:6px;background:#f6f1e4" sandbox=""></iframe>`, foot: `<button class="btn" type="button" id="lgCopy">${U.icon('copy')}HTMLをコピー</button><button class="btn pri" type="button" id="lgSave">HTMLファイルを保存</button>`, cls: 'wide', onMount: (m) => { m.querySelector('iframe').srcdoc = html; m.querySelector('#lgCopy').onclick = async () => UI.toast(await U.copyText(html) ? 'クリップボードにコピーしました' : 'コピーできませんでした', 'warn'); m.querySelector('#lgSave').onclick = () => FileOut.save(`log_${App.roomId}.html`, html, 'text/html'); } });
   },
+  async audioTagModal(files, forced) {
+    const dur = (f) => new Promise(res => { const u = URL.createObjectURL(f); const a = new window.Audio(); a.preload = 'metadata'; const done = (v) => { URL.revokeObjectURL(u); res(v); }; a.onloadedmetadata = () => done(a.duration); a.onerror = () => done(NaN); a.src = u; setTimeout(() => done(NaN), 4000); });
+    const info = []; for (const f of files) { const d = await dur(f); info.push({ f, d, tag: forced || (isFinite(d) ? (d < 15 ? 'se' : 'bgm') : (f.size < 600000 ? 'se' : 'bgm')) }); }
+    Modal.open({ title: '音源の種類を選択', body: `<p class="small" style="margin-top:0">長さから推定しています（15秒未満＝SE）。必要なら変更してください。</p>${info.map((x, i) => `<div class="preset"><div class="grow" style="min-width:0"><div class="n" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${E(x.f.name)}</div><div class="d">${isFinite(x.d) ? x.d.toFixed(1) + '秒' : '長さ不明'}・${U.bytes(x.f.size)}</div></div><div class="seg" role="radiogroup" aria-label="種類"><button type="button" data-i="${i}" data-t="bgm" class="${x.tag === 'bgm' ? 'on' : ''}">BGM（ループ）</button><button type="button" data-i="${i}" data-t="se" class="${x.tag === 'se' ? 'on' : ''}">SE（効果音）</button></div></div>`).join('')}`, foot: `<button class="btn" type="button" data-act="modalClose">キャンセル</button><button class="btn pri" type="button" id="atGo">追加する</button>`, onMount: (m) => {
+      m.querySelectorAll('.seg button').forEach(b => b.onclick = () => { info[+b.dataset.i].tag = b.dataset.t; b.parentNode.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); });
+      m.querySelector('#atGo').onclick = async () => { Modal.close(); let n = 0; for (const x of info) { try { if (await Assets.addFile(x.f, x.tag)) n++; } catch (e) { UI.toast(`${x.f.name}: ${e.message}`, 'err'); } } if (n) UI.toast(`${n}件の音源を追加しました`); };
+    } });
+  },
   diceHelp() {
     const s = App.S.room.settings;
     const rows = [
@@ -3048,22 +3356,41 @@ const Panels = {
   },
   broadcastModal() {
     const base = location.href.split('#')[0];
-    const url = (c) => `${base}#broadcast&room=${App.roomId}${c ? '&chroma=' + c : ''}${Sync.p2pWanted ? '&p2p=1' : ''}`;
+    const p2pOn = () => Sync.transports.some(t => t.name === 'p2p');
+    const url = (c) => `${base}#broadcast&room=${App.roomId}${c ? '&chroma=' + c : ''}${!Caps.inArtifact ? '&p2p=1' : ''}`;
+    const st = () => { const t = Sync.transports.find(x => x.name === 'p2p'); if (!t) return '<span class="pill warn"><span class="dot"></span>OBS接続は未開始</span>'; return t.mode === 'host' || (t.mode === 'client' && t.conns.size) ? `<span class="pill ok"><span class="dot"></span>OBS接続 待受中（${t.mode === 'host' ? 'ホスト' : '参加'}）</span>` : t.mode === 'failed' ? `<span class="pill bad"><span class="dot"></span>P2P接続に失敗：${E(t.err)}（ネットワーク制限の可能性）</span>` : '<span class="pill warn"><span class="dot"></span>接続準備中…</span>'; };
+    const bcN = () => [...Sync.peers.values()].filter(x => x.bcast).length;
     Modal.open({
-      title: '配信画面（OBSブラウザソース）',
-      body: `<p class="small" style="margin-top:0">UIを除いた16:9のステージ・字幕風チャット・ダイス演出・演出シーケンスのみを表示します。<b>シークレットダイス・秘匿ハンドアウト・GMメモは配信画面に一切表示されません。</b></p>
-      <label class="field"><span>背景</span><select id="bcC"><option value="">シーン背景をそのまま表示</option><option value="green">クロマキー（グリーン）</option><option value="blue">クロマキー（ブルー）</option><option value="magenta">クロマキー（マゼンタ）</option></select></label>
+      title: '配信画面（OBSブラウザソース）', cls: 'wide',
+      body: `<p class="small" style="margin-top:0">UIを除いた16:9ステージ・字幕風チャット・ダイス演出・演出シーケンス・発言者へのカメラワークのみを表示します。配信画面は<b>閲覧専用（viewer）</b>として自動参加し、<b>シークレットダイス・秘匿ハンドアウト・GMメモ・個別幻覚は一切届きません。</b></p>
+      ${Caps.inArtifact ? `<div class="card small" style="border-color:var(--brass2)">claude.ai 上ではOBS（外部ブラウザ）から直接接続できません。<b>「このタブを配信画面にする」</b>を押し、OBSの「ウィンドウキャプチャ」でこのウィンドウを取り込んでください。</div>` : `
+      <div class="row" style="align-items:flex-start;gap:14px"><div class="grow" style="min-width:240px">
+        <div class="row"><span id="bcSt">${st()}</span><span class="tiny muted" id="bcN">配信画面の接続：${bcN()}</span></div>
+        <ol class="small" style="padding-left:1.3em;margin:8px 0">
+          <li>下の<b>「OBS配信接続を有効化」</b>を押す（このPCがホストになります）</li>
+          <li>URLをコピーし、OBSの「ソース追加 → ブラウザ」にURLを貼る（幅1920・高さ1080推奨）</li>
+          <li>OBSのブラウザソースで「対話」を開き、1回クリックすると音声が有効になります</li>
+        </ol>
+        <button class="btn brass" type="button" id="bcP2P"${p2pOn() ? ' disabled' : ''}>${p2pOn() ? 'OBS配信接続は有効です' : 'OBS配信接続を有効化（ワンクリック）'}</button>
+      </div><div class="qr" id="bcQr" aria-label="配信画面URLのQRコード"></div></div>`}
+      <label class="field" style="margin-top:12px"><span>背景</span><select id="bcC"><option value="">シーン背景をそのまま表示</option><option value="green">クロマキー（グリーン）</option><option value="blue">クロマキー（ブルー）</option><option value="magenta">クロマキー（マゼンタ）</option></select></label>
       <label class="field"><span>配信画面URL</span><input type="text" id="bcUrl" readonly value="${E(url(''))}"></label>
       <div class="row"><button class="btn" type="button" id="bcCopy">${U.icon('copy')}URLをコピー</button><button class="btn" type="button" id="bcOpen">新しいウィンドウで開く</button><button class="btn brass" type="button" id="bcHere">このタブを配信画面にする</button></div>
-      <p class="tiny muted" style="margin-top:10px">OBSのブラウザソースは別ブラウザ扱いのため、別端末同期（P2P）が必要です${Sync.p2pWanted ? '（このルームはP2P有効）' : '（ルーム設定でP2P接続を開始してください）'}。同一ブラウザなら「新しいウィンドウ」をウィンドウキャプチャでも配信できます。配信画面ではEscで通常画面に戻ります。</p>`,
+      <p class="tiny muted" style="margin-top:10px">同じブラウザの別ウィンドウなら自動で同期します（ウィンドウキャプチャ可）。配信画面ではEscで通常画面に戻ります。接続できない場合、配信画面側に対処方法が表示されます。</p>`,
       onMount: (m) => {
-        const sel = m.querySelector('#bcC'), inp = m.querySelector('#bcUrl'); sel.onchange = () => inp.value = url(sel.value);
-        m.querySelector('#bcCopy').onclick = async () => UI.toast(await U.copyText(inp.value) ? 'URLをコピーしました' : 'コピーできませんでした');
+        const sel = m.querySelector('#bcC'), inp = m.querySelector('#bcUrl');
+        const qr = () => QR.render(m.querySelector('#bcQr'), inp.value);
+        sel.onchange = () => { inp.value = url(sel.value); qr(); };
+        qr();
+        m.querySelector('#bcCopy').onclick = async () => UI.toast(await U.copyText(inp.value) ? 'URLをコピーしました。OBSのブラウザソースに貼り付けてください' : 'コピーできませんでした');
         m.querySelector('#bcOpen').onclick = () => { const w = window.open(inp.value, '_blank', 'noopener'); if (!w) UI.toast('ポップアップがブロックされました。URLをコピーして開いてください', 'warn'); };
         m.querySelector('#bcHere').onclick = () => { Modal.close(); Broadcast.enterInTab(sel.value); };
+        const b = m.querySelector('#bcP2P'); if (b) b.onclick = () => { Sync.enableP2P(); App.saveLast(); b.disabled = true; b.textContent = 'OBS配信接続を有効化しました'; };
+        const tick = setInterval(() => { const e = m.querySelector('#bcSt'); if (!e || !document.body.contains(e)) return clearInterval(tick); e.innerHTML = st(); m.querySelector('#bcN').textContent = '配信画面の接続：' + bcN(); }, 1000);
       },
     });
   },
+
 };
 
 /* ------------------------------ ファイル出力 ------------------------------ */
@@ -3098,7 +3425,7 @@ const FileOut = {
     for (const [id, du] of Object.entries(o.blobs || {})) { const b = U.dataUrlToBlob(du); if (b) await Assets.put(id, b); }
     const st = State.migrate(o.state); st.room.id = App.roomId;
     App.S = st; App.persist(); UI.fullRender();
-    Sync.send({ k: 'push', state: st, role: App.me.role });
+    for (const p of Sync.peers.values()) Sync.send({ k: 'push', to: p.pid, state: State.viewFor(st, p.pid, p.role), role: App.me.role });
     for (const id of Object.keys(o.blobs || {})) Assets.push(id);
     UI.toast('インポートして全員に配信しました');
   },
@@ -3112,20 +3439,33 @@ const Drop = {
     el.addEventListener('drop', (e) => { e.preventDefault(); e.stopPropagation(); el.classList.remove('over'); const fs = [...(e.dataTransfer?.files || [])]; if (fs.length) onFiles(fs); else if (onText) { const t = e.dataTransfer.getData('text/plain'); if (t) onText(t); } });
   },
   pick(accept, multiple, cb) { const i = document.createElement('input'); i.type = 'file'; i.accept = accept; i.multiple = !!multiple; i.style.display = 'none'; document.body.appendChild(i); i.onchange = () => { cb([...i.files]); i.remove(); }; i.click(); setTimeout(() => { if (document.body.contains(i) && !i.files.length) { /* keep until change */ } }, 0); },
+  isAudio(f) { return /^audio\//.test(f.type) || /\.(mp3|ogg|wav|m4a|aac|flac|opus|webm)$/i.test(f.name); },
   async files(files, tag) {
-    let n = 0;
+    let n = 0; const audios = []; const bad = [];
     for (const f of files) {
-      if (/\.json$|^application\/json/.test(f.name + ' ' + f.type) || /^text\//.test(f.type)) { const t = await f.text(); this.text(t); continue; }
-      let tg = tag; if (/^audio\//.test(f.type) && !['bgm', 'se'].includes(tg)) tg = f.size < 600000 ? 'se' : 'bgm'; if (/^image\//.test(f.type) && ['bgm', 'se'].includes(tg)) tg = 'bg';
+      if (/\.json$|^application\/json/.test(f.name + ' ' + f.type) || /^text\//.test(f.type) || /\.txt$/i.test(f.name)) { const t = await f.text(); this.text(t, f.name); continue; }
+      if (this.isAudio(f)) { audios.push(f); continue; }
+      if (!/^image\/(png|jpe?g|gif|webp|svg\+xml|bmp|avif)$/.test(f.type)) { bad.push(f.name); continue; }
+      let tg = tag; if (['bgm', 'se'].includes(tg)) tg = 'bg';
       try { const m = await Assets.addFile(f, tg); if (m) n++; } catch (e) { UI.toast(`${f.name}: ${e.message}`, 'err'); }
     }
+    if (bad.length) UI.toast(`未対応のファイル形式です：${bad.join('、')}（画像：PNG/JPEG/GIF/WebP、音源：MP3/OGG/WAV/M4A、テキスト：JSON/TXT）`, 'err');
     if (n) UI.toast(`${n}件の素材を追加しました`);
+    if (audios.length) Panels.audioTagModal(audios, ['bgm', 'se'].includes(tag) ? tag : null);
   },
-  text(t) {
-    const s = String(t || '').trim(); if (!s) return;
+  text(t, fname) {
+    const s = String(t || '').trim(); if (!s) { if (fname) UI.toast(`${fname} は空のファイルです`, 'err'); return; }
     if (/"app"\s*:\s*"shinentaku"/.test(s.slice(0, 200))) { if (App.isGM()) FileOut.applyImport(s).catch(e => UI.toast(e.message, 'err')); else UI.toast('ルームのインポートはGMのみ可能です', 'warn'); return; }
     if (/"kind"\s*:\s*"character"/.test(s) || /キャラクター名|STR\s+CON\s+POW|《.+》\s*\d+/.test(s)) { Panels.importModal(s); return; }
+    if (fname) UI.toast(`${fname}：キャラクターデータ（いあきゃら駒JSON／テキスト）またはルームJSONとして認識できませんでした`, 'err');
   },
+};
+
+/* ------------------------------ QR（配信画面URL用・cdnjs の qrcodejs を遅延読込） ------------------------------ */
+const QR = {
+  p: null,
+  load() { if (window.QRCode) return Promise.resolve(true); if (this.p) return this.p; this.p = new Promise(res => { const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'; sc.onload = () => res(!!window.QRCode); sc.onerror = () => res(false); document.head.appendChild(sc); setTimeout(() => res(!!window.QRCode), 8000); }); return this.p; },
+  async render(el, text) { if (!el) return; const ok = await this.load(); if (!ok) { el.style.display = 'none'; return; } el.innerHTML = ''; try { new window.QRCode(el, { text, width: 148, height: 148, correctLevel: window.QRCode.CorrectLevel.L }); el.title = 'スマホやタブレットの配信アプリで読み取れます'; } catch (e) { el.style.display = 'none'; } },
 };
 
 /* ------------------------------ Bind（入力→アクション） ------------------------------ */
@@ -3206,7 +3546,7 @@ const Act = {
   stat(t) { const c = App.S.chars[t.dataset.id]; if (!App.canEditChar(c)) return; const s = c.status[+t.dataset.i]; if (!s) return; App.dispatch('char.stat', { id: c.id, label: s.label, value: s.value + (+t.dataset.d) }); },
   speakAs(t) { L.speaker = t.dataset.id; L.face = 0; Chat.renderSpeakers(); Chat.renderPalette(); if (UI.isMobile()) UI.mnav('chat'); else U.$('#chatInput').focus(); UI.toast(`発言者：${App.S.chars[t.dataset.id]?.name}`); },
   sanFor(t) { Panels.sanModal(t.dataset.id); },
-  claimChar(t) { const c = App.S.chars[t.dataset.id]; if (!c || c.owner) return; App.dispatch('char.update', { id: c.id, patch: { owner: App.me.name } }); L.speaker = c.id; Chat.renderSpeakers(); Chat.renderPalette(); },
+  claimChar(t) { const c = App.S.chars[t.dataset.id]; if (!c || c.owner || c.npc) return; App.dispatch('char.update', { id: c.id, patch: { owner: App.me.pid, ownerName: App.me.name } }); L.speaker = c.id; Chat.renderSpeakers(); Chat.renderPalette(); },
   toggleBoard(t) { const c = App.S.chars[t.dataset.id]; if (!App.canEditChar(c)) return; App.dispatch('char.update', { id: c.id, patch: { board: Object.assign({}, c.board, { on: c.board?.on === false }) } }); },
   arrDel(t) { const c = App.S.chars[t.dataset.id]; if (!App.canEditChar(c)) return; const arr = U.clone(c[t.dataset.arr] || []); arr.splice(+t.dataset.i, 1); App.dispatch('char.update', { id: c.id, patch: { [t.dataset.arr]: arr } }); },
   arrAdd(t) { const c = App.S.chars[t.dataset.id]; if (!App.canEditChar(c)) return; const k = t.dataset.arr; const arr = U.clone(c[k] || []); arr.push(k === 'status' ? { label: '新規', value: 0, max: 0 } : k === 'skills' ? { name: '新しい技能', value: 1 } : { label: '表情' + (arr.length + 1), asset: null }); App.dispatch('char.update', { id: c.id, patch: { [k]: arr } }); },
@@ -3266,12 +3606,14 @@ const Act = {
   },
   bgmStop() { if (!needGM()) return; App.dispatch('bgm.set', { id: null, fade: 1500, ts: Date.now() }); },
   seqPlay(t) { const q = App.S.seqs.find(x => x.id === t.dataset.id); if (q) { if (!Snd.unlocked) Snd.unlock(); Seq.playAll(q); } },
-  seqPreview(t) { const q = App.S.seqs.find(x => x.id === t.dataset.id); if (q) Seq.play({ id: q.id, steps: q.steps.filter(s => !['bg', 'fg', 'scene', 'bgm', 'fx', 'tone', 'letterbox'].includes(s.t) || true) }, false); },
+  seqPreview(t) { const q = App.S.seqs.find(x => x.id === t.dataset.id); if (q) Seq.playQueued({ id: q.id, steps: q.steps.filter(s => !['bg', 'fg', 'scene', 'bgm', 'fx', 'tone', 'letterbox'].includes(s.t) || true) }, false); },
   seqEdit(t) { L.seqSel = L.seqSel === t.dataset.id ? null : t.dataset.id; UI.renderPanel('fx'); },
   seqClose() { L.seqSel = null; UI.renderPanel('fx'); },
   seqNew() { if (!needGM()) return; const q = { id: 'q_' + U.uid(6), name: '新しい演出', desc: '', steps: [{ t: 'blackout', on: true, ms: 800 }, { t: 'novel', speaker: '', text: 'ここに文章', speed: 45, hold: 2000 }, { t: 'blackout', on: false, ms: 800 }] }; App.dispatch('seq.add', { seq: q }); L.seqSel = q.id; },
   seqAddPreset() { if (!needGM()) return; const id = U.$('#presetSel')?.value; const p = Demo.presets().find(x => x.id === id); if (!p) return; const q = Object.assign({}, U.clone(p), { id: 'q_' + U.uid(6) }); App.dispatch('seq.add', { seq: q }); L.seqSel = q.id; UI.toast(`プリセット「${p.name}」を追加しました`); },
-  seqStop() { Seq.stop(App.isGM()); },
+  seqStop() { FxQ.stopAll(); if (App.isGM()) FX.send({ t: 'stop' }); },
+  halluc() { if (!needGM()) return; const to = U.$('#hlTo')?.value || 'each'; const text = (U.$('#hlText')?.value || '').trim(); if (to === 'each') FX.send({ t: 'halluc', mode: 'each', seed: Date.now() }); else Sync.send({ k: 'fx', fx: { t: 'halluc', mode: 'one', text }, to: [to] }); UI.toast(to === 'each' ? '全員にそれぞれ別の幻覚を見せました' : '対象プレイヤーにだけ幻覚を見せました'); },
+  revealMsg(t) { Chat.reveal(t.dataset.id); },
   seqDup(t) { const q = App.S.seqs.find(x => x.id === t.dataset.id); if (!q) return; const n = Object.assign(U.clone(q), { id: 'q_' + U.uid(6), name: q.name + '（複製）' }); App.dispatch('seq.add', { seq: n }); L.seqSel = n.id; },
   async seqDel(t) { if (!(await Modal.confirm('このシーケンスを削除しますか？', { ok: '削除', danger: true }))) return; App.dispatch('seq.del', { id: t.dataset.id }); L.seqSel = null; },
   stepMove(t) { const q = App.S.seqs.find(x => x.id === t.dataset.id); const i = +t.dataset.i, j = i + (+t.dataset.d); if (!q || j < 0 || j >= q.steps.length) return; const s = U.clone(q.steps); [s[i], s[j]] = [s[j], s[i]]; App.dispatch('seq.update', { id: q.id, patch: { steps: s } }); },
@@ -3280,17 +3622,23 @@ const Act = {
   // handouts
   hoNew() { if (!needGM()) return; const h = { id: 'h_' + U.uid(6), title: '新しいハンドアウト', body: '', image: null, to: 'all', revealed: false }; App.dispatch('ho.add', { ho: h }); L.hoEdit = h.id; },
   hoView(t) { Overlay.handoutReveal(t.dataset.id); },
-  hoReveal(t) { if (!needGM()) return; App.dispatch('ho.update', { id: t.dataset.id, patch: { revealed: true } }); FX.send({ t: 'ho', id: t.dataset.id }); Overlay.handoutReveal(t.dataset.id); const h = App.S.handouts.find(x => x.id === t.dataset.id); if (h && h.to === 'all') Chat.sys(`ハンドアウト「${h.title}」が公開されました`, 'info'); else UI.toast('秘匿ハンドアウトを対象者に配布しました'); },
+  hoReveal(t) { if (!needGM()) return; App.dispatch('ho.update', { id: t.dataset.id, patch: { revealed: true } }); const hh = App.S.handouts.find(x => x.id === t.dataset.id); if (hh && hh.to === 'all') FX.send({ t: 'ho', id: t.dataset.id }); else if (hh) { const to = App.recipients(hh).filter(x => x !== App.me.pid); if (to.length) Sync.send({ k: 'fx', fx: { t: 'ho', id: hh.id }, to }); } Overlay.handoutReveal(t.dataset.id); const h = App.S.handouts.find(x => x.id === t.dataset.id); if (h && h.to === 'all') Chat.sys(`ハンドアウト「${h.title}」が公開されました`, 'info'); else UI.toast('秘匿ハンドアウトを対象者に配布しました'); },
   hoEdit(t) { L.hoEdit = L.hoEdit === t.dataset.id ? null : t.dataset.id; UI.renderPanel('handouts'); },
   hoClose() { L.hoEdit = null; UI.renderPanel('handouts'); },
-  hoToAll(t) { App.dispatch('ho.update', { id: t.dataset.id, patch: { to: 'all' } }); },
-  hoToggle(t) { const h = App.S.handouts.find(x => x.id === t.dataset.id); if (!h) return; let to = Array.isArray(h.to) ? h.to.slice() : []; const n = t.dataset.n; to = to.includes(n) ? to.filter(x => x !== n) : to.concat([n]); App.dispatch('ho.update', { id: h.id, patch: { to: to.length ? to : 'all' } }); },
-  hoAddName(t) { const n = (U.$('#hoAddName')?.value || '').trim(); if (!n) return; const h = App.S.handouts.find(x => x.id === t.dataset.id); const to = Array.isArray(h.to) ? h.to.slice() : []; if (!to.includes(n)) to.push(n); App.dispatch('ho.update', { id: h.id, patch: { to } }); },
+  hoToAll(t) { App.dispatch('ho.update', { id: t.dataset.id, patch: { to: 'all', toChars: [] } }); },
+  setOwner(t) { if (!needGM()) return; const c = App.S.chars[t.dataset.id]; if (!c) return; const pid = t.value || null; App.dispatch('char.update', { id: c.id, patch: { owner: pid, ownerName: pid ? pname(pid) : '' } }); },
+  hoToggle(t) {
+    const h = App.S.handouts.find(x => x.id === t.dataset.id); if (!h) return;
+    let to = Array.isArray(h.to) ? h.to.slice() : []; let tc = (h.toChars || []).slice();
+    if (t.dataset.pid) { const n = t.dataset.pid; to = to.includes(n) ? to.filter(x => x !== n) : to.concat([n]); }
+    if (t.dataset.cid) { const n = t.dataset.cid; tc = tc.includes(n) ? tc.filter(x => x !== n) : tc.concat([n]); }
+    App.dispatch('ho.update', { id: h.id, patch: { to: (to.length || tc.length) ? to : 'all', toChars: tc } });
+  },
   async hoDel(t) { if (!(await Modal.confirm('このハンドアウトを削除しますか？', { ok: '削除', danger: true }))) return; App.dispatch('ho.del', { id: t.dataset.id }); L.hoEdit = null; },
   // room
   async copyInvite() { const url = location.href.split('#')[0] + '#room=' + App.roomId + (Sync.p2pWanted ? '&p2p=1' : ''); const ok = await U.copyText(url); UI.toast(ok ? '招待リンクをコピーしました' : url, ok ? '' : 'warn'); },
   p2pOn() { Sync.enableP2P(); App.saveLast(); UI.toast('P2P接続を開始します（GMが最初にホストになります）'); },
-  meSave() { const n = (U.$('#meName')?.value || '').trim().slice(0, 30) || App.me.name; const r = U.$('#meRole')?.value || App.me.role; App.me.name = n; App.me.role = r; App.saveLast(); Session.save(); Sync.presence(); UI.fullRender(); UI.toast(`${n}（${r === 'GM' ? 'GM' : r === 'VIEW' ? '見学' : 'PL'}）に変更しました`); },
+  meSave() { const n = (U.$('#meName')?.value || '').trim().slice(0, 30) || App.me.name; const r = U.$('#meRole')?.value || App.me.role; const old = App.me.name; App.me.name = n; App.me.role = r; for (const c of Object.values(App.S.chars)) if (c.owner === App.me.pid && c.ownerName !== n) App.dispatch('char.update', { id: c.id, patch: { ownerName: n } }); void old; App.saveLast(); Session.save(); Sync.presence(); UI.fullRender(); UI.toast(`${n}（${r === 'GM' ? 'GM' : r === 'VIEW' ? '見学' : 'PL'}）に変更しました`); },
   timer(t) { if (!needGM()) return; const T = App.S.timer; const v = t.dataset.v; if (v === 'start') App.dispatch('timer.set', { running: true, start: Date.now() }); else if (v === 'pause') App.dispatch('timer.set', { running: false, acc: (T.acc || 0) + (Date.now() - T.start) }); else App.dispatch('timer.set', { running: false, acc: 0, start: 0 }); },
   brk() { if (!needGM()) return; if (App.S.brk.on) { App.dispatch('brk.set', { on: false }); return; } const min = +(U.$('#brkMin')?.value || 0); App.dispatch('brk.set', { on: true, msg: U.$('#brkMsg')?.value || '', until: min ? Date.now() + min * 60000 : 0 }); },
   mkDel(t) { App.dispatch('marker.del', { id: t.dataset.id }); },
@@ -3309,6 +3657,21 @@ const Act = {
 
 /* ------------------------------ Broadcast（配信画面） ------------------------------ */
 const Broadcast = {
+  waitT: null,
+  status(kind) {
+    const el = U.$('#bcastStatus'); if (!el) return;
+    if (kind === 'ok') { el.classList.add('hidden'); return; }
+    const p2p = Sync.transports.find(t => t.name === 'p2p');
+    const fail = p2p && p2p.mode === 'failed';
+    el.classList.remove('hidden');
+    el.innerHTML = `<div class="box"><h4>${kind === 'help' ? '配信画面：GMの画面に接続できません' : '配信画面：接続待機中…'}</h4><div class="small muted">ルーム #${U.esc(App.roomId)}（閲覧専用・秘匿情報は表示されません）</div>${kind === 'help' ? `<ol>
+      <li>GMの画面で「配信画面」ボタン →「<b>OBS配信接続を有効化</b>」を押してください。</li>
+      <li>このURLに <b>&amp;p2p=1</b> が含まれているか確認してください${Sync.p2pWanted ? '（含まれています）' : '（<b>含まれていません</b>）'}。</li>
+      <li>${fail ? `P2P接続に失敗しました（${U.esc(p2p.err)}）。社内ネットワーク等でWebRTCが制限されている場合は、GMのPCで「新しいウィンドウで開く」を使いウィンドウキャプチャしてください。` : 'GMと同じブラウザなら別ウィンドウで開くだけで自動接続します。'}</li>
+      <li>claude.ai 上のルームはOBSから直接接続できません。GMの画面で「このタブを配信画面にする」を使ってください。</li></ol>` : '<div style="margin-top:10px">GMの画面と同期しています。しばらくお待ちください。</div>'}</div>`;
+  },
+  watch() { this.status('wait'); clearTimeout(this.waitT); this.waitT = setTimeout(() => { if (!this.ok) this.status('help'); }, 9000); },
+  connected() { this.ok = true; clearTimeout(this.waitT); this.status('ok'); },
   setChroma(c) { const col = { green: '#00ff00', blue: '#0000ff', magenta: '#ff00ff' }[c]; document.body.classList.toggle('chroma', !!col); if (col) document.body.style.setProperty('--chroma', col); },
   enterInTab(chroma) { App.bcast = true; App.bcastInTab = true; document.body.classList.add('bcast'); this.setChroma(chroma); Modal.close(); U.$('#subs').innerHTML = ''; setTimeout(() => { Board.fit(); Board.renderGrid(); Board.renderTokens(); }, 50); Sync.presence(); UI.toast('配信画面モード（Escで戻る）'); },
   exit() { App.bcast = false; App.bcastInTab = false; document.body.classList.remove('bcast', 'chroma'); setTimeout(() => { Board.fit(); UI.fullRender(); }, 50); Sync.presence(); },
@@ -3325,6 +3688,8 @@ const Broadcast = {
 
 /* ------------------------------ Session（タブ単位の身元） ------------------------------ */
 const Session = {
+  pidFor(rid) { try { const k = 'shinentaku.pid.' + rid; let v = sessionStorage.getItem(k); if (!v) { v = U.uid(10); sessionStorage.setItem(k, v); sessionStorage.setItem('shinentaku.jt.' + rid, String(Date.now())); } return v; } catch (e) { return App.me.pid || U.uid(10); } },
+  joinedAt(rid) { try { return +(sessionStorage.getItem('shinentaku.jt.' + rid) || Date.now()); } catch (e) { return Date.now(); } },
   get() { try { return JSON.parse(sessionStorage.getItem('shinentaku.session') || 'null'); } catch (e) { return null; } },
   save() { if (App.bcast && !App.bcastInTab) return; try { sessionStorage.setItem('shinentaku.session', JSON.stringify({ roomId: App.roomId, name: App.me.name, role: App.me.role, pid: App.me.pid, p2p: Sync.p2pWanted })); } catch (e) { } },
 };
@@ -3370,6 +3735,10 @@ window.__cocTest = {
       ['CCB<=60 で 61 は失敗', () => R('CCB<=60', { rng: F(0.60) }).outcome === 'fail'],
       ['CCB<=60 で 96 は致命的失敗', () => R('CCB<=60', { rng: F(0.95) }).outcome === 'fumble'],
       ['CC<=60 / 1d100<=60 も判定', () => R('CC<=60', { rng: F(0.3) }).outcome === 'success' && R('1d100<=60', { rng: F(0.99) }).outcome === 'fumble'],
+      ['CC<=60 はBCDice準拠（03は成功・01は決定的成功・100は致命的失敗）', () => R('CC<=60', { rng: F(0.02) }).outcome === 'success' && R('CC<=60', { rng: F(0) }).outcome === 'crit' && R('CC<=60', { rng: F(0.99) }).outcome === 'fumble' && R('CC<=60', { rng: F(0.97) }).outcome === 'fail'],
+      ['目標値100以上でも出目100は失敗', () => R('CCB<=120', { rng: F(0.995) }).outcome === 'fumble' && R('CCB<=120', { rng: F(0.97) }).outcome === 'success'],
+      ['SC1/1d6・SC 0/1d3・SAN 1/1d6 構文', () => R('SC1/1d6', { rng: F(0.9), san: 50 }).kind === 'san' && R('SC 0/1d3', { rng: F(0.1), san: 50 }).loss === 0 && R('SAN 1/1d6', { rng: F(0.1), san: 50 }).loss === 1],
+      ['DB参照（+1D4/-1D4/0）を式として展開', () => { const mk = (db) => ({ params: [{ label: 'DB', value: db }], status: [] }); const a = R('1d3+{DB}', { rng: F(0.99), resolve: CoC.resolver(mk('+1D4')) }); const b = R('1d3+{DB}', { rng: F(0.99), resolve: CoC.resolver(mk('-1d4')) }); const c = R('1d3+{DB}', { rng: F(0.99), resolve: CoC.resolver(mk('0')) }); return a.value === 7 && b.value === -1 && c.value === 3; }],
       ['閾値変更（クリ1/ファン100）', () => R('CCB<=60', { rng: F(0.02), crit: 1, fumble: 100 }).outcome === 'success' && R('CCB<=60', { rng: F(0.97), crit: 1, fumble: 100 }).outcome === 'fail'],
       ['2d6+3 の合計', () => R('2d6+3', { rng: F([0, 0.99]) }).value === 10],
       ['(1d6+1)*2 の式', () => R('(1d6+1)*2', { rng: F(0.5) }).value === 10],
@@ -3401,7 +3770,7 @@ window.__cocTest = {
 function parseHash() { const h = location.hash.replace(/^#/, ''); const o = {}; for (const part of h.split('&')) { if (!part) continue; const [k, v] = part.split('='); o[decodeURIComponent(k)] = v == null ? true : decodeURIComponent(v); } return o; }
 (async function boot() {
   try { await App.loadPrefs(); } catch (e) { }
-  UI.init(); FX.init(); Board.init(); installGlobalInput();
+  Icon.install(); UI.init(); FX.init(); Board.init(); installGlobalInput();
   Caps.init();
   window.addEventListener('pagehide', () => { try { Sync.send({ k: 'bye' }); } catch (e) { } });
   const hp = parseHash();
@@ -3410,19 +3779,20 @@ function parseHash() { const h = location.hash.replace(/^#/, ''); const o = {}; 
     App.bcast = true; document.body.classList.add('bcast'); Broadcast.setChroma(hp.chroma || '');
     let last = null; try { last = await Store.get('kv', 'last'); } catch (e) { }
     const rid = U.normRoomId(hp.room) || last?.roomId || 'demo';
+    Broadcast.noCam = hp.cam === '0'; Board.noCam = hp.cam === '0';
     await App.join({ roomId: rid, name: '配信画面', role: 'VIEW', mode: 'join', p2p: !!(hp.p2p || last?.p2p) });
+    Broadcast.watch();
     UI.renderAudioGate(); U.$('#audioGate').innerHTML = `<button class="btn brass" type="button" data-act="unlockAudio">${U.icon('vol')}配信音声を有効化（OBSでは「ページ操作」で1回クリック）</button>`;
     return;
   }
   if (sess && sess.roomId) {
-    App.me.pid = sess.pid || App.me.pid;
     await App.join({ roomId: sess.roomId, name: sess.name, role: sess.role, mode: 'join', p2p: sess.p2p });
   } else if (hp.room) {
     await App.join({ roomId: hp.room, name: '見学者', role: 'VIEW', mode: 'join', p2p: !!hp.p2p });
     Panels.lobby({ room: U.normRoomId(hp.room), p2p: !!hp.p2p });
   } else {
-    let demo = null; try { demo = await Store.get('rooms', 'demo'); } catch (e) { }
-    if (demo && demo.room) await App.join({ roomId: 'demo', name: 'GM', role: 'GM', mode: 'join', autoDemo: true });
+    let demo = false; try { demo = (await Store.keys('rooms')).some(k => String(k).startsWith('demo@')); } catch (e) { }
+    if (demo) await App.join({ roomId: 'demo', name: 'GM', role: 'GM', mode: 'join', autoDemo: true });
     else await App.join({ roomId: 'demo', roomName: '霧笛の夜（デモ）', name: 'GM', role: 'GM', mode: 'auto', demo: true });
     setTimeout(() => { if (App.roomId === 'demo') UI.toast('デモルームを開きました。右上の扉アイコンから自分のルームを作成・参加できます。'); }, 900);
   }
