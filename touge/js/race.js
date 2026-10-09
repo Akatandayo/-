@@ -64,12 +64,12 @@
       g.beginPath(); g.moveTo(40, 22); g.lineTo(84, 64); g.lineTo(40, 106); g.stroke();
       g.strokeStyle = '#000'; g.lineWidth = 6; g.strokeRect(3, 3, w - 6, h - 6);
     });
-    TEX.banner = (txt, bg, fg) => canvasTex(512, 96, (g, w, h) => {
+    TEX.banner = (txt, bg, fg) => Object.assign(canvasTex(512, 96, (g, w, h) => {
       g.fillStyle = bg; g.fillRect(0, 0, w, h);
       g.fillStyle = fg; g.font = 'bold 64px "Arial Black",sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillText(txt, w / 2, h / 2 + 2);
       g.strokeStyle = fg; g.lineWidth = 6; g.strokeRect(6, 6, w - 12, h - 12);
-    });
+    }), { _own: true });
     TEX.ready = true;
   }
 
@@ -295,7 +295,8 @@
       g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
       g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
       g.setIndex(idx); g.computeVertexNormals();
-      const m = new THREE.MeshPhongMaterial({ map: TEX.road(T.wet), shininess: T.wet ? 90 : 12, specular: T.wet ? 0x8090a0 : 0x222222 });
+      const roadTex = TEX.road(T.wet); roadTex._own = true;
+      const m = new THREE.MeshPhongMaterial({ map: roadTex, shininess: T.wet ? 90 : 12, specular: T.wet ? 0x8090a0 : 0x222222 });
       const mesh = new THREE.Mesh(g, m); scene.add(mesh);
     }
     // --- terrain ribbons (both sides) ---
@@ -666,8 +667,20 @@
 
   // ---------- start a race ----------
   // o: { courseId, format, target, player:{name, card, tune}, rival:{name, card, tune, skill, remote}, assist, onFinish, net, seed, tutorial, introText }
+  function disposeScene() {
+    if (!scene) return;
+    scene.traverse((ob) => {
+      if (ob.geometry) ob.geometry.dispose();
+      const ms = Array.isArray(ob.material) ? ob.material : ob.material ? [ob.material] : [];
+      ms.forEach((m) => { if (m.map && m.map._own) m.map.dispose(); m.dispose(); });
+    });
+    renderer.renderLists.dispose();
+    scene = null;
+  }
+
   R.start = function (o) {
     opts = o;
+    disposeScene();
     const def = D.COURSES[o.courseId];
     theme = Object.assign({ key: def.theme }, D.THEMES[def.theme]);
     course = S.buildCourse(def);

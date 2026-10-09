@@ -211,7 +211,7 @@ kbd { background: #fff2; border: 1px solid #fff4; border-radius: 4px; padding: 0
 .flip .front { transform: rotateY(180deg); }
 .flip .front .tdcard { max-width: none; }
 .flip.rare.open .front { box-shadow: 0 0 40px var(--gc), 0 0 80px var(--gc); border-radius: 12px; }
-.newtag { position: absolute; z-index: 3; top: -10px; left: -6px; background: var(--pink); color: #fff; font-weight: 900; padding: 2px 8px; border-radius: 6px; font-size: 12px; transform: rotateY(180deg); }
+.newtag { position: absolute; z-index: 3; top: -10px; left: -6px; background: var(--pink); color: #fff; font-weight: 900; padding: 2px 8px; border-radius: 6px; font-size: 12px; }
 .srare { font-family: var(--disp); font-size: 36px; color: #fff; text-shadow: 0 0 20px var(--gold), 0 0 40px #ff00aa; animation: vsPop .8s both; }
 
 /* ---------- online ---------- */

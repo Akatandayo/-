@@ -76,12 +76,16 @@
   function portraitSVG(key) {
     const ch = D.CHARS[key] || D.CHARS.me;
     const col = ch.color, h = [...key].reduce((a, c) => a + c.charCodeAt(0), 0);
+    // spiky anime-style hair: alternating tips/valleys around the top of the head
     const spikes = [];
-    const n = 5 + (h % 4);
+    const n = 9 + (h % 5) * 2;
     for (let i = 0; i <= n; i++) {
-      const a = Math.PI * (1.05 + i / n * 0.9), r = 78 + ((h >> i) % 3) * 9;
-      spikes.push(`${150 + Math.cos(a) * r},${190 + Math.sin(a) * r}`);
+      const a = Math.PI * (0.92 + i / n * 1.16);
+      const tip = i % 2 === 0;
+      const r = tip ? 88 + ((h >> (i % 7)) % 4) * 7 : 66;
+      spikes.push(`${(150 + Math.cos(a) * r * 0.95).toFixed(1)},${(186 + Math.sin(a) * r).toFixed(1)}`);
     }
+    spikes.push('205,160', '180,138', '150,150', '120,138', '95,160');
     const long = ['mina', 'misaki', 'reika', 'rin', 'yuu'].includes(key);
     return `<svg class="sil" viewBox="0 0 300 400" xmlns="http://www.w3.org/2000/svg">
       <defs><radialGradient id="pg_${key}" cx=".5" cy=".45" r=".6"><stop offset="0" stop-color="${col}" stop-opacity=".55"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></radialGradient>
@@ -92,10 +96,13 @@
       <path d="M120 282 L150 330 L180 282" fill="none" stroke="${col}" stroke-width="3"/>
       <rect x="130" y="240" width="40" height="45" fill="#0a0c18" stroke="${col}" stroke-width="2"/>
       <ellipse cx="150" cy="190" rx="64" ry="74" fill="#0d1020" stroke="${col}" stroke-width="3"/>
-      <polygon points="${spikes.join(' ')} 225,170 75,170" fill="#05060c" stroke="${col}" stroke-width="2"/>
-      <text x="150" y="232" font-size="58" font-weight="900" fill="${col}" text-anchor="middle" font-family="Noto Sans JP, sans-serif" opacity=".95">${esc(ch.icon)}</text>
+      <polygon points="${spikes.join(' ')}" fill="#05060c" stroke="${col}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M112 196 l22 -4 M188 196 l-22 -4" stroke="${col}" stroke-width="4" stroke-linecap="round"/>
+      <text x="150" y="246" font-size="46" font-weight="900" fill="${col}" text-anchor="middle" font-family="Noto Sans JP, sans-serif" opacity=".95">${esc(ch.icon)}</text>
     </svg>`;
   }
+
+  UI.portraitSVG = portraitSVG;
 
   // ---------- screens ----------
   const scr = () => $('#screens');
