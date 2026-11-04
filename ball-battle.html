@@ -1,0 +1,446 @@
+<title>ボールバトル・アリーナ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+1p:wght@400;700;800&display=swap">
+<style>
+/* Layout: one narrow vertical column like a phone arena — loadout screen, then HUD / square arena / controls. Single dark arcade look by choice. */
+:root{
+  --bg:#0c0e18; --panel:#151827; --line:#2a2f48; --ink:#f4efe4; --muted:#9097b3;
+  --red:#ff5a4e; --blue:#3fa9ff; --gold:#ffcf4a; --good:#5be3a1;
+  --display:"Dela Gothic One","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --body:"M PLUS 1p","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  color-scheme:dark;
+}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--body);margin:0;padding-block:16px 28px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.app{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(26px,7vw,36px);line-height:1.1;margin:0;letter-spacing:.02em;text-wrap:balance}
+h1 .b{color:var(--gold)}
+.lead{color:var(--muted);font-size:13px;margin:4px 0 0;line-height:1.6}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* ---- setup ---- */
+.sides{display:grid;grid-template-columns:1fr;gap:12px}
+.side{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;border-top:4px solid var(--tc)}
+.side.red{--tc:var(--red)} .side.blue{--tc:var(--blue)}
+.sideHead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.sideHead b{font-family:var(--display);font-weight:400;font-size:18px;color:var(--tc)}
+.count{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.chars{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.charBtn{background:#0f1220;border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;gap:10px;align-items:center;text-align:left}
+.charBtn .em{font-size:30px;line-height:1}
+.charBtn .nm{font-weight:800;font-size:15px}
+.charBtn .st{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.charBtn[aria-pressed="true"]{border-color:var(--tc);background:color-mix(in srgb,var(--tc) 14%,#0f1220)}
+.skills{display:flex;flex-direction:column;gap:6px}
+.skillBtn{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center;background:#0f1220;border:1px solid var(--line);border-radius:10px;padding:8px 10px;text-align:left}
+.skillBtn .ic{font-size:22px;text-align:center}
+.skillBtn .sn{font-weight:800;font-size:14px}
+.skillBtn .sd{font-size:11.5px;color:var(--muted);line-height:1.45}
+.skillBtn .cd{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.skillBtn[aria-pressed="true"]{border-color:var(--tc);background:color-mix(in srgb,var(--tc) 12%,#0f1220)}
+.skillBtn[aria-pressed="true"] .cd{color:var(--ink)}
+.skillBtn:disabled{opacity:.4;cursor:not-allowed}
+.primary{font-family:var(--display);font-weight:400;font-size:20px;background:var(--gold);color:#1b1505;border:0;border-radius:12px;padding:14px;letter-spacing:.06em}
+.primary:disabled{opacity:.45}
+.note{font-size:12px;color:var(--muted);text-align:center;margin:0}
+
+/* ---- battle ---- */
+.hud{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hp{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.hp.red{--tc:var(--red)} .hp.blue{--tc:var(--blue)}
+.hpTop{display:flex;justify-content:space-between;gap:6px;font-size:13px;font-weight:800}
+.hpTop span:first-child{color:var(--tc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hpTop span:last-child{font-variant-numeric:tabular-nums}
+.bar{height:10px;background:#07080f;border-radius:6px;overflow:hidden;position:relative}
+.bar i{position:absolute;inset:0 auto 0 0;background:var(--tc);border-radius:6px;transition:width .12s}
+.bar u{position:absolute;inset:0 auto 0 0;background:#fff6;border-radius:6px;transition:width .6s .15s}
+.cds{display:flex;gap:6px}
+.cdIc{--p:0;position:relative;width:34px;height:34px;border-radius:8px;background:#0b0d17;border:1px solid var(--line);display:grid;place-items:center;font-size:18px;overflow:hidden}
+.cdIc::after{content:"";position:absolute;inset:0;background:conic-gradient(#000b calc(var(--p)*1turn),transparent 0)}
+.cdIc.ready{border-color:var(--tc)}
+.cdIc b{position:absolute;right:2px;bottom:0;font-size:10px;font-weight:800;z-index:1;font-variant-numeric:tabular-nums;text-shadow:0 0 3px #000}
+.arenaWrap{position:relative;width:100%;aspect-ratio:1/1;max-width:100%}
+canvas{width:100%;height:100%;display:block;border-radius:14px;background:#090b14;touch-action:manipulation}
+.controls{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.ctl{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 14px;font-weight:800;font-size:14px}
+.ctl[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
+.timer{font-family:var(--display);font-size:15px;text-align:center;color:var(--muted);font-variant-numeric:tabular-nums}
+@media (min-width:620px){.sides{grid-template-columns:1fr 1fr}.app.wide{max-width:900px}}
+@media (prefers-reduced-motion:reduce){.bar i,.bar u{transition:none}}
+</style>
+
+<div class="app" id="app">
+  <header>
+    <h1>ボールバトル<span class="b">・</span>アリーナ</h1>
+    <p class="lead">壁に跳ね返りながら自動で戦うオートバトル。キャラと技（最大3つ）を選んで観戦しよう。</p>
+  </header>
+
+  <section id="setup" class="setupScreen">
+    <div class="sides" id="sides"></div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+      <button class="primary" id="startBtn">バトル開始</button>
+      <p class="note">技はクールタイムが終わると自動で発動します。連続技はクールタイムがほぼありません。</p>
+    </div>
+  </section>
+
+  <section id="battle" hidden>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="hud" id="hud"></div>
+      <div class="timer" id="timer">90.0</div>
+      <div class="arenaWrap"><canvas id="cv" width="1200" height="1200"></canvas></div>
+      <div class="controls">
+        <button class="ctl" data-speed="1" aria-pressed="true">×1</button>
+        <button class="ctl" data-speed="2" aria-pressed="false">×2</button>
+        <button class="ctl" data-speed="4" aria-pressed="false">×4</button>
+        <button class="ctl" id="pauseBtn">一時停止</button>
+        <button class="ctl" id="againBtn">もう一度</button>
+        <button class="ctl" id="backBtn">編成に戻る</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(()=>{
+"use strict";
+// ================= 基本ユーティリティ =================
+const W=600,H=600,DT=1/120,TIME_LIMIT=90;
+const rand=(a,b)=>a+Math.random()*(b-a);
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const norm=(x,y)=>{const l=Math.hypot(x,y)||1;return [x/l,y/l]};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const TEAM={red:{c:'#ff5a4e',name:'赤'},blue:{c:'#3fa9ff',name:'青'}};
+
+// ================= 技の定義 =================
+// can(self,foe,g): 発動条件 / use(self,foe,g): 効果
+const SKILLS={
+  // ---- 剣士 ----
+  slash:{name:'斬撃',icon:'⚔️',cd:1.2,desc:'近くの敵を斬りつける。10ダメージ＋ノックバック',
+    can:(s,f)=>dist(s,f)<s.r+f.r+55,
+    use(s,f,g){g.slashFx(s,f,1);g.damage(f,10,s,{kb:520});}},
+  rush:{name:'連続斬り',icon:'🌀',cd:0.6,desc:'密着時に高速の連撃（2×7ヒット）。連続技なのでほぼCTなし',
+    can:(s,f)=>dist(s,f)<s.r+f.r+45,
+    use(s,f,g){s.rushT=0.7;s.rushTick=0;}},
+  dash:{name:'突進',icon:'💨',cd:4,desc:'敵めがけて猛加速。当たると15ダメージ',
+    can:(s,f)=>dist(s,f)>160,
+    use(s,f,g){const[nx,ny]=norm(f.x-s.x,f.y-s.y);s.vx=nx*s.speed*3.2;s.vy=ny*s.speed*3.2;s.dashT=0.55;}},
+  wave:{name:'剣気',icon:'🌙',cd:3,desc:'三日月の斬撃を飛ばす。8ダメージ',
+    can:(s,f)=>dist(s,f)>130,
+    use(s,f,g){g.shoot(s,f,{speed:540,r:16,dmg:8,icon:'🌙',color:'#ffe9a8',spin:true});}},
+  guard:{name:'見切り',icon:'🛡️',cd:7,desc:'危険を察知して1.5秒間 被ダメージ75%カット',
+    can:(s,f,g)=>g.threatened(s,f),
+    use(s,f,g){s.guardT=1.5;}},
+  // ---- 魔法使い ----
+  fire:{name:'ファイアボール',icon:'🔥',cd:1.6,desc:'火球を放つ。9ダメージ',
+    can:(s,f)=>dist(s,f)>90,
+    use(s,f,g){g.shoot(s,f,{speed:400,r:14,dmg:9,icon:'🔥',color:'#ff8a3d',lead:true});}},
+  thunder:{name:'サンダー',icon:'⚡',cd:4.5,desc:'敵の移動先に雷を落とす（0.55秒後）。16ダメージ',
+    can:()=>true,
+    use(s,f,g){g.strikes.push({owner:s,x:clamp(f.x+f.vx*.45,30,W-30),y:clamp(f.y+f.vy*.45,30,H-30),t:.55,r:60,dmg:16,done:false,fade:0});}},
+  nova:{name:'アイスノヴァ',icon:'❄️',cd:6,desc:'周囲に冷気を放つ。8ダメージ＋2.5秒間スロー',
+    can:(s,f)=>dist(s,f)<170,
+    use(s,f,g){g.rings.push({x:s.x,y:s.y,r:s.r,max:175,t:0,color:'#9be7ff'});g.damage(f,8,s,{kb:300});f.slowT=2.5;}},
+  blink:{name:'テレポート',icon:'✨',cd:5,desc:'接近されたら離れた場所へ瞬間移動',
+    can:(s,f)=>dist(s,f)<s.r+f.r+40||f.dashT>0&&dist(s,f)<220,
+    use(s,f,g){g.burst(s.x,s.y,'#d6b4ff',18);let best=null,bd=-1;
+      for(let i=0;i<14;i++){const p={x:rand(60,W-60),y:rand(60,H-60)};const d=dist(p,f);if(d>bd){bd=d;best=p;}}
+      s.x=best.x;s.y=best.y;g.burst(s.x,s.y,'#d6b4ff',18);}},
+  timestop:{name:'時間停止',icon:'⏳',cd:14,desc:'2.5秒間 敵の時を止める。止まった敵は動けず技も使えない',
+    can:(s,f,g)=>g.time>2&&!g.timeStop,
+    use(s,f,g){f.frozenT=2.5;g.timeStop={by:s,t:2.5,max:2.5};g.rings.push({x:s.x,y:s.y,r:s.r,max:900,t:0,color:'#c9a6ff',speed:2200});}},
+  heal:{name:'ヒール',icon:'💚',cd:9,desc:'HPが60%以下のとき15回復',
+    can:s=>s.hp<s.maxHp*.6,
+    use(s,f,g){s.hp=Math.min(s.maxHp,s.hp+15);g.popup(s.x,s.y-s.r-10,'+15','#5be3a1');g.burst(s.x,s.y,'#5be3a1',14);}},
+};
+
+// ================= キャラ定義 =================
+const CHARS={
+  swordsman:{name:'剣士',emoji:'🗡️',face:'🤺',hp:125,speed:250,r:28,contact:3,
+    skills:['slash','rush','dash','wave','guard'],def:['slash','rush','dash']},
+  mage:{name:'魔法使い',emoji:'🪄',face:'🧙',hp:100,speed:215,r:28,contact:2,
+    skills:['fire','thunder','nova','blink','timestop','heal'],def:['fire','thunder','timestop']},
+};
+
+// ================= 編成画面 =================
+const load=()=>{try{return JSON.parse(localStorage.getItem('bb-loadout'))}catch(e){return null}};
+const save=()=>{try{localStorage.setItem('bb-loadout',JSON.stringify(loadout))}catch(e){}};
+let loadout=load()||{red:{char:'swordsman',skills:[...CHARS.swordsman.def]},blue:{char:'mage',skills:[...CHARS.mage.def]}};
+for(const k of ['red','blue']){const L=loadout[k];if(!L||!CHARS[L.char])loadout[k]={char:k==='red'?'swordsman':'mage',skills:[]};
+  loadout[k].skills=(loadout[k].skills||[]).filter(id=>CHARS[loadout[k].char].skills.includes(id)).slice(0,3);}
+
+const $=s=>document.querySelector(s);
+function renderSetup(){
+  const box=$('#sides');box.innerHTML='';
+  for(const team of ['red','blue']){
+    const L=loadout[team],C=CHARS[L.char];
+    const el=document.createElement('div');el.className='side '+team;
+    el.innerHTML=`<div class="sideHead"><b>${TEAM[team].name}チーム</b><span class="count">技 ${L.skills.length}/3</span></div>
+      <div class="chars">${Object.entries(CHARS).map(([id,c])=>`<button class="charBtn" data-team="${team}" data-char="${id}" aria-pressed="${id===L.char}">
+        <span class="em">${c.face}</span><span><div class="nm">${c.name}</div><div class="st">HP ${c.hp}・速さ ${c.speed}</div></span></button>`).join('')}</div>
+      <div class="skills">${C.skills.map(id=>{const s=SKILLS[id],on=L.skills.includes(id),dis=!on&&L.skills.length>=3;
+        return `<button class="skillBtn" data-team="${team}" data-skill="${id}" aria-pressed="${on}" ${dis?'disabled':''}>
+          <span class="ic">${s.icon}</span><span><div class="sn">${s.name}</div><div class="sd">${s.desc}</div></span><span class="cd">CT ${s.cd}s</span></button>`}).join('')}</div>`;
+    box.appendChild(el);
+  }
+  $('#startBtn').disabled=!(loadout.red.skills.length&&loadout.blue.skills.length);
+}
+$('#sides').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;const L=loadout[b.dataset.team];
+  if(b.dataset.char&&b.dataset.char!==L.char){L.char=b.dataset.char;L.skills=[...CHARS[L.char].def];}
+  if(b.dataset.skill){const i=L.skills.indexOf(b.dataset.skill);if(i>=0)L.skills.splice(i,1);else if(L.skills.length<3)L.skills.push(b.dataset.skill);}
+  save();renderSetup();
+});
+
+// ================= バトル本体 =================
+const cv=$('#cv'),ctx=cv.getContext('2d');ctx.scale(2,2);
+let G=null,speedMul=1,paused=false,last=0,acc=0;
+
+function makeFighter(team,L,x,y){
+  const C=CHARS[L.char];const a=rand(0,Math.PI*2);
+  return {team,color:TEAM[team].c,char:C,name:C.name,face:C.face,x,y,vx:Math.cos(a)*C.speed,vy:Math.sin(a)*C.speed,
+    r:C.r,speed:C.speed,hp:C.hp,maxHp:C.hp,shownHp:C.hp,contact:C.contact,
+    skills:L.skills.map(id=>({id,def:SKILLS[id],cd:SKILLS[id].cd*rand(.3,.7)})),
+    castLock:0,rushT:0,rushTick:0,dashT:0,guardT:0,slowT:0,frozenT:0,flash:0,trail:[],calls:[],hitBy:0};
+}
+function newGame(){
+  const a=makeFighter('red',loadout.red,150,450),b=makeFighter('blue',loadout.blue,450,150);
+  a.foe=b;b.foe=a;
+  G={f:[a,b],proj:[],strikes:[],rings:[],parts:[],pops:[],slashes:[],time:0,shake:0,timeStop:null,over:null,overT:0,
+    damage(t,d,src,o={}){
+      if(G.over)return;
+      if(t.guardT>0){d*=.25;G.burst(t.x,t.y,'#ffffff',6);}
+      d=Math.round(d*10)/10;t.hp=Math.max(0,t.hp-d);t.flash=.15;
+      G.popup(t.x+rand(-10,10),t.y-t.r-6,String(d),t.guardT>0?'#cfd6ff':'#ffffff',d>=12);
+      G.shake=Math.min(10,G.shake+d*.5);G.burst(t.x,t.y,src.color,Math.min(16,4+d));
+      if(o.kb&&t.frozenT<=0){const[nx,ny]=norm(t.x-src.x,t.y-src.y);t.vx=nx*o.kb;t.vy=ny*o.kb;}
+      if(t.hp<=0)G.finish(src,'KO');
+    },
+    shoot(s,f,o){let tx=f.x,ty=f.y;if(o.lead){const tt=dist(s,f)/o.speed;tx+=f.vx*tt*.6;ty+=f.vy*tt*.6;}
+      const[nx,ny]=norm(tx-s.x,ty-s.y);G.proj.push({owner:s,x:s.x+nx*s.r,y:s.y+ny*s.r,vx:nx*o.speed,vy:ny*o.speed,r:o.r,dmg:o.dmg,icon:o.icon,color:o.color,spin:o.spin,a:Math.atan2(ny,nx),life:3});},
+    threatened(s,f){if(f.dashT>0||f.rushT>0)return dist(s,f)<200;
+      return G.proj.some(p=>p.owner===f&&dist(p,s)<150)||G.strikes.some(k=>k.owner===f&&!k.done&&dist(k,s)<k.r+s.r);},
+    slashFx(s,f,big){const a=Math.atan2(f.y-s.y,f.x-s.x);G.slashes.push({o:s,a,t:0,max:.22,big,color:s.color});},
+    burst(x,y,c,n){for(let i=0;i<n;i++){const a=rand(0,Math.PI*2),v=rand(60,320);G.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:0,max:rand(.25,.6),c,s:rand(2,4.5)});}},
+    popup(x,y,txt,c,big){G.pops.push({x,y,txt,c,t:0,big});},
+    finish(w,how){if(G.over)return;G.over={winner:w,how};G.timeStop=null;for(const f of G.f)f.frozenT=0;}
+  };
+  buildHud();
+}
+
+function useSkills(s,g){
+  if(s.frozenT>0||s.castLock>0||s.rushT>0)return;
+  for(const k of s.skills){
+    if(k.cd>0)continue;
+    if(k.def.can(s,s.foe,g)){k.def.use(s,s.foe,g);k.cd=k.def.cd;s.castLock=.25;
+      s.calls.push({txt:k.def.icon+' '+k.def.name,t:0});break;}
+  }
+}
+
+function step(dt){
+  const g=G;
+  if(g.over)g.overT+=dt; else g.time+=dt;
+  if(g.timeStop){g.timeStop.t-=dt;if(g.timeStop.t<=0)g.timeStop=null;}
+  if(!g.over&&g.time>=TIME_LIMIT){const[a,b]=g.f;const pa=a.hp/a.maxHp,pb=b.hp/b.maxHp;
+    if(pa===pb)g.over={winner:null,how:'TIME'};else g.finish(pa>pb?a:b,'TIME');}
+
+  for(const s of g.f){
+    s.flash=Math.max(0,s.flash-dt);
+    if(s.frozenT>0){s.frozenT-=dt;continue;}       // 時間停止中：何も進まない
+    if(g.over&&s.hp<=0){s.vx*=.96;s.vy*=.96;s.x+=s.vx*dt;s.y+=s.vy*dt;continue;}
+    for(const k of s.skills)k.cd=Math.max(0,k.cd-dt);
+    s.castLock-=dt;s.guardT-=dt;s.slowT-=dt;s.dashT-=dt;s.hitBy-=dt;
+    if(!g.over)useSkills(s,g);
+    const f=s.foe;
+    // 連続斬り：敵を追いかけながら高速連撃
+    if(s.rushT>0){s.rushT-=dt;s.rushTick-=dt;
+      const[nx,ny]=norm(f.x-s.x,f.y-s.y);const sp=s.speed*1.5;
+      s.vx+=(nx*sp-s.vx)*Math.min(1,dt*10);s.vy+=(ny*sp-s.vy)*Math.min(1,dt*10);
+      if(s.rushTick<=0){s.rushTick=.1;if(dist(s,f)<s.r+f.r+40&&!g.over){g.slashFx(s,f,0);g.damage(f,2,s,{});}}}
+    // 速さを基準値へ戻す
+    const target=s.speed*(s.slowT>0?.5:1);const cur=Math.hypot(s.vx,s.vy);
+    if(s.dashT<=0&&s.rushT<=0){
+      if(cur<5){const a=rand(0,6.28);s.vx=Math.cos(a)*target;s.vy=Math.sin(a)*target;}
+      else{const ns=cur+(target-cur)*Math.min(1,dt*2.2);s.vx*=ns/cur;s.vy*=ns/cur;}}
+    s.x+=s.vx*dt;s.y+=s.vy*dt;
+    // 壁で跳ね返る
+    if(s.x<s.r){s.x=s.r;s.vx=Math.abs(s.vx);wallHit(s);} if(s.x>W-s.r){s.x=W-s.r;s.vx=-Math.abs(s.vx);wallHit(s);}
+    if(s.y<s.r){s.y=s.r;s.vy=Math.abs(s.vy);wallHit(s);} if(s.y>H-s.r){s.y=H-s.r;s.vy=-Math.abs(s.vy);wallHit(s);}
+    s.trail.push({x:s.x,y:s.y});if(s.trail.length>12)s.trail.shift();
+  }
+  collide(g.f[0],g.f[1]);
+
+  // 弾
+  for(const p of g.proj){
+    if(p.owner.frozenT>0)continue;
+    p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(p.spin)p.a+=dt*14;
+    const t=p.owner.foe;
+    if(!g.over&&dist(p,t)<p.r+t.r){g.damage(t,p.dmg,p.owner,{kb:t.speed*1.2});p.life=0;}
+    if(p.x<-20||p.x>W+20||p.y<-20||p.y>H+20){p.life=0;}
+  }
+  g.proj=g.proj.filter(p=>p.life>0);
+  // 雷
+  for(const k of g.strikes){
+    if(k.done){k.fade+=dt;continue;}
+    if(k.owner.frozenT>0)continue;
+    k.t-=dt;if(k.t<=0){k.done=true;const t=k.owner.foe;g.shake+=6;g.burst(k.x,k.y,'#fff27a',20);
+      if(!g.over&&dist(k,t)<k.r+t.r*.6)g.damage(t,k.dmg,k.owner,{});}
+  }
+  g.strikes=g.strikes.filter(k=>k.fade<.35);
+  for(const r of g.rings){r.t+=dt;r.r+=(r.speed||700)*dt;} g.rings=g.rings.filter(r=>r.r<r.max);
+  for(const p of g.parts){p.t+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.92;p.vy*=.92;} g.parts=g.parts.filter(p=>p.t<p.max);
+  for(const p of g.pops){p.t+=dt;p.y-=40*dt;} g.pops=g.pops.filter(p=>p.t<.8);
+  for(const s of g.slashes)s.t+=dt; g.slashes=g.slashes.filter(s=>s.t<s.max);
+  for(const s of g.f){for(const c of s.calls)c.t+=dt;s.calls=s.calls.filter(c=>c.t<1);}
+  g.shake*=.88;
+}
+function wallHit(s){if(s.dashT>0)s.dashT=0;G.burst(s.x,s.y,'#ffffff55',3);}
+
+function collide(a,b){
+  const d=dist(a,b),min=a.r+b.r;if(d>=min||d===0)return;
+  const[nx,ny]=norm(b.x-a.x,b.y-a.y);const ov=min-d;
+  const af=a.frozenT>0,bf=b.frozenT>0;
+  // 位置補正（止まっている側は動かない）
+  if(af&&!bf){b.x+=nx*ov;b.y+=ny*ov;} else if(bf&&!af){a.x-=nx*ov;a.y-=ny*ov;} else {a.x-=nx*ov/2;a.y-=ny*ov/2;b.x+=nx*ov/2;b.y+=ny*ov/2;}
+  const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
+  if(rv<0){
+    if(af&&!bf){b.vx-=2*rv*nx;b.vy-=2*rv*ny;}
+    else if(bf&&!af){a.vx+=2*rv*nx;a.vy+=2*rv*ny;}
+    else if(!af&&!bf){a.vx+=rv*nx;a.vy+=rv*ny;b.vx-=rv*nx;b.vy-=rv*ny;}
+  }
+  if(G.over)return;
+  // 体当たりダメージ
+  for(const[s,t]of[[a,b],[b,a]]){
+    if(s.frozenT>0)continue;
+    if(s.dashT>0){s.dashT=0;G.slashFx(s,t,1);G.damage(t,15,s,{kb:560});t.hitBy=.4;continue;}
+    if(t.hitBy<=0){G.damage(t,s.contact,s,{});}
+  }
+  if(a.hitBy<=0)a.hitBy=.4; if(b.hitBy<=0)b.hitBy=.4;
+}
+
+// ================= 描画 =================
+function draw(){
+  const g=G;ctx.save();ctx.clearRect(0,0,W,H);
+  if(g.shake>.3)ctx.translate(rand(-g.shake,g.shake),rand(-g.shake,g.shake));
+  // アリーナ
+  ctx.fillStyle='#0b0e1a';ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='#1a2036';ctx.lineWidth=1;
+  for(let i=50;i<W;i+=50){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,H);ctx.moveTo(0,i);ctx.lineTo(W,i);ctx.stroke();}
+  ctx.strokeStyle='#2b3354';ctx.lineWidth=2;ctx.beginPath();ctx.arc(W/2,H/2,90,0,7);ctx.stroke();
+
+  // 雷の予告
+  for(const k of g.strikes){
+    if(!k.done){const p=1-k.t/.55;ctx.strokeStyle=`rgba(255,240,120,${.4+.5*p})`;ctx.setLineDash([8,6]);ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(k.x,k.y,k.r,0,7);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle=`rgba(255,240,120,${.08+.15*p})`;ctx.beginPath();ctx.arc(k.x,k.y,k.r*p,0,7);ctx.fill();}
+    else{const a=1-k.fade/.35;ctx.strokeStyle=`rgba(255,250,200,${a})`;ctx.lineWidth=6;ctx.beginPath();
+      let x=k.x,y=0;ctx.moveTo(x,y);while(y<k.y){y+=40;x=k.x+rand(-18,18);ctx.lineTo(y>=k.y?k.x:x,Math.min(y,k.y));}ctx.stroke();
+      ctx.fillStyle=`rgba(255,245,160,${a*.5})`;ctx.beginPath();ctx.arc(k.x,k.y,k.r,0,7);ctx.fill();}
+  }
+  for(const r of g.rings){ctx.strokeStyle=r.color;ctx.globalAlpha=1-r.r/r.max;ctx.lineWidth=5;ctx.beginPath();ctx.arc(r.x,r.y,r.r,0,7);ctx.stroke();ctx.globalAlpha=1;}
+
+  // ファイター
+  for(const s of g.f)drawFighter(s);
+  // 弾
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  for(const p of g.proj){ctx.save();ctx.translate(p.x,p.y);ctx.fillStyle=p.color+'55';ctx.beginPath();ctx.arc(0,0,p.r+5,0,7);ctx.fill();
+    ctx.rotate(p.a);ctx.font=`${p.r*2}px serif`;ctx.fillText(p.icon,0,1);ctx.restore();}
+  // 斬撃エフェクト
+  for(const sl of g.slashes){const s=sl.o,p=sl.t/sl.max;ctx.strokeStyle='#fff';ctx.globalAlpha=1-p;ctx.lineWidth=sl.big?7:4;
+    const R=s.r+(sl.big?38:26);const off=sl.big?1.1:.7;const st=sl.a-off+(sl.big?0:rand(-.5,.5));
+    ctx.beginPath();ctx.arc(s.x,s.y,R,st,st+off*2*Math.min(1,p*2.5));ctx.stroke();ctx.globalAlpha=1;}
+  for(const p of g.parts){ctx.globalAlpha=1-p.t/p.max;ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,p.s,0,7);ctx.fill();}
+  ctx.globalAlpha=1;
+
+  // 時間停止：世界をモノクロにし、止めた本人だけ色を残す
+  if(g.timeStop){
+    ctx.save();ctx.globalCompositeOperation='saturation';ctx.fillStyle='#808080';ctx.fillRect(-20,-20,W+40,H+40);ctx.restore();
+    ctx.fillStyle='rgba(70,30,120,.22)';ctx.fillRect(-20,-20,W+40,H+40);
+    drawFighter(g.timeStop.by);
+    const el=g.timeStop.max-g.timeStop.t;
+    if(el<1.2){ctx.globalAlpha=Math.min(1,(1.2-el)*2);ctx.font='44px "Dela Gothic One",sans-serif';ctx.fillStyle='#e9dcff';
+      ctx.textAlign='center';ctx.fillText('時よ、止まれ',W/2,H/2);ctx.globalAlpha=1;}
+  }
+  // ダメージ数字
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  for(const p of g.pops){ctx.globalAlpha=1-p.t/.8;ctx.font=`800 ${p.big?26:18}px "M PLUS 1p",sans-serif`;
+    ctx.lineWidth=4;ctx.strokeStyle='#000';ctx.strokeText(p.txt,p.x,p.y);ctx.fillStyle=p.c;ctx.fillText(p.txt,p.x,p.y);}
+  ctx.globalAlpha=1;
+  ctx.restore();
+
+  // 決着
+  if(g.over){const a=Math.min(1,g.overT*2);ctx.fillStyle=`rgba(5,6,12,${.6*a})`;ctx.fillRect(0,0,W,H);ctx.globalAlpha=a;
+    ctx.textAlign='center';ctx.font='64px "Dela Gothic One",sans-serif';
+    const w=g.over.winner;ctx.fillStyle=w?w.color:'#fff';
+    ctx.fillText(g.over.how==='KO'?'K.O.!':'TIME UP',W/2,H/2-40);
+    ctx.font='28px "Dela Gothic One",sans-serif';ctx.fillStyle='#f4efe4';
+    ctx.fillText(w?`${TEAM[w.team].name}の${w.name} の勝利！`:'引き分け',W/2,H/2+20);
+    ctx.font='16px "M PLUS 1p",sans-serif';ctx.fillStyle='#9097b3';ctx.fillText('「もう一度」で再戦',W/2,H/2+60);ctx.globalAlpha=1;}
+}
+function drawFighter(s){
+  const dead=s.hp<=0;
+  for(let i=0;i<s.trail.length;i++){const t=s.trail[i];ctx.globalAlpha=i/s.trail.length*.25;ctx.fillStyle=s.color;
+    ctx.beginPath();ctx.arc(t.x,t.y,s.r*(.5+i/s.trail.length*.5),0,7);ctx.fill();}
+  ctx.globalAlpha=dead?.4:1;
+  if(s.dashT>0||s.rushT>0){ctx.fillStyle=s.color+'44';ctx.beginPath();ctx.arc(s.x,s.y,s.r+10,0,7);ctx.fill();}
+  const grd=ctx.createRadialGradient(s.x-8,s.y-10,4,s.x,s.y,s.r);grd.addColorStop(0,'#ffffff33');grd.addColorStop(1,s.color+'aa');
+  ctx.fillStyle=s.flash>0?'#ffffff':grd;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,7);ctx.fill();
+  ctx.strokeStyle=s.color;ctx.lineWidth=3;ctx.stroke();
+  ctx.font=`${s.r*1.25}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(s.face,s.x,s.y+2);
+  // HPリング
+  ctx.strokeStyle='#00000088';ctx.lineWidth=4;ctx.beginPath();ctx.arc(s.x,s.y,s.r+6,0,7);ctx.stroke();
+  ctx.strokeStyle=s.hp/s.maxHp>.3?'#5be3a1':'#ff5a4e';ctx.beginPath();ctx.arc(s.x,s.y,s.r+6,-Math.PI/2,-Math.PI/2+Math.PI*2*s.hp/s.maxHp);ctx.stroke();
+  if(s.guardT>0){ctx.strokeStyle='#dfe6ff';ctx.lineWidth=3;ctx.setLineDash([6,4]);ctx.beginPath();ctx.arc(s.x,s.y,s.r+13,0,7);ctx.stroke();ctx.setLineDash([]);}
+  if(s.slowT>0){ctx.fillStyle='#9be7ff44';ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,7);ctx.fill();ctx.font='14px serif';ctx.fillText('❄️',s.x+s.r-2,s.y-s.r+2);}
+  if(s.frozenT>0){ctx.font='18px serif';ctx.fillText('⏸️',s.x,s.y-s.r-18);}
+  ctx.globalAlpha=1;
+  // 技名のコールアウト
+  for(const c of s.calls){ctx.globalAlpha=Math.min(1,(1-c.t)*2.5);ctx.font='800 16px "M PLUS 1p",sans-serif';
+    const y=s.y-s.r-28-c.t*22;ctx.lineWidth=4;ctx.strokeStyle='#000';ctx.strokeText(c.txt,s.x,y);ctx.fillStyle=s.color;ctx.fillText(c.txt,s.x,y);}
+  ctx.globalAlpha=1;
+}
+
+// ================= HUD =================
+let hudEls=[];
+function buildHud(){
+  const hud=$('#hud');hud.innerHTML='';hudEls=[];
+  for(const s of G.f){
+    const el=document.createElement('div');el.className='hp '+s.team;
+    el.innerHTML=`<div class="hpTop"><span>${s.face} ${s.name}</span><span class="v"></span></div>
+      <div class="bar"><u></u><i></i></div>
+      <div class="cds">${s.skills.map(k=>`<div class="cdIc" title="${k.def.name}">${k.def.icon}<b></b></div>`).join('')}</div>`;
+    hud.appendChild(el);
+    hudEls.push({s,v:el.querySelector('.v'),i:el.querySelector('i'),u:el.querySelector('u'),cds:[...el.querySelectorAll('.cdIc')]});
+  }
+}
+function updateHud(){
+  for(const h of hudEls){const s=h.s;const p=(s.hp/s.maxHp*100)+'%';h.i.style.width=p;h.u.style.width=p;
+    h.v.textContent=`${Math.ceil(s.hp)} / ${s.maxHp}`;
+    s.skills.forEach((k,i)=>{const el=h.cds[i];el.style.setProperty('--p',k.cd/k.def.cd);el.classList.toggle('ready',k.cd<=0);
+      el.querySelector('b').textContent=k.cd>0?k.cd.toFixed(1):'';});}
+  $('#timer').textContent=Math.max(0,TIME_LIMIT-G.time).toFixed(1);
+}
+
+// ================= ループ・操作 =================
+function frame(t){
+  const dt=Math.min(.05,(t-last)/1000||0);last=t;
+  if(G&&!paused){acc+=dt*speedMul;while(acc>=DT){step(DT);acc-=DT;}}
+  if(G){draw();updateHud();}
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+function showBattle(on){$('#setup').hidden=on;$('#battle').hidden=!on;$('#app').classList.toggle('wide',!on);}
+$('#startBtn').onclick=()=>{newGame();paused=false;$('#pauseBtn').textContent='一時停止';showBattle(true);window.scrollTo(0,0);};
+$('#againBtn').onclick=()=>{newGame();paused=false;$('#pauseBtn').textContent='一時停止';};
+$('#backBtn').onclick=()=>{G=null;showBattle(false);renderSetup();};
+$('#pauseBtn').onclick=e=>{paused=!paused;e.target.textContent=paused?'再開':'一時停止';};
+document.querySelectorAll('[data-speed]').forEach(b=>b.onclick=()=>{speedMul=+b.dataset.speed;
+  document.querySelectorAll('[data-speed]').forEach(x=>x.setAttribute('aria-pressed',x===b));});
+
+renderSetup();showBattle(false);
+})();
+</script>
