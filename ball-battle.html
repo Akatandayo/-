@@ -131,7 +131,7 @@ canvas{width:100%;height:100%;display:block;border-radius:14px;background:#090b1
 
   <section id="setup" class="setupScreen">
     <div class="sides" id="sides"></div>
-    <p class="note" style="margin-top:12px">技はクールタイムが終わると自動で発動します。連続技はクールタイムがほぼありません。<br>40秒を過ぎるとサドンデス（与ダメージが時間とともに上昇）。</p>
+    <p class="note" style="margin-top:12px">技はクールタイムが終わると自動で発動します。連続技はクールタイムがほぼありません。<br>45秒を過ぎるとサドンデス（与ダメージが時間とともに上昇）。</p>
     <div class="startBar">
       <button class="primary" id="startBtn">バトル開始</button>
     </div>
@@ -166,7 +166,7 @@ ART.hitoriAttack='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAecAAAG5CAYAAAC0
 (()=>{
 "use strict";
 // ================= 基本ユーティリティ =================
-const W=600,H=600,DT=1/120,TIME_LIMIT=120,SD_START=40;   // 40秒以降はサドンデス（与ダメージが時間とともに増加）
+const W=600,H=600,DT=1/120,TIME_LIMIT=120,SD_START=45;   // 45秒以降はサドンデス（与ダメージが時間とともに増加）
 const rand=(a,b)=>a+Math.random()*(b-a);
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const norm=(x,y)=>{const l=Math.hypot(x,y)||1;return [x/l,y/l]};
@@ -180,39 +180,41 @@ const REDUCED=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)
 // atk: 攻撃技（独は攻撃時立ち絵に切り替わる） / big: 大技（全面カットイン） / sfx: 効果音
 // 数値はすべて BAL にまとめる（説明文も BAL から生成するので、調整しても表記がずれない）
 const BAL={
-  dmg:1.7,   // 与ダメージ全体倍率（試合時間の調整用。ユーザー指定値のオーロラ100・Glitch自傷150には掛けない）
-  slash:58,rush:12,dash:125,wave:95,guardCut:.55,guardT:2,counter:55,counterCd:1,
-  fire:50,thunder:110,nova:85,novaR:210,novaSlow:3,blink:60,blinkShot:85,ts:3.4,heal:155,healAt:.75,
-  mebius:95,mebiusSpd:550,mebiusLead:.3,glitch:170,bind:1.5,glitchSelf:150,reach:44,setup:185,aurora:100,pull:25,
+  dmg:1.6,   // 与ダメージ全体倍率（試合時間の調整用。ユーザー指定値のオーロラ100・Glitch自傷150には掛けない）
+  slash:52,rush:15,dash:140,wave:115,guardCut:.6,guardT:2,counter:55,counterCd:1,
+  fire:50,thunder:115,nova:85,novaR:210,novaSlow:3,blink:60,blinkShot:85,ts:3.4,heal:165,healAt:.75,
+  mebius:100,mebiusSpd:550,mebiusLead:.3,glitch:150,bind:1.5,glitchSelf:150,reach:44,setup:195,aurora:100,pull:30,
 };
+// 説明文に出すダメージ＝実際に入るダメージ（全体倍率込み。サドンデス前の値）
+const D=v=>Math.round(v*BAL.dmg);
 const SKILLS={
   // ---- 剣士 ----
-  slash:{name:'斬撃',icon:'⚔️',cd:1.2,sfx:'slash',get desc(){return `近くの敵を斬りつける。${BAL.slash}ダメージ＋ノックバック`},
+  slash:{name:'斬撃',icon:'⚔️',cd:1.2,sfx:'slash',get desc(){return `近くの敵を斬りつける。${D(BAL.slash)}ダメージ＋ノックバック`},
     can:(s,f)=>dist(s,f)<s.r+f.r+55,
     use(s,f,g){g.slashFx(s,f,1);g.damage(f,BAL.slash,s,{kb:520,tag:'slash'});}},
-  rush:{name:'連続斬り',icon:'🌀',cd:1.2,sfx:'slash',get desc(){return `密着時に高速の連撃（${BAL.rush}×7ヒット）。連続技なのでほぼCTなし`},
+  rush:{name:'連続斬り',icon:'🌀',cd:1.2,sfx:'slash',get desc(){return `密着時に高速の連撃（${D(BAL.rush)}×7ヒット）。連続技なのでほぼCTなし`},
     can:(s,f)=>dist(s,f)<s.r+f.r+45,
     use(s,f,g){s.rushT=0.7;s.rushTick=0;}},
-  dash:{name:'突進',icon:'💨',cd:4,sfx:'dash',get desc(){return `敵めがけて猛加速。当たると${BAL.dash}ダメージ`},
+  dash:{name:'突進',icon:'💨',cd:4,sfx:'dash',get desc(){return `敵めがけて猛加速。当たると${D(BAL.dash)}ダメージ`},
     can:(s,f)=>dist(s,f)>160,
     use(s,f,g){const[nx,ny]=norm(f.x-s.x,f.y-s.y);s.vx=nx*s.speed*3.2;s.vy=ny*s.speed*3.2;s.dashT=0.55;}},
-  wave:{name:'剣気',icon:'🌙',cd:2.6,sfx:'shoot',get desc(){return `三日月の斬撃を飛ばす。${BAL.wave}ダメージ`},
+  wave:{name:'剣気',icon:'🌙',cd:2.6,sfx:'shoot',get desc(){return `三日月の斬撃を飛ばす。${D(BAL.wave)}ダメージ`},
     can:(s,f)=>dist(s,f)>130,
     use(s,f,g){g.shoot(s,f,{speed:540,r:16,dmg:BAL.wave,icon:'🌙',color:'#ffe9a8',spin:true,tag:'wave'});}},
-  guard:{name:'見切り',icon:'🛡️',cd:6,sfx:'guard',get desc(){return `危険を察知して${BAL.guardT}秒間 被ダメージ${Math.round(BAL.guardCut*100)}%カット。近くの相手から被弾すると${BAL.counter}ダメージで斬り返す（${BAL.counterCd}秒に1回）`},
+  guard:{name:'見切り',icon:'🛡️',cd:6,sfx:'guard',get desc(){return `危険を察知して${BAL.guardT}秒間 被ダメージ${Math.round(BAL.guardCut*100)}%カット。近くの相手から被弾すると${D(BAL.counter)}ダメージで斬り返す（${BAL.counterCd}秒に1回）`},
     can:(s,f,g)=>g.threatened(s,f),
     use(s,f,g){s.guardT=BAL.guardT;}},
   // ---- 魔法使い ----
-  fire:{name:'ファイアボール',icon:'🔥',cd:1.9,sfx:'shoot',get desc(){return `火球を放つ。${BAL.fire}ダメージ`},
+  fire:{name:'ファイアボール',icon:'🔥',cd:1.9,sfx:'shoot',get desc(){return `火球を放つ。${D(BAL.fire)}ダメージ`},
     can:(s,f)=>dist(s,f)>90,
     use(s,f,g){g.shoot(s,f,{speed:400,r:14,dmg:BAL.fire,icon:'🔥',color:'#ff8a3d',lead:true,tag:'fire'});}},
-  thunder:{name:'サンダー',icon:'⚡',cd:4.5,sfx:'charge',get desc(){return `敵の移動先に雷を落とす（0.55秒後）。${BAL.thunder}ダメージ`},
+  thunder:{name:'サンダー',icon:'⚡',cd:4.5,sfx:'charge',get desc(){return `敵の移動先に雷を落とす（0.55秒後）。${D(BAL.thunder)}ダメージ`},
     can:()=>true,
     use(s,f,g){g.strikes.push({owner:s,x:clamp(f.x+f.vx*.45,30,W-30),y:clamp(f.y+f.vy*.45,30,H-30),t:.55,r:60,dmg:BAL.thunder,done:false,fade:0});}},
-  nova:{name:'アイスノヴァ',icon:'❄️',cd:6,sfx:'nova',get desc(){return `周囲（広範囲）に冷気を放つ。${BAL.nova}ダメージ＋${BAL.novaSlow}秒間スロー`},
+  nova:{name:'アイスノヴァ',icon:'❄️',cd:6,sfx:'nova',get desc(){return `周囲（広範囲）に冷気を放つ。${D(BAL.nova)}ダメージ＋${BAL.novaSlow}秒間スロー`},
     can:(s,f)=>dist(s,f)<BAL.novaR,
     use(s,f,g){g.rings.push({x:s.x,y:s.y,r:s.r,max:BAL.novaR+5,t:0,color:'#9be7ff'});g.damage(f,BAL.nova,s,{kb:300,tag:'nova'});f.slowT=BAL.novaSlow;}},
-  blink:{name:'テレポート',icon:'✨',cd:3,sfx:'blink',get desc(){return `接近されたら離れた場所へ瞬間移動。元の場所に魔力の爆発（${BAL.blink}ダメージ）を残し、移動先から魔弾で追撃（${BAL.blinkShot}ダメージ）`},
+  blink:{name:'テレポート',icon:'✨',cd:3,sfx:'blink',get desc(){return `接近されたら離れた場所へ瞬間移動。元の場所に魔力の爆発（${D(BAL.blink)}ダメージ）を残し、移動先から魔弾で追撃（${D(BAL.blinkShot)}ダメージ）`},
     can:(s,f)=>dist(s,f)<s.r+f.r+40||f.dashT>0&&dist(s,f)<220,
     use(s,f,g){g.burst(s.x,s.y,'#d6b4ff',18);g.rings.push({x:s.x,y:s.y,r:s.r,max:s.r+80,t:0,color:'#d6b4ff',speed:500});
       if(dist(s,f)<s.r+f.r+70)g.damage(f,BAL.blink,s,{kb:420,tag:'blink'});let best=null,bd=-1;
@@ -227,12 +229,12 @@ const SKILLS={
     can:s=>s.hp<s.maxHp*BAL.healAt,
     use(s,f,g){g.heal(s,BAL.heal,'#5be3a1');}},
   // ---- 電子 独 ----
-  mebius:{name:'Mebius',icon:'🟣',cd:2.8,atk:true,sfx:'mebius',get desc(){return `敵へ一瞬踏み込み、敵の動きを読んで紫のオーラ斬撃を飛ばす。${BAL.mebius}ダメージ（中〜遠距離）`},
+  mebius:{name:'Mebius',icon:'🟣',cd:2.8,atk:true,sfx:'mebius',get desc(){return `敵へ一瞬踏み込み、敵の動きを読んで紫のオーラ斬撃を飛ばす。${D(BAL.mebius)}ダメージ（中〜遠距離）`},
     can:(s,f)=>dist(s,f)>140,
     use(s,f,g){const[nx,ny]=norm(f.x-s.x,f.y-s.y);s.vx=nx*s.speed*2.4;s.vy=ny*s.speed*2.4;s.lungeT=.18;
       g.rings.push({x:s.x,y:s.y,r:s.r,max:s.r+50,t:0,color:'#b46bff',speed:300});
       g.shoot(s,f,{speed:BAL.mebiusSpd,r:24,dmg:BAL.mebius,kind:'crescent',color:'#b46bff',lead:BAL.mebiusLead,tag:'mebius'});}},
-  glitch:{name:'Glitch',icon:'👾',cd:6.5,atk:true,sfx:'glitch',get desc(){return `至近距離でバグを起こし、0.12秒後に${BAL.glitch}ダメージ＋${BAL.bind}秒間拘束（移動・スキル不可）。その瞬間に離れられていると外れ、自分が${BAL.glitchSelf}ダメージ`},
+  glitch:{name:'Glitch',icon:'👾',cd:6.5,atk:true,sfx:'glitch',get desc(){return `至近距離でバグを起こし、0.12秒後に${D(BAL.glitch)}ダメージ＋${BAL.bind}秒間拘束（移動・スキル不可）。その瞬間に離れられていると外れ、自分が${BAL.glitchSelf}ダメージ`},
     quote:'ゲームのバグを具現化した諸刃の剣',   // 技の説明（編成画面に表示）。カットインでは叫ばない
     can:(s,f)=>dist(s,f)<s.r+f.r+30,
     use(s,f,g){s.glitchT=.12;}},   // 0.12秒後に判定（resolveGlitch）
@@ -262,11 +264,11 @@ const tagInfo=t=>SKILLS[t]||TAGS[t]||{icon:'・',name:t};
 
 // ================= キャラ定義 =================
 const CHARS={
-  swordsman:{name:'剣士',emoji:'🗡️',face:'🤺',hp:1850,speed:250,r:28,contact:18,
+  swordsman:{name:'剣士',emoji:'🗡️',face:'🤺',hp:2180,speed:250,r:28,contact:18,
     skills:['slash','rush','dash','wave','guard'],def:['slash','rush','dash']},
-  mage:{name:'魔法使い',emoji:'🪄',face:'🧙',hp:1350,speed:215,r:28,contact:14,
-    skills:['fire','thunder','nova','blink','timestop','heal'],def:['fire','thunder','timestop']},
-  hitori:{name:'電子 独',emoji:'',face:'',hp:1750,speed:220,r:30,contact:14,
+  mage:{name:'魔法使い',emoji:'🪄',face:'🧙',hp:1550,speed:215,r:28,contact:14,
+    skills:['fire','thunder','nova','blink','timestop','heal'],def:['fire','timestop','heal']},
+  hitori:{name:'電子 独',emoji:'',face:'',hp:2100,speed:220,r:30,contact:14,
     // art: 立ち絵。head はボール内／アイコンに表示する顔の切り抜き範囲（画像座標）。
     // attack: 攻撃時立ち絵。攻撃技の発動中だけこちらに「差し替え」る（通常絵と同時には描かない）
     art:{src:ART.hitori,w:266,h:508,head:{x:55,y:-5,s:170},
@@ -361,7 +363,7 @@ function makeFighter(team,L,x,y){
     r:C.r,speed:C.speed,hp:C.hp,maxHp:C.hp,contact:C.contact,
     skills:[...new Set([...L.skills,...(C.passives||[])])].map(id=>({id,def:SKILLS[id],cd:SKILLS[id].cd*rand(.3,.7),used:false,fired:0})),
     castLock:0,rushT:0,rushTick:0,dashT:0,lungeT:0,glitchT:0,boundT:0,guardT:0,slowT:0,frozenT:0,flash:0,trail:[],calls:[],hitBy:0,
-    poseT:0,poseFlash:0,upsetT:0,counterT:0};
+    poseT:0,poseFlash:0,upsetT:0,counterT:0,bigHitT:0};
 }
 function newGame(){
   const a=makeFighter('red',loadout.red,150,450),b=makeFighter('blue',loadout.blue,450,150);
@@ -378,19 +380,21 @@ function newGame(){
             if(src!==t){if(o.tag!=='aurora')d*=BAL.dmg;d*=G.sdMul();}   // 全体倍率（ユーザー指定値のオーロラ100・Glitch自傷150は対象外）
       if(t.guardT>0){d*=1-BAL.guardCut;G.burst(t.x,t.y,'#ffffff',6);
         if(src!==t&&t.counterT<=0&&t.hp>0&&dist(t,src)<t.r+src.r+70){t.counterT=BAL.counterCd;G.slashFx(t,src,1);const dd=Math.round(BAL.counter*BAL.dmg*G.sdMul());   // 見切り：斬り返し（CTあり）
-          src.hp=Math.max(0,src.hp-dd);src.flash=.12;G.stats[t.team].guard=(G.stats[t.team].guard||0)+dd;G.popup(src.x,src.y+src.r+18,String(dd),'#dfe6ff',false);
+          src.hp=Math.max(0,src.hp-dd);src.flash=.12;G.stats[t.team].guard=(G.stats[t.team].guard||0)+dd;G.popup(src.x,src.y+src.r+18,String(dd),'#dfe6ff',false,src);
           G.sfx('slash');if(src.hp<=0){G.finish(t,'KO');return;}}}
       d=Math.round(d);t.hp=Math.max(0,t.hp-d);t.flash=.12;
       const tag=src===t?'self':(o.tag||'contact');const st=G.stats[src===t?t.team:src.team];st[tag]=(st[tag]||0)+d;
       const big=d>=120;
-      G.popup(t.x+rand(-10,10),t.y+t.r+20,String(d),t.guardT>0?'#cfd6ff':big?'#ffcf4a':'#ffffff',big);
+      // 大技の直後0.3秒は体当たりの小さな数字を出さない（ダメージは入る）。MISS の自傷は呼び出し側で1つにまとめて表示
+      if(o.tag!=='contact'&&d>=60)t.bigHitT=.3;
+      if(!o.noPop&&!(o.tag==='contact'&&t.bigHitT>0))G.popup(t.x+rand(-10,10),t.y+t.r+20,String(d),t.guardT>0?'#cfd6ff':big?'#ffcf4a':'#ffffff',big,t);
       G.shake=Math.min(12,G.shake+d*.05);G.burst(t.x,t.y,src.color,Math.min(22,4+d/9));
       if(d>=60){G.hitstop=Math.max(G.hitstop,Math.min(.13,.03+d/2600));G.rings.push({x:t.x,y:t.y,r:t.r,max:t.r+30+d/5,t:0,color:'#ffffffcc',speed:520});}
       G.sfx(big?'big':'hit');
       if(o.kb&&!stuck(t)){const[nx,ny]=norm(t.x-src.x,t.y-src.y);t.vx=nx*o.kb;t.vy=ny*o.kb;}
       if(t.hp<=0)G.finish(t.foe,'KO');   // 自傷で倒れた場合も相手の勝ち
     },
-    heal(s,n,c){s.hp=Math.min(s.maxHp,s.hp+n);G.popup(s.x,s.y+s.r+20,'+'+n,'#5be3a1',true);G.burst(s.x,s.y,c,18);
+    heal(s,n,c){s.hp=Math.min(s.maxHp,s.hp+n);G.popup(s.x,s.y+s.r+20,'+'+n,'#5be3a1',true,s);G.burst(s.x,s.y,c,18);
       G.rings.push({x:s.x,y:s.y,r:s.r,max:s.r+40,t:0,color:c,speed:160});},
     shoot(s,f,o){let tx=f.x,ty=f.y;if(o.lead){const tt=dist(s,f)/o.speed,k=o.lead===true?.6:o.lead;tx+=f.vx*tt*k;ty+=f.vy*tt*k;}   // lead: 偏差射撃の強さ
       const[nx,ny]=norm(tx-s.x,ty-s.y);G.proj.push({owner:s,x:s.x+nx*s.r,y:s.y+ny*s.r,vx:nx*o.speed,vy:ny*o.speed,r:o.r,dmg:o.dmg,icon:o.icon,kind:o.kind,color:o.color,spin:o.spin,tag:o.tag,a:Math.atan2(ny,nx),life:3});},
@@ -398,14 +402,32 @@ function newGame(){
       return G.proj.some(p=>p.owner===f&&dist(p,s)<150)||G.strikes.some(k=>k.owner===f&&!k.done&&dist(k,s)<k.r+s.r);},
     slashFx(s,f,big){const a=Math.atan2(f.y-s.y,f.x-s.x);G.slashes.push({o:s,a,t:0,max:.22,big,color:s.color});},
     burst(x,y,c,n,sp=1){for(let i=0;i<n;i++){const a=rand(0,Math.PI*2),v=rand(60,320)*sp;G.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:0,max:rand(.25,.6)*(sp>1?1.6:1),c,s:rand(2,4.5)*(sp>1?1.4:1)});}},
-    popup(x,y,txt,c,big){const n=G.pops.filter(p=>p.t<.4&&Math.abs(p.x-x)<40&&Math.abs(p.y-y)<70).length;   // 近くに出たばかりの数字があれば下へずらす
-      G.pops.push({x,y:y+n*26,txt,c,t:0,big});},
+    // ダメージ数字は対象ボールごとに縦に積む（出たばかりの数字があれば、その下に出す）
+    popup(x,y,txt,c,big,tg){if(G.over)return;
+      if(tg){const v=+txt;   // 連撃などの小さい数字は、直前の同じ対象の小さい数字に合算して1つにする
+        const m=!big&&v>0&&G.pops.find(p=>p.tg===tg&&p.sum&&p.t<.3&&p.c===c);
+        if(m){m.sum+=v;m.txt=String(m.sum);m.t=0;return;}
+        const side=tg.foe&&tg.x<tg.foe.x?-1:1;   // 相手と反対側に寄せて、隣のボールの数字と重ねない
+        const below=tg.y+tg.r+20+2*26<H-12&&tg.y>130;   // 下に余白があり、技名の吹き出しも上に出ているとき
+        if(below){x=tg.x+side*24;y=tg.y+tg.r+20;}
+        else{let sx=side;if(tg.x+sx*(tg.r+46)<30||tg.x+sx*(tg.r+46)>W-30)sx=-sx;x=tg.x+sx*(tg.r+46);y=tg.y-14;}}   // 余白が無ければボールの横に出す
+      // 表示中のほかの数字（どのボールの数字でも）と重なる間は、その下へずらしていく
+      const hh=q=>q.big?20:14,ww=q=>String(q.txt).length*(q.big?11:7.5)+6;let yy=y;const me={txt,big};
+      for(let k=0;k<8;k++){const hit=G.pops.find(p=>Math.abs(p.x-x)<ww(p)+ww(me)&&Math.abs(p.y-yy)<hh(p)+hh(me));
+        if(!hit)break;yy=hit.y+hh(hit)+hh(me)+2;}
+      if(yy>H-24){yy=y;for(let k=0;k<8;k++){const hit=G.pops.find(p=>Math.abs(p.x-x)<ww(p)+ww(me)&&Math.abs(p.y-yy)<hh(p)+hh(me));   // 下に入りきらなければ上へ積む
+        if(!hit)break;yy=hit.y-hh(hit)-hh(me)-2;}}
+      G.pops.push({x,y:yy,txt,c,t:0,big,tg,sum:!big&&+txt>0?+txt:0});},
     // カットイン：full=大技（チーム側の帯が画面を横切る）／false=小カットイン（攻撃時立ち絵の顔窓）
     cutin(s,info,full){
       const cur=G.cutins.find(c=>c.s===s);
       if(cur&&cur.full&&!full&&cur.t<cur.dur-.25)return;
       G.cutins=G.cutins.filter(c=>c.s!==s);
-      const dur=full?.95:.7;G.cutins.push({s,...info,t:0,dur,full});
+      const dur=full?.95:.7;let cy=s.team==='red'?150:450;
+      if(!full){   // 小カットインは、両ボールから一番離れた高さに出す（ボールを隠さない）
+        const px=s.team==='red'?75:W-75;let best=-1;
+        for(const y of [110,300,490]){const d=Math.min(...G.f.map(f=>Math.hypot(f.x-px,(f.y-y)*1.3)));if(d>best){best=d;cy=y;}}}
+      G.cutins.push({s,...info,t:0,dur,full,cy});
       if(s.char.imgAtk){if(s.poseT<=0)s.poseFlash=.18;s.poseT=Math.max(s.poseT,dur+.4);}   // カットイン中は必ず攻撃時の顔
       if(full){G.slowmo=Math.max(G.slowmo,.4);G.slowF=.3;G.sfx('cutin');}
     },
@@ -447,7 +469,7 @@ const stuck=s=>s.frozenT>0||s.boundT>0;
 function resolveGlitch(s,f,g){
   g.glitchFx.push({x:(s.x+f.x)/2,y:(s.y+f.y)/2,t:0});g.glitchScreen=.3;
   if(dist(s,f)<s.r+f.r+BAL.reach&&f.hp>0){g.damage(f,BAL.glitch,s,{tag:'glitch'});if(!g.over){f.boundT=BAL.bind;f.rushT=0;f.dashT=0;f.vx=f.vy=0;}}
-  else{g.popup(s.x,s.y+s.r+52,'MISS','#ff5a4e',true);g.damage(s,BAL.glitchSelf,s,{});}
+  else{g.popup(s.x,s.y+s.r+20,'MISS -'+BAL.glitchSelf,'#ff5a4e',true,s);g.damage(s,BAL.glitchSelf,s,{noPop:true});}
 }
 function step(dt){
   const g=G;
@@ -466,7 +488,7 @@ function step(dt){
     if(g.over&&s.hp<=0){s.vx*=.96;s.vy*=.96;s.x+=s.vx*dt;s.y+=s.vy*dt;continue;}
     const ts=g.timeStop&&g.timeStop.by===s?2:1;   // 自分の時間停止中は（時間停止以外の）CTが2倍速
     for(const k of s.skills)k.cd=Math.max(0,k.cd-dt*(k.id==='timestop'?1:ts));
-    s.castLock-=dt;s.guardT-=dt;s.upsetT-=dt;s.counterT-=dt;s.slowT-=dt;s.dashT-=dt;s.lungeT-=dt;s.hitBy-=dt;
+    s.castLock-=dt;s.bigHitT-=dt;s.guardT-=dt;s.upsetT-=dt;s.counterT-=dt;s.slowT-=dt;s.dashT-=dt;s.lungeT-=dt;s.hitBy-=dt;
     if(s.glitchT>0){s.glitchT-=dt;if(s.glitchT<=0&&!g.over)resolveGlitch(s,s.foe,g);}
     if(s.boundT>0){s.boundT-=dt;s.vx=s.vy=0;s.trail.push({x:s.x,y:s.y});if(s.trail.length>12)s.trail.shift();continue;}  // 拘束中：動けない
     if(!g.over)useSkills(s,g);
@@ -475,7 +497,7 @@ function step(dt){
     if(s.rushT>0){s.rushT-=dt;s.rushTick-=dt;
       const[nx,ny]=norm(f.x-s.x,f.y-s.y);const sp=s.speed*1.5;
       s.vx+=(nx*sp-s.vx)*Math.min(1,dt*10);s.vy+=(ny*sp-s.vy)*Math.min(1,dt*10);
-      if(s.rushTick<=0){s.rushTick=.1;if(dist(s,f)<s.r+f.r+40&&!g.over){g.slashFx(s,f,0);g.damage(f,15,s,{tag:'rush'});}}}
+      if(s.rushTick<=0){s.rushTick=.1;if(dist(s,f)<s.r+f.r+40&&!g.over){g.slashFx(s,f,0);g.damage(f,BAL.rush,s,{tag:'rush'});}}}
     // 速さを基準値へ戻す
     const target=s.speed*(s.slowT>0?.5:1);const cur=Math.hypot(s.vx,s.vy);
     if(s.dashT<=0&&s.rushT<=0&&s.lungeT<=0){
@@ -523,7 +545,7 @@ function step(dt){
   g.glitchScreen=Math.max(0,g.glitchScreen-dt);g.flash=Math.max(0,g.flash-dt);
   for(const r of g.rings){r.t+=dt;r.r+=(r.speed||700)*dt;} g.rings=g.rings.filter(r=>r.r<r.max);
   for(const p of g.parts){p.t+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.92;p.vy*=.92;} g.parts=g.parts.filter(p=>p.t<p.max);
-  for(const p of g.pops){p.t+=dt;p.y+=28*dt;}   // ダメージ数字は下へ（技名は上） g.pops=g.pops.filter(p=>p.t<.9);
+  for(const p of g.pops){p.t+=dt;if(p.y<H-30)p.y+=28*dt;}   // ダメージ数字は下へ（技名は上） g.pops=g.pops.filter(p=>p.t<.9);
   for(const s of g.slashes)s.t+=dt; g.slashes=g.slashes.filter(s=>s.t<s.max);
   for(const c of g.cutins)c.t+=dt; g.cutins=g.cutins.filter(c=>c.t<c.dur);
   for(const s of g.f){for(const c of s.calls)c.t+=dt;s.calls=s.calls.filter(c=>c.t<1.1);}
@@ -547,7 +569,7 @@ function collide(a,b){
   // 体当たりダメージ
   for(const[s,t]of[[a,b],[b,a]]){
     if(s.frozenT>0)continue;
-    if(s.dashT>0){s.dashT=0;G.slashFx(s,t,1);G.damage(t,140,s,{kb:560,tag:'dash'});t.hitBy=.4;continue;}
+    if(s.dashT>0){s.dashT=0;G.slashFx(s,t,1);G.damage(t,BAL.dash,s,{kb:560,tag:'dash'});t.hitBy=.4;continue;}
     if(t.hitBy<=0){G.damage(t,s.contact,s,{tag:'contact'});}
   }
   if(a.hitBy<=0)a.hitBy=.4; if(b.hitBy<=0)b.hitBy=.4;
@@ -652,7 +674,7 @@ function draw(rdt){
   }
   // ダメージ数字
   ctx.textAlign='center';ctx.textBaseline='middle';
-  for(const p of g.pops){const sc=1+.7*(1-ease(p.t/.12));ctx.globalAlpha=clamp((.9-p.t)*3,0,1);
+  if(!g.over)for(const p of g.pops){const sc=1+.7*(1-ease(p.t/.12));ctx.globalAlpha=clamp((.9-p.t)*3,0,1);
     ctx.font=`800 ${Math.round((p.big?34:23)*sc)}px "M PLUS 1p",sans-serif`;const x=clamp(p.x,30,W-30),y=clamp(p.y,20,H-20);
     ctx.lineWidth=5;ctx.strokeStyle='#000';ctx.strokeText(p.txt,x,y);ctx.fillStyle=p.c;ctx.fillText(p.txt,x,y);}
   ctx.globalAlpha=1;
@@ -711,7 +733,7 @@ function drawFighter(s){
   if(ctx.globalAlpha<=0){ctx.globalAlpha=1;return;}
   if(s.dashT>0||s.rushT>0){ctx.fillStyle=s.color+'44';ctx.beginPath();ctx.arc(s.x,s.y,s.r+10,0,7);ctx.fill();}
   if(s.upsetT>0&&!dead){const p=.5+.5*Math.sin(vt*18);ctx.strokeStyle=`rgba(255,207,74,${.5+.4*p})`;ctx.lineWidth=4;ctx.beginPath();ctx.arc(s.x,s.y,s.r+18+p*4,0,7);ctx.stroke();}
-  if(atkPose){const p=.5+.5*Math.sin(vt*14);ctx.fillStyle=`rgba(180,107,255,${.25+.15*p})`;ctx.beginPath();ctx.arc(s.x,s.y,s.r+17+p*3,0,7);ctx.arc(s.x,s.y,s.r+9,0,7,true);ctx.fill();}
+  if(atkPose){const p=.5+.5*Math.sin(vt*14);ctx.fillStyle=`rgba(180,107,255,${.25+.15*p})`;ctx.beginPath();ctx.arc(s.x,s.y,s.r+17+p*3,0,Math.PI*2);ctx.moveTo(s.x+s.r+9,s.y);ctx.arc(s.x,s.y,s.r+9,Math.PI*2,0,true);ctx.fill();}
   const r=s.r*(1+s.poseFlash*.9);
   const grd=ctx.createRadialGradient(s.x-8,s.y-10,4,s.x,s.y,r);grd.addColorStop(0,'#ffffff33');grd.addColorStop(1,s.color+'aa');
   ctx.fillStyle=grd;ctx.beginPath();ctx.arc(s.x,s.y,r,0,7);ctx.fill();
@@ -732,9 +754,11 @@ function drawFighter(s){
   ctx.globalAlpha=1;
   // 技名のコールアウト（スマホでも読める大きさ・暗い下地つき）
   // 表示中の吹き出しは新しいものほどボールの近くに置き、古いものを32pxずつ上へ積む（重ならない）
-  const vis=s.calls.filter(c=>c.t>=0);
+  const vis=G.over?[]:s.calls.filter(c=>c.t>=0);   // 決着後は吹き出しを出さない
   vis.forEach((c,i)=>{const idx=vis.length-1-i;ctx.globalAlpha=Math.min(1,(1.1-c.t)*3);ctx.font='800 21px "M PLUS 1p",sans-serif';
-    const up=!!c.sub;const w=ctx.measureText(c.txt).width+20;const x=clamp(s.x,w/2+4,W-w/2-4);
+    const up=!!c.sub;const w=ctx.measureText(c.txt).width+20;
+    const near=s.foe&&Math.abs(s.foe.x-s.x)<150&&Math.abs(s.foe.y-s.y)<170;   // 2つのボールが近いときは、吹き出しをそれぞれ外側へ寄せる
+    const x=clamp(near?s.x+(s.x<s.foe.x?-1:1)*(w/2-s.r):s.x,w/2+4,W-w/2-4);
     const top=s.y-s.r-30-(vis.length-1)*32-15<4;   // 上に入りきらなければ下側に積む
     const y=top?s.y+s.r+64+idx*32:s.y-s.r-30-idx*32;
     pill(x-w/2,y-15,w,30);ctx.fillStyle='rgba(8,10,20,.85)';ctx.fill();ctx.strokeStyle=s.color;ctx.lineWidth=2;ctx.stroke();
@@ -746,7 +770,7 @@ function drawCutin(c){
   const s=c.s,red=s.team==='red',dir=red?1:-1;
   const inP=ease(c.t/.16),outP=c.t>c.dur-.18?ease((c.t-(c.dur-.18))/.18):0;
   const art=s.char.imgAtk&&ready(s.char.imgAtk)?s.char.imgAtk:null;   // カットインは攻撃時立ち絵のみ（通常絵は使わない）
-  const cy=red?150:450;
+  const cy=c.full?(red?150:450):c.cy;
   ctx.save();ctx.textBaseline='middle';
   if(c.full){
     const bh=110*inP*(1-outP);if(bh<1){ctx.restore();return;}
@@ -777,7 +801,8 @@ function drawCutin(c){
   }else if(art){
     // 小カットイン：チーム側の端から攻撃時立ち絵の顔窓がスライドイン
     const pw=150,ph=118;const x0=red?0:W-pw;const off=(1-inP+outP)*-(pw+30)*dir;
-    ctx.globalAlpha=.95;ctx.translate(off,0);
+    const under=G.f.some(f=>Math.abs(f.x-(x0+pw/2))<pw/2+f.r&&Math.abs(f.y-cy)<ph/2+f.r+30);   // それでもボールに重なるときは半透明
+    ctx.globalAlpha=under?.4:.95;ctx.translate(off,0);
     ctx.beginPath();if(red){ctx.moveTo(x0,cy-ph/2);ctx.lineTo(x0+pw,cy-ph/2);ctx.lineTo(x0+pw-26,cy+ph/2);ctx.lineTo(x0,cy+ph/2);}
     else{ctx.moveTo(x0+26,cy-ph/2);ctx.lineTo(x0+pw,cy-ph/2);ctx.lineTo(x0+pw,cy+ph/2);ctx.lineTo(x0,cy+ph/2);}ctx.closePath();
     ctx.fillStyle='#24113d';ctx.fill();ctx.save();ctx.clip();
