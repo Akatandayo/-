@@ -180,10 +180,10 @@ const REDUCED=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)
 // atk: 攻撃技（独は攻撃時立ち絵に切り替わる） / big: 大技（全面カットイン） / sfx: 効果音
 // 数値はすべて BAL にまとめる（説明文も BAL から生成するので、調整しても表記がずれない）
 const BAL={
-  dmg:1.6,   // 与ダメージ全体倍率（試合時間の調整用。ユーザー指定値のオーロラ100・Glitch自傷150には掛けない）
-  slash:52,rush:15,dash:140,wave:115,guardCut:.6,guardT:2,counter:55,counterCd:1,
-  fire:50,thunder:115,nova:85,novaR:210,novaSlow:3,blink:60,blinkShot:85,ts:3.4,heal:165,healAt:.75,
-  mebius:100,mebiusSpd:550,mebiusLead:.3,glitch:150,bind:1.5,glitchSelf:150,reach:44,setup:195,aurora:100,pull:30,
+  dmg:1.7,   // 与ダメージ全体倍率（試合時間の調整用。ユーザー指定値のオーロラ100・Glitch自傷150には掛けない）
+  slash:50,rush:11,dash:82,wave:98,guardCut:.65,guardT:2,counter:55,counterCd:1,
+  fire:46,thunder:106,nova:75,novaR:210,novaSlow:2.2,blink:60,blinkShot:65,tsDmg:2.2,ts:2.5,heal:280,healAt:.7,
+  mebius:95,mebiusSpd:550,mebiusLead:.1,glitch:120,bind:1.5,glitchSelf:150,reach:44,setup:130,aurora:100,pull:45,
 };
 // 説明文に出すダメージ＝実際に入るダメージ（全体倍率込み。サドンデス前の値）
 const D=v=>Math.round(v*BAL.dmg);
@@ -221,11 +221,11 @@ const SKILLS={
       for(let i=0;i<14;i++){const p={x:rand(60,W-60),y:rand(60,H-60)};const d=dist(p,f);if(d>bd){bd=d;best=p;}}
       s.x=best.x;s.y=best.y;s.trail.length=0;g.burst(s.x,s.y,'#d6b4ff',18);
       g.shoot(s,f,{speed:520,r:13,dmg:BAL.blinkShot,icon:'✨',color:'#d6b4ff',lead:true,tag:'blink'});}},
-  timestop:{name:'時間停止',icon:'⏳',cd:8.5,big:true,sfx:'timestop',get desc(){return `${BAL.ts}秒間 敵の時を止める。止まった敵は動けず技も使えない。止めている間は他の技のCTが2倍速で回復`},
+  timestop:{name:'時間停止',icon:'⏳',cd:12.5,big:true,sfx:'timestop',get desc(){return `${BAL.ts}秒間 敵の時を止める。止まった敵は動けず技も使えず、受けるダメージが${Math.round(BAL.tsDmg*100-100)}%増える。止めている間は他の攻撃技のCTが2倍速で回復`},
     quote:'時よ、止まれ',
     can:(s,f,g)=>g.time>2&&!g.timeStop,
     use(s,f,g){f.frozenT=BAL.ts;g.timeStop={by:s,t:BAL.ts,max:BAL.ts};g.rings.push({x:s.x,y:s.y,r:s.r,max:900,t:0,color:'#c9a6ff',speed:2200});}},
-  heal:{name:'ヒール',icon:'💚',cd:7,sfx:'heal',get desc(){return `HPが${Math.round(BAL.healAt*100)}%以下のとき${BAL.heal}回復`},
+  heal:{name:'ヒール',icon:'💚',cd:10,sfx:'heal',get desc(){return `HPが${Math.round(BAL.healAt*100)}%以下のとき${BAL.heal}回復`},
     can:s=>s.hp<s.maxHp*BAL.healAt,
     use(s,f,g){g.heal(s,BAL.heal,'#5be3a1');}},
   // ---- 電子 独 ----
@@ -264,16 +264,16 @@ const tagInfo=t=>SKILLS[t]||TAGS[t]||{icon:'・',name:t};
 
 // ================= キャラ定義 =================
 const CHARS={
-  swordsman:{name:'剣士',emoji:'🗡️',face:'🤺',hp:2180,speed:250,r:28,contact:18,
+  swordsman:{name:'剣士',emoji:'🗡️',face:'🤺',hp:2600,speed:250,r:28,contact:18,
     skills:['slash','rush','dash','wave','guard'],def:['slash','rush','dash']},
-  mage:{name:'魔法使い',emoji:'🪄',face:'🧙',hp:1550,speed:215,r:28,contact:14,
-    skills:['fire','thunder','nova','blink','timestop','heal'],def:['fire','timestop','heal']},
-  hitori:{name:'電子 独',emoji:'',face:'',hp:2100,speed:220,r:30,contact:14,
+  mage:{name:'魔法使い',emoji:'🪄',face:'🧙',hp:1800,speed:215,r:28,contact:14,
+    skills:['fire','thunder','nova','blink','timestop','heal'],def:['fire','thunder','timestop']},
+  hitori:{name:'電子 独',emoji:'',face:'',hp:2700,speed:220,r:30,contact:14,
     // art: 立ち絵。head はボール内／アイコンに表示する顔の切り抜き範囲（画像座標）。
     // attack: 攻撃時立ち絵。攻撃技の発動中だけこちらに「差し替え」る（通常絵と同時には描かない）
     art:{src:ART.hitori,w:266,h:508,head:{x:55,y:-5,s:170},
       attack:{src:ART.hitoriAttack,w:487,h:441,head:{x:141,y:-5,s:170}}},
-    skills:['mebius','glitch','setup','aurora'],def:['mebius','glitch','aurora'],
+    skills:['mebius','glitch','setup','aurora'],def:['mebius','glitch','setup'],
     // 特性（パッシブ）：技枠を使わず常に有効。{番狂わせ} は試合中1回だけの逆転の一手なので、3枠の1つを潰さない扱いにする
     passives:['upset']},
 };
@@ -377,7 +377,7 @@ function newGame(){
     sfx(n){SND.play(n);},
     damage(t,d,src,o={}){
       if(G.over)return;
-            if(src!==t){if(o.tag!=='aurora')d*=BAL.dmg;d*=G.sdMul();}   // 全体倍率（ユーザー指定値のオーロラ100・Glitch自傷150は対象外）
+            if(src!==t){if(o.tag!=='aurora')d*=BAL.dmg;d*=G.sdMul();if(t.frozenT>0)d*=BAL.tsDmg;}   // 時間停止中の敵は被ダメージ増   // 全体倍率（ユーザー指定値のオーロラ100・Glitch自傷150は対象外）
       if(t.guardT>0){d*=1-BAL.guardCut;G.burst(t.x,t.y,'#ffffff',6);
         if(src!==t&&t.counterT<=0&&t.hp>0&&dist(t,src)<t.r+src.r+70){t.counterT=BAL.counterCd;G.slashFx(t,src,1);const dd=Math.round(BAL.counter*BAL.dmg*G.sdMul());   // 見切り：斬り返し（CTあり）
           src.hp=Math.max(0,src.hp-dd);src.flash=.12;G.stats[t.team].guard=(G.stats[t.team].guard||0)+dd;G.popup(src.x,src.y+src.r+18,String(dd),'#dfe6ff',false,src);
@@ -413,10 +413,10 @@ function newGame(){
         else{let sx=side;if(tg.x+sx*(tg.r+46)<30||tg.x+sx*(tg.r+46)>W-30)sx=-sx;x=tg.x+sx*(tg.r+46);y=tg.y-14;}}   // 余白が無ければボールの横に出す
       // 表示中のほかの数字（どのボールの数字でも）と重なる間は、その下へずらしていく
       const hh=q=>q.big?20:14,ww=q=>String(q.txt).length*(q.big?11:7.5)+6;let yy=y;const me={txt,big};
-      for(let k=0;k<8;k++){const hit=G.pops.find(p=>Math.abs(p.x-x)<ww(p)+ww(me)&&Math.abs(p.y-yy)<hh(p)+hh(me));
-        if(!hit)break;yy=hit.y+hh(hit)+hh(me)+2;}
-      if(yy>H-24){yy=y;for(let k=0;k<8;k++){const hit=G.pops.find(p=>Math.abs(p.x-x)<ww(p)+ww(me)&&Math.abs(p.y-yy)<hh(p)+hh(me));   // 下に入りきらなければ上へ積む
-        if(!hit)break;yy=hit.y-hh(hit)-hh(me)-2;}}
+      const boxes=()=>[...G.pops.map(p=>({x:p.x,y:p.y,hw:ww(p),hh:hh(p)})),...(G.callRects||[]).map(r=>({x:r.x,y:r.y,hw:r.w/2,hh:r.h/2}))];   // 吹き出しも避ける
+      const find=yy=>boxes().find(q=>Math.abs(q.x-x)<q.hw+ww(me)&&Math.abs(q.y-yy)<q.hh+hh(me));
+      for(let k=0;k<10;k++){const hit=find(yy);if(!hit)break;yy=hit.y+hit.hh+hh(me)+2;}
+      if(yy>H-24){yy=y;for(let k=0;k<10;k++){const hit=find(yy);if(!hit)break;yy=hit.y-hit.hh-hh(me)-2;}}   // 下に入りきらなければ上へ積む
       G.pops.push({x,y:yy,txt,c,t:0,big,tg,sum:!big&&+txt>0?+txt:0});},
     // カットイン：full=大技（チーム側の帯が画面を横切る）／false=小カットイン（攻撃時立ち絵の顔窓）
     cutin(s,info,full){
@@ -487,7 +487,7 @@ function step(dt){
     if(s.poseT>0){s.poseT-=dt;if(s.poseT<=0)s.poseFlash=.12;}
     if(g.over&&s.hp<=0){s.vx*=.96;s.vy*=.96;s.x+=s.vx*dt;s.y+=s.vy*dt;continue;}
     const ts=g.timeStop&&g.timeStop.by===s?2:1;   // 自分の時間停止中は（時間停止以外の）CTが2倍速
-    for(const k of s.skills)k.cd=Math.max(0,k.cd-dt*(k.id==='timestop'?1:ts));
+    for(const k of s.skills)k.cd=Math.max(0,k.cd-dt*(k.id==='timestop'||k.id==='heal'?1:ts));   // 時間停止・ヒール自身は加速しない
     s.castLock-=dt;s.bigHitT-=dt;s.guardT-=dt;s.upsetT-=dt;s.counterT-=dt;s.slowT-=dt;s.dashT-=dt;s.lungeT-=dt;s.hitBy-=dt;
     if(s.glitchT>0){s.glitchT-=dt;if(s.glitchT<=0&&!g.over)resolveGlitch(s,s.foe,g);}
     if(s.boundT>0){s.boundT-=dt;s.vx=s.vy=0;s.trail.push({x:s.x,y:s.y});if(s.trail.length>12)s.trail.shift();continue;}  // 拘束中：動けない
@@ -545,7 +545,7 @@ function step(dt){
   g.glitchScreen=Math.max(0,g.glitchScreen-dt);g.flash=Math.max(0,g.flash-dt);
   for(const r of g.rings){r.t+=dt;r.r+=(r.speed||700)*dt;} g.rings=g.rings.filter(r=>r.r<r.max);
   for(const p of g.parts){p.t+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.92;p.vy*=.92;} g.parts=g.parts.filter(p=>p.t<p.max);
-  for(const p of g.pops){p.t+=dt;if(p.y<H-30)p.y+=28*dt;}   // ダメージ数字は下へ（技名は上） g.pops=g.pops.filter(p=>p.t<.9);
+  for(const p of g.pops)p.t+=dt;   // 数字はその場でポップして消える（流さないので重ならない）   // ダメージ数字は下へ（技名は上） g.pops=g.pops.filter(p=>p.t<.9);
   for(const s of g.slashes)s.t+=dt; g.slashes=g.slashes.filter(s=>s.t<s.max);
   for(const c of g.cutins)c.t+=dt; g.cutins=g.cutins.filter(c=>c.t<c.dur);
   for(const s of g.f){for(const c of s.calls)c.t+=dt;s.calls=s.calls.filter(c=>c.t<1.1);}
@@ -672,6 +672,7 @@ function draw(rdt){
     ctx.font='800 20px "M PLUS 1p",sans-serif';ctx.textAlign='center';ctx.fillStyle='#e9dcff';
     ctx.fillText('⏳ '+g.timeStop.t.toFixed(1),W/2,26);
   }
+  drawCalls(g);
   // ダメージ数字
   ctx.textAlign='center';ctx.textBaseline='middle';
   if(!g.over)for(const p of g.pops){const sc=1+.7*(1-ease(p.t/.12));ctx.globalAlpha=clamp((.9-p.t)*3,0,1);
@@ -753,16 +754,34 @@ function drawFighter(s){
     ctx.strokeText('拘束',s.x,s.y);ctx.fillStyle='#ff9cf5';ctx.fillText('拘束',s.x,s.y);}
   ctx.globalAlpha=1;
   // 技名のコールアウト（スマホでも読める大きさ・暗い下地つき）
-  // 表示中の吹き出しは新しいものほどボールの近くに置き、古いものを32pxずつ上へ積む（重ならない）
-  const vis=G.over?[]:s.calls.filter(c=>c.t>=0);   // 決着後は吹き出しを出さない
-  vis.forEach((c,i)=>{const idx=vis.length-1-i;ctx.globalAlpha=Math.min(1,(1.1-c.t)*3);ctx.font='800 21px "M PLUS 1p",sans-serif';
-    const up=!!c.sub;const w=ctx.measureText(c.txt).width+20;
-    const near=s.foe&&Math.abs(s.foe.x-s.x)<150&&Math.abs(s.foe.y-s.y)<170;   // 2つのボールが近いときは、吹き出しをそれぞれ外側へ寄せる
-    const x=clamp(near?s.x+(s.x<s.foe.x?-1:1)*(w/2-s.r):s.x,w/2+4,W-w/2-4);
-    const top=s.y-s.r-30-(vis.length-1)*32-15<4;   // 上に入りきらなければ下側に積む
-    const y=top?s.y+s.r+64+idx*32:s.y-s.r-30-idx*32;
-    pill(x-w/2,y-15,w,30);ctx.fillStyle='rgba(8,10,20,.85)';ctx.fill();ctx.strokeStyle=s.color;ctx.lineWidth=2;ctx.stroke();
-    ctx.fillStyle=up?'#ffcf4a':'#ffffff';ctx.fillText(c.txt,x,y+1);});
+  ctx.globalAlpha=1;
+}
+// 技名の吹き出し：両ボールの吹き出しをまとめて配置し、互いに（縦横とも）重ならないようにずらす。相手のボールも避ける
+function drawCalls(g){
+  if(g.over)return;   // 決着後は出さない
+  ctx.font='800 21px "M PLUS 1p",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  const placed=[],items=[];
+  const hitR=(a,b)=>Math.abs(a.x-b.x)<(a.w+b.w)/2+4&&Math.abs(a.y-b.y)<(a.h+b.h)/2+2;
+  const order=[...g.f].sort((a,b)=>a.y-b.y);   // 上にいるボールから順に配置
+  for(const s of order){const vis=s.calls.filter(c=>c.t>=0).reverse();if(!vis.length)continue;   // 新しい順
+    const f=s.foe;const near=f&&Math.abs(f.x-s.x)<150&&Math.abs(f.y-s.y)<170;
+    const down=s.y-s.r-30-(vis.length-1)*32-15<4;const dir=down?1:-1;let y=down?s.y+s.r+64:s.y-s.r-30;
+    const ball=f?[{x:f.x,y:f.y,w:f.r*2+8,h:f.r*2+8}]:[];
+    const nums=g.pops.map(p=>({x:p.x,y:p.y,w:String(p.txt).length*(p.big?20:13)+8,h:p.big?36:26}));
+    for(const c of vis){const w=ctx.measureText(c.txt).width+20;
+      const x=clamp(near?s.x+(s.x<f.x?-1:1)*(w/2-s.r):s.x,w/2+4,W-w/2-4);
+      // 置き場所の候補：同じ向きに積む → 反対側に積む → 左右にずらす。まず数字も避け、無理なら吹き出し同士だけは必ず避ける
+      const out=r=>r.y<17||r.y>H-17||r.x<r.w/2||r.x>W-r.w/2;
+      const y2=down?s.y-s.r-30:s.y+s.r+64;
+      const mk=n=>{const c=[];for(let k=0;k<n;k++)c.push({x,y:y+dir*32*k},{x,y:y2-dir*32*k},{x:x-(w+8),y:y+dir*32*k},{x:x+(w+8),y:y+dir*32*k});return c;};
+      let r=null;   // 数字を避けるのはボールの近く（3段以内）だけ。遠くへ飛ばすより、吹き出し同士だけ避けて近くに置く
+      pick:for(const lv of[2,1])for(const c of mk(lv===2?3:10)){const q={...c,w,h:30};if(out(q)||placed.some(z=>hitR(z,q))||ball.some(z=>hitR(z,q))||(lv===2&&nums.some(z=>hitR(z,q))))continue;r=q;break pick;}
+      if(!r)r={x,y:clamp(y,17,H-17),w,h:30};
+      placed.push(r);items.push({s,c,r});y=r.y+dir*32;}}
+  g.callRects=placed;   // 動作確認用
+  for(const {s,c,r} of items){ctx.globalAlpha=Math.min(1,(1.1-c.t)*3);
+    pill(r.x-r.w/2,r.y-15,r.w,30);ctx.fillStyle='rgba(8,10,20,.85)';ctx.fill();ctx.strokeStyle=s.color;ctx.lineWidth=2;ctx.stroke();
+    ctx.fillStyle=c.sub?'#ffcf4a':'#ffffff';ctx.fillText(c.txt,r.x,r.y+1);}
   ctx.globalAlpha=1;
 }
 // カットイン描画
@@ -889,6 +908,6 @@ document.querySelectorAll('[data-speed]').forEach(b=>b.onclick=()=>{speedMul=+b.
   document.querySelectorAll('[data-speed]').forEach(x=>x.setAttribute('aria-pressed',x===b));});
 
 renderSetup();showBattle(false);
-window.BB={newGame,step,get G(){return G},loadout,SKILLS,CHARS,BAL,SD_START};   // 動作確認用
+window.BB={newGame,step,draw:()=>draw(0),get G(){return G},loadout,SKILLS,CHARS,BAL,SD_START};   // 動作確認用
 })();
 </script>
