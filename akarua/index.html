@@ -35,6 +35,12 @@ button{font:inherit;color:inherit;cursor:pointer}
 .bg-work{background:radial-gradient(circle at 50% 45%,#000 0 12%,#3b1a6a 30%,#0b0618 70%)}
 .bg-edge{background:radial-gradient(circle at 50% 50%,#ffffff 0 4%,#9aa4c8 20%,#20243a 55%,#05060c)}
 .bg-black{background:#000}
+.bg-school{background:linear-gradient(180deg,#3a3550 0%,#5a4a5e 45%,#2a2433 100%)}
+.bg-school::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,#ffffff08 0 3px,transparent 3px 120px),linear-gradient(transparent 60%,#00000055)}
+.bg-dusk{background:linear-gradient(180deg,#2b1d4a 0%,#c0576a 45%,#f0a060 70%,#3a2030 100%)}
+.bg-limbo{background:radial-gradient(circle at 50% 30%,#fff3f8 0%,#e8c6d8 30%,#8e7aa8 70%,#3a3350 100%)}
+.petal{position:absolute;width:10px;height:7px;background:#ffd6e6;border-radius:70% 0;opacity:.85;animation:fall 7s linear infinite}
+@keyframes fall{from{transform:translate(0,-40px) rotate(0)}to{transform:translate(-80px,110vh) rotate(540deg)}}
 .bg-white{background:#f4f6ff}
 
 .neon{position:absolute;font-weight:900;letter-spacing:.3em;white-space:nowrap;animation:flick 6s infinite}
@@ -285,6 +291,12 @@ const BG = {
     return s+`<div class="tube" style="left:0;right:0;bottom:30%;height:2px;background:#ff5fb8;box-shadow:0 0 20px 4px #ff5fb866"></div>`;}},
   work:{deco:()=>`<div style="position:absolute;left:50%;top:42%;width:46vmin;height:46vmin;margin:-23vmin;border-radius:50%;border:2px dashed #b48cff55;animation:spin 30s linear infinite"></div>
     <div style="position:absolute;left:50%;top:42%;width:30vmin;height:30vmin;margin:-15vmin;border-radius:50%;border:1px solid #ff5fb855;animation:spin 12s linear infinite reverse"></div>`},
+  school:{deco:()=>`<div class="tube" style="left:8%;right:8%;top:8%;height:4px;background:#fff8;box-shadow:0 0 18px 4px #fff3;animation:none"></div>
+    <div style="position:absolute;left:10%;top:18%;width:30%;height:34%;border:3px solid #ffffff22;background:linear-gradient(#9fb4d044,#e0b08033)"></div>
+    <div style="position:absolute;right:10%;top:18%;width:30%;height:34%;border:3px solid #ffffff22;background:linear-gradient(#9fb4d044,#e0b08033)"></div>`},
+  dusk:{deco:()=>`<div style="position:absolute;left:0;right:0;bottom:22%;height:3px;background:#0006"></div>
+    <div style="position:absolute;left:0;right:0;bottom:22%;height:16%;background:repeating-linear-gradient(90deg,#0007 0 3px,transparent 3px 26px)"></div>`},
+  limbo:{deco:()=>{let s='';for(let i=0;i<34;i++)s+=`<div class="petal" style="left:${Math.random()*110}%;animation-delay:${-Math.random()*7}s;animation-duration:${5+Math.random()*4}s"></div>`;return s;}},
   edge:{deco:()=>''}, black:{deco:()=>''}, white:{deco:()=>''}
 };
 let curBg = '';
@@ -366,6 +378,9 @@ function nextLine(){
     if(typeof x==='object'){
       if(x.bg) setBg(x.bg); if(x.show) show(x.show); if(x.fx) x.fx();
       if(x.noise) noiseBurst(x.noise); if(x.shake) shake();
+      if(x.chapter){ $('#text').textContent=''; $('#namebox').style.display='none';
+        return overlay(`<div class="panel" style="text-align:center;background:#05060cee;border-color:#ffffff22"><div class="muted" style="letter-spacing:.4em">CHAPTER</div>
+          <h2 style="font-size:24px;margin:10px 0 18px;letter-spacing:.1em">${x.chapter}</h2><button class="btn pri" id="chok">すすむ</button></div>`), $('#chok').onclick=()=>{ closeOverlay(); nextLine(); }, $('#chok').focus(); }
       continue;
     }
     curLinePos = lineIdx-1; curAtEnd=false; say(x); return;
@@ -377,7 +392,7 @@ function say(raw){
   const m1 = raw.match(/^([htmp]):([\s\S]*)$/);
   const m2 = raw.match(/^([^：\n]{1,14})：([\s\S]*)$/);
   if(raw.startsWith(':')){ text=raw.slice(1); }
-  else if(m1){ who=m1[1]; text=m1[2]; name = who==='p'?S.name:CH[who].name; }
+  else if(m1){ who=m1[1]; text=m1[2]; name = who==='p'?S.name:((S.nameOv&&S.nameOv[who])||CH[who].name); }
   else if(m2){ who='x'; name=m2[1]; text=m2[2]; }
   text = fmt(text);
   BACKLOG.push({name, text, color:(CH[who]&&CH[who].color)||''}); if(BACKLOG.length>300) BACKLOG.shift();
@@ -407,7 +422,7 @@ document.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ if(d
 function finishNode(){
   const n = curNode;
   if(n.choices) return choices(n.choices);
-  if(n.roll) return choices([{t:`《${typeof n.roll.s==='string'?n.roll.s:n.roll.s.label}》で判定する`, roll:n.roll.s, mod:n.roll.mod, ok:n.roll.ok, ng:n.roll.ng}]);
+  if(n.roll) return choices([{t:`《${typeof n.roll.s==='string'?n.roll.s:n.roll.s.label}》で判定する`, roll:n.roll.s, mod:n.roll.mod, ok:n.roll.ok, ng:n.roll.ng, crit:n.roll.crit, fumble:n.roll.fumble}]);
   if(n.san) return choices([{t:`SANチェック（${n.san.s}）`, san:n.san.s, go:n.san.next}]);
   if(n.battle) return startBattle(n.battle);
   if(n.storyEnd) return endStory(n.storyEnd);
@@ -430,7 +445,7 @@ function choices(list){
     b.onclick = ()=>{
       box.innerHTML='';
       if(c.fx) c.fx();
-      if(c.roll) return doRoll(c.roll, c.mod||0, ok=>play(ok?c.ok:c.ng));
+      if(c.roll) return doRoll(c.roll, c.mod||0, (ok,r,j)=>{ if(j==='crit'&&c.crit) return play(c.crit); if(j==='fumble'&&c.fumble) return play(c.fumble); play(ok?c.ok:c.ng); });
       if(c.san) return doSan(c.san, ()=>play(c.go));
       if(c.fn) return c.fn();
       play(c.go);
@@ -445,6 +460,30 @@ function overlay(html){ const o=$('#overlay'); o.innerHTML=html; o.classList.add
 function closeOverlay(){ const o=$('#overlay'); o.classList.remove('on'); o.innerHTML=''; }
 
 /* ---------- ダイス ---------- */
+// クリティカル／ファンブル時の特殊描写と効果（文章は scenario.js の ROLL_FLAVOR）
+function rollFlavor(label, j, isNpc){
+  const F = ROLL_FLAVOR[j];
+  const who = isNpc ? (label.startsWith('独')?'t':label.startsWith('紅葉')?'m':label.startsWith('ハルカ')?'h':'') : '';
+  let text, react='', eff='';
+  if(isNpc){ const N=ROLL_FLAVOR.npc[j]; text = pick(N[who]||N.any); }
+  else {
+    text = pick(F[label] || F.default);
+    const RE=ROLL_FLAVOR.react; const pool = S.story ? RE.story[j] : ['t','m'].filter(c=>comp(c)).flatMap(c=>RE[j][c].map(x=>c+':'+x));
+    if(pool.length) react = pick(pool);
+    // 効果
+    if(j==='crit'){
+      const r = S.story ? 'noise' : pick(['san','noise','money']);
+      if(r==='san'){ sanGain(1); eff='SAN +1'; } else if(r==='noise'){ addNoise(S.story?-3:-2); eff=`${S.story?'ノイズ':'侵食度'} -${S.story?3:2}%`; } else { S.money+=500; hud(); eff='¥500 拾った'; }
+    } else {
+      const r = S.story ? 'noise' : pick(['hp','noise','san']);
+      if(r==='hp'){ S.hp=Math.max(1,S.hp-1); hud(); eff='HP -1'; } else if(r==='noise'){ addNoise(S.story?3:2); eff=`${S.story?'ノイズ':'侵食度'} +${S.story?3:2}%`; } else { S.san=Math.max(1,S.san-1); hud(); eff='SAN -1'; }
+    }
+  }
+  const rl = react ? (()=>{ const m=react.match(/^([htm]):(.*)$/); return m?`<div style="margin-top:4px"><b style="color:${CH[m[1]].color}">${CH[m[1]].name}</b>「${fmt(m[2])}」</div>`:`<div class="muted" style="margin-top:4px">${fmt(react)}</div>`; })() : '';
+  return `<div style="margin:8px auto 0;max-width:420px;font-size:14px;line-height:1.7;text-align:left;border-left:3px solid ${j==='crit'?'var(--gold)':'var(--red)'};padding:4px 10px;background:#ffffff08">
+    <div>${fmt(text)}</div>${rl}${eff?`<div class="${j==='crit'?'crit':'ng'}" style="font-size:12px;margin-top:4px">${j==='crit'?'★ ':'▼ '}${eff}</div>`:''}</div>`;
+}
+function maxDice(expr){ return dice(String(expr).toUpperCase().replace(/(\d*)D(\d+)/g,(m,n,s)=>String((+n||1)*(+s)))); }
 function judge(r, v){ if(r<=5 && r<=v) return 'crit'; if(r>=96 && r>v) return 'fumble'; return r<=v?'ok':'ng'; }
 const JLAB = {crit:'クリティカル！',ok:'成功',ng:'失敗',fumble:'ファンブル…'};
 function doRoll(spec, mod, cb, opt={}){
@@ -459,6 +498,7 @@ function doRoll(spec, mod, cb, opt={}){
     $('#dn').textContent = r; $('#dn').className='num '+(j==='crit'?'crit':ok?'ok':'ng');
     $('#dr').innerHTML = `<span class="${j==='crit'?'crit':ok?'ok':'ng'}">${JLAB[j]}</span>`;
     if(ok && !isNpc && S.skills[spec]!==undefined) S.grow[spec]=1;
+    if(j==='crit'||j==='fumble'){ const fl=rollFlavor(label, j, isNpc); $('#dr').insertAdjacentHTML('afterend', fl); }
     const db=$('#db');
     const done=()=>{ closeOverlay(); cb(ok, r, j); };
     const okb=document.createElement('button'); okb.className='btn pri'; okb.textContent='OK'; okb.onclick=done; db.appendChild(okb);
@@ -477,10 +517,12 @@ function doSan(expr, cb){
     <div class="num" id="dn">--</div><div class="res" id="dr"></div><div class="muted" id="dx"></div><div class="row" style="justify-content:center;margin-top:10px" id="db"></div></div>`);
   let t=0; const iv=setInterval(()=>{ $('#dn').textContent=String(rnd(100)).padStart(2,'0'); if(++t>14){ clearInterval(iv); fin(); } },45);
   function fin(){
-    const r=rnd(100), ok=r<=v; const loss=Math.max(0,dice(ok?sOk:sNg));
+    const r=rnd(100), ok=r<=v; let loss=Math.max(0,dice(ok?sOk:sNg)); let extra='';
+    if(r<=5){ loss=0; extra=`<div class="crit" style="font-size:14px;margin-top:6px">★ クリティカル：${pick(ROLL_FLAVOR.san.crit)}</div>`; }
+    else if(r>=96){ loss=Math.max(loss, maxDice(sNg)); extra=`<div class="ng" style="font-size:14px;margin-top:6px">▼ ファンブル：${pick(ROLL_FLAVOR.san.fumble)}（最大値）</div>`; }
     S.san = Math.max(0, S.san-loss); hud();
     $('#dn').textContent=r; $('#dn').className='num '+(ok?'ok':'ng');
-    $('#dr').innerHTML=`<span class="${ok?'ok':'ng'}">${ok?'成功':'失敗'}</span>　SAN -${loss}`;
+    $('#dr').innerHTML=`<span class="${ok?'ok':'ng'}">${ok?'成功':'失敗'}</span>　SAN -${loss}`+extra;
     if(loss>0) noiseBurst(.4);
     const db=$('#db'); const b=document.createElement('button'); b.className='btn pri'; b.textContent='OK'; db.appendChild(b); b.focus();
     b.onclick=()=>{
@@ -507,7 +549,7 @@ function msg(html, cb, btn='OK'){
 /* ---------- HUD ---------- */
 function hud(){
   if(!S) return;
-  if(S.story){ $('#hud').innerHTML=`<button id="menuBtn" style="visibility:hidden">手帳</button><button id="logBtn" class="chip" style="cursor:pointer">ログ</button><button id="saveBtn" class="chip" style="cursor:pointer">セーブ</button>`;
+  if(S.story){ $('#hud').innerHTML=`<span class="chip">${S.name}</span><span class="chip hp">HP <b>${S.hp}</b>/${S.hpMax}</span>${S.acts&&S.acts.length?`<span class="chip noise">ノイズ <b>${S.noise}%</b></span>`:''}<button id="menuBtn" style="visibility:hidden;margin-left:auto">手帳</button><button id="logBtn" class="chip" style="cursor:pointer">ログ</button><button id="saveBtn" class="chip" style="cursor:pointer">セーブ</button>`;
     $('#logBtn').onclick=openLog; $('#saveBtn').onclick=()=>{ if(!$('#overlay').classList.contains('on')) saveMenu('save', closeOverlay); }; return; }
   const f = '◆'.repeat(S.frag)+'◇'.repeat(5-S.frag);
   const cn = {none:'ひとり',t:'独',m:'紅葉',both:'独・紅葉'}[S.comp];
@@ -627,10 +669,11 @@ function saveMenu(mode, back){
 }
 
 /* ---------- 戦闘 ---------- */
-let B=null;
+let B=null, LAST_BATTLE_SCENE=null;
 function startBattle(cfg){
   const e = Object.assign({}, ENEMIES[cfg.e]); e.hpMax=e.hp; e.calm=e.talk?e.talk.n:0;
-  B = {eid:cfg.e, e, win:cfg.win, lose:cfg.lose||'faint', flee:cfg.flee, peace:cfg.peace, round:1, log:[], weak:0, tUlt:false, mHeal:0, busy:false};
+  LAST_BATTLE_SCENE = curId;
+  B = {used:{}, eid:cfg.e, e, win:cfg.win, lose:cfg.lose||'faint', flee:cfg.flee, peace:cfg.peace, round:1, log:[], weak:0, tUlt:false, mHeal:0, busy:false};
   const go = ()=>{ renderBattle(); blog(`<b>${e.name}</b> が現れた！`); if(e.intro) blog(`<span class="muted">${e.intro}</span>`); };
   if(e.san && !cfg.noSan){ msg(`<h2>${e.name}</h2><p>${e.desc}</p><p class="muted">その姿を目にした――</p>`, ()=>doSan(e.san, go), 'SANチェック'); }
   else go();
@@ -639,6 +682,8 @@ function blog(h){ B.log.push(h); const el=$('#blog'); if(el){ el.innerHTML=B.log
 function renderBattle(){
   const e=B.e;
   const acts = [];
+  (S.acts||[]).forEach(x=>{ if(x.once && B.used && B.used[x.id]) return;
+    acts.push(`<button class="btn" data-a="${x.id}" style="border-color:${x.color||'#9fd0ff'}">${x.label}<br><small class="muted">${x.type==='absorb'?'次の攻撃を無力化':`${x.v}% / ${x.dmg}`}${x.noise?` ・ ノイズ+${x.noise}`:''}${x.once?' ・ 1回':''}</small></button>`); });
   acts.push(`<button class="btn" data-a="punch">こぶし<br><small class="muted">${skillVal('こぶし')}% / 1D3${S.db!=='0'?S.db:''}</small></button>`);
   acts.push(`<button class="btn" data-a="kick">キック<br><small class="muted">${skillVal('キック')}% / 1D6${S.db!=='0'?S.db:''}</small></button>`);
   if(S.items['スタンロッド']) acts.push(`<button class="btn" data-a="rod">スタンロッド<br><small class="muted">${skillVal('こぶし')}% / 1D6+1</small></button>`);
@@ -655,7 +700,7 @@ function renderBattle(){
       <div class="bar e" style="max-width:300px;margin:6px auto"><i style="width:${e.hp/e.hpMax*100}%"></i></div>
       <div class="muted">HP ${e.hp}/${e.hpMax}${e.talk?` ・ 鎮静まで ${B.e.calm}`:''}</div></div>
     <div class="row" style="gap:16px"><div style="flex:1">HP ${S.hp}/${S.hpMax}<div class="bar p"><i style="width:${S.hp/S.hpMax*100}%"></i></div></div>
-      <div style="flex:1">SAN ${S.san}<div class="bar s"><i style="width:${S.san/sanMax()*100}%"></i></div></div></div>
+      ${S.story?`<div style="flex:1">ノイズ ${S.noise}%<div class="bar s"><i style="width:${S.noise}%;background:linear-gradient(90deg,#ddd,#fff)"></i></div></div>`:`<div style="flex:1">SAN ${S.san}<div class="bar s"><i style="width:${S.san/sanMax()*100}%"></i></div></div>`}</div>
     <div class="blog" id="blog"></div>
     <div class="acts" id="acts">${acts.join('')}</div></div>`);
   $('#blog').innerHTML=B.log.map(x=>`<div>${x}</div>`).join(''); $('#blog').scrollTop=1e9;
@@ -667,20 +712,27 @@ async function act(a){
   if(B.busy) return; B.busy=true; document.querySelectorAll('#acts button').forEach(b=>b.disabled=true);
   const e=B.e; let guard=0;
   if(a==='item'){ B.busy=false; return battleItem(); }
-  if(a==='punch'||a==='kick'||a==='rod'){
-    const sk = a==='kick'?'キック':'こぶし';
-    const R=rollLine(sk, skillVal(sk));
-    blog(`<b>${S.name}</b>の攻撃 ${R.txt}`);
-    if(R.ok){ S.grow[a==='kick'?'キック':'こぶし']=1;
-      let d = dice((a==='punch'?'1D3':a==='kick'?'1D6':'1D6+1') + (S.db!=='0'?S.db:''));
-      if(R.j==='crit') d+= dice(a==='punch'?'1D3':'1D6');
+  const cx = (S.acts||[]).find(x=>x.id===a);
+  if(cx && cx.type==='absorb'){
+    addNoise(cx.noise||0); B.absorb=1; blog(`<b>${S.name}</b>の${cx.label}　<span class="muted">${cx.text||''}${cx.noise?`（ノイズ +${cx.noise}%）`:''}</span>`); noiseBurst(.4);
+  } else if(a==='punch'||a==='kick'||a==='rod'||cx){
+    const sk = cx ? (cx.skill||cx.label) : a==='kick'?'キック':'こぶし';
+    const R=rollLine(cx?cx.label:sk, cx&&cx.v ? cx.v : skillVal(sk));
+    if(cx){ if(cx.once) B.used[cx.id]=1; if(cx.noise){ addNoise(cx.noise); } }
+    blog(`<b>${S.name}</b>の${cx?'':'攻撃 '}${R.txt}${cx&&cx.noise?` <span class="muted">（ノイズ +${cx.noise}%）</span>`:''}`);
+    if(cx && cx.text) blog(`<span class="muted">　${cx.text}</span>`);
+    if(R.ok){ if(S.skills[sk]!==undefined) S.grow[sk]=1;
+      const base = cx ? cx.dmg : (a==='punch'?'1D3':a==='kick'?'1D6':'1D6+1');
+      let d = dice(base + (cx&&cx.noDb ? '' : (S.db!=='0'?S.db:'')));
+      if(R.j==='crit'){ d+= dice(base.split('+')[0]); blog(`<span class="crit">　★ ${fmt(pick(BATTLE_FLAVOR.atkCrit))}</span>`); }
       if(B.weak){ const w=dice('1D4'); d+=w; blog(`　紅葉が見抜いた弱点を突いた！（+${w}）`); B.weak=0; }
       hitEnemy(d);
-    }
+    } else if(R.j==='fumble'){ guard-=30; blog(`<span class="ng">　▼ ${fmt(pick(BATTLE_FLAVOR.atkFumble))}（このラウンド回避-30）</span>`); }
   } else if(a==='talk'){
     const R=rollLine(e.talk.s, clamp(skillVal(e.talk.s)+(e.talk.mod||0),1,99));
     blog(`<b>${S.name}</b>は語りかけた ${R.txt}`);
-    if(R.ok){ S.grow[e.talk.s]=1; e.calm -= (R.j==='crit'?2:1); blog(`　${e.name}の動きが鈍った…`); }
+    if(R.ok){ S.grow[e.talk.s]=1; e.calm -= (R.j==='crit'?2:1); blog(R.j==='crit'?`<span class="crit">　★ 言葉がまっすぐ届いた。${e.name}の動きが大きく鈍った！</span>`:`　${e.name}の動きが鈍った…`); }
+    else if(R.j==='fumble'){ e.calm+=1; blog(`<span class="ng">　▼ 言葉選びを間違えた。${e.name}が警戒を強めた…</span>`); }
     if(e.calm<=0){ await sleep(500); return endBattle(true, true); }
   } else if(a==='guard'){ guard=30; blog(`<b>${S.name}</b>は身構えた。`); }
   else if(a==='flee'){
@@ -689,27 +741,39 @@ async function act(a){
   }
   refreshBattle(); await sleep(550);
   if(e.hp<=0) return endBattle(true);
+  if(S.story && S.noise>=100){ blog('<span class="ng">ノイズが、全身を呑み込んだ――</span>'); await sleep(500); return endBattle(false); }
   // 同行者の行動
   if(comp('t')){
     if(!B.tUlt && e.hp<=e.hpMax/2){ B.tUlt=true; blog(`<span style="color:${CH.t.color}">独</span>「……終わらせる。」〈🤍Re: End of a Dream💙〉100 → <span class="crit">発動</span>`); hitEnemy(dice('1D6+2')); }
-    else { const R=rollLine('↓FREEDOM DiVE↓',69); blog(`<span style="color:${CH.t.color}">独</span>の〈↓FREEDOM DiVE↓〉 ${R.txt}`); if(R.ok) hitEnemy(dice('1D6')); }
+    else { const R=rollLine('↓FREEDOM DiVE↓',69); blog(`<span style="color:${CH.t.color}">独</span>の${R.txt}`);
+      if(R.j==='crit'){ blog(`<span class="crit">　★ 独「……今の、ちょっと気持ちよかった」</span>`); hitEnemy(dice('2D6')); }
+      else if(R.ok) hitEnemy(dice('1D6'));
+      else if(R.j==='fumble') blog(`<span class="ng">　▼ 独「……っ、ノイズが…」 独の指先で砂嵐が弾けた。</span>`); }
     refreshBattle(); await sleep(550); if(e.hp<=0) return endBattle(true);
   }
   if(comp('m')){
     if(S.hp<=S.hpMax/2 && B.mHeal<2){ B.mHeal++; const R=rollLine('応急手当',60); blog(`<span style="color:${CH.m.color}">紅葉</span>「ちょっと、じっとしてて！」${R.txt}`); if(R.ok){ const h=dice('1D3'); heal(h); blog(`　HPが ${h} 回復した。`);} }
-    else if(!B.weak){ const R=rollLine('目星',85); blog(`<span style="color:${CH.m.color}">紅葉</span>「あそこ、ノイズが薄いよ！」${R.txt}`); if(R.ok){ B.weak=1; blog('　次の攻撃が成功するとダメージ+1D4'); } }
+    else if(!B.weak){ const R=rollLine('目星',85); blog(`<span style="color:${CH.m.color}">紅葉</span>「あそこ、ノイズが薄いよ！」${R.txt}`);
+      if(R.j==='crit'){ B.weak=1; blog(`<span class="crit">　★ 紅葉「見えた！ 独君の敵はうちの敵！」――弱点を正確に突いた。</span>`); hitEnemy(dice('1D4')); }
+      else if(R.ok){ B.weak=1; blog('　次の攻撃が成功するとダメージ+1D4'); }
+      else if(R.j==='fumble') blog(`<span class="ng">　▼ 紅葉「あれ？ どこ？ ……わっ、こっち来た！？」</span>`); }
     else { const R=rollLine('こぶし',50); blog(`<span style="color:${CH.m.color}">紅葉</span>のこぶし ${R.txt}`); if(R.ok) hitEnemy(dice('1D3')); }
     refreshBattle(); await sleep(550); if(e.hp<=0) return endBattle(true);
   }
   // 敵の行動
   const ally = (comp('t')||comp('m')) && Math.random()<.25;
   const R=rollLine('攻撃', e.atk); blog(`<b class="ng">${e.name}</b>の${pick(e.moves||['攻撃'])} ${R.txt}`);
+  if(R.j==='fumble'){ const sd=dice('1D3'); e.hp=Math.max(0,e.hp-sd); blog(`<span class="crit">　★ ${fmt(pick(BATTLE_FLAVOR.enemyFumble)).replace('{e}',e.name)}（${sd} ダメージ）</span>`); refreshBattle(); if(e.hp<=0){ await sleep(450); return endBattle(true); } }
+  if(R.j==='crit') blog(`<span class="ng">　▼ ${fmt(pick(BATTLE_FLAVOR.enemyCrit)).replace('{e}',e.name)}</span>`);
   if(R.ok){
-    if(ally){ const who = comp('t')&&(!comp('m')||Math.random()<.5) ? '独' : '紅葉'; blog(`　${who}を狙った！――が、${who}は軽く身を翻して躱した。`); }
+    if(B.absorb){ B.absorb=0; blog(`<span style="color:${CH.t.color}">　〈Glitch〉――攻撃は、バグのようにノイズへ呑まれて消えた。</span>`); noiseBurst(.4); }
+    else if(ally){ const who = comp('t')&&(!comp('m')||Math.random()<.5) ? '独' : '紅葉'; blog(`　${who}を狙った！――が、${who}は軽く身を翻して躱した。`); }
     else {
       const D=rollLine('回避', clamp(skillVal('回避')+guard,1,95)); blog(`　${S.name}の回避 ${D.txt}`);
-      if(D.ok){ S.grow['回避']=1; blog('　攻撃を躱した！'); }
+      if(D.ok){ S.grow['回避']=1; blog('　攻撃を躱した！');
+        if(D.j==='crit'){ const cd=dice('1D3'); blog(`<span class="crit">　★ ${fmt(pick(BATTLE_FLAVOR.dodgeCrit))}</span>`); hitEnemy(cd); refreshBattle(); if(e.hp<=0){ await sleep(450); return endBattle(true); } } }
       else { let d=dice(e.dmg); if(R.j==='crit') d+=dice(e.dmg);
+        if(D.j==='fumble'){ d+=1; blog(`<span class="ng">　▼ ${fmt(pick(BATTLE_FLAVOR.dodgeFumble))}（+1）</span>`); }
         if(comp('t') && !B.tGlitch && d>=2){ B.tGlitch=true;
           blog(`<span style="color:${CH.t.color}">独</span>〈Glitch〉――<b>${d}</b> ダメージの攻撃が、バグのようにノイズへ呑まれて消えた。`);
           blog('<span class="muted">　独の腕に、白黒の砂嵐が走る。「……平気。慣れてるから」</span>'); noiseBurst(.5); d=0; }
@@ -718,7 +782,7 @@ async function act(a){
   }
   refreshBattle();
   await sleep(450);
-  if(S.hp<=0) return endBattle(false);
+  if(S.hp<=0 || (S.story && S.noise>=100)) return endBattle(false);
   B.round++; B.busy=false; renderBattle();
 }
 function refreshBattle(){ const ph=document.querySelector('.battle'); if(!ph) return; const e=B.e;
@@ -742,7 +806,7 @@ function endBattle(win, peaceful){
   if(win) metaAdd('enemy', B.eid);
   const after=()=>{ closeOverlay(); if(win) play(peaceful&&B.peace?B.peace:B.win); else play(B.lose); };
   if(win) msg(`<h2 class="ok">${peaceful?'鎮静化':'勝利'}</h2><p>${peaceful?`${e.name}は静かにノイズの向こうへ消えていった。`:`${e.name}は砂嵐になって崩れ落ちた。`}</p>`, after);
-  else msg(`<h2 class="ng">戦闘不能</h2><p>視界が、白黒の砂嵐に塗り潰されていく――</p>`, after);
+  else msg(`<h2 class="ng">${S.story&&S.noise>=100?'ノイズに呑まれた':'戦闘不能'}</h2><p>視界が、白黒の砂嵐に塗り潰されていく――</p>`, after);
 }
 
 /* ---------- 依頼 ---------- */
@@ -994,6 +1058,7 @@ function startStory(cs){
   S.skills = Object.assign({}, BASE_SKILLS); if(cs.setup) cs.setup();
   closeOverlay(); inHub=false; play(cs.start);
 }
+function retryBattle(){ S.hp=S.hpMax; S.noise=Math.min(S.noise,30); play(LAST_BATTLE_SCENE); }
 function endStory(label){
   const cs = CHAR_STORIES.find(c=>c.id===S.story); if(cs) metaAdd('story', cs.id);
   $('#box').style.display='none';
