@@ -227,6 +227,7 @@ const ITEMS = {
   'ラムネ':      {price:300,  desc:'HP+1。その日最初の1粒はSAN+1。独の大好物。', use:()=>{ heal(1); if(S.ramuneDay!==S.day){S.ramuneDay=S.day; sanGain(1); return 'HP+1 / SAN+1';} return 'HP+1（SAN回復は1日1回まで）'; }},
   '包帯':        {price:800,  desc:'HP+1D3。', use:()=>{const v=dice('1D3'); heal(v); return `HP+${v}`;}},
   'ハーブティー':{price:1500, desc:'ハルカ印。SAN+1D3。', use:()=>{const v=dice('1D3'); sanGain(v); return `SAN+${v}`;}},
+  '団子':        {price:0, hidden:true, desc:'白夜のお土産。HP+1D3、SAN+1。', use:()=>{const v=dice('1D3'); heal(v); sanGain(1); return `HP+${v} / SAN+1`;}},
   'お守り':      {price:2500, desc:'失敗した技能判定を1回だけ振り直せる。（自動で確認されます）', use:null},
   'スタンロッド':{price:5000, desc:'武器。戦闘で〈こぶし〉で判定し 1D6+1+DB ダメージ。', use:null, weapon:true},
 };
@@ -808,13 +809,13 @@ function openDex(tab){
   let body='';
   const cnt=(k,all)=>`<div class="muted" style="margin-bottom:8px">収集 ${Object.keys(META[k]).filter(x=>all.includes(x)).length} / ${all.length}</div>`;
   if(dexTab==='chara'){
-    body = PROFILES.map(pf=>{
-      const aff = S? S.aff[pf.id] : 99;
+    body = PROFILES.filter(pf=>!pf.unlock || pf.unlock()).map(pf=>{
+      const aff = S? (S.aff[pf.id]??0) : 99;
       return `<div class="card"><div class="row" style="gap:12px;align-items:flex-start;flex-wrap:nowrap">
-        <img src="${CH[pf.id].img.def}" style="width:72px;height:96px;object-fit:contain;background:#d8e0ff22;border-radius:10px;flex:none">
-        <div><div class="tt" style="color:${CH[pf.id].color}">${pf.name} <span class="muted">${pf.kana}</span></div>
+        ${pf.noimg?`<div style="width:72px;height:96px;background:#d8e0ff14;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-size:30px;color:#cfd8ff88">刀</div>`:`<img src="${CH[pf.id].img.def}" style="width:72px;height:96px;object-fit:contain;background:#d8e0ff22;border-radius:10px;flex:none">`}
+        <div><div class="tt" style="color:${(CH[pf.id]||{color:'#e8e8e8'}).color}">${pf.name} <span class="muted">${pf.kana}</span></div>
         <div class="cl">${pf.info}</div><p style="font-size:13px;margin:6px 0">${pf.desc}</p>
-        ${pf.more.map(x=> (aff>=x.aff||META.bond[x.bond]) ? `<p style="font-size:13px;margin:4px 0;color:#cfd8ff">◆ ${x.text}</p>` : `<p class="muted" style="font-size:12px;margin:4px 0">◇ ？？？（もっと仲良くなると解放）</p>`).join('')}
+        ${pf.more.map(x=> (x.need ? x.need() : (aff>=x.aff||META.bond[x.bond])) ? `<p style="font-size:13px;margin:4px 0;color:#cfd8ff">◆ ${x.text}</p>` : `<p class="muted" style="font-size:12px;margin:4px 0">◇ ？？？（もっと仲良くなると解放）</p>`).join('')}
         </div></div></div>`;}).join('');
   } else if(dexTab==='talk'){
     const all = ['h','t','m'].flatMap(w=>TALK[w].map(x=>x.id));
@@ -843,7 +844,7 @@ function openDex(tab){
 /* ---------- 購買 ---------- */
 function shop(){
   inHub=false;
-  const keys=Object.keys(ITEMS);
+  const keys=Object.keys(ITEMS).filter(k=>!ITEMS[k].hidden);
   overlay(`<div class="panel"><h2>ハルカの棚</h2><div class="muted">「欲しいものがあったら言ってね〜。お代はちゃんと貰うけど♪」　所持金 ¥<b id="sm">${S.money.toLocaleString()}</b></div><div style="margin-top:10px">
   ${keys.map(k=>`<div class="kv"><span><b>${k}</b> <span class="muted">所持${S.items[k]||0}</span><br><span class="muted">${ITEMS[k].desc}</span></span><span><button class="btn" data-b="${k}">¥${ITEMS[k].price.toLocaleString()}</button></span></div>`).join('')}
   </div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn pri" id="sc">戻る</button></div></div>`);
@@ -1919,6 +1920,10 @@ const TALK = {
     {id:'h15', title:'作業部屋の秘密', when:()=>!!S.done.s3, lines:['h:作業部屋のこと、内緒にしてくれてる？','h:えらいえらい。ご褒美に……うーん、何がいい？ 星とか？','h:冗談だよ〜。本物の星はさすがに棚に入らないからね。']},
     {id:'h6', title:'灯野君のこと', when:()=>!!S.done.m5, lines:['h:灯野君はね、昔ウチで働いてたんだ。','h:帰れって、何度も言ったんだけどね。……私も、甘かったなぁ。','h:だから、君にはちゃんと帰ってほしいんだよ。']},
     {id:'h16', title:'もうすぐ', when:()=>S.frag>=4, lines:['h:もうすぐ、だね。','h:……寂しくなるなぁ、って言ったら、困らせちゃうかな。','h:なーんてね！ 帰る子を笑顔で送り出すのが、店主の仕事だから。']},
+    {id:'h17', title:'旦那さん', when:()=>S.day>=2, lines:['p:ハルカさんって、結婚してるんですか？','h:してるよ〜。白夜っていうの。白石 白夜。','h:刀鍛冶でね、白い髪で、目の色が左右で違って。煙管ばっかり吸ってる困った人。','h:今はちょっと別の世界で隠居中。……あ、別居じゃないからね？ ラブラブだからね？']},
+    {id:'h18', title:'アカルアの始まり', when:()=>S.flags.read&&S.flags.read.h17, lines:['h:アカルアはね、もともと白夜と二人で始めたお店なんだ〜。','h:あの人が刀を打って、私が何でもやる。……今思うと、変なお店だよね。','h:白夜が隠居してからは、独君と紅葉ちゃんが来てくれて。賑やかになったなぁ。']},
+    {id:'h19', title:'人間である', when:()=>S.flags.read&&S.flags.read.h17&&S.day>=4, lines:['h:白夜ってね、すっごく強いの。私が呆れるくらい。','h:でも、本人はずっと「わしはしがない刀鍛冶さ」って言うんだ。','h:どんなに強くなっても、あの人は"人間"のまま。……私は、そういうところが好きになったの。','h:ふふ、のろけちゃった。内緒ね〜。']},
+    {id:'h20', title:'煙管の匂い', when:()=>S.frag>=2, lines:['h:……すん。','h:ん？ いや、どこかから煙管の匂いがした気がして。','h:気のせいかな〜。あの人、こっちに来る時は絶対連絡くれないからさ。','h:……来たら来たで、お店の中で吸わないでって言わなきゃ。']},
   ],
   t:[
     {id:'t1', title:'……何。', lines:['t:……何。','t:用がないなら、話しかけなくていいよ。','t:………………別に、嫌って意味じゃない。']},
@@ -1936,6 +1941,7 @@ const TALK = {
     {id:'t14', title:'灯りの写真', when:()=>!!S.done.m4, lines:['t:……第7区画の灯り。','t:紅葉が写真見せてくれた。……キミも写ってたけど。','t:……変な顔してた。']},
     {id:'t15', title:'向こうの話', when:()=>S.day>=6, lines:['t:……キミ、向こうでは何してたの。','t:……ふーん。','t:ボクは、向こうに戻りたいとは思わない。でも、向こうの話を聞くのは、嫌いじゃない。']},
     {id:'t7', title:'あと少し', when:()=>S.frag>=3, lines:['t:……座標、あと少しだね。','t:…………。','t:……なんでもない。']},
+    {id:'t16', title:'白夜さん', when:()=>S.flags.read&&S.flags.read.h17, lines:['t:……白夜さん？ ハルカさんの旦那さん。','t:……何回か会ったことある。ボクのこと「お前さん」って呼ぶ。','t:料理、すごくうまい。……ラムネに合うお菓子、作ってくれた。','t:……また、会いたい。……別に、お菓子目当てじゃない。']},
   ],
   m:[
     {id:'m1', title:'独君どこだ〜い', lines:['m:あ、{name}！ 独君見なかった？','m:「独君どこだ〜い♡」って探してるのに、すぐどっか行っちゃうの。','m:……あなたの後ろに隠れてたりしないよね？']},
@@ -1952,10 +1958,11 @@ const TALK = {
     {id:'m6', title:'そのノイズ', when:()=>S.noise>=50, lines:['m:ちょっと、そのノイズ大丈夫？','m:ハルカさんに診てもらいなよ。……あなたが消えたら、独君がまた落ち込むでしょ。']},
     {id:'m12', title:'忘れたら許さない', when:()=>S.frag>=3, lines:['m:ねぇ、帰ったら、うちらのこと忘れちゃう？','m:……忘れたら、許さないからね？','m:冗談！ ……半分だけ。']},
     {id:'m13', title:'毎日新鮮', when:()=>S.day>=5, lines:['m:今日の独君もかっこよかった〜。','m:え？ いつもと同じ？ 毎日新鮮にかっこいいの！','m:{name}にはこの良さがわからないかな〜？ わかっても困るけど♡']},
+    {id:'m15', title:'嬢ちゃん', when:()=>S.flags.read&&S.flags.read.h17, lines:['m:白夜さんの話、聞いた？','m:あの人ね、うちのこと「嬢ちゃん」って呼ぶの。孫みたいに可愛がってくれるんだよ〜。','m:でもね、初めて会った時、白夜さんのこと女の人だと思っちゃって……。','m:……ハルカさんに大笑いされた。']},
   ],
 };
 const IDLE = {
-  h:['h:ん〜？ 今日はもうたくさん話したでしょ〜。また明日ね。','h:お茶でも淹れようか？ ……冗談、自分で淹れて〜。','h:独く〜ん、ちょっとこっち来てくれる〜？ ……あ、{name}だった。','h:ふふ、暇そうだね。私も暇〜。','h:無理はしないでね。それだけ。'],
+  h:['h:ん〜？ 今日はもうたくさん話したでしょ〜。また明日ね。','h:お茶でも淹れようか？ ……冗談、自分で淹れて〜。','h:独く〜ん、ちょっとこっち来てくれる〜？ ……あ、{name}だった。','h:ふふ、暇そうだね。私も暇〜。','h:無理はしないでね。それだけ。','h:……白夜、今ごろ何してるかな〜。'],
   t:['t:……まだ何か用？','t:……ラムネ、持ってない？ ……ないならいい。','t:…………（マフラーに顔を埋めている）','t:……眠い。','t:……うるさい…。……今のは、キミに言ったんじゃない。'],
   m:['m:独君見なかった〜？ ……見てない？ そっか。','m:なぁに？ うち今、独君のこと考えるので忙しいんだけど？','m:えへへ、今日も指輪ぴかぴか♡','m:……ずっと見てるけど、何？','m:また明日ね〜！ 独君にもおやすみって言っといて！'],
 };
@@ -2112,6 +2119,18 @@ const NIGHT = [
     ':『どこにいるの？』',
     ':――次の瞬間には、また砂嵐に戻っていた。',
   ], san:{s:'0/1', next:'__hub'}}},
+  {id:'n6', when:()=>S.flags.read&&S.flags.read.h17&&S.day>=3, scene:{bg:'shop', show:['h'], lines:[
+    ':夜。カウンターで、ハルカさんが一通の手紙を読んでいた。',
+    ':和紙の封筒。ほのかに、煙管の煙の匂いがする。',
+    'h:あ、見られちゃった。……白夜から。',
+    'h:「新しい子が来たそうだな。わしの分まで、よろしく頼む」だって。',
+    'h:……どこで聞いたんだろ。相変わらず、何でもお見通しなんだから。',
+    'h:それとね、お土産も入ってたよ。はい、君の分。',
+    ':手渡されたのは、竹皮に包まれたお団子だった。',
+    {fx:()=>{ S.items['団子']=(S.items['団子']||0)+3; }},
+    ':（団子×3を手に入れた）',
+    'h:あの人の料理、おいしいんだよ〜。……私より上手なのが、ちょっと悔しいけど。',
+  ], next:'__hub'}},
   {id:'n5', when:()=>!!S.done.m5, scene:{bg:'shop', show:['t','h','m'], lines:[
     'h:はーい、今日は私が晩ごはん作りました〜！',
     ':テーブルの上で、虹色に発光する何かがぐつぐつと煮えている。',
@@ -2156,6 +2175,10 @@ const PROFILES = [
     desc:'独の妻。独のことが大好きで、ちょっと（かなり）愛が重い。一人称は「うち」。〈目星〉と〈説得〉が得意。「独君どこだ〜い♡」',
     more:[{aff:4, bond:'mb1', text:'左手の結婚指輪は白石ハルカ製。壊れない、外れない、消えない。どんな効果も概念も受け付けない。「ず〜っと一緒だよ？♡」'},
           {aff:8, bond:'mb2', text:'独のいるところが、紅葉の帰る場所。アザトース（ハルカの母）を何度も目にしているが、平気な顔をしている。'}]},
+  {id:'b', noimg:true, unlock:()=>META.talk.h17, name:'白石 白夜', kana:'しらいし びゃくや', info:'31歳 / 男 / 刀鍛冶 / 出身：日本 / 誕生日 12/1 / 現在は別の世界で隠居中',
+    desc:'白石ハルカの夫。白い髪にオッドアイ。「わしはしがない刀鍛冶さ」。女性には「嬢ちゃん」、男性には「お前さん」と、誰にでも孫のように接する。よく女性と間違われる。煙管を手放さない。料理上手。',
+    more:[{text:'ハルカと二人でアカルアを始めた。どんなに強くなっても、彼は"人間"であることを変えない。', need:()=>META.talk.h19},
+          {text:'今もときどき、煙管の匂いのする手紙とお土産がアカルアに届く。', need:()=>(S&&S.flags.ni_n6) || META.talk.h20}]},
 ];
 
 /* ---------- エンディング ---------- */

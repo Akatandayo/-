@@ -227,6 +227,7 @@ const ITEMS = {
   'ラムネ':      {price:300,  desc:'HP+1。その日最初の1粒はSAN+1。独の大好物。', use:()=>{ heal(1); if(S.ramuneDay!==S.day){S.ramuneDay=S.day; sanGain(1); return 'HP+1 / SAN+1';} return 'HP+1（SAN回復は1日1回まで）'; }},
   '包帯':        {price:800,  desc:'HP+1D3。', use:()=>{const v=dice('1D3'); heal(v); return `HP+${v}`;}},
   'ハーブティー':{price:1500, desc:'ハルカ印。SAN+1D3。', use:()=>{const v=dice('1D3'); sanGain(v); return `SAN+${v}`;}},
+  '団子':        {price:0, hidden:true, desc:'白夜のお土産。HP+1D3、SAN+1。', use:()=>{const v=dice('1D3'); heal(v); sanGain(1); return `HP+${v} / SAN+1`;}},
   'お守り':      {price:2500, desc:'失敗した技能判定を1回だけ振り直せる。（自動で確認されます）', use:null},
   'スタンロッド':{price:5000, desc:'武器。戦闘で〈こぶし〉で判定し 1D6+1+DB ダメージ。', use:null, weapon:true},
 };
@@ -808,13 +809,13 @@ function openDex(tab){
   let body='';
   const cnt=(k,all)=>`<div class="muted" style="margin-bottom:8px">収集 ${Object.keys(META[k]).filter(x=>all.includes(x)).length} / ${all.length}</div>`;
   if(dexTab==='chara'){
-    body = PROFILES.map(pf=>{
-      const aff = S? S.aff[pf.id] : 99;
+    body = PROFILES.filter(pf=>!pf.unlock || pf.unlock()).map(pf=>{
+      const aff = S? (S.aff[pf.id]??0) : 99;
       return `<div class="card"><div class="row" style="gap:12px;align-items:flex-start;flex-wrap:nowrap">
-        <img src="${CH[pf.id].img.def}" style="width:72px;height:96px;object-fit:contain;background:#d8e0ff22;border-radius:10px;flex:none">
-        <div><div class="tt" style="color:${CH[pf.id].color}">${pf.name} <span class="muted">${pf.kana}</span></div>
+        ${pf.noimg?`<div style="width:72px;height:96px;background:#d8e0ff14;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-size:30px;color:#cfd8ff88">刀</div>`:`<img src="${CH[pf.id].img.def}" style="width:72px;height:96px;object-fit:contain;background:#d8e0ff22;border-radius:10px;flex:none">`}
+        <div><div class="tt" style="color:${(CH[pf.id]||{color:'#e8e8e8'}).color}">${pf.name} <span class="muted">${pf.kana}</span></div>
         <div class="cl">${pf.info}</div><p style="font-size:13px;margin:6px 0">${pf.desc}</p>
-        ${pf.more.map(x=> (aff>=x.aff||META.bond[x.bond]) ? `<p style="font-size:13px;margin:4px 0;color:#cfd8ff">◆ ${x.text}</p>` : `<p class="muted" style="font-size:12px;margin:4px 0">◇ ？？？（もっと仲良くなると解放）</p>`).join('')}
+        ${pf.more.map(x=> (x.need ? x.need() : (aff>=x.aff||META.bond[x.bond])) ? `<p style="font-size:13px;margin:4px 0;color:#cfd8ff">◆ ${x.text}</p>` : `<p class="muted" style="font-size:12px;margin:4px 0">◇ ？？？（もっと仲良くなると解放）</p>`).join('')}
         </div></div></div>`;}).join('');
   } else if(dexTab==='talk'){
     const all = ['h','t','m'].flatMap(w=>TALK[w].map(x=>x.id));
@@ -843,7 +844,7 @@ function openDex(tab){
 /* ---------- 購買 ---------- */
 function shop(){
   inHub=false;
-  const keys=Object.keys(ITEMS);
+  const keys=Object.keys(ITEMS).filter(k=>!ITEMS[k].hidden);
   overlay(`<div class="panel"><h2>ハルカの棚</h2><div class="muted">「欲しいものがあったら言ってね〜。お代はちゃんと貰うけど♪」　所持金 ¥<b id="sm">${S.money.toLocaleString()}</b></div><div style="margin-top:10px">
   ${keys.map(k=>`<div class="kv"><span><b>${k}</b> <span class="muted">所持${S.items[k]||0}</span><br><span class="muted">${ITEMS[k].desc}</span></span><span><button class="btn" data-b="${k}">¥${ITEMS[k].price.toLocaleString()}</button></span></div>`).join('')}
   </div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn pri" id="sc">戻る</button></div></div>`);
