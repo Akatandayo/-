@@ -335,11 +335,12 @@ function focus(who){
 
 /* ---------- テキスト進行 ---------- */
 const BACKLOG=[];
-let curNode=null, lineIdx=0, typing=false, full='', tTimer=null, waitClick=false;
+let curAtEnd=false, curLinePos=0, curId=null, curNode=null, lineIdx=0, typing=false, full='', tTimer=null, waitClick=false;
 function playNode(n){
   if(!n){ console.error('scene missing'); return; }
+  if(!SC_NODE_FROM_PLAY) curId = null; SC_NODE_FROM_PLAY = false; curLinePos=0; curAtEnd=false;
   curNode = n; lineIdx = 0;
-  $('#box').style.display=''; $('#hud').style.display = S&&S.story ? 'none' : '';
+  $('#box').style.display=''; $('#hud').style.display = '';
   if(n.bg) setBg(n.bg);
   if(n.show) show(n.show);
   if(n.on) n.on();
@@ -347,10 +348,14 @@ function playNode(n){
   nextLine();
 }
 function play(id){
+  curId = typeof id==='string' && id!=='__hub' ? id : null;
   const n = typeof id==='object' ? id : SC[id];
   if(!n){ console.error('no scene', id); return toHub(); }
+  SC_NODE_FROM_PLAY = !!curId && typeof n!=='function';
+  if(typeof n==='function') curId = null;
   playNode(typeof n==='function' ? n() : n);
 }
+let SC_NODE_FROM_PLAY = false;
 function nextLine(){
   $('#choices').innerHTML=''; $('#next').style.display='none';
   const L = curNode.lines || [];
@@ -363,9 +368,9 @@ function nextLine(){
       if(x.noise) noiseBurst(x.noise); if(x.shake) shake();
       continue;
     }
-    say(x); return;
+    curLinePos = lineIdx-1; curAtEnd=false; say(x); return;
   }
-  finishNode();
+  curAtEnd=true; finishNode();
 }
 function say(raw){
   let who='', name='', text=raw;
@@ -502,6 +507,8 @@ function msg(html, cb, btn='OK'){
 /* ---------- HUD ---------- */
 function hud(){
   if(!S) return;
+  if(S.story){ $('#hud').innerHTML=`<button id="menuBtn" style="visibility:hidden">手帳</button><button id="logBtn" class="chip" style="cursor:pointer">ログ</button><button id="saveBtn" class="chip" style="cursor:pointer">セーブ</button>`;
+    $('#logBtn').onclick=openLog; $('#saveBtn').onclick=()=>{ if(!$('#overlay').classList.contains('on')) saveMenu('save', closeOverlay); }; return; }
   const f = '◆'.repeat(S.frag)+'◇'.repeat(5-S.frag);
   const cn = {none:'ひとり',t:'独',m:'紅葉',both:'独・紅葉'}[S.comp];
   $('#hud').innerHTML = `<span class="chip">Day <b>${S.day}</b> ${S.busy?'夜':'昼'}</span>
@@ -509,8 +516,8 @@ function hud(){
    <span class="chip san">SAN <b>${S.san}</b></span><span class="chip noise">侵食 <b>${S.noise}%</b></span>
    <span class="chip frag">座標 <b>${f}</b></span><span class="chip">¥<b>${S.money.toLocaleString()}</b></span>
    ${S.req?`<span class="chip">同行:${cn}</span>`:''}${S.insane?`<span class="chip ng">狂気:${S.insane}</span>`:''}
-   <button id="menuBtn">手帳</button><button id="logBtn" class="chip" style="cursor:pointer">ログ</button><button id="dexBtn" class="chip" style="cursor:pointer">図鑑</button>`;
-  $('#menuBtn').onclick = openNote; $('#logBtn').onclick = openLog; $('#dexBtn').onclick = ()=>openDex();
+   <button id="menuBtn">手帳</button><button id="logBtn" class="chip" style="cursor:pointer">ログ</button><button id="dexBtn" class="chip" style="cursor:pointer">図鑑</button><button id="saveBtn" class="chip" style="cursor:pointer">セーブ</button>`;
+  $('#menuBtn').onclick = openNote; $('#logBtn').onclick = openLog; $('#dexBtn').onclick = ()=>openDex(); $('#saveBtn').onclick = ()=>{ if(!$('#overlay').classList.contains('on')) saveMenu('save', closeOverlay); };
 }
 
 /* ---------- 手帳 ---------- */
@@ -533,17 +540,91 @@ function openNote(){
     <div class="kv"><span style="color:${CH.t.color}">電子 独</span><span>${heart(S.aff.t)}</span></div>
     <div class="kv"><span style="color:${CH.m.color}">電子 紅葉</span><span>${heart(S.aff.m)}</span></div>
     <h3>侵食度</h3><div class="bar s"><i style="width:${S.noise}%"></i></div><div class="muted">100%に達すると【Network】に同化してしまう。</div>
-    <div class="row" style="justify-content:flex-end;margin-top:14px">${inHub?'<button class="btn" id="nsave">セーブ</button>':''}<button class="btn" id="ntitle">タイトルへ</button><button class="btn pri" id="nclose">閉じる</button></div></div>`);
+    <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn" id="nsave">セーブ／ロード</button><button class="btn" id="ntitle">タイトルへ</button><button class="btn pri" id="nclose">閉じる</button></div></div>`);
   $('#nclose').onclick=closeOverlay;
   $('#ntitle').onclick=()=>{ if(confirm('タイトルに戻りますか？（セーブしていない進行は失われます）')){ closeOverlay(); title(); } };
-  if($('#nsave')) $('#nsave').onclick=()=>{ save(); $('#nsave').textContent='セーブしました'; };
+  $('#nsave').onclick=()=>saveMenu('save', ()=>{ closeOverlay(); openNote(); });
   document.querySelectorAll('[data-use]').forEach(b=>b.onclick=()=>{ const k=b.dataset.use; S.items[k]--; const r=ITEMS[k].use(); closeOverlay(); msg(`<p>${k}を使った。<br><b>${r}</b></p>`, ()=>{}); });
 }
 
 /* ---------- セーブ ---------- */
-const SAVE_KEY='akarua_save_v1';
-function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); return true; }catch(e){ return false; } }
-function load(){ try{ const d=localStorage.getItem(SAVE_KEY); return d?JSON.parse(d):null; }catch(e){ return null; } }
+/* セーブスロット：auto（オートセーブ）＋ 1〜5（手動）
+   ・依頼の途中や会話の途中でもセーブできる（戦闘中・ダイス中・一部の自動生成シーンを除く）
+   ・データの書き出し／読み込みで、別のブラウザや端末に持っていける */
+const SLOT_PREFIX='akarua_slot_', SLOTS=['auto','1','2','3','4','5'];
+(function migrate(){ try{ const old=localStorage.getItem('akarua_save_v1'); if(old && !localStorage.getItem(SLOT_PREFIX+'auto')){ localStorage.setItem(SLOT_PREFIX+'auto', JSON.stringify({v:2,time:Date.now(),S:JSON.parse(old),at:'hub',place:'アカルア'})); } localStorage.removeItem('akarua_save_v1'); }catch(e){} })();
+function readSlot(k){ try{ const d=localStorage.getItem(SLOT_PREFIX+k); return d?JSON.parse(d):null; }catch(e){ return null; } }
+function writeSlot(k, data){ try{ localStorage.setItem(SLOT_PREFIX+k, JSON.stringify(data)); return true; }catch(e){ return false; } }
+function delSlot(k){ try{ localStorage.removeItem(SLOT_PREFIX+k); }catch(e){} }
+function anySave(){ return SLOTS.some(k=>readSlot(k)); }
+const PLACE = {room:'自分の部屋',shop:'アカルア',alley:'ネオン横丁',park:'データ公園',archive:'アーカイブ廃層',dark:'第7区画',tower:'展望塔',roof:'屋上',work:'作業部屋',edge:'境界',black:'？？？',white:'？？？'};
+function canSaveHere(){
+  if(B && document.querySelector('.battle')) return false;
+  if(inHub) return true;
+  return !!curId && !!SC[curId];
+}
+function snapshot(){
+  return {v:2, time:Date.now(), S:JSON.parse(JSON.stringify(S)), at: inHub ? 'hub' : {scene:curId, pos: curAtEnd ? (curNode.lines||[]).length : curLinePos}, place: PLACE[curBg]||'', req: S.req ? (REQ.find(r=>r.id===S.req)||{}).title : ''};
+}
+function save(){ return writeSlot('auto', snapshot()); }   // オートセーブ（アカルアに戻った時）
+function restore(data){
+  S = Object.assign(newState(), data.S); closeOverlay(); BACKLOG.length=0;
+  if(data.at==='hub' || !data.at || !SC[data.at.scene]){ return toHub(); }
+  // シーンの途中から：背景と立ち絵だけ再現して、指定の台詞まで進める（効果は二重にかけない）
+  inHub=false; curId=data.at.scene; const n=SC[curId];
+  curNode=n; $('#box').style.display=''; $('#hud').style.display = S.story ? 'none' : '';
+  if(n.bg) setBg(n.bg); if(n.show) show(n.show);
+  const L=n.lines||[];
+  for(let i=0;i<data.at.pos && i<L.length;i++){ let x=L[i]; if(Array.isArray(x)){ if(!comp(x[0])) continue; x=x[1]; } if(x && typeof x==='object'){ if(x.bg) setBg(x.bg); if(x.show) show(x.show); } }
+  lineIdx=data.at.pos; hud();
+  if(lineIdx>=L.length){ $('#namebox').style.display='none'; $('#text').textContent='（つづきから）'; }
+  nextLine();
+}
+function slotInfo(d){
+  if(!d) return '<span class="muted">― 空き ―</span>';
+  const s=d.S, dt=new Date(d.time);
+  const ts=`${dt.getFullYear()}/${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+  const where = s.story ? 'キャラクターストーリー' : (d.at==='hub' ? 'アカルア（拠点）' : `${d.place||''}${d.req?`／${d.req}`:''}`);
+  return `<b>${s.name}</b> <span class="muted">${s.story?'':`Day ${s.day} ・ 座標 ${'◆'.repeat(s.frag)}${'◇'.repeat(5-s.frag)} ・ SAN ${s.san} ・ 侵食 ${s.noise}%`}</span><br><span class="muted" style="font-size:12px">${where} ・ ${ts}</span>`;
+}
+function saveMenu(mode, back){
+  // mode: 'save' | 'load'
+  const can = mode==='load' || canSaveHere();
+  overlay(`<div class="panel"><h2>${mode==='save'?'セーブ':'ロード'}</h2>
+    <div class="row" style="margin-bottom:10px">
+      ${S?`<button class="btn ${mode==='save'?'pri':''}" data-m="save" style="padding:5px 14px">セーブ</button>`:''}
+      <button class="btn ${mode==='load'?'pri':''}" data-m="load" style="padding:5px 14px">ロード</button></div>
+    ${mode==='save'&&!can?'<p class="ng" style="font-size:13px">ここではセーブできません（戦闘中など）。アカルアに戻るか、シーンが変わってから試してください。</p>':''}
+    ${SLOTS.map(k=>{ const d=readSlot(k); const isAuto=k==='auto';
+      const btn = mode==='save'
+        ? (isAuto?'<span class="muted" style="font-size:12px">アカルアで自動保存</span>':`<button class="btn pri" data-sv="${k}" ${can?'':'disabled'}>ここにセーブ</button>`)
+        : `<button class="btn pri" data-ld="${k}" ${d?'':'disabled'}>ロード</button>`;
+      return `<div class="card"><div class="row" style="justify-content:space-between;flex-wrap:nowrap;gap:10px"><div><span class="tag">${isAuto?'AUTO':'No.'+k}</span>${slotInfo(d)}</div>
+        <div class="row" style="flex-wrap:nowrap">${btn}${d&&!isAuto?`<button class="btn" data-dl="${k}" title="削除" style="padding:9px 11px">✕</button>`:''}</div></div></div>`; }).join('')}
+    <h3>別のブラウザ・端末に持っていく</h3>
+    <div class="row"><button class="btn" id="exp">書き出し（ファイル保存）</button><button class="btn" id="imp">読み込み</button><input type="file" id="impf" accept=".json,application/json" style="display:none"></div>
+    <div class="muted" style="font-size:12px;margin-top:4px">セーブはこのブラウザの中に保存されます。端末を変える時は「書き出し」したファイルを、新しい方で「読み込み」してください。</div>
+    <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" id="smb">戻る</button></div></div>`);
+  $('#smb').onclick=back;
+  document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>saveMenu(b.dataset.m, back));
+  document.querySelectorAll('[data-sv]').forEach(b=>b.onclick=()=>{ const k=b.dataset.sv; if(readSlot(k) && !confirm(`No.${k} に上書きしますか？`)) return; if(writeSlot(k, snapshot())) saveMenu('save', back); else alert('セーブできませんでした'); });
+  document.querySelectorAll('[data-ld]').forEach(b=>b.onclick=()=>{ if(S && !confirm('ロードしますか？（今の進行でセーブしていない分は失われます）')) return; restore(readSlot(b.dataset.ld)); });
+  document.querySelectorAll('[data-dl]').forEach(b=>b.onclick=()=>{ if(confirm(`No.${b.dataset.dl} を削除しますか？`)){ delSlot(b.dataset.dl); saveMenu(mode, back); } });
+  $('#exp').onclick=()=>{
+    const all={app:'akarua', v:2, slots:{}, meta:META}; SLOTS.forEach(k=>{ const d=readSlot(k); if(d) all.slots[k]=d; });
+    const blob=new Blob([JSON.stringify(all)],{type:'application/json'}); const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=`akarua_save_${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(a); a.click(); a.remove();
+  };
+  $('#imp').onclick=()=>$('#impf').click();
+  $('#impf').onchange=e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader();
+    r.onload=()=>{ try{ const all=JSON.parse(r.result); if(all.app!=='akarua') throw 0;
+      if(!confirm('読み込んだデータで、今のセーブと図鑑を上書きしますか？')) return;
+      Object.entries(all.slots||{}).forEach(([k,d])=>writeSlot(k,d));
+      if(all.meta){ for(const k of Object.keys(all.meta)) META[k]=Object.assign(META[k]||{}, all.meta[k]); try{ localStorage.setItem(META_KEY, JSON.stringify(META)); }catch(e){} }
+      saveMenu('load', back);
+    }catch(err){ alert('アカルアのセーブデータではないようです'); } };
+    r.readAsText(f); };
+}
 
 /* ---------- 戦闘 ---------- */
 let B=null;
@@ -628,7 +709,11 @@ async function act(a){
     else {
       const D=rollLine('回避', clamp(skillVal('回避')+guard,1,95)); blog(`　${S.name}の回避 ${D.txt}`);
       if(D.ok){ S.grow['回避']=1; blog('　攻撃を躱した！'); }
-      else { let d=dice(e.dmg); if(R.j==='crit') d+=dice(e.dmg); S.hp=Math.max(0,S.hp-d); blog(`　<span class="ng">${d} ダメージを受けた！</span>`); shake(); noiseBurst(.3); hud(); }
+      else { let d=dice(e.dmg); if(R.j==='crit') d+=dice(e.dmg);
+        if(comp('t') && !B.tGlitch && d>=2){ B.tGlitch=true;
+          blog(`<span style="color:${CH.t.color}">独</span>〈Glitch〉――<b>${d}</b> ダメージの攻撃が、バグのようにノイズへ呑まれて消えた。`);
+          blog('<span class="muted">　独の腕に、白黒の砂嵐が走る。「……平気。慣れてるから」</span>'); noiseBurst(.5); d=0; }
+        if(d>0){ S.hp=Math.max(0,S.hp-d); blog(`　<span class="ng">${d} ダメージを受けた！</span>`); shake(); noiseBurst(.3); hud(); } }
     }
   }
   refreshBattle();
@@ -709,7 +794,7 @@ function chooseComp(r){
   if(r.comp){ return startReq(r, r.comp); }
   overlay(`<div class="panel"><h2>${r.title}</h2><p>誰と行く？</p>
     <div class="grid2">
-      <button class="pick" data-c="t"><b style="color:${CH.t.color}">電子 独</b><small>聞き耳85・目星85。戦闘で〈↓FREEDOM DiVE↓〉</small></button>
+      <button class="pick" data-c="t"><b style="color:${CH.t.color}">電子 独</b><small>聞き耳85・目星85。戦闘で〈↓FREEDOM DiVE↓〉、1度だけ〈Glitch〉で攻撃を無力化</small></button>
       <button class="pick" data-c="m"><b style="color:${CH.m.color}">電子 紅葉</b><small>目星85・説得85・応急手当60。弱点看破と手当て</small></button>
       <button class="pick" data-c="none"><b>ひとりで行く</b><small>自分の力だけで挑む</small></button>
     </div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" id="cb">やめる</button></div></div>`);
@@ -884,7 +969,7 @@ function rest(){
 function showEnding(id){
   const E = ENDINGS[id]; inHub=false; metaAdd('end', id);
   $('#box').style.display='none'; show([]); setBg(E.bg||'black');
-  try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+  delSlot('auto');
   overlay(`<div class="panel ending"><div class="muted" style="text-align:center">ENDING</div><h2 style="color:${E.color||'#fff'}">${E.title}</h2>
     <p>${fmt(typeof E.text==='function'?E.text():E.text)}</p>
     <div class="muted" style="text-align:center">${S.name} / ${S.day}日目 / SAN ${S.san} / 侵食 ${S.noise}%</div>
@@ -920,20 +1005,20 @@ function endStory(label){
 /* ---------- タイトル・キャラ作成 ---------- */
 function title(){
   S=null; inHub=false; $('#box').style.display='none'; $('#hud').style.display='none'; show([]); setBg('shop');
-  const has = !!load();
+  const has = anySave();
   overlay(`<div class="panel title" style="background:#070914ee"><div class="muted">CoC6th based / Network RPG</div>
     <h1>Network<br>// アカルア</h1><div class="sub">迷い人の依頼帳</div>
     <div class="row" style="justify-content:center;flex-direction:column;gap:10px">
       <button class="btn pri" id="tn" style="min-width:220px">はじめから</button>
-      <button class="btn" id="tc" style="min-width:220px" ${has?'':'disabled'}>つづきから</button>
+      <button class="btn" id="tc" style="min-width:220px">つづきから ${has?'':'<small class="muted">（セーブの読み込み）</small>'}</button>
       ${Object.keys(META.end).length?`<button class="btn" id="ts" style="min-width:220px;border-color:var(--gold)">キャラクターストーリー <small class="muted">追加コンテンツ</small></button>`:`<button class="btn" style="min-width:220px" disabled>キャラクターストーリー <small class="muted">（エンディングを1度見ると解放）</small></button>`}
       <button class="btn" id="td" style="min-width:220px">図鑑 <small class="muted">（エンド ${Object.keys(META.end).filter(k=>ENDINGS[k]).length}/${Object.keys(ENDINGS).length}）</small></button>
     </div>
     <p class="muted" style="margin-top:20px">クリック／タップ・Enterで文章送り。<br>キャラ案・デザイン：あかたん</p></div>`);
-  $('#tn').onclick=()=>{ if(has && !confirm('セーブデータがあります。はじめからにしますか？')) return; create(); };
+  $('#tn').onclick=()=>{ if(readSlot('auto') && !confirm('オートセーブがあります。はじめからにすると、オートセーブは上書きされます。よろしいですか？\n（No.1〜5のセーブは残ります）')) return; create(); };
   $('#td').onclick=()=>openDex('chara');
   if($('#ts')) $('#ts').onclick=openStories;
-  $('#tc').onclick=()=>{ S=Object.assign(newState(), load()); closeOverlay(); toHub(); };
+  $('#tc').onclick=()=>saveMenu('load', title);
 }
 function create(){
   S=newState();
