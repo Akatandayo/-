@@ -122,6 +122,7 @@ input[type=text]{width:100%;padding:10px 12px;border-radius:10px;border:1px soli
 .card .tt{font-weight:800}.card .cl{font-size:12px;color:var(--muted)}
 .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:99px;background:#26305a;margin-right:4px}
 
+details.card summary{cursor:pointer;font-weight:700;font-size:14px}
 /* ダイス */
 .dice{text-align:center}
 .dice .lab{font-size:15px;color:var(--muted)}
@@ -332,6 +333,7 @@ function focus(who){
 }
 
 /* ---------- テキスト進行 ---------- */
+const BACKLOG=[];
 let curNode=null, lineIdx=0, typing=false, full='', tTimer=null, waitClick=false;
 function playNode(n){
   if(!n){ console.error('scene missing'); return; }
@@ -372,6 +374,7 @@ function say(raw){
   else if(m1){ who=m1[1]; text=m1[2]; name = who==='p'?S.name:CH[who].name; }
   else if(m2){ who='x'; name=m2[1]; text=m2[2]; }
   text = fmt(text);
+  BACKLOG.push({name, text, color:(CH[who]&&CH[who].color)||''}); if(BACKLOG.length>300) BACKLOG.shift();
   const nb = $('#namebox');
   if(name){ nb.style.display='block'; nb.textContent=name; nb.style.color = (CH[who]&&CH[who].color)||'#cfe'; }
   else nb.style.display='none';
@@ -403,7 +406,7 @@ function finishNode(){
   if(n.battle) return startBattle(n.battle);
   if(n.end) return finishRequest(n.end);
   if(n.fail) return failRequest(n.fail);
-  if(n.ending) return showEnding(n.ending);
+  if(n.ending) return showEnding(typeof n.ending==='function'?n.ending():n.ending);
   if(n.goto) return play(n.goto());
   if(n.next) return play(n.next);
   return toHub();
@@ -504,8 +507,8 @@ function hud(){
    <span class="chip san">SAN <b>${S.san}</b></span><span class="chip noise">侵食 <b>${S.noise}%</b></span>
    <span class="chip frag">座標 <b>${f}</b></span><span class="chip">¥<b>${S.money.toLocaleString()}</b></span>
    ${S.req?`<span class="chip">同行:${cn}</span>`:''}${S.insane?`<span class="chip ng">狂気:${S.insane}</span>`:''}
-   <button id="menuBtn">手帳</button>`;
-  $('#menuBtn').onclick = openNote;
+   <button id="menuBtn">手帳</button><button id="logBtn" class="chip" style="cursor:pointer">ログ</button><button id="dexBtn" class="chip" style="cursor:pointer">図鑑</button>`;
+  $('#menuBtn').onclick = openNote; $('#logBtn').onclick = openLog; $('#dexBtn').onclick = ()=>openDex();
 }
 
 /* ---------- 手帳 ---------- */
@@ -544,7 +547,7 @@ function load(){ try{ const d=localStorage.getItem(SAVE_KEY); return d?JSON.pars
 let B=null;
 function startBattle(cfg){
   const e = Object.assign({}, ENEMIES[cfg.e]); e.hpMax=e.hp; e.calm=e.talk?e.talk.n:0;
-  B = {e, win:cfg.win, lose:cfg.lose||'faint', flee:cfg.flee, peace:cfg.peace, round:1, log:[], weak:0, tUlt:false, mHeal:0, busy:false};
+  B = {eid:cfg.e, e, win:cfg.win, lose:cfg.lose||'faint', flee:cfg.flee, peace:cfg.peace, round:1, log:[], weak:0, tUlt:false, mHeal:0, busy:false};
   const go = ()=>{ renderBattle(); blog(`<b>${e.name}</b> が現れた！`); if(e.intro) blog(`<span class="muted">${e.intro}</span>`); };
   if(e.san && !cfg.noSan){ msg(`<h2>${e.name}</h2><p>${e.desc}</p><p class="muted">その姿を目にした――</p>`, ()=>doSan(e.san, go), 'SANチェック'); }
   else go();
@@ -649,6 +652,7 @@ function battleItem(){
 function endBattle(win, peaceful){
   B.busy=false;
   const e=B.e;
+  if(win) metaAdd('enemy', B.eid);
   const after=()=>{ closeOverlay(); if(win) play(peaceful&&B.peace?B.peace:B.win); else play(B.lose); };
   if(win) msg(`<h2 class="ok">${peaceful?'鎮静化':'勝利'}</h2><p>${peaceful?`${e.name}は静かにノイズの向こうへ消えていった。`:`${e.name}は砂嵐になって崩れ落ちた。`}</p>`, after);
   else msg(`<h2 class="ng">戦闘不能</h2><p>視界が、白黒の砂嵐に塗り潰されていく――</p>`, after);
@@ -657,8 +661,14 @@ function endBattle(win, peaceful){
 /* ---------- 依頼 ---------- */
 let inHub=false;
 function toHub(){
-  inHub=true; S.req=null; S.comp='none'; hud();
+  inHub=false; S.req=null; S.comp='none'; hud();
   if(S.noise>=100) return showEnding('assim');
+  if(S.busy && !S.flags['nt'+S.day]){
+    S.flags['nt'+S.day]=1;
+    const ev = NIGHT.find(x=>!S.flags['ni_'+x.id] && x.when());
+    if(ev){ S.flags['ni_'+ev.id]=1; return play(ev.scene); }
+  }
+  inHub=true;
   playNode({bg:'shop', show: S.busy?['t:sit','h','m']:['t','h','m'], lines:[ hubGreeting() ], choices: hubMenu()});
   save();
 }
@@ -685,7 +695,7 @@ function board(){
       <div class="row" style="justify-content:space-between"><span class="muted">${r.rewardTxt||''}</span><button class="btn pri" data-r="${r.id}">受ける</button></div></div>`).join('')}
     ${locked.map(r=>`<div class="card" style="opacity:.5"><span class="tag">メイン</span><span class="tt">？？？</span><div class="cl">帰還座標の断片を ${r.need} つ集めると…</div></div>`).join('')}
     </div><div class="row" style="justify-content:flex-end"><button class="btn" id="bclose">戻る</button></div></div>`);
-  $('#bclose').onclick=()=>{ closeOverlay(); inHub=true; };
+  $('#bclose').onclick=()=>{ closeOverlay(); toHub(); };
   document.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>chooseComp(REQ.find(r=>r.id===b.dataset.r)));
 }
 function reqVisible(r){
@@ -701,7 +711,7 @@ function chooseComp(r){
       <button class="pick" data-c="m"><b style="color:${CH.m.color}">電子 紅葉</b><small>目星85・説得85・応急手当60。弱点看破と手当て</small></button>
       <button class="pick" data-c="none"><b>ひとりで行く</b><small>自分の力だけで挑む</small></button>
     </div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" id="cb">やめる</button></div></div>`);
-  $('#cb').onclick=()=>{ closeOverlay(); inHub=true; };
+  $('#cb').onclick=()=>{ closeOverlay(); toHub(); };
   document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>startReq(r,b.dataset.c));
 }
 function startReq(r,c){ closeOverlay(); inHub=false; S.req=r.id; S.comp=c; hud(); play(r.start); }
@@ -714,7 +724,7 @@ function finishRequest(end){
   if(end.items) for(const [k,v] of Object.entries(end.items)){ S.items[k]=(S.items[k]||0)+v; lines.push(`${k} ×${v} を手に入れた`); }
   if(end.aff) for(const [k,v] of Object.entries(end.aff)){ S.aff[k]+=v; lines.push(`${CH[k].name}との距離が少し縮まった`); }
   if(end.fx) end.fx();
-  if(r) S.done[r.id]=true;
+  if(r){ S.done[r.id]=true; metaAdd('req', r.id); }
   S.busy=true; hud();
   msg(`<h2 class="ok">依頼完了</h2><p>${end.msg||(r?r.title:'')}</p><p>${lines.join('<br>')}</p>`, toHub);
 }
@@ -725,6 +735,7 @@ function failRequest(){
 
 /* ---------- 会話 ---------- */
 function talkMenu(){
+  inHub=false;
   playNode({bg:'shop', show:S.busy?['t:sit','h','m']:['t','h','m'], lines:[':誰と話そう？'], choices:[
     {t:'白石 ハルカ', fn:()=>play(talkScene('h'))},
     {t:'電子 独', fn:()=>play(talkScene('t'))},
@@ -733,21 +744,100 @@ function talkMenu(){
   ]});
 }
 function talkScene(who){
-  const pool = TALK[who].filter(x=>!x.when || x.when());
   const key = who+S.day;
-  let first = !S.talked[key];
-  // 未読優先
-  S.flags.read = S.flags.read || {};
-  const unread = pool.filter(x=>!S.flags.read[x.id]);
-  const t = (unread.length? unread[0] : pick(pool));
-  S.flags.read[t.id]=1;
-  const lines = t.lines.slice();
-  if(first){ S.talked[key]=1; S.aff[who]+=1; }
+  S.flags.read = S.flags.read || {}; S.flags.readDay = S.flags.readDay || {};
+  const st = who==='t'?[S.busy?'t:sit':'t']:[who];
+  // 絆イベント（好感度で解放、その日の最初の会話で発生）
+  if(!S.talked[key]){
+    const bond = BONDS.find(b=>b.who===who && !S.flags['bond_'+b.id] && S.aff[who]>=b.aff && (!b.when||b.when()));
+    if(bond){ S.talked[key]=1; S.aff[who]+=1; S.flags['bond_'+bond.id]=1; metaAdd('bond', bond.id); return bond.scene; }
+  }
+  let lines;
+  if(S.talked[key]){
+    // 今日はもう話した → ひとこと雑談
+    lines = [pick(IDLE[who].filter(x=>x!==S.flags['lastIdle'+who])||IDLE[who])];
+    S.flags['lastIdle'+who]=lines[0];
+  } else {
+    const pool = TALK[who].filter(x=>!x.when || x.when());
+    const unread = pool.filter(x=>!S.flags.read[x.id]).sort((a,b)=>(b.when?1:0)-(a.when?1:0));
+    const t = unread.length ? unread[0] : pool.slice().sort((a,b)=>(S.flags.readDay[a.id]||0)-(S.flags.readDay[b.id]||0))[0];
+    S.flags.read[t.id]=1; S.flags.readDay[t.id]=S.day; metaAdd('talk', t.id);
+    lines = t.lines.slice();
+    S.talked[key]=1; S.aff[who]+=1;
+  }
   const extra = [];
   if(who==='h' && S.day - S.adjustDay >= 3 && S.noise>=15){
     extra.push({t:'侵食の調整をお願いする', fn:()=>{ S.adjustDay=S.day; addNoise(-10); play({show:['h'], lines:['h:はいは〜い、ちょっと手ぇ貸してね。',{noise:.5},':ハルカさんの指が触れた瞬間、指先のノイズがすうっと引いていく。','h:応急処置だけどね〜。3日に1回くらいなら、やってあげられるよ。',':（侵食度 -10%）'], next:'__hub'}); }});
   }
-  return {show: who==='t'?[S.busy?'t:sit':'t']:[who], lines, choices: extra.length? [...extra, {t:'戻る', fn:toHub}] : null, next: extra.length?null:'__hub'};
+  return {show:st, lines, choices: extra.length? [...extra, {t:'戻る', fn:toHub}] : null, next: extra.length?null:'__hub'};
+}
+
+/* ---------- メタ（周回を超えて残る記録） ---------- */
+const META_KEY='akarua_meta_v1';
+let META = (()=>{ try{ return JSON.parse(localStorage.getItem(META_KEY))||{}; }catch(e){ return {}; } })();
+['talk','enemy','req','end','bond'].forEach(k=>META[k]=META[k]||{});
+function metaAdd(kind, id){ if(!META[kind][id]){ META[kind][id]=1; try{ localStorage.setItem(META_KEY, JSON.stringify(META)); }catch(e){} } }
+
+/* ---------- バックログ ---------- */
+function openLog(){
+  if($('#overlay').classList.contains('on')) return;
+  overlay(`<div class="panel"><h2>ログ</h2><div id="lg" style="max-height:60vh;overflow:auto;font-size:14px;line-height:1.7">
+    ${BACKLOG.map(l=>`<div style="padding:6px 0;border-bottom:1px solid #ffffff0d">${l.name?`<b style="color:${l.color||'#cfe'}">${l.name}</b><br>`:''}<span${l.name?'':' class="muted"'}>${esc(l.text)}</span></div>`).join('')||'<div class="muted">まだ何もない</div>'}
+    </div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn pri" id="lc">閉じる</button></div></div>`);
+  const lg=$('#lg'); lg.scrollTop=lg.scrollHeight; $('#lc').onclick=closeOverlay;
+}
+function esc(t){ return String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+/* ---------- 図鑑 ---------- */
+function renderLine(raw){
+  if(typeof raw!=='string') return '';
+  const nm = S ? S.name : 'あなた';
+  const f = t=>esc(String(t).replace(/\{name\}/g, nm));
+  let m;
+  if(raw.startsWith(':')) return `<div class="muted">${f(raw.slice(1))}</div>`;
+  if((m=raw.match(/^([htmp]):([\s\S]*)$/))) return `<div><b style="color:${CH[m[1]].color}">${m[1]==='p'?nm:CH[m[1]].name}</b>「${f(m[2])}」</div>`;
+  if((m=raw.match(/^([^：\n]{1,14})：([\s\S]*)$/))) return `<div><b>${esc(m[1])}</b>「${f(m[2])}」</div>`;
+  return `<div>${f(raw)}</div>`;
+}
+let dexTab='chara';
+function openDex(tab){
+  if(!tab && $('#overlay').classList.contains('on')) return;
+  if(tab) dexTab=tab;
+  const back = ()=>{ closeOverlay(); if(!S) title(); };
+  const tabs=[['chara','人物'],['talk','会話'],['bond','思い出'],['req','依頼'],['enemy','敵'],['end','エンド']];
+  let body='';
+  const cnt=(k,all)=>`<div class="muted" style="margin-bottom:8px">収集 ${Object.keys(META[k]).filter(x=>all.includes(x)).length} / ${all.length}</div>`;
+  if(dexTab==='chara'){
+    body = PROFILES.map(pf=>{
+      const aff = S? S.aff[pf.id] : 99;
+      return `<div class="card"><div class="row" style="gap:12px;align-items:flex-start;flex-wrap:nowrap">
+        <img src="${CH[pf.id].img.def}" style="width:72px;height:96px;object-fit:contain;background:#d8e0ff22;border-radius:10px;flex:none">
+        <div><div class="tt" style="color:${CH[pf.id].color}">${pf.name} <span class="muted">${pf.kana}</span></div>
+        <div class="cl">${pf.info}</div><p style="font-size:13px;margin:6px 0">${pf.desc}</p>
+        ${pf.more.map(x=> (aff>=x.aff||META.bond[x.bond]) ? `<p style="font-size:13px;margin:4px 0;color:#cfd8ff">◆ ${x.text}</p>` : `<p class="muted" style="font-size:12px;margin:4px 0">◇ ？？？（もっと仲良くなると解放）</p>`).join('')}
+        </div></div></div>`;}).join('');
+  } else if(dexTab==='talk'){
+    const all = ['h','t','m'].flatMap(w=>TALK[w].map(x=>x.id));
+    body = cnt('talk',all) + ['h','t','m'].map(w=>`<h3 style="color:${CH[w].color}">${CH[w].name}</h3>`+
+      TALK[w].map((x,i)=> META.talk[x.id] ? `<details class="card"><summary>#${i+1} ${esc(x.title||x.lines[0].replace(/^[htmp]:/,'').slice(0,22))}</summary><div style="font-size:13px;line-height:1.8;margin-top:6px">${x.lines.map(renderLine).join('')}</div></details>` : `<div class="card muted">#${i+1} ？？？</div>`).join('')).join('');
+  } else if(dexTab==='bond'){
+    const all = BONDS.map(b=>b.id);
+    body = cnt('bond',all) + BONDS.map(b=> META.bond[b.id] ? `<details class="card"><summary><b style="color:${CH[b.who].color}">${CH[b.who].name}</b>　${b.title}</summary><div style="font-size:13px;line-height:1.8;margin-top:6px">${(SC[b.scene].lines||[]).map(renderLine).join('')}</div></details>` : `<div class="card muted"><b style="color:${CH[b.who].color}">${CH[b.who].name}</b>　？？？ <span style="font-size:11px">（好感度 ${b.aff} 以上で会話すると…）</span></div>`).join('');
+  } else if(dexTab==='req'){
+    const all = REQ.map(r=>r.id);
+    body = cnt('req',all) + REQ.map(r=> META.req[r.id] ? `<div class="card ${r.main?'main':'side'}"><span class="tag">${r.main?'メイン':r.repeat?'日課':'サブ'}</span><span class="tt">${r.title}</span><div class="cl">依頼人：${r.client}</div><p style="font-size:13px;margin:6px 0">${r.desc}</p></div>` : `<div class="card muted"><span class="tag">${r.main?'メイン':r.repeat?'日課':'サブ'}</span>？？？</div>`).join('');
+  } else if(dexTab==='enemy'){
+    const all = Object.keys(ENEMIES);
+    body = cnt('enemy',all) + all.map(k=>{ const e=ENEMIES[k]; return META.enemy[k] ? `<div class="card battle"><div class="row" style="flex-wrap:nowrap;gap:12px"><div class="glyph" style="font-size:14px;animation:none">${e.glyph}</div><div><div class="tt">${e.name}</div><div class="cl">HP ${e.hp} / 攻撃 ${e.atk}% / ${e.dmg} / SAN ${e.san}</div><p style="font-size:13px;margin:6px 0">${e.desc}</p></div></div></div>` : `<div class="card muted">？？？</div>`; }).join('');
+  } else if(dexTab==='end'){
+    const all = Object.keys(ENDINGS);
+    body = cnt('end',all) + all.map(k=>{ const E=ENDINGS[k]; return META.end[k] ? `<div class="card"><b style="color:${E.color}">${E.title}</b><div class="cl">${E.hint||''}</div></div>` : `<div class="card muted">？？？ <span style="font-size:11px">${E.hint||''}</span></div>`; }).join('');
+  }
+  overlay(`<div class="panel"><h2>図鑑</h2><div class="row" style="margin-bottom:10px">${tabs.map(([k,l])=>`<button class="btn ${k===dexTab?'pri':''}" data-t="${k}" style="padding:5px 12px">${l}</button>`).join('')}</div>
+    <div style="max-height:60vh;overflow:auto">${body}</div>
+    <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn pri" id="dc">閉じる</button></div></div>`);
+  document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>openDex(b.dataset.t));
+  $('#dc').onclick=back;
 }
 
 /* ---------- 購買 ---------- */
@@ -757,7 +847,7 @@ function shop(){
   overlay(`<div class="panel"><h2>ハルカの棚</h2><div class="muted">「欲しいものがあったら言ってね〜。お代はちゃんと貰うけど♪」　所持金 ¥<b id="sm">${S.money.toLocaleString()}</b></div><div style="margin-top:10px">
   ${keys.map(k=>`<div class="kv"><span><b>${k}</b> <span class="muted">所持${S.items[k]||0}</span><br><span class="muted">${ITEMS[k].desc}</span></span><span><button class="btn" data-b="${k}">¥${ITEMS[k].price.toLocaleString()}</button></span></div>`).join('')}
   </div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn pri" id="sc">戻る</button></div></div>`);
-  $('#sc').onclick=()=>{ closeOverlay(); inHub=true; hud(); };
+  $('#sc').onclick=()=>{ closeOverlay(); toHub(); };
   document.querySelectorAll('[data-b]').forEach(b=>{
     const k=b.dataset.b; if(ITEMS[k].weapon && S.items[k]) b.disabled=true;
     b.onclick=()=>{ if(S.money<ITEMS[k].price){ b.textContent='お金が足りない'; return; } S.money-=ITEMS[k].price; S.items[k]=(S.items[k]||0)+1; closeOverlay(); shop(); hud(); };
@@ -790,7 +880,7 @@ function rest(){
 
 /* ---------- エンディング ---------- */
 function showEnding(id){
-  const E = ENDINGS[id]; inHub=false;
+  const E = ENDINGS[id]; inHub=false; metaAdd('end', id);
   $('#box').style.display='none'; show([]); setBg(E.bg||'black');
   try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
   overlay(`<div class="panel ending"><div class="muted" style="text-align:center">ENDING</div><h2 style="color:${E.color||'#fff'}">${E.title}</h2>
@@ -809,9 +899,11 @@ function title(){
     <div class="row" style="justify-content:center;flex-direction:column;gap:10px">
       <button class="btn pri" id="tn" style="min-width:220px">はじめから</button>
       <button class="btn" id="tc" style="min-width:220px" ${has?'':'disabled'}>つづきから</button>
+      <button class="btn" id="td" style="min-width:220px">図鑑 <small class="muted">（エンド ${Object.keys(META.end).filter(k=>ENDINGS[k]).length}/${Object.keys(ENDINGS).length}）</small></button>
     </div>
     <p class="muted" style="margin-top:20px">クリック／タップ・Enterで文章送り。<br>キャラ案・デザイン：あかたん</p></div>`);
   $('#tn').onclick=()=>{ if(has && !confirm('セーブデータがあります。はじめからにしますか？')) return; create(); };
+  $('#td').onclick=()=>openDex('chara');
   $('#tc').onclick=()=>{ S=Object.assign(newState(), load()); closeOverlay(); toHub(); };
 }
 function create(){
