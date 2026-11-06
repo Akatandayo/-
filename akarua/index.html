@@ -38,6 +38,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .bg-school{background:linear-gradient(180deg,#3a3550 0%,#5a4a5e 45%,#2a2433 100%)}
 .bg-school::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,#ffffff08 0 3px,transparent 3px 120px),linear-gradient(transparent 60%,#00000055)}
 .bg-dusk{background:linear-gradient(180deg,#2b1d4a 0%,#c0576a 45%,#f0a060 70%,#3a2030 100%)}
+.bg-ruins{background:radial-gradient(circle at 75% 18%,#e8ecff33,transparent 12%),linear-gradient(180deg,#0b0d18 0%,#1a1d2c 55%,#2a2a33 100%)}
 .bg-limbo{background:radial-gradient(circle at 50% 30%,#fff3f8 0%,#e8c6d8 30%,#8e7aa8 70%,#3a3350 100%)}
 .petal{position:absolute;width:10px;height:7px;background:#ffd6e6;border-radius:70% 0;opacity:.85;animation:fall 7s linear infinite}
 @keyframes fall{from{transform:translate(0,-40px) rotate(0)}to{transform:translate(-80px,110vh) rotate(540deg)}}
@@ -208,6 +209,7 @@ const CH = {
   h:{name:'白石 ハルカ', color:'#d2b8ff', img:{def:'img/haruka.png'}},
   t:{name:'電子 独',     color:'#9fd0ff', img:{def:'img/hitori_stand.png', float:'img/hitori_float.png', sit:'img/hitori_sit.png'}},
   m:{name:'電子 紅葉',   color:'#ff9fc8', img:{def:'img/momiji.png'}},
+  b:{name:'白石 白夜',   color:'#e6e6e6', img:{def:'img/byakuya.png'}},
   p:{name:'', color:'#ffe08a'}
 };
 
@@ -296,6 +298,10 @@ const BG = {
     <div style="position:absolute;right:10%;top:18%;width:30%;height:34%;border:3px solid #ffffff22;background:linear-gradient(#9fb4d044,#e0b08033)"></div>`},
   dusk:{deco:()=>`<div style="position:absolute;left:0;right:0;bottom:22%;height:3px;background:#0006"></div>
     <div style="position:absolute;left:0;right:0;bottom:22%;height:16%;background:repeating-linear-gradient(90deg,#0007 0 3px,transparent 3px 26px)"></div>`},
+  ruins:{deco:()=>{ let s=''; const xs=[[2,38,22],[16,52,14],[28,30,18],[44,60,12],[55,42,20],[72,55,16],[84,35,14]];
+    xs.forEach(([l,t,w])=>{ s+=`<div style="position:absolute;left:${l}%;top:${t}%;bottom:18%;width:${w}%;background:linear-gradient(#20232f,#14161f);clip-path:polygon(0 8%,30% 0,55% 12%,80% 2%,100% 10%,100% 100%,0 100%);opacity:.95"></div>`; });
+    for(let i=0;i<18;i++) s+=`<div class="star" style="left:${Math.random()*100}%;top:${Math.random()*30}%;animation-delay:${-Math.random()*3}s"></div>`;
+    return s+`<div style="position:absolute;left:0;right:0;bottom:0;height:20%;background:linear-gradient(#1c1c24,#0c0c10)"></div>`; }},
   limbo:{deco:()=>{let s='';for(let i=0;i<34;i++)s+=`<div class="petal" style="left:${Math.random()*110}%;animation-delay:${-Math.random()*7}s;animation-duration:${5+Math.random()*4}s"></div>`;return s;}},
   edge:{deco:()=>''}, black:{deco:()=>''}, white:{deco:()=>''}
 };
@@ -389,7 +395,7 @@ function nextLine(){
 }
 function say(raw){
   let who='', name='', text=raw;
-  const m1 = raw.match(/^([htmp]):([\s\S]*)$/);
+  const m1 = raw.match(/^([htmpb]):([\s\S]*)$/);
   const m2 = raw.match(/^([^：\n]{1,14})：([\s\S]*)$/);
   if(raw.startsWith(':')){ text=raw.slice(1); }
   else if(m1){ who=m1[1]; text=m1[2]; name = who==='p'?S.name:((S.nameOv&&S.nameOv[who])||CH[who].name); }
@@ -599,7 +605,7 @@ function readSlot(k){ try{ const d=localStorage.getItem(SLOT_PREFIX+k); return d
 function writeSlot(k, data){ try{ localStorage.setItem(SLOT_PREFIX+k, JSON.stringify(data)); return true; }catch(e){ return false; } }
 function delSlot(k){ try{ localStorage.removeItem(SLOT_PREFIX+k); }catch(e){} }
 function anySave(){ return SLOTS.some(k=>readSlot(k)); }
-const PLACE = {room:'自分の部屋',shop:'アカルア',alley:'ネオン横丁',park:'データ公園',archive:'アーカイブ廃層',dark:'第7区画',tower:'展望塔',roof:'屋上',work:'作業部屋',edge:'境界',black:'？？？',white:'？？？'};
+const PLACE = {ruins:'廃墟群',school:'学校',dusk:'屋上',limbo:'？？？',room:'自分の部屋',shop:'アカルア',alley:'ネオン横丁',park:'データ公園',archive:'アーカイブ廃層',dark:'第7区画',tower:'展望塔',roof:'屋上',work:'作業部屋',edge:'境界',black:'？？？',white:'？？？'};
 function canSaveHere(){
   if(B && document.querySelector('.battle')) return false;
   if(inHub) return true;
@@ -698,7 +704,7 @@ function renderBattle(){
     <div class="row" style="justify-content:space-between"><span class="tag">ROUND ${B.round}</span><span class="muted">同行：${cn.join('・')||'なし'}</span></div>
     <div class="enemy"><div class="glyph" id="eg">${e.glyph}</div><div class="ename">${e.name}</div>
       <div class="bar e" style="max-width:300px;margin:6px auto"><i style="width:${e.hp/e.hpMax*100}%"></i></div>
-      <div class="muted">HP ${e.hp}/${e.hpMax}${e.talk?` ・ 鎮静まで ${B.e.calm}`:''}</div></div>
+      <div class="muted">HP ${e.hideHp?'？？？':`${e.hp}/${e.hpMax}`}${e.talk?` ・ 鎮静まで ${B.e.calm}`:''}</div></div>
     <div class="row" style="gap:16px"><div style="flex:1">HP ${S.hp}/${S.hpMax}<div class="bar p"><i style="width:${S.hp/S.hpMax*100}%"></i></div></div>
       ${S.story?`<div style="flex:1">ノイズ ${S.noise}%<div class="bar s"><i style="width:${S.noise}%;background:linear-gradient(90deg,#ddd,#fff)"></i></div></div>`:`<div style="flex:1">SAN ${S.san}<div class="bar s"><i style="width:${S.san/sanMax()*100}%"></i></div></div>`}</div>
     <div class="blog" id="blog"></div>
@@ -707,7 +713,9 @@ function renderBattle(){
   document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>act(b.dataset.a));
 }
 function rollLine(label, v){ const r=rnd(100), j=judge(r,v); return {r, j, ok:j==='ok'||j==='crit', txt:`〈${label}〉${v} → ${r} <span class="${j==='crit'?'crit':j==='ok'?'ok':'ng'}">${JLAB[j]}</span>`}; }
-function hitEnemy(d, who){ const e=B.e; d=Math.max(1,d); e.hp=Math.max(0,e.hp-d); blog(`　→ <b>${d}</b> ダメージ！`); const g=$('#eg'); if(g){g.classList.remove('hit');void g.offsetWidth;g.classList.add('hit');} noiseBurst(.25); }
+function hitEnemy(d, who){ const e=B.e; d=Math.max(1,d);
+  if(e.unbeatable){ blog(`<span class="muted">　→ ${pick(e.parry||['受け流された。'])}</span>`); const g=$('#eg'); if(g){g.classList.remove('hit');void g.offsetWidth;g.classList.add('hit');} return; }
+  e.hp=Math.max(0,e.hp-d); blog(`　→ <b>${d}</b> ダメージ！`); const g=$('#eg'); if(g){g.classList.remove('hit');void g.offsetWidth;g.classList.add('hit');} noiseBurst(.25); }
 async function act(a){
   if(B.busy) return; B.busy=true; document.querySelectorAll('#acts button').forEach(b=>b.disabled=true);
   const e=B.e; let guard=0;
@@ -761,6 +769,7 @@ async function act(a){
     refreshBattle(); await sleep(550); if(e.hp<=0) return endBattle(true);
   }
   // 敵の行動
+  if(e.script && e.script[B.round]){ blog(`<span style="color:#e6e6e6">${fmt(e.script[B.round])}</span>`); await sleep(500); }
   const ally = (comp('t')||comp('m')) && Math.random()<.25;
   const R=rollLine('攻撃', e.atk); blog(`<b class="ng">${e.name}</b>の${pick(e.moves||['攻撃'])} ${R.txt}`);
   if(R.j==='fumble'){ const sd=dice('1D3'); e.hp=Math.max(0,e.hp-sd); blog(`<span class="crit">　★ ${fmt(pick(BATTLE_FLAVOR.enemyFumble)).replace('{e}',e.name)}（${sd} ダメージ）</span>`); refreshBattle(); if(e.hp<=0){ await sleep(450); return endBattle(true); } }
@@ -783,11 +792,12 @@ async function act(a){
   refreshBattle();
   await sleep(450);
   if(S.hp<=0 || (S.story && S.noise>=100)) return endBattle(false);
+  if(e.endAfter && B.round>=e.endAfter) return endBattle(false);
   B.round++; B.busy=false; renderBattle();
 }
 function refreshBattle(){ const ph=document.querySelector('.battle'); if(!ph) return; const e=B.e;
   ph.querySelector('.bar.e i').style.width=(e.hp/e.hpMax*100)+'%';
-  ph.querySelector('.enemy .muted').textContent=`HP ${e.hp}/${e.hpMax}${e.talk?` ・ 鎮静まで ${e.calm}`:''}`;
+  ph.querySelector('.enemy .muted').textContent=`HP ${e.hideHp?'？？？':`${e.hp}/${e.hpMax}`}${e.talk?` ・ 鎮静まで ${e.calm}`:''}`;
   ph.querySelector('.bar.p i').style.width=(S.hp/S.hpMax*100)+'%'; }
 function battleItem(){
   const list=Object.entries(S.items).filter(([k,v])=>v>0&&ITEMS[k].use);
@@ -806,6 +816,7 @@ function endBattle(win, peaceful){
   if(win) metaAdd('enemy', B.eid);
   const after=()=>{ closeOverlay(); if(win) play(peaceful&&B.peace?B.peace:B.win); else play(B.lose); };
   if(win) msg(`<h2 class="ok">${peaceful?'鎮静化':'勝利'}</h2><p>${peaceful?`${e.name}は静かにノイズの向こうへ消えていった。`:`${e.name}は砂嵐になって崩れ落ちた。`}</p>`, after);
+  else if(e.endMsg) msg(`<h2 class="ng">――</h2><p>${fmt(e.endMsg)}</p>`, after, 'つづく');
   else msg(`<h2 class="ng">${S.story&&S.noise>=100?'ノイズに呑まれた':'戦闘不能'}</h2><p>視界が、白黒の砂嵐に塗り潰されていく――</p>`, after);
 }
 
@@ -946,7 +957,7 @@ function renderLine(raw){
   const f = t=>esc(String(t).replace(/\{name\}/g, nm));
   let m;
   if(raw.startsWith(':')) return `<div class="muted">${f(raw.slice(1))}</div>`;
-  if((m=raw.match(/^([htmp]):([\s\S]*)$/))) return `<div><b style="color:${CH[m[1]].color}">${m[1]==='p'?nm:CH[m[1]].name}</b>「${f(m[2])}」</div>`;
+  if((m=raw.match(/^([htmpb]):([\s\S]*)$/))) return `<div><b style="color:${CH[m[1]].color}">${m[1]==='p'?nm:CH[m[1]].name}</b>「${f(m[2])}」</div>`;
   if((m=raw.match(/^([^：\n]{1,14})：([\s\S]*)$/))) return `<div><b>${esc(m[1])}</b>「${f(m[2])}」</div>`;
   return `<div>${f(raw)}</div>`;
 }
@@ -979,7 +990,7 @@ function openDex(tab){
     body = cnt('req',all) + REQ.map(r=> META.req[r.id] ? `<div class="card ${r.main?'main':'side'}"><span class="tag">${r.main?'メイン':r.repeat?'日課':'サブ'}</span><span class="tt">${r.title}</span><div class="cl">依頼人：${r.client}</div><p style="font-size:13px;margin:6px 0">${r.desc}</p></div>` : `<div class="card muted"><span class="tag">${r.main?'メイン':r.repeat?'日課':'サブ'}</span>？？？</div>`).join('');
   } else if(dexTab==='enemy'){
     const all = Object.keys(ENEMIES);
-    body = cnt('enemy',all) + all.map(k=>{ const e=ENEMIES[k]; return META.enemy[k] ? `<div class="card battle"><div class="row" style="flex-wrap:nowrap;gap:12px"><div class="glyph" style="font-size:14px;animation:none">${e.glyph}</div><div><div class="tt">${e.name}</div><div class="cl">HP ${e.hp} / 攻撃 ${e.atk}% / ${e.dmg} / SAN ${e.san}</div><p style="font-size:13px;margin:6px 0">${e.desc}</p></div></div></div>` : `<div class="card muted">？？？</div>`; }).join('');
+    body = cnt('enemy',all) + all.map(k=>{ const e=ENEMIES[k]; return META.enemy[k] ? `<div class="card battle"><div class="row" style="flex-wrap:nowrap;gap:12px"><div class="glyph" style="font-size:14px;animation:none">${e.glyph}</div><div><div class="tt">${e.name}</div><div class="cl">HP ${e.hideHp?'？？？':e.hp} / 攻撃 ${e.atk}% / ${e.dmg} / SAN ${e.san}</div><p style="font-size:13px;margin:6px 0">${e.desc}</p></div></div></div>` : `<div class="card muted">？？？</div>`; }).join('');
   } else if(dexTab==='end'){
     const all = Object.keys(ENDINGS);
     body = cnt('end',all) + all.map(k=>{ const E=ENDINGS[k]; return META.end[k] ? `<div class="card"><b style="color:${E.color}">${E.title}</b><div class="cl">${E.hint||''}</div></div>` : `<div class="card muted">？？？ <span style="font-size:11px">${E.hint||''}</span></div>`; }).join('');
