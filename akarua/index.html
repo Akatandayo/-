@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Network // アカルア</title>
+<style>
+:root{
+  --ink:#e8ecff;--muted:#8f98b8;--line:#3a4570;--panel:rgba(8,10,22,.9);
+  --cyan:#5ff6ff;--pink:#ff5fb8;--violet:#b48cff;--gold:#ffd86b;--red:#ff5f7a;--green:#6dffb0;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#03040a;overflow:hidden;color:var(--ink);
+  font-family:"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer}
+#game{position:relative;width:100%;height:100%;max-width:1200px;margin:0 auto;overflow:hidden;user-select:none}
+
+/* ---------- 背景 ---------- */
+#bg,#bgdeco{position:absolute;inset:0;transition:opacity .6s}
+#bgdeco{pointer-events:none;overflow:hidden}
+.bg-room{background:radial-gradient(ellipse at 50% 70%,#2a3a6a55,transparent 60%),linear-gradient(#070912,#10152a)}
+.bg-shop{background:
+  radial-gradient(circle at 20% 15%,#ff4fb233,transparent 35%),
+  radial-gradient(circle at 80% 20%,#3ff0ff2a,transparent 35%),
+  linear-gradient(180deg,#120a22 0%,#0b0c1c 60%,#151025 100%)}
+.bg-shop::after{content:"";position:absolute;left:0;right:0;bottom:0;height:32%;
+  background:repeating-linear-gradient(90deg,#ffffff06 0 2px,transparent 2px 80px),linear-gradient(#0000,#1c1433)}
+.bg-alley{background:radial-gradient(circle at 15% 30%,#ff2fa055,transparent 30%),radial-gradient(circle at 85% 25%,#29e8ff44,transparent 30%),linear-gradient(#0a0618,#170a26 70%,#06040c)}
+.bg-park{background:linear-gradient(#04130f,#062419 60%,#03100a),repeating-linear-gradient(0deg,#33ff9915 0 1px,transparent 1px 40px)}
+.bg-park::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,#33ff9912 0 1px,transparent 1px 40px)}
+.bg-archive{background:radial-gradient(ellipse at 50% 40%,#2b3d9a55,transparent 60%),linear-gradient(#050818,#0a1030)}
+.bg-dark{background:radial-gradient(circle at 50% 80%,#ffcc4415,transparent 40%),linear-gradient(#020204,#07070c)}
+.bg-tower{background:radial-gradient(circle at 70% 20%,#ffffff22,transparent 15%),linear-gradient(#060a1f,#141a40 70%,#2a1f45)}
+.bg-roof{background:linear-gradient(#070b1c,#1a1638 70%,#3a2050)}
+.bg-work{background:radial-gradient(circle at 50% 45%,#000 0 12%,#3b1a6a 30%,#0b0618 70%)}
+.bg-edge{background:radial-gradient(circle at 50% 50%,#ffffff 0 4%,#9aa4c8 20%,#20243a 55%,#05060c)}
+.bg-black{background:#000}
+.bg-white{background:#f4f6ff}
+
+.neon{position:absolute;font-weight:900;letter-spacing:.3em;white-space:nowrap;animation:flick 6s infinite}
+.tube{position:absolute;border-radius:6px;animation:flick 7s infinite}
+.star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;animation:tw 3s infinite}
+.page{position:absolute;width:46px;height:60px;border:1px solid #7fa0ff66;background:#6f8cff14;border-radius:3px;animation:floaty 6s ease-in-out infinite}
+.rain{position:absolute;width:1px;height:60px;background:linear-gradient(#0000,#9ff5);animation:rain 1.1s linear infinite}
+.lamp{position:absolute;width:6px;height:6px;border-radius:50%;background:#ffd86b;box-shadow:0 0 18px 6px #ffd86b55}
+@keyframes flick{0%,100%{opacity:1}92%{opacity:1}93%{opacity:.3}94%{opacity:1}96%{opacity:.5}97%{opacity:1}}
+@keyframes tw{0%,100%{opacity:.2}50%{opacity:1}}
+@keyframes floaty{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-18px) rotate(3deg)}}
+@keyframes rain{from{transform:translateY(-80px)}to{transform:translateY(110vh)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- 立ち絵 ---------- */
+#stage{position:absolute;left:0;right:0;top:44px;bottom:var(--boxh,170px);pointer-events:none}
+.slot{position:absolute;bottom:0;width:40%;height:100%;display:flex;align-items:flex-end;justify-content:center;transition:filter .3s,opacity .3s,transform .3s}
+#slot-l{left:2%}#slot-c{left:30%}#slot-r{right:2%}
+.slot img{height:min(94%,620px);width:auto;max-width:none;object-fit:contain;position:relative;z-index:1;
+  filter:drop-shadow(0 0 1.2px #fff) drop-shadow(0 0 1.2px #fff) drop-shadow(0 0 14px #9fb4ff88);animation:appear .35s ease-out}
+.slot.has::before{content:"";position:absolute;bottom:2%;left:50%;width:78%;height:78%;transform:translateX(-50%);
+  background:radial-gradient(ellipse at 50% 60%,#d8e0ff40,#8ea2ff14 45%,transparent 70%);border-radius:50%}
+.slot.dim{filter:brightness(.55) saturate(.6)}
+.slot.bob img{animation:appear .35s ease-out,bob 3s ease-in-out infinite}
+@keyframes appear{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes bob{0%,100%{translate:0 0}50%{translate:0 -10px}}
+.shake{animation:shake .35s}
+@keyframes shake{0%,100%{transform:none}20%{transform:translate(-8px,3px)}40%{transform:translate(7px,-4px)}60%{transform:translate(-5px,2px)}80%{transform:translate(4px,-1px)}}
+
+/* ---------- HUD ---------- */
+#hud{position:absolute;top:0;left:0;right:0;height:44px;display:flex;align-items:center;gap:10px;padding:0 10px;
+  background:linear-gradient(#000c,#0000);font-size:12px;z-index:5;white-space:nowrap;overflow-x:auto;scrollbar-width:none}
+#hud::-webkit-scrollbar{display:none}
+#hud .chip{padding:3px 8px;border:1px solid #ffffff22;border-radius:99px;background:#0008}
+#hud b{font-weight:800}
+#hud .hp b{color:#ff8fa0}#hud .san b{color:#9fd8ff}#hud .mp b{color:#c6a8ff}#hud .noise b{color:#ffe07a}#hud .frag b{color:var(--cyan);letter-spacing:1px}
+#menuBtn{margin-left:auto;border:1px solid #ffffff33;background:#0009;border-radius:8px;padding:4px 10px}
+
+/* ---------- テキストボックス ---------- */
+#box{position:absolute;left:10px;right:10px;bottom:10px;min-height:150px;background:var(--panel);border:1px solid #6f86ff55;
+  border-radius:14px;padding:22px 18px 16px;box-shadow:0 0 0 1px #000,0 10px 40px #000c,inset 0 0 30px #4a5cff14;z-index:6}
+#box::before{content:"";position:absolute;inset:0;border-radius:14px;pointer-events:none;
+  background:repeating-linear-gradient(0deg,#ffffff05 0 1px,transparent 1px 3px)}
+#namebox{position:absolute;top:-14px;left:16px;padding:3px 14px;border-radius:8px;background:#0b0e1f;border:1px solid currentColor;
+  font-weight:800;font-size:14px;display:none}
+#text{font-size:16px;line-height:1.85;min-height:58px;white-space:pre-wrap}
+#text.narr{color:#cfd6f5}
+#next{position:absolute;right:16px;bottom:8px;font-size:12px;color:var(--cyan);animation:tw 1s infinite;display:none}
+#choices{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+#choices:empty{display:none}
+.choice{text-align:left;border:1px solid #6f86ff66;background:linear-gradient(90deg,#1a2250,#10142c);border-radius:10px;padding:10px 14px;transition:.15s}
+.choice:hover,.choice:focus-visible{border-color:var(--cyan);background:linear-gradient(90deg,#22307a,#141a3a);outline:none}
+.choice small{color:var(--muted);margin-left:6px}
+.choice:disabled{opacity:.4;cursor:default}
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+
+/* ---------- ノイズ ---------- */
+#noise{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0;z-index:20;image-rendering:pixelated;mix-blend-mode:screen}
+#game.glitch #stage,#game.glitch #bgdeco{animation:glitch .25s steps(2) 3}
+@keyframes glitch{0%{transform:translate(0)}25%{transform:translate(-6px,0) skewX(4deg)}50%{transform:translate(5px,1px)}75%{transform:translate(-2px,-1px) skewX(-3deg)}100%{transform:none}}
+
+/* ---------- オーバーレイ ---------- */
+#overlay{position:absolute;inset:0;z-index:30;display:none;align-items:center;justify-content:center;padding:14px;background:#000a;backdrop-filter:blur(2px)}
+#overlay.on{display:flex}
+.panel{width:min(640px,100%);max-height:100%;overflow:auto;background:linear-gradient(160deg,#121733,#0a0d1e);border:1px solid #6f86ff66;border-radius:16px;padding:18px;box-shadow:0 20px 60px #000}
+.panel h2{margin:0 0 10px;font-size:20px}.panel h3{margin:14px 0 8px;font-size:15px;color:var(--cyan)}
+.btn{border:1px solid #6f86ff88;background:#1b2358;border-radius:10px;padding:9px 16px}
+.btn:hover{border-color:var(--cyan)}
+.btn.pri{background:linear-gradient(90deg,#3a3fd8,#9b3fd8);border-color:transparent;font-weight:700}
+.btn:disabled{opacity:.4;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.muted{color:var(--muted);font-size:13px}
+table.t{width:100%;border-collapse:collapse;font-size:13px}
+table.t td{padding:4px 6px;border-bottom:1px solid #ffffff10}
+table.t td:last-child{text-align:right;font-weight:700}
+.cols{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:4px 14px}
+.kv{display:flex;justify-content:space-between;font-size:13px;border-bottom:1px solid #ffffff0d;padding:3px 0}
+.kv span:last-child{font-weight:700}
+input[type=text]{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #6f86ff88;background:#070a18;color:var(--ink);font-size:16px}
+.pick{border:1px solid #ffffff22;background:#0d1130;border-radius:10px;padding:8px 10px;text-align:left}
+.pick.sel{border-color:var(--cyan);background:#163050}
+.pick small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.card{border:1px solid #ffffff22;border-radius:12px;padding:12px;margin-bottom:8px;background:#0c1028}
+.card.main{border-color:#5ff6ff66}.card.side{border-color:#ff5fb866}
+.card .tt{font-weight:800}.card .cl{font-size:12px;color:var(--muted)}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:99px;background:#26305a;margin-right:4px}
+
+/* ダイス */
+.dice{text-align:center}
+.dice .lab{font-size:15px;color:var(--muted)}
+.dice .num{font-size:64px;font-weight:900;letter-spacing:2px;margin:6px 0;font-variant-numeric:tabular-nums}
+.dice .res{font-size:22px;font-weight:900;min-height:32px}
+.ok{color:var(--green)}.ng{color:var(--red)}.crit{color:var(--gold)}
+
+/* バトル */
+.battle .enemy{text-align:center;padding:10px 0}
+.battle .glyph{font-family:monospace;font-size:26px;line-height:1.05;white-space:pre;color:#cfd8ff;text-shadow:0 0 10px #8fa0ff,2px 0 #ff3b8a,-2px 0 #3bf0ff;animation:glitch 2s steps(2) infinite}
+.battle .glyph.hit{animation:shake .3s}
+.battle .ename{font-weight:900;font-size:18px;margin-top:6px}
+.bar{height:8px;border-radius:9px;background:#000;overflow:hidden;margin:4px 0}
+.bar i{display:block;height:100%;transition:width .4s}
+.bar.e i{background:linear-gradient(90deg,#ff5f7a,#ffb06b)}
+.bar.p i{background:linear-gradient(90deg,#ff5f7a,#ff9fb0)}
+.bar.s i{background:linear-gradient(90deg,#4fb0ff,#9fe8ff)}
+.blog{height:150px;overflow:auto;background:#05070f;border:1px solid #ffffff18;border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.6;margin:10px 0}
+.blog div{border-bottom:1px solid #ffffff08}
+.acts{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+
+/* タイトル */
+.title{text-align:center}
+.title h1{font-size:clamp(30px,7vw,54px);margin:0;letter-spacing:.08em;line-height:1.1;
+  text-shadow:0 0 12px #ff5fb8,0 0 30px #b48cff,3px 0 #3bf0ff;animation:flick 5s infinite}
+.title .sub{color:var(--cyan);letter-spacing:.4em;margin:10px 0 26px;font-size:13px}
+.ending h2{font-size:26px;text-align:center;margin-bottom:4px}
+.ending p{line-height:1.9;white-space:pre-wrap}
+
+@media (max-width:640px){
+  #text{font-size:15px}
+  .slot{width:56%}#slot-l{left:-6%}#slot-c{left:22%}#slot-r{right:-6%}
+  .slot img{height:min(80%,100vw)}
+  #box{left:6px;right:6px;bottom:6px;padding:20px 14px 14px}
+}
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="bg" class="bg-black"></div>
+  <div id="bgdeco"></div>
+  <div id="stage"><div class="slot" id="slot-l"></div><div class="slot" id="slot-c"></div><div class="slot" id="slot-r"></div></div>
+  <div id="hud" style="display:none"></div>
+  <div id="box" style="display:none">
+    <div id="namebox"></div>
+    <div id="text"></div>
+    <div id="choices"></div>
+    <div id="next">▼ クリック / タップ</div>
+  </div>
+  <canvas id="noise" width="160" height="100"></canvas>
+  <div id="overlay"></div>
+</div>
+
+<script>
+/* =========================================================
+   Network // アカルア  — エンジン部
+   シナリオ・依頼・会話は scenario.js に分けてあります
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const rnd = n => Math.floor(Math.random() * n) + 1;
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function dice(expr){
+  expr = String(expr).replace(/\s/g,'').toUpperCase();
+  let total = 0, m; const re = /([+-]?)(\d*)D(\d+)|([+-]?)(\d+)/g;
+  while((m = re.exec(expr))){
+    if(m[3]){ const n = m[2] ? +m[2] : 1; let s = 0; for(let i=0;i<n;i++) s += rnd(+m[3]); total += (m[1]==='-'?-1:1)*s; }
+    else if(m[5]) total += (m[4]==='-'?-1:1)*(+m[5]);
+  }
+  return total;
+}
+
+/* ---------- キャラクター ---------- */
+const CH = {
+  h:{name:'白石 ハルカ', color:'#d2b8ff', img:{def:'img/haruka.png'}},
+  t:{name:'電子 独',     color:'#9fd0ff', img:{def:'img/hitori_stand.png', float:'img/hitori_float.png', sit:'img/hitori_sit.png'}},
+  m:{name:'電子 紅葉',   color:'#ff9fc8', img:{def:'img/momiji.png'}},
+  p:{name:'', color:'#ffe08a'}
+};
+
+/* ---------- 技能 ---------- */
+const BASE_SKILLS = {
+  '回避':0,'こぶし':50,'キック':25,'組み付き':25,'投擲':25,
+  '応急手当':30,'鍵開け':1,'隠れる':10,'聞き耳':25,'忍び歩き':10,'追跡':10,'登攀':40,'図書館':25,'目星':25,
+  '運転':20,'機械修理':20,'電気修理':10,'跳躍':25,'水泳':25,'コンピューター':1,
+  '言いくるめ':5,'信用':15,'説得':15,'値切り':5,
+  '医学':5,'オカルト':5,'心理学':5,'歴史':20,'クトゥルフ神話':0
+};
+const JOBS = [
+  {id:'学生',   desc:'どこにでもいる学生。調べ物と観察が得意。', b:{'図書館':40,'目星':30,'聞き耳':30,'心理学':25,'説得':20,'コンピューター':20}},
+  {id:'会社員', desc:'人当たりの良さで世の中を渡ってきた。',     b:{'信用':40,'説得':35,'言いくるめ':30,'心理学':25,'目星':20,'値切り':20}},
+  {id:'警察官', desc:'鍛えた身体と観察眼。荒事にも強い。',       b:{'目星':35,'聞き耳':30,'こぶし':20,'追跡':30,'応急手当':25,'組み付き':20}},
+  {id:'看護師', desc:'手当てと人の心の機微に通じている。',       b:{'応急手当':45,'医学':40,'心理学':35,'聞き耳':20,'説得':20}},
+  {id:'エンジニア',desc:'機械も回路も、触れば大体わかる。',      b:{'電気修理':45,'機械修理':40,'コンピューター':40,'目星':25}},
+  {id:'作家',   desc:'本と物語と、少しのオカルト。',             b:{'図書館':40,'心理学':30,'オカルト':30,'言いくるめ':30,'歴史':20}},
+];
+const HOBBY_SKILLS = ['目星','聞き耳','図書館','追跡','忍び歩き','隠れる','応急手当','登攀','跳躍','説得','言いくるめ','信用','心理学','電気修理','機械修理','こぶし','キック','回避','オカルト'];
+
+const ITEMS = {
+  'ラムネ':      {price:300,  desc:'HP+1。その日最初の1粒はSAN+1。独の大好物。', use:()=>{ heal(1); if(S.ramuneDay!==S.day){S.ramuneDay=S.day; sanGain(1); return 'HP+1 / SAN+1';} return 'HP+1（SAN回復は1日1回まで）'; }},
+  '包帯':        {price:800,  desc:'HP+1D3。', use:()=>{const v=dice('1D3'); heal(v); return `HP+${v}`;}},
+  'ハーブティー':{price:1500, desc:'ハルカ印。SAN+1D3。', use:()=>{const v=dice('1D3'); sanGain(v); return `SAN+${v}`;}},
+  'お守り':      {price:2500, desc:'失敗した技能判定を1回だけ振り直せる。（自動で確認されます）', use:null},
+  'スタンロッド':{price:5000, desc:'武器。戦闘で〈こぶし〉で判定し 1D6+1+DB ダメージ。', use:null, weapon:true},
+};
+
+/* ---------- 状態 ---------- */
+let S = null;
+function newState(){
+  return {name:'',job:'',st:{},db:'0',hp:0,hpMax:0,mp:0,mpMax:0,san:0,sanStart:0,skills:{},grow:{},
+    money:3000,items:{'ラムネ':1},day:1,busy:false,noise:5,frag:0,done:{},aff:{h:0,t:0,m:0},talked:{},
+    comp:'none',insane:null,flags:{},req:null,ramuneDay:0,adjustDay:-9};
+}
+function dbOf(v){ return v<=12?'-1D6':v<=16?'-1D4':v<=24?'0':v<=32?'+1D4':'+1D6'; }
+function sanMax(){ return 99 - (S.skills['クトゥルフ神話']||0); }
+function heal(v){ S.hp = clamp(S.hp+v, 0, S.hpMax); hud(); }
+function sanGain(v){ S.san = clamp(S.san+v, 0, sanMax()); hud(); }
+function addNoise(v){ S.noise = clamp(S.noise+v, 0, 100); hud(); }
+function comp(c){ // 同行者判定
+  if(c==='solo') return S.comp==='none';
+  if(c==='t') return S.comp==='t'||S.comp==='both';
+  if(c==='m') return S.comp==='m'||S.comp==='both';
+  if(c==='both') return S.comp==='both';
+  if(typeof c==='function') return c();
+  return true;
+}
+function skillVal(name){
+  let v;
+  if(name==='幸運') v = S.st.POW*5;
+  else if(name==='アイデア') v = S.st.INT*5;
+  else if(name==='知識') v = Math.min(99,S.st.EDU*5);
+  else if(name==='DEX×5') v = S.st.DEX*5;
+  else v = S.skills[name] ?? 0;
+  if(S.insane && !['幸運'].includes(name)) v -= 10;
+  return Math.max(1, v);
+}
+const fmt = s => String(s).replace(/\{name\}/g, S ? S.name : '');
+
+/* ---------- 背景 ---------- */
+const BG = {
+  room:{deco:()=>`<div class="tube" style="left:44%;top:58%;width:12%;height:5%;background:#8fb4ff;box-shadow:0 0 40px 12px #6f8cff55"></div>`},
+  shop:{deco:()=>`
+    <div class="neon" style="top:9%;left:50%;transform:translateX(-50%);font-size:clamp(26px,6vw,56px);color:#ffd2f0;text-shadow:0 0 8px #ff5fb8,0 0 24px #ff5fb8,0 0 50px #ff2f98">アカルア</div>
+    <div class="tube" style="left:6%;top:6%;width:6px;height:60%;background:#5ff6ff;box-shadow:0 0 14px 3px #5ff6ff99"></div>
+    <div class="tube" style="right:6%;top:10%;width:6px;height:55%;background:#b48cff;box-shadow:0 0 14px 3px #b48cff99;animation-delay:-2s"></div>
+    <div class="tube" style="left:12%;top:28%;width:22%;height:5px;background:#ff5fb8;box-shadow:0 0 14px 3px #ff5fb899;animation-delay:-4s"></div>
+    <div class="tube" style="right:12%;top:34%;width:18%;height:5px;background:#5ff6ff;box-shadow:0 0 14px 3px #5ff6ff99;animation-delay:-1s"></div>
+    <div class="neon" style="right:8%;top:42%;font-size:13px;color:#bff;text-shadow:0 0 8px #5ff6ff">OPEN 24h?</div>`},
+  alley:{deco:()=>{let s='';for(let i=0;i<40;i++)s+=`<div class="rain" style="left:${Math.random()*100}%;animation-delay:${-Math.random()}s;animation-duration:${.8+Math.random()*.6}s"></div>`;
+    return s+`<div class="neon" style="left:6%;top:14%;font-size:28px;color:#ffd0ee;text-shadow:0 0 10px #ff2fa0;writing-mode:vertical-rl">第三区画</div>
+    <div class="neon" style="right:7%;top:18%;font-size:22px;color:#cff;text-shadow:0 0 10px #29e8ff;writing-mode:vertical-rl;animation-delay:-3s">ネオン横丁</div>`;}},
+  park:{deco:()=>`<div class="neon" style="left:50%;top:10%;transform:translateX(-50%);font-size:18px;color:#bfffdc;text-shadow:0 0 10px #33ff99">SECTOR-05 DATA PARK</div>`},
+  archive:{deco:()=>{let s='';for(let i=0;i<14;i++)s+=`<div class="page" style="left:${Math.random()*92}%;top:${5+Math.random()*55}%;animation-delay:${-Math.random()*6}s"></div>`;return s;}},
+  dark:{deco:()=>`<div class="lamp" style="left:20%;top:30%;opacity:.25"></div><div class="lamp" style="left:70%;top:40%;opacity:.15"></div>`},
+  tower:{deco:()=>{let s='';for(let i=0;i<60;i++)s+=`<div class="star" style="left:${Math.random()*100}%;top:${Math.random()*60}%;animation-delay:${-Math.random()*3}s"></div>`;return s;}},
+  roof:{deco:()=>{let s='';for(let i=0;i<40;i++)s+=`<div class="star" style="left:${Math.random()*100}%;top:${Math.random()*50}%;animation-delay:${-Math.random()*3}s"></div>`;
+    return s+`<div class="tube" style="left:0;right:0;bottom:30%;height:2px;background:#ff5fb8;box-shadow:0 0 20px 4px #ff5fb866"></div>`;}},
+  work:{deco:()=>`<div style="position:absolute;left:50%;top:42%;width:46vmin;height:46vmin;margin:-23vmin;border-radius:50%;border:2px dashed #b48cff55;animation:spin 30s linear infinite"></div>
+    <div style="position:absolute;left:50%;top:42%;width:30vmin;height:30vmin;margin:-15vmin;border-radius:50%;border:1px solid #ff5fb855;animation:spin 12s linear infinite reverse"></div>`},
+  edge:{deco:()=>''}, black:{deco:()=>''}, white:{deco:()=>''}
+};
+let curBg = '';
+function setBg(name){
+  if(name===curBg) return; curBg = name;
+  $('#bg').className = 'bg-'+name;
+  $('#bgdeco').innerHTML = BG[name] ? BG[name].deco() : '';
+  if(name==='edge') noiseLevel(.35); else noiseLevel(0);
+}
+
+/* ---------- ノイズ演出 ---------- */
+const nc = $('#noise'), nx = nc.getContext('2d'); let nBase = 0, nBurst = 0;
+function drawNoise(){
+  const a = Math.max(nBase, nBurst);
+  if(a>0.01){
+    const img = nx.createImageData(nc.width, nc.height);
+    for(let i=0;i<img.data.length;i+=4){const v=Math.random()*255|0; img.data[i]=img.data[i+1]=img.data[i+2]=v; img.data[i+3]=255;}
+    nx.putImageData(img,0,0);
+  }
+  nc.style.opacity = a; nBurst *= .9;
+  requestAnimationFrame(drawNoise);
+}
+function noiseLevel(v){ nBase = v; }
+function noiseBurst(v=.8){ nBurst = v; const g=$('#game'); g.classList.remove('glitch'); void g.offsetWidth; g.classList.add('glitch'); }
+function shake(){ const g=$('#stage'); g.classList.remove('shake'); void g.offsetWidth; g.classList.add('shake'); }
+
+/* ---------- 立ち絵表示 ---------- */
+let onStage = {};
+function show(list){
+  const slots = {l:$('#slot-l'), c:$('#slot-c'), r:$('#slot-r')};
+  const pos = list.length===1?['c']:list.length===2?['l','r']:['l','c','r'];
+  const want = {};
+  list.forEach((spec,i)=>{ const [id,pose='def'] = spec.split(':'); want[pos[i]] = {id,pose}; });
+  onStage = {};
+  for(const k of ['l','c','r']){
+    const el = slots[k], w = want[k];
+    if(!w){ el.innerHTML=''; el.className='slot'; el.dataset.key=''; continue; }
+    onStage[w.id] = k;
+    const key = w.id+':'+w.pose;
+    if(el.dataset.key!==key){ el.innerHTML = `<img src="${CH[w.id].img[w.pose]||CH[w.id].img.def}" alt="${CH[w.id].name}">`; el.dataset.key = key; }
+    el.className = 'slot has' + (w.pose==='float'?' bob':'');
+  }
+}
+function focus(who){
+  for(const k of ['l','c','r']){ const el=$('#slot-'+k); if(!el.dataset.key) continue;
+    el.classList.toggle('dim', !!who && onStage[who]!==k && who!=='p' && who!=='' ); }
+}
+
+/* ---------- テキスト進行 ---------- */
+let curNode=null, lineIdx=0, typing=false, full='', tTimer=null, waitClick=false;
+function playNode(n){
+  if(!n){ console.error('scene missing'); return; }
+  curNode = n; lineIdx = 0;
+  $('#box').style.display=''; $('#hud').style.display='';
+  if(n.bg) setBg(n.bg);
+  if(n.show) show(n.show);
+  if(n.on) n.on();
+  hud();
+  nextLine();
+}
+function play(id){
+  const n = typeof id==='object' ? id : SC[id];
+  if(!n){ console.error('no scene', id); return toHub(); }
+  playNode(typeof n==='function' ? n() : n);
+}
+function nextLine(){
+  $('#choices').innerHTML=''; $('#next').style.display='none';
+  const L = curNode.lines || [];
+  while(lineIdx < L.length){
+    let x = L[lineIdx++];
+    if(Array.isArray(x)){ if(!comp(x[0])) continue; x = x[1]; }
+    if(typeof x==='function'){ x = x(); if(!x) continue; }
+    if(typeof x==='object'){
+      if(x.bg) setBg(x.bg); if(x.show) show(x.show); if(x.fx) x.fx();
+      if(x.noise) noiseBurst(x.noise); if(x.shake) shake();
+      continue;
+    }
+    say(x); return;
+  }
+  finishNode();
+}
+function say(raw){
+  let who='', name='', text=raw;
+  const m1 = raw.match(/^([htmp]):([\s\S]*)$/);
+  const m2 = raw.match(/^([^：\n]{1,14})：([\s\S]*)$/);
+  if(raw.startsWith(':')){ text=raw.slice(1); }
+  else if(m1){ who=m1[1]; text=m1[2]; name = who==='p'?S.name:CH[who].name; }
+  else if(m2){ who='x'; name=m2[1]; text=m2[2]; }
+  text = fmt(text);
+  const nb = $('#namebox');
+  if(name){ nb.style.display='block'; nb.textContent=name; nb.style.color = (CH[who]&&CH[who].color)||'#cfe'; }
+  else nb.style.display='none';
+  $('#text').classList.toggle('narr', !name);
+  focus(who==='x'?'':who);
+  typeText(text, ()=>{ waitClick=true; $('#next').style.display='block'; });
+}
+function typeText(text, done){
+  clearInterval(tTimer); full=text; typing=true; waitClick=false;
+  const el=$('#text'); el.textContent=''; let i=0;
+  tTimer=setInterval(()=>{ i+=1; el.textContent=full.slice(0,i); if(i>=full.length){ clearInterval(tTimer); typing=false; done(); } }, 22);
+  typeDone = done;
+}
+let typeDone=null;
+function advance(){
+  if($('#overlay').classList.contains('on')) return;
+  if(typing){ clearInterval(tTimer); $('#text').textContent=full; typing=false; typeDone&&typeDone(); return; }
+  if(waitClick){ waitClick=false; nextLine(); }
+}
+$('#box').addEventListener('click', e=>{ if(e.target.closest('button')) return; advance(); });
+$('#stage').addEventListener('click', advance);
+document.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ if(document.activeElement&&document.activeElement.tagName==='INPUT')return; e.preventDefault(); advance(); } });
+
+function finishNode(){
+  const n = curNode;
+  if(n.choices) return choices(n.choices);
+  if(n.roll) return choices([{t:`《${typeof n.roll.s==='string'?n.roll.s:n.roll.s.label}》で判定する`, roll:n.roll.s, mod:n.roll.mod, ok:n.roll.ok, ng:n.roll.ng}]);
+  if(n.san) return choices([{t:`SANチェック（${n.san.s}）`, san:n.san.s, go:n.san.next}]);
+  if(n.battle) return startBattle(n.battle);
+  if(n.end) return finishRequest(n.end);
+  if(n.fail) return failRequest(n.fail);
+  if(n.ending) return showEnding(n.ending);
+  if(n.goto) return play(n.goto());
+  if(n.next) return play(n.next);
+  return toHub();
+}
+function choices(list){
+  const box=$('#choices'); box.innerHTML='';
+  list.filter(c=>(!c.if || comp(c.if)) && (!c.when || c.when())).forEach(c=>{
+    const b=document.createElement('button'); b.className='choice';
+    let hint='';
+    if(c.roll){ const lab = typeof c.roll==='string'?c.roll:c.roll.label; const v = typeof c.roll==='string'?skillVal(c.roll)+(c.mod||0):c.roll.v; hint=`<small>〈${lab}〉${v}%</small>`; }
+    if(c.san) hint=`<small>${c.san}</small>`;
+    b.innerHTML = fmt(c.t) + hint;
+    if(c.disabled && c.disabled()) b.disabled=true;
+    b.onclick = ()=>{
+      box.innerHTML='';
+      if(c.fx) c.fx();
+      if(c.roll) return doRoll(c.roll, c.mod||0, ok=>play(ok?c.ok:c.ng));
+      if(c.san) return doSan(c.san, ()=>play(c.go));
+      if(c.fn) return c.fn();
+      play(c.go);
+    };
+    box.appendChild(b);
+  });
+  const first = box.querySelector('button'); if(first) first.focus({preventScroll:true});
+}
+
+/* ---------- オーバーレイ ---------- */
+function overlay(html){ const o=$('#overlay'); o.innerHTML=html; o.classList.add('on'); return o; }
+function closeOverlay(){ const o=$('#overlay'); o.classList.remove('on'); o.innerHTML=''; }
+
+/* ---------- ダイス ---------- */
+function judge(r, v){ if(r<=5 && r<=v) return 'crit'; if(r>=96 && r>v) return 'fumble'; return r<=v?'ok':'ng'; }
+const JLAB = {crit:'クリティカル！',ok:'成功',ng:'失敗',fumble:'ファンブル…'};
+function doRoll(spec, mod, cb, opt={}){
+  const isNpc = typeof spec==='object';
+  const label = isNpc ? spec.label : spec;
+  const v = isNpc ? spec.v : clamp(skillVal(spec)+mod,1,99);
+  const o = overlay(`<div class="panel dice"><div class="lab">〈${label}〉 目標値 <b>${v}</b>${S.insane&&!isNpc?' <span class="ng">(一時的狂気 -10)</span>':''}</div>
+    <div class="num" id="dn">--</div><div class="res" id="dr"></div><div class="row" style="justify-content:center;margin-top:10px" id="db"></div></div>`);
+  let t=0; const iv=setInterval(()=>{ $('#dn').textContent=String(rnd(100)).padStart(2,'0'); if(++t>14){ clearInterval(iv); fin(); } },45);
+  function fin(){
+    const r = rnd(100), j = judge(r,v), ok = j==='ok'||j==='crit';
+    $('#dn').textContent = r; $('#dn').className='num '+(j==='crit'?'crit':ok?'ok':'ng');
+    $('#dr').innerHTML = `<span class="${j==='crit'?'crit':ok?'ok':'ng'}">${JLAB[j]}</span>`;
+    if(ok && !isNpc && S.skills[spec]!==undefined) S.grow[spec]=1;
+    const db=$('#db');
+    const done=()=>{ closeOverlay(); cb(ok, r, j); };
+    const okb=document.createElement('button'); okb.className='btn pri'; okb.textContent='OK'; okb.onclick=done; db.appendChild(okb);
+    if(!ok && !isNpc && (S.items['お守り']||0)>0 && !opt.noReroll){
+      const rb=document.createElement('button'); rb.className='btn'; rb.textContent=`お守りで振り直す（残${S.items['お守り']}）`;
+      rb.onclick=()=>{ S.items['お守り']--; closeOverlay(); doRoll(spec, mod, cb, {noReroll:true}); };
+      db.appendChild(rb);
+    }
+    okb.focus();
+  }
+}
+function doSan(expr, cb){
+  const [sOk,sNg] = expr.split('/');
+  const v = S.san;
+  const o = overlay(`<div class="panel dice"><div class="lab">SANチェック（${expr}） 現在SAN <b>${v}</b></div>
+    <div class="num" id="dn">--</div><div class="res" id="dr"></div><div class="muted" id="dx"></div><div class="row" style="justify-content:center;margin-top:10px" id="db"></div></div>`);
+  let t=0; const iv=setInterval(()=>{ $('#dn').textContent=String(rnd(100)).padStart(2,'0'); if(++t>14){ clearInterval(iv); fin(); } },45);
+  function fin(){
+    const r=rnd(100), ok=r<=v; const loss=Math.max(0,dice(ok?sOk:sNg));
+    S.san = Math.max(0, S.san-loss); hud();
+    $('#dn').textContent=r; $('#dn').className='num '+(ok?'ok':'ng');
+    $('#dr').innerHTML=`<span class="${ok?'ok':'ng'}">${ok?'成功':'失敗'}</span>　SAN -${loss}`;
+    if(loss>0) noiseBurst(.4);
+    const db=$('#db'); const b=document.createElement('button'); b.className='btn pri'; b.textContent='OK'; db.appendChild(b); b.focus();
+    b.onclick=()=>{
+      closeOverlay();
+      if(S.san<=0) return showEnding('insane');
+      if(loss>=5 && !S.insane){
+        // アイデアロール → 成功で一時的狂気
+        const iv2 = S.st.INT*5, r2=rnd(100);
+        if(r2<=iv2){
+          S.insane = pick(['震えが止まらない','ノイズの幻聴が聞こえる','周囲の全てが作り物に見える','笑いが止まらない','足元が崩れていく感覚']);
+          hud();
+          return msg(`<h2 class="ng">一時的狂気</h2><p>アイデアロール ${r2}/${iv2} 成功――理解してしまった。</p><p>《${S.insane}》<br><span class="muted">休むまで全技能 -10</span></p>`, cb);
+        }
+      }
+      cb();
+    };
+  }
+}
+function msg(html, cb, btn='OK'){
+  overlay(`<div class="panel">${html}<div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn pri" id="mok">${btn}</button></div></div>`);
+  $('#mok').onclick=()=>{ closeOverlay(); cb&&cb(); }; $('#mok').focus();
+}
+
+/* ---------- HUD ---------- */
+function hud(){
+  if(!S) return;
+  const f = '◆'.repeat(S.frag)+'◇'.repeat(5-S.frag);
+  const cn = {none:'ひとり',t:'独',m:'紅葉',both:'独・紅葉'}[S.comp];
+  $('#hud').innerHTML = `<span class="chip">Day <b>${S.day}</b> ${S.busy?'夜':'昼'}</span>
+   <span class="chip hp">HP <b>${S.hp}</b>/${S.hpMax}</span><span class="chip mp">MP <b>${S.mp}</b></span>
+   <span class="chip san">SAN <b>${S.san}</b></span><span class="chip noise">侵食 <b>${S.noise}%</b></span>
+   <span class="chip frag">座標 <b>${f}</b></span><span class="chip">¥<b>${S.money.toLocaleString()}</b></span>
+   ${S.req?`<span class="chip">同行:${cn}</span>`:''}${S.insane?`<span class="chip ng">狂気:${S.insane}</span>`:''}
+   <button id="menuBtn">手帳</button>`;
+  $('#menuBtn').onclick = openNote;
+}
+
+/* ---------- 手帳 ---------- */
+function openNote(){
+  if($('#overlay').classList.contains('on')) return;
+  const st = S.st;
+  const sk = Object.entries(S.skills).filter(([k,v])=>v>0).map(([k,v])=>`<div class="kv"><span>${k}${S.grow[k]?' ✓':''}</span><span>${v}</span></div>`).join('');
+  const it = Object.entries(S.items).filter(([k,v])=>v>0).map(([k,v])=>`<div class="kv"><span>${k} ×${v}<br><span class="muted">${ITEMS[k].desc}</span></span><span>${ITEMS[k].use?`<button class="btn" data-use="${k}">使う</button>`:''}</span></div>`).join('') || '<div class="muted">なし</div>';
+  const heart = n => '♥'.repeat(Math.min(5,Math.floor(n/2)))+'♡'.repeat(5-Math.min(5,Math.floor(n/2)));
+  overlay(`<div class="panel"><h2>探索者手帳 — ${S.name}</h2>
+    <div class="muted">${S.job} / 迷い人 / アカルアのスタッフ（${S.day}日目）</div>
+    <h3>能力値</h3><div class="cols">${['STR','CON','POW','DEX','APP','SIZ','INT','EDU'].map(k=>`<div class="kv"><span>${k}</span><span>${st[k]}</span></div>`).join('')}
+      <div class="kv"><span>HP</span><span>${S.hp}/${S.hpMax}</span></div><div class="kv"><span>MP</span><span>${S.mp}/${S.mpMax}</span></div>
+      <div class="kv"><span>SAN</span><span>${S.san}/${sanMax()}</span></div><div class="kv"><span>DB</span><span>${S.db}</span></div>
+      <div class="kv"><span>アイデア</span><span>${st.INT*5}</span></div><div class="kv"><span>幸運</span><span>${st.POW*5}</span></div><div class="kv"><span>知識</span><span>${Math.min(99,st.EDU*5)}</span></div></div>
+    <h3>技能 <span class="muted">（✓＝成長チェック。休むと成長ロール）</span></h3><div class="cols">${sk}</div>
+    <h3>所持品</h3>${it}
+    <h3>関係</h3>
+    <div class="kv"><span style="color:${CH.h.color}">白石 ハルカ</span><span>${heart(S.aff.h)}</span></div>
+    <div class="kv"><span style="color:${CH.t.color}">電子 独</span><span>${heart(S.aff.t)}</span></div>
+    <div class="kv"><span style="color:${CH.m.color}">電子 紅葉</span><span>${heart(S.aff.m)}</span></div>
+    <h3>侵食度</h3><div class="bar s"><i style="width:${S.noise}%"></i></div><div class="muted">100%に達すると【Network】に同化してしまう。</div>
+    <div class="row" style="justify-content:flex-end;margin-top:14px">${inHub?'<button class="btn" id="nsave">セーブ</button>':''}<button class="btn" id="ntitle">タイトルへ</button><button class="btn pri" id="nclose">閉じる</button></div></div>`);
+  $('#nclose').onclick=closeOverlay;
+  $('#ntitle').onclick=()=>{ if(confirm('タイトルに戻りますか？（セーブしていない進行は失われます）')){ closeOverlay(); title(); } };
+  if($('#nsave')) $('#nsave').onclick=()=>{ save(); $('#nsave').textContent='セーブしました'; };
+  document.querySelectorAll('[data-use]').forEach(b=>b.onclick=()=>{ const k=b.dataset.use; S.items[k]--; const r=ITEMS[k].use(); closeOverlay(); msg(`<p>${k}を使った。<br><b>${r}</b></p>`, ()=>{}); });
+}
+
+/* ---------- セーブ ---------- */
+const SAVE_KEY='akarua_save_v1';
+function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); return true; }catch(e){ return false; } }
+function load(){ try{ const d=localStorage.getItem(SAVE_KEY); return d?JSON.parse(d):null; }catch(e){ return null; } }
+
+/* ---------- 戦闘 ---------- */
+let B=null;
+function startBattle(cfg){
+  const e = Object.assign({}, ENEMIES[cfg.e]); e.hpMax=e.hp; e.calm=e.talk?e.talk.n:0;
+  B = {e, win:cfg.win, lose:cfg.lose||'faint', flee:cfg.flee, peace:cfg.peace, round:1, log:[], weak:0, tUlt:false, mHeal:0, busy:false};
+  const go = ()=>{ renderBattle(); blog(`<b>${e.name}</b> が現れた！`); if(e.intro) blog(`<span class="muted">${e.intro}</span>`); };
+  if(e.san && !cfg.noSan){ msg(`<h2>${e.name}</h2><p>${e.desc}</p><p class="muted">その姿を目にした――</p>`, ()=>doSan(e.san, go), 'SANチェック'); }
+  else go();
+}
+function blog(h){ B.log.push(h); const el=$('#blog'); if(el){ el.innerHTML=B.log.map(x=>`<div>${x}</div>`).join(''); el.scrollTop=el.scrollHeight; } }
+function renderBattle(){
+  const e=B.e;
+  const acts = [];
+  acts.push(`<button class="btn" data-a="punch">こぶし<br><small class="muted">${skillVal('こぶし')}% / 1D3${S.db!=='0'?S.db:''}</small></button>`);
+  acts.push(`<button class="btn" data-a="kick">キック<br><small class="muted">${skillVal('キック')}% / 1D6${S.db!=='0'?S.db:''}</small></button>`);
+  if(S.items['スタンロッド']) acts.push(`<button class="btn" data-a="rod">スタンロッド<br><small class="muted">${skillVal('こぶし')}% / 1D6+1</small></button>`);
+  if(e.talk) acts.push(`<button class="btn" data-a="talk">${e.talk.s}で語りかける<br><small class="muted">${clamp(skillVal(e.talk.s)+(e.talk.mod||0),1,99)}% / 残り${B.e.calm}</small></button>`);
+  acts.push(`<button class="btn" data-a="guard">回避に専念<br><small class="muted">このラウンド回避+30</small></button>`);
+  acts.push(`<button class="btn" data-a="item">アイテム</button>`);
+  if(B.flee) acts.push(`<button class="btn" data-a="flee">逃げる<br><small class="muted">DEX×5 ${S.st.DEX*5}%</small></button>`);
+  const cn = [];
+  if(comp('t')) cn.push(`<span style="color:${CH.t.color}">独</span>`);
+  if(comp('m')) cn.push(`<span style="color:${CH.m.color}">紅葉</span>`);
+  overlay(`<div class="panel battle">
+    <div class="row" style="justify-content:space-between"><span class="tag">ROUND ${B.round}</span><span class="muted">同行：${cn.join('・')||'なし'}</span></div>
+    <div class="enemy"><div class="glyph" id="eg">${e.glyph}</div><div class="ename">${e.name}</div>
+      <div class="bar e" style="max-width:300px;margin:6px auto"><i style="width:${e.hp/e.hpMax*100}%"></i></div>
+      <div class="muted">HP ${e.hp}/${e.hpMax}${e.talk?` ・ 鎮静まで ${B.e.calm}`:''}</div></div>
+    <div class="row" style="gap:16px"><div style="flex:1">HP ${S.hp}/${S.hpMax}<div class="bar p"><i style="width:${S.hp/S.hpMax*100}%"></i></div></div>
+      <div style="flex:1">SAN ${S.san}<div class="bar s"><i style="width:${S.san/sanMax()*100}%"></i></div></div></div>
+    <div class="blog" id="blog"></div>
+    <div class="acts" id="acts">${acts.join('')}</div></div>`);
+  $('#blog').innerHTML=B.log.map(x=>`<div>${x}</div>`).join(''); $('#blog').scrollTop=1e9;
+  document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>act(b.dataset.a));
+}
+function rollLine(label, v){ const r=rnd(100), j=judge(r,v); return {r, j, ok:j==='ok'||j==='crit', txt:`〈${label}〉${v} → ${r} <span class="${j==='crit'?'crit':j==='ok'?'ok':'ng'}">${JLAB[j]}</span>`}; }
+function hitEnemy(d, who){ const e=B.e; d=Math.max(1,d); e.hp=Math.max(0,e.hp-d); blog(`　→ <b>${d}</b> ダメージ！`); const g=$('#eg'); if(g){g.classList.remove('hit');void g.offsetWidth;g.classList.add('hit');} noiseBurst(.25); }
+async function act(a){
+  if(B.busy) return; B.busy=true; document.querySelectorAll('#acts button').forEach(b=>b.disabled=true);
+  const e=B.e; let guard=0;
+  if(a==='item'){ B.busy=false; return battleItem(); }
+  if(a==='punch'||a==='kick'||a==='rod'){
+    const sk = a==='kick'?'キック':'こぶし';
+    const R=rollLine(sk, skillVal(sk));
+    blog(`<b>${S.name}</b>の攻撃 ${R.txt}`);
+    if(R.ok){ S.grow[a==='kick'?'キック':'こぶし']=1;
+      let d = dice((a==='punch'?'1D3':a==='kick'?'1D6':'1D6+1') + (S.db!=='0'?S.db:''));
+      if(R.j==='crit') d+= dice(a==='punch'?'1D3':'1D6');
+      if(B.weak){ const w=dice('1D4'); d+=w; blog(`　紅葉が見抜いた弱点を突いた！（+${w}）`); B.weak=0; }
+      hitEnemy(d);
+    }
+  } else if(a==='talk'){
+    const R=rollLine(e.talk.s, clamp(skillVal(e.talk.s)+(e.talk.mod||0),1,99));
+    blog(`<b>${S.name}</b>は語りかけた ${R.txt}`);
+    if(R.ok){ S.grow[e.talk.s]=1; e.calm -= (R.j==='crit'?2:1); blog(`　${e.name}の動きが鈍った…`); }
+    if(e.calm<=0){ await sleep(500); return endBattle(true, true); }
+  } else if(a==='guard'){ guard=30; blog(`<b>${S.name}</b>は身構えた。`); }
+  else if(a==='flee'){
+    const R=rollLine('DEX×5', S.st.DEX*5); blog(`<b>${S.name}</b>は逃げ出した ${R.txt}`);
+    if(R.ok){ await sleep(600); closeOverlay(); B.busy=false; return play(B.flee); }
+  }
+  refreshBattle(); await sleep(550);
+  if(e.hp<=0) return endBattle(true);
+  // 同行者の行動
+  if(comp('t')){
+    if(!B.tUlt && e.hp<=e.hpMax/2){ B.tUlt=true; blog(`<span style="color:${CH.t.color}">独</span>「……終わらせる。」〈🤍Re: End of a Dream💙〉100 → <span class="crit">発動</span>`); hitEnemy(dice('1D6+2')); }
+    else { const R=rollLine('↓FREEDOM DiVE↓',69); blog(`<span style="color:${CH.t.color}">独</span>の〈↓FREEDOM DiVE↓〉 ${R.txt}`); if(R.ok) hitEnemy(dice('1D6')); }
+    refreshBattle(); await sleep(550); if(e.hp<=0) return endBattle(true);
+  }
+  if(comp('m')){
+    if(S.hp<=S.hpMax/2 && B.mHeal<2){ B.mHeal++; const R=rollLine('応急手当',60); blog(`<span style="color:${CH.m.color}">紅葉</span>「ちょっと、じっとしてて！」${R.txt}`); if(R.ok){ const h=dice('1D3'); heal(h); blog(`　HPが ${h} 回復した。`);} }
+    else if(!B.weak){ const R=rollLine('目星',85); blog(`<span style="color:${CH.m.color}">紅葉</span>「あそこ、ノイズが薄いよ！」${R.txt}`); if(R.ok){ B.weak=1; blog('　次の攻撃が成功するとダメージ+1D4'); } }
+    else { const R=rollLine('こぶし',50); blog(`<span style="color:${CH.m.color}">紅葉</span>のこぶし ${R.txt}`); if(R.ok) hitEnemy(dice('1D3')); }
+    refreshBattle(); await sleep(550); if(e.hp<=0) return endBattle(true);
+  }
+  // 敵の行動
+  const ally = (comp('t')||comp('m')) && Math.random()<.25;
+  const R=rollLine('攻撃', e.atk); blog(`<b class="ng">${e.name}</b>の${pick(e.moves||['攻撃'])} ${R.txt}`);
+  if(R.ok){
+    if(ally){ const who = comp('t')&&(!comp('m')||Math.random()<.5) ? '独' : '紅葉'; blog(`　${who}を狙った！――が、${who}は軽く身を翻して躱した。`); }
+    else {
+      const D=rollLine('回避', clamp(skillVal('回避')+guard,1,95)); blog(`　${S.name}の回避 ${D.txt}`);
+      if(D.ok){ S.grow['回避']=1; blog('　攻撃を躱した！'); }
+      else { let d=dice(e.dmg); if(R.j==='crit') d+=dice(e.dmg); S.hp=Math.max(0,S.hp-d); blog(`　<span class="ng">${d} ダメージを受けた！</span>`); shake(); noiseBurst(.3); hud(); }
+    }
+  }
+  refreshBattle();
+  await sleep(450);
+  if(S.hp<=0) return endBattle(false);
+  B.round++; B.busy=false; renderBattle();
+}
+function refreshBattle(){ const ph=document.querySelector('.battle'); if(!ph) return; const e=B.e;
+  ph.querySelector('.bar.e i').style.width=(e.hp/e.hpMax*100)+'%';
+  ph.querySelector('.enemy .muted').textContent=`HP ${e.hp}/${e.hpMax}${e.talk?` ・ 鎮静まで ${e.calm}`:''}`;
+  ph.querySelector('.bar.p i').style.width=(S.hp/S.hpMax*100)+'%'; }
+function battleItem(){
+  const list=Object.entries(S.items).filter(([k,v])=>v>0&&ITEMS[k].use);
+  const box=$('#acts');
+  box.innerHTML = list.map(([k,v])=>`<button class="btn" data-i="${k}">${k} ×${v}<br><small class="muted">${ITEMS[k].desc}</small></button>`).join('') + `<button class="btn" data-i="">戻る</button>`;
+  box.querySelectorAll('[data-i]').forEach(b=>b.onclick=async()=>{
+    const k=b.dataset.i; if(!k) return renderBattle();
+    S.items[k]--; const r=ITEMS[k].use(); blog(`${S.name}は${k}を使った。（${r}）`);
+    // アイテム使用で1行動消費：同行者・敵が動く
+    await act('noop');
+  });
+}
+function endBattle(win, peaceful){
+  B.busy=false;
+  const e=B.e;
+  const after=()=>{ closeOverlay(); if(win) play(peaceful&&B.peace?B.peace:B.win); else play(B.lose); };
+  if(win) msg(`<h2 class="ok">${peaceful?'鎮静化':'勝利'}</h2><p>${peaceful?`${e.name}は静かにノイズの向こうへ消えていった。`:`${e.name}は砂嵐になって崩れ落ちた。`}</p>`, after);
+  else msg(`<h2 class="ng">戦闘不能</h2><p>視界が、白黒の砂嵐に塗り潰されていく――</p>`, after);
+}
+
+/* ---------- 依頼 ---------- */
+let inHub=false;
+function toHub(){
+  inHub=true; S.req=null; S.comp='none'; hud();
+  if(S.noise>=100) return showEnding('assim');
+  playNode({bg:'shop', show: S.busy?['t:sit','h','m']:['t','h','m'], lines:[ hubGreeting() ], choices: hubMenu()});
+  save();
+}
+function hubGreeting(){
+  if(S.busy) return pick(['h:おつかれさま〜。今日の営業はおしまい！ ゆっくり休んでね。','t:……おつかれ。今日はもう寝る。','m:おつかれ〜！ 独君、一緒に帰ろ♡']);
+  if(S.frag>=5) return 'h:座標は揃ったね。……準備ができたら、掲示板の一番上を見て。';
+  return pick(['h:おはよ〜。開店まであと1時間くらいあるよ。依頼、見ていく？','t:……開店前、退屈。','m:おはよ〜！ 今日も独君かわいいね♡ ……あ、{name}もおはよ。','h:今日はどんな依頼が来てるかな〜？']);
+}
+function hubMenu(){
+  return [
+    {t:S.busy?'依頼掲示板 <small>（今日の仕事は終わり）</small>':'依頼掲示板を見る', disabled:()=>S.busy, fn:board},
+    {t:'誰かと話す', fn:talkMenu},
+    {t:'ハルカの棚（購買）', fn:shop},
+    {t:S.busy?'自室で休む（次の日へ）':'自室で休む <small>（依頼を受けずに次の日へ）</small>', fn:rest},
+  ];
+}
+function board(){
+  inHub=false;
+  const list = REQ.filter(r=>reqVisible(r));
+  const locked = REQ.filter(r=>r.main && !S.done[r.id] && r.need>S.frag).slice(0,1);
+  overlay(`<div class="panel"><h2>依頼掲示板</h2><div class="muted">依頼を受けると、その日の仕事はそれで終わり。</div><div style="margin-top:10px">
+    ${list.map(r=>`<div class="card ${r.main?'main':'side'}"><div><span class="tag">${r.main?'メイン':r.repeat?'日課':'サブ'}</span><span class="tt">${r.title}</span></div>
+      <div class="cl">依頼人：${r.client}</div><p style="margin:6px 0;font-size:14px">${r.desc}</p>
+      <div class="row" style="justify-content:space-between"><span class="muted">${r.rewardTxt||''}</span><button class="btn pri" data-r="${r.id}">受ける</button></div></div>`).join('')}
+    ${locked.map(r=>`<div class="card" style="opacity:.5"><span class="tag">メイン</span><span class="tt">？？？</span><div class="cl">帰還座標の断片を ${r.need} つ集めると…</div></div>`).join('')}
+    </div><div class="row" style="justify-content:flex-end"><button class="btn" id="bclose">戻る</button></div></div>`);
+  $('#bclose').onclick=()=>{ closeOverlay(); inHub=true; };
+  document.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>chooseComp(REQ.find(r=>r.id===b.dataset.r)));
+}
+function reqVisible(r){
+  if(S.done[r.id] && !r.repeat) return false;
+  if(r.main) return r.need<=S.frag;
+  return !r.cond || r.cond();
+}
+function chooseComp(r){
+  if(r.comp){ return startReq(r, r.comp); }
+  overlay(`<div class="panel"><h2>${r.title}</h2><p>誰と行く？</p>
+    <div class="grid2">
+      <button class="pick" data-c="t"><b style="color:${CH.t.color}">電子 独</b><small>聞き耳85・目星85。戦闘で〈↓FREEDOM DiVE↓〉</small></button>
+      <button class="pick" data-c="m"><b style="color:${CH.m.color}">電子 紅葉</b><small>目星85・説得85・応急手当60。弱点看破と手当て</small></button>
+      <button class="pick" data-c="none"><b>ひとりで行く</b><small>自分の力だけで挑む</small></button>
+    </div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" id="cb">やめる</button></div></div>`);
+  $('#cb').onclick=()=>{ closeOverlay(); inHub=true; };
+  document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>startReq(r,b.dataset.c));
+}
+function startReq(r,c){ closeOverlay(); inHub=false; S.req=r.id; S.comp=c; hud(); play(r.start); }
+function finishRequest(end){
+  const r = REQ.find(x=>x.id===S.req);
+  let lines=[];
+  if(end.money){ S.money+=end.money; lines.push(`報酬 ¥${end.money.toLocaleString()}`); }
+  if(end.frag){ S.frag+=1; lines.push(`<span style="color:var(--cyan)">◆ 帰還座標の断片を手に入れた（${S.frag}/5）</span>`); }
+  if(end.san){ const v=dice(end.san); sanGain(v); lines.push(`依頼達成：SAN +${v}`); }
+  if(end.items) for(const [k,v] of Object.entries(end.items)){ S.items[k]=(S.items[k]||0)+v; lines.push(`${k} ×${v} を手に入れた`); }
+  if(end.aff) for(const [k,v] of Object.entries(end.aff)){ S.aff[k]+=v; lines.push(`${CH[k].name}との距離が少し縮まった`); }
+  if(end.fx) end.fx();
+  if(r) S.done[r.id]=true;
+  S.busy=true; hud();
+  msg(`<h2 class="ok">依頼完了</h2><p>${end.msg||(r?r.title:'')}</p><p>${lines.join('<br>')}</p>`, toHub);
+}
+function failRequest(){
+  S.busy=true; S.hp=Math.max(1,S.hp); hud();
+  msg(`<h2 class="ng">依頼失敗</h2><p>今日のところは、帰ろう。<br><span class="muted">依頼は掲示板に残っている。また挑戦できる。</span></p>`, toHub);
+}
+
+/* ---------- 会話 ---------- */
+function talkMenu(){
+  playNode({bg:'shop', show:S.busy?['t:sit','h','m']:['t','h','m'], lines:[':誰と話そう？'], choices:[
+    {t:'白石 ハルカ', fn:()=>play(talkScene('h'))},
+    {t:'電子 独', fn:()=>play(talkScene('t'))},
+    {t:'電子 紅葉', fn:()=>play(talkScene('m'))},
+    {t:'やっぱりやめる', fn:toHub},
+  ]});
+}
+function talkScene(who){
+  const pool = TALK[who].filter(x=>!x.when || x.when());
+  const key = who+S.day;
+  let first = !S.talked[key];
+  // 未読優先
+  S.flags.read = S.flags.read || {};
+  const unread = pool.filter(x=>!S.flags.read[x.id]);
+  const t = (unread.length? unread[0] : pick(pool));
+  S.flags.read[t.id]=1;
+  const lines = t.lines.slice();
+  if(first){ S.talked[key]=1; S.aff[who]+=1; }
+  const extra = [];
+  if(who==='h' && S.day - S.adjustDay >= 3 && S.noise>=15){
+    extra.push({t:'侵食の調整をお願いする', fn:()=>{ S.adjustDay=S.day; addNoise(-10); play({show:['h'], lines:['h:はいは〜い、ちょっと手ぇ貸してね。',{noise:.5},':ハルカさんの指が触れた瞬間、指先のノイズがすうっと引いていく。','h:応急処置だけどね〜。3日に1回くらいなら、やってあげられるよ。',':（侵食度 -10%）'], next:'__hub'}); }});
+  }
+  return {show: who==='t'?[S.busy?'t:sit':'t']:[who], lines, choices: extra.length? [...extra, {t:'戻る', fn:toHub}] : null, next: extra.length?null:'__hub'};
+}
+
+/* ---------- 購買 ---------- */
+function shop(){
+  inHub=false;
+  const keys=Object.keys(ITEMS);
+  overlay(`<div class="panel"><h2>ハルカの棚</h2><div class="muted">「欲しいものがあったら言ってね〜。お代はちゃんと貰うけど♪」　所持金 ¥<b id="sm">${S.money.toLocaleString()}</b></div><div style="margin-top:10px">
+  ${keys.map(k=>`<div class="kv"><span><b>${k}</b> <span class="muted">所持${S.items[k]||0}</span><br><span class="muted">${ITEMS[k].desc}</span></span><span><button class="btn" data-b="${k}">¥${ITEMS[k].price.toLocaleString()}</button></span></div>`).join('')}
+  </div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn pri" id="sc">戻る</button></div></div>`);
+  $('#sc').onclick=()=>{ closeOverlay(); inHub=true; hud(); };
+  document.querySelectorAll('[data-b]').forEach(b=>{
+    const k=b.dataset.b; if(ITEMS[k].weapon && S.items[k]) b.disabled=true;
+    b.onclick=()=>{ if(S.money<ITEMS[k].price){ b.textContent='お金が足りない'; return; } S.money-=ITEMS[k].price; S.items[k]=(S.items[k]||0)+1; closeOverlay(); shop(); hud(); };
+  });
+}
+
+/* ---------- 休む ---------- */
+function rest(){
+  inHub=false;
+  // 成長ロール
+  const res=[];
+  for(const k of Object.keys(S.grow)){
+    const cur=S.skills[k]; const r=rnd(100);
+    if(r>cur || r>95){ const up=dice('1D10'); S.skills[k]=Math.min(99,cur+up); res.push(`${k}：${r} > ${cur} → <span class="ok">+${up}（${S.skills[k]}）</span>`); }
+    else res.push(`${k}：${r} ≦ ${cur} → 成長なし`);
+  }
+  S.grow={};
+  const hp=dice('1D3'); heal(hp); S.mp=S.mpMax;
+  const wasInsane=S.insane; S.insane=null;
+  S.day++; S.busy=false; addNoise(5);
+  const warn = S.noise>=80?'<p class="ng">指先だけでなく、腕まで砂嵐が這い上がっている。……急がないと。</p>':S.noise>=50?'<p style="color:var(--gold)">指先のノイズが、前より濃くなった気がする。</p>':'';
+  msg(`<h2>${S.day}日目の朝</h2><p class="muted">窓を少しだけ開けて、ベッドに飛び込んだ。</p>
+    <p>HP +${hp}　MP全回復${wasInsane?'　一時的狂気から回復した':''}<br>侵食度 +5%（${S.noise}%）</p>${warn}
+    ${res.length?`<h3>成長ロール</h3><p style="font-size:13px">${res.join('<br>')}</p>`:''}`, ()=>{
+      if(S.noise>=100) return showEnding('assim');
+      const ev = MORNING.find(m=>!S.flags['mo_'+m.id] && m.when());
+      if(ev){ S.flags['mo_'+ev.id]=1; play(ev.scene); } else toHub();
+    });
+}
+
+/* ---------- エンディング ---------- */
+function showEnding(id){
+  const E = ENDINGS[id]; inHub=false;
+  $('#box').style.display='none'; show([]); setBg(E.bg||'black');
+  try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+  overlay(`<div class="panel ending"><div class="muted" style="text-align:center">ENDING</div><h2 style="color:${E.color||'#fff'}">${E.title}</h2>
+    <p>${fmt(typeof E.text==='function'?E.text():E.text)}</p>
+    <div class="muted" style="text-align:center">${S.name} / ${S.day}日目 / SAN ${S.san} / 侵食 ${S.noise}%</div>
+    <div class="row" style="justify-content:center;margin-top:16px"><button class="btn pri" id="et">タイトルへ</button></div></div>`);
+  $('#et').onclick=()=>{ closeOverlay(); title(); };
+}
+
+/* ---------- タイトル・キャラ作成 ---------- */
+function title(){
+  S=null; inHub=false; $('#box').style.display='none'; $('#hud').style.display='none'; show([]); setBg('shop');
+  const has = !!load();
+  overlay(`<div class="panel title" style="background:#070914ee"><div class="muted">CoC6th based / Network RPG</div>
+    <h1>Network<br>// アカルア</h1><div class="sub">迷い人の依頼帳</div>
+    <div class="row" style="justify-content:center;flex-direction:column;gap:10px">
+      <button class="btn pri" id="tn" style="min-width:220px">はじめから</button>
+      <button class="btn" id="tc" style="min-width:220px" ${has?'':'disabled'}>つづきから</button>
+    </div>
+    <p class="muted" style="margin-top:20px">クリック／タップ・Enterで文章送り。<br>キャラ案・デザイン：あかたん</p></div>`);
+  $('#tn').onclick=()=>{ if(has && !confirm('セーブデータがあります。はじめからにしますか？')) return; create(); };
+  $('#tc').onclick=()=>{ S=Object.assign(newState(), load()); closeOverlay(); toHub(); };
+}
+function create(){
+  S=newState();
+  let st={};
+  const roll=()=>{ st={STR:dice('3D6'),CON:dice('3D6'),POW:dice('3D6'),DEX:dice('3D6'),APP:dice('3D6'),SIZ:dice('2D6+6'),INT:dice('2D6+6'),EDU:dice('3D6+3')}; };
+  roll();
+  let job=JOBS[0], hob=[];
+  const draw=()=>{
+    const hp=Math.ceil((st.CON+st.SIZ)/2);
+    overlay(`<div class="panel"><h2>迷い人の作成</h2>
+      <h3>名前</h3><input type="text" id="nm" maxlength="12" placeholder="あなたの名前" value="${S.name}">
+      <h3>能力値 <button class="btn" id="rr" style="padding:3px 10px;font-size:12px">振り直す</button></h3>
+      <div class="cols">${Object.entries(st).map(([k,v])=>`<div class="kv"><span>${k}</span><span>${v}</span></div>`).join('')}
+        <div class="kv"><span>HP</span><span>${hp}</span></div><div class="kv"><span>MP</span><span>${st.POW}</span></div><div class="kv"><span>SAN</span><span>${st.POW*5}</span></div><div class="kv"><span>DB</span><span>${dbOf(st.STR+st.SIZ)}</span></div></div>
+      <h3>元の世界での職業</h3><div class="grid2">${JOBS.map(j=>`<button class="pick ${j===job?'sel':''}" data-j="${j.id}"><b>${j.id}</b><small>${j.desc}</small></button>`).join('')}</div>
+      <div class="muted" style="margin-top:6px">${Object.entries(job.b).map(([k,v])=>`${k}+${v}`).join(' / ')}</div>
+      <h3>得意なこと（2つ選ぶ・各+30）</h3><div class="row">${HOBBY_SKILLS.map(k=>`<button class="pick ${hob.includes(k)?'sel':''}" data-h="${k}" style="padding:5px 10px">${k}</button>`).join('')}</div>
+      <div class="row" style="justify-content:space-between;margin-top:16px"><button class="btn" id="cbk">戻る</button><button class="btn pri" id="cok">この姿で【Network】へ</button></div></div>`);
+    $('#nm').oninput=e=>S.name=e.target.value;
+    $('#rr').onclick=()=>{ roll(); draw(); };
+    $('#cbk').onclick=title;
+    document.querySelectorAll('[data-j]').forEach(b=>b.onclick=()=>{ job=JOBS.find(j=>j.id===b.dataset.j); draw(); });
+    document.querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>{ const k=b.dataset.h; if(hob.includes(k)) hob=hob.filter(x=>x!==k); else if(hob.length<2) hob.push(k); draw(); });
+    $('#cok').onclick=()=>{
+      S.name=(S.name||'').trim(); if(!S.name){ $('#nm').focus(); $('#nm').placeholder='名前を入力してください'; return; }
+      if(hob.length<2){ alert('得意なことを2つ選んでください'); return; }
+      S.st=st; S.job=job.id; S.db=dbOf(st.STR+st.SIZ);
+      S.hpMax=S.hp=Math.ceil((st.CON+st.SIZ)/2); S.mpMax=S.mp=st.POW; S.san=S.sanStart=st.POW*5;
+      S.skills=Object.assign({}, BASE_SKILLS); S.skills['回避']=st.DEX*2;
+      for(const [k,v] of Object.entries(job.b)) S.skills[k]=Math.min(99,(S.skills[k]||0)+v);
+      for(const k of hob) S.skills[k]=Math.min(99,S.skills[k]+30);
+      closeOverlay(); play('pro_0');
+    };
+  };
+  draw();
+}
+
+window.addEventListener('load', ()=>{
+  SC.__hub = {hub:true};
+  drawNoise(); title();
+});
+</script>
+<script src="scenario.js"></script>
+</body>
+</html>
