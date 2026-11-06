@@ -339,7 +339,7 @@ let curNode=null, lineIdx=0, typing=false, full='', tTimer=null, waitClick=false
 function playNode(n){
   if(!n){ console.error('scene missing'); return; }
   curNode = n; lineIdx = 0;
-  $('#box').style.display=''; $('#hud').style.display='';
+  $('#box').style.display=''; $('#hud').style.display = S&&S.story ? 'none' : '';
   if(n.bg) setBg(n.bg);
   if(n.show) show(n.show);
   if(n.on) n.on();
@@ -405,6 +405,7 @@ function finishNode(){
   if(n.roll) return choices([{t:`《${typeof n.roll.s==='string'?n.roll.s:n.roll.s.label}》で判定する`, roll:n.roll.s, mod:n.roll.mod, ok:n.roll.ok, ng:n.roll.ng}]);
   if(n.san) return choices([{t:`SANチェック（${n.san.s}）`, san:n.san.s, go:n.san.next}]);
   if(n.battle) return startBattle(n.battle);
+  if(n.storyEnd) return endStory(n.storyEnd);
   if(n.end) return finishRequest(n.end);
   if(n.fail) return failRequest(n.fail);
   if(n.ending) return showEnding(typeof n.ending==='function'?n.ending():n.ending);
@@ -776,7 +777,7 @@ function talkScene(who){
 /* ---------- メタ（周回を超えて残る記録） ---------- */
 const META_KEY='akarua_meta_v1';
 let META = (()=>{ try{ return JSON.parse(localStorage.getItem(META_KEY))||{}; }catch(e){ return {}; } })();
-['talk','enemy','req','end','bond'].forEach(k=>META[k]=META[k]||{});
+['talk','enemy','req','end','bond','story'].forEach(k=>META[k]=META[k]||{});
 function metaAdd(kind, id){ if(!META[kind][id]){ META[kind][id]=1; try{ localStorage.setItem(META_KEY, JSON.stringify(META)); }catch(e){} } }
 
 /* ---------- バックログ ---------- */
@@ -812,10 +813,10 @@ function openDex(tab){
     body = PROFILES.filter(pf=>!pf.unlock || pf.unlock()).map(pf=>{
       const aff = S? (S.aff[pf.id]??0) : 99;
       return `<div class="card"><div class="row" style="gap:12px;align-items:flex-start;flex-wrap:nowrap">
-        ${pf.noimg?`<div style="width:72px;height:96px;background:#d8e0ff14;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-size:30px;color:#cfd8ff88">刀</div>`:`<img src="${CH[pf.id].img.def}" style="width:72px;height:96px;object-fit:contain;background:#d8e0ff22;border-radius:10px;flex:none">`}
+        ${pf.noimg?`<div style="width:72px;height:96px;background:#d8e0ff14;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-size:30px;color:#cfd8ff88">${pf.glyph||'刀'}</div>`:`<img src="${CH[pf.id].img.def}" style="width:72px;height:96px;object-fit:contain;background:#d8e0ff22;border-radius:10px;flex:none">`}
         <div><div class="tt" style="color:${(CH[pf.id]||{color:'#e8e8e8'}).color}">${pf.name} <span class="muted">${pf.kana}</span></div>
         <div class="cl">${pf.info}</div><p style="font-size:13px;margin:6px 0">${pf.desc}</p>
-        ${pf.more.map(x=> (x.need ? x.need() : (aff>=x.aff||META.bond[x.bond])) ? `<p style="font-size:13px;margin:4px 0;color:#cfd8ff">◆ ${x.text}</p>` : `<p class="muted" style="font-size:12px;margin:4px 0">◇ ？？？（もっと仲良くなると解放）</p>`).join('')}
+        ${pf.more.map(x=> (x.need ? x.need() : (aff>=x.aff||META.bond[x.bond])) ? `<p style="font-size:13px;margin:4px 0;color:#cfd8ff">◆ ${x.text}</p>` : `<p class="muted" style="font-size:12px;margin:4px 0">◇ ？？？（${x.need?'会話を進めると解放':'もっと仲良くなると解放'}）</p>`).join('')}
         </div></div></div>`;}).join('');
   } else if(dexTab==='talk'){
     const all = ['h','t','m'].flatMap(w=>TALK[w].map(x=>x.id));
@@ -891,6 +892,31 @@ function showEnding(id){
   $('#et').onclick=()=>{ closeOverlay(); title(); };
 }
 
+/* ---------- キャラクターストーリー ---------- */
+function openStories(){
+  overlay(`<div class="panel"><h2>キャラクターストーリー</h2><div class="muted">アカルアのみんなの目線で描く、もうひとつの物語。</div><div style="margin-top:10px">
+    ${CHAR_STORIES.map(cs=>`<div class="card"><div class="row" style="flex-wrap:nowrap;gap:12px">
+      <img src="${CH[cs.who].img.def}" style="width:56px;height:72px;object-fit:contain;background:#d8e0ff22;border-radius:10px;flex:none">
+      <div style="flex:1"><div class="tt" style="color:${CH[cs.who].color}">${cs.title} ${META.story[cs.id]?'<span class="tag">クリア済み</span>':''}</div><div class="cl">${cs.sub}</div></div>
+      <button class="btn ${cs.start?'pri':''}" data-s="${cs.id}" ${cs.start?'':'disabled'}>${cs.start?'あそぶ':'準備中'}</button></div></div>`).join('')}
+    </div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" id="sb">戻る</button></div></div>`);
+  $('#sb').onclick=title;
+  document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>startStory(CHAR_STORIES.find(c=>c.id===b.dataset.s)));
+}
+function startStory(cs){
+  S = newState(); S.story = cs.id; S.name = CH[cs.who].name;
+  S.st = {STR:10,CON:10,POW:10,DEX:10,APP:10,SIZ:10,INT:10,EDU:10}; S.hp=S.hpMax=10; S.mp=S.mpMax=10; S.san=S.sanStart=50;
+  S.skills = Object.assign({}, BASE_SKILLS); if(cs.setup) cs.setup();
+  closeOverlay(); inHub=false; play(cs.start);
+}
+function endStory(label){
+  const cs = CHAR_STORIES.find(c=>c.id===S.story); if(cs) metaAdd('story', cs.id);
+  $('#box').style.display='none';
+  overlay(`<div class="panel ending"><div class="muted" style="text-align:center">CHARACTER STORY</div><h2>${cs?cs.title:''}</h2><p style="text-align:center">${typeof label==='string'?label:'おしまい'}</p>
+    <div class="row" style="justify-content:center;margin-top:16px"><button class="btn pri" id="se">タイトルへ</button></div></div>`);
+  $('#se').onclick=()=>{ closeOverlay(); title(); };
+}
+
 /* ---------- タイトル・キャラ作成 ---------- */
 function title(){
   S=null; inHub=false; $('#box').style.display='none'; $('#hud').style.display='none'; show([]); setBg('shop');
@@ -900,11 +926,13 @@ function title(){
     <div class="row" style="justify-content:center;flex-direction:column;gap:10px">
       <button class="btn pri" id="tn" style="min-width:220px">はじめから</button>
       <button class="btn" id="tc" style="min-width:220px" ${has?'':'disabled'}>つづきから</button>
+      ${Object.keys(META.end).length?`<button class="btn" id="ts" style="min-width:220px;border-color:var(--gold)">キャラクターストーリー <small class="muted">追加コンテンツ</small></button>`:`<button class="btn" style="min-width:220px" disabled>キャラクターストーリー <small class="muted">（エンディングを1度見ると解放）</small></button>`}
       <button class="btn" id="td" style="min-width:220px">図鑑 <small class="muted">（エンド ${Object.keys(META.end).filter(k=>ENDINGS[k]).length}/${Object.keys(ENDINGS).length}）</small></button>
     </div>
     <p class="muted" style="margin-top:20px">クリック／タップ・Enterで文章送り。<br>キャラ案・デザイン：あかたん</p></div>`);
   $('#tn').onclick=()=>{ if(has && !confirm('セーブデータがあります。はじめからにしますか？')) return; create(); };
   $('#td').onclick=()=>openDex('chara');
+  if($('#ts')) $('#ts').onclick=openStories;
   $('#tc').onclick=()=>{ S=Object.assign(newState(), load()); closeOverlay(); toHub(); };
 }
 function create(){

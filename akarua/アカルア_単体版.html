@@ -339,7 +339,7 @@ let curNode=null, lineIdx=0, typing=false, full='', tTimer=null, waitClick=false
 function playNode(n){
   if(!n){ console.error('scene missing'); return; }
   curNode = n; lineIdx = 0;
-  $('#box').style.display=''; $('#hud').style.display='';
+  $('#box').style.display=''; $('#hud').style.display = S&&S.story ? 'none' : '';
   if(n.bg) setBg(n.bg);
   if(n.show) show(n.show);
   if(n.on) n.on();
@@ -405,6 +405,7 @@ function finishNode(){
   if(n.roll) return choices([{t:`《${typeof n.roll.s==='string'?n.roll.s:n.roll.s.label}》で判定する`, roll:n.roll.s, mod:n.roll.mod, ok:n.roll.ok, ng:n.roll.ng}]);
   if(n.san) return choices([{t:`SANチェック（${n.san.s}）`, san:n.san.s, go:n.san.next}]);
   if(n.battle) return startBattle(n.battle);
+  if(n.storyEnd) return endStory(n.storyEnd);
   if(n.end) return finishRequest(n.end);
   if(n.fail) return failRequest(n.fail);
   if(n.ending) return showEnding(typeof n.ending==='function'?n.ending():n.ending);
@@ -776,7 +777,7 @@ function talkScene(who){
 /* ---------- メタ（周回を超えて残る記録） ---------- */
 const META_KEY='akarua_meta_v1';
 let META = (()=>{ try{ return JSON.parse(localStorage.getItem(META_KEY))||{}; }catch(e){ return {}; } })();
-['talk','enemy','req','end','bond'].forEach(k=>META[k]=META[k]||{});
+['talk','enemy','req','end','bond','story'].forEach(k=>META[k]=META[k]||{});
 function metaAdd(kind, id){ if(!META[kind][id]){ META[kind][id]=1; try{ localStorage.setItem(META_KEY, JSON.stringify(META)); }catch(e){} } }
 
 /* ---------- バックログ ---------- */
@@ -812,10 +813,10 @@ function openDex(tab){
     body = PROFILES.filter(pf=>!pf.unlock || pf.unlock()).map(pf=>{
       const aff = S? (S.aff[pf.id]??0) : 99;
       return `<div class="card"><div class="row" style="gap:12px;align-items:flex-start;flex-wrap:nowrap">
-        ${pf.noimg?`<div style="width:72px;height:96px;background:#d8e0ff14;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-size:30px;color:#cfd8ff88">刀</div>`:`<img src="${CH[pf.id].img.def}" style="width:72px;height:96px;object-fit:contain;background:#d8e0ff22;border-radius:10px;flex:none">`}
+        ${pf.noimg?`<div style="width:72px;height:96px;background:#d8e0ff14;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-size:30px;color:#cfd8ff88">${pf.glyph||'刀'}</div>`:`<img src="${CH[pf.id].img.def}" style="width:72px;height:96px;object-fit:contain;background:#d8e0ff22;border-radius:10px;flex:none">`}
         <div><div class="tt" style="color:${(CH[pf.id]||{color:'#e8e8e8'}).color}">${pf.name} <span class="muted">${pf.kana}</span></div>
         <div class="cl">${pf.info}</div><p style="font-size:13px;margin:6px 0">${pf.desc}</p>
-        ${pf.more.map(x=> (x.need ? x.need() : (aff>=x.aff||META.bond[x.bond])) ? `<p style="font-size:13px;margin:4px 0;color:#cfd8ff">◆ ${x.text}</p>` : `<p class="muted" style="font-size:12px;margin:4px 0">◇ ？？？（もっと仲良くなると解放）</p>`).join('')}
+        ${pf.more.map(x=> (x.need ? x.need() : (aff>=x.aff||META.bond[x.bond])) ? `<p style="font-size:13px;margin:4px 0;color:#cfd8ff">◆ ${x.text}</p>` : `<p class="muted" style="font-size:12px;margin:4px 0">◇ ？？？（${x.need?'会話を進めると解放':'もっと仲良くなると解放'}）</p>`).join('')}
         </div></div></div>`;}).join('');
   } else if(dexTab==='talk'){
     const all = ['h','t','m'].flatMap(w=>TALK[w].map(x=>x.id));
@@ -891,6 +892,31 @@ function showEnding(id){
   $('#et').onclick=()=>{ closeOverlay(); title(); };
 }
 
+/* ---------- キャラクターストーリー ---------- */
+function openStories(){
+  overlay(`<div class="panel"><h2>キャラクターストーリー</h2><div class="muted">アカルアのみんなの目線で描く、もうひとつの物語。</div><div style="margin-top:10px">
+    ${CHAR_STORIES.map(cs=>`<div class="card"><div class="row" style="flex-wrap:nowrap;gap:12px">
+      <img src="${CH[cs.who].img.def}" style="width:56px;height:72px;object-fit:contain;background:#d8e0ff22;border-radius:10px;flex:none">
+      <div style="flex:1"><div class="tt" style="color:${CH[cs.who].color}">${cs.title} ${META.story[cs.id]?'<span class="tag">クリア済み</span>':''}</div><div class="cl">${cs.sub}</div></div>
+      <button class="btn ${cs.start?'pri':''}" data-s="${cs.id}" ${cs.start?'':'disabled'}>${cs.start?'あそぶ':'準備中'}</button></div></div>`).join('')}
+    </div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" id="sb">戻る</button></div></div>`);
+  $('#sb').onclick=title;
+  document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>startStory(CHAR_STORIES.find(c=>c.id===b.dataset.s)));
+}
+function startStory(cs){
+  S = newState(); S.story = cs.id; S.name = CH[cs.who].name;
+  S.st = {STR:10,CON:10,POW:10,DEX:10,APP:10,SIZ:10,INT:10,EDU:10}; S.hp=S.hpMax=10; S.mp=S.mpMax=10; S.san=S.sanStart=50;
+  S.skills = Object.assign({}, BASE_SKILLS); if(cs.setup) cs.setup();
+  closeOverlay(); inHub=false; play(cs.start);
+}
+function endStory(label){
+  const cs = CHAR_STORIES.find(c=>c.id===S.story); if(cs) metaAdd('story', cs.id);
+  $('#box').style.display='none';
+  overlay(`<div class="panel ending"><div class="muted" style="text-align:center">CHARACTER STORY</div><h2>${cs?cs.title:''}</h2><p style="text-align:center">${typeof label==='string'?label:'おしまい'}</p>
+    <div class="row" style="justify-content:center;margin-top:16px"><button class="btn pri" id="se">タイトルへ</button></div></div>`);
+  $('#se').onclick=()=>{ closeOverlay(); title(); };
+}
+
 /* ---------- タイトル・キャラ作成 ---------- */
 function title(){
   S=null; inHub=false; $('#box').style.display='none'; $('#hud').style.display='none'; show([]); setBg('shop');
@@ -900,11 +926,13 @@ function title(){
     <div class="row" style="justify-content:center;flex-direction:column;gap:10px">
       <button class="btn pri" id="tn" style="min-width:220px">はじめから</button>
       <button class="btn" id="tc" style="min-width:220px" ${has?'':'disabled'}>つづきから</button>
+      ${Object.keys(META.end).length?`<button class="btn" id="ts" style="min-width:220px;border-color:var(--gold)">キャラクターストーリー <small class="muted">追加コンテンツ</small></button>`:`<button class="btn" style="min-width:220px" disabled>キャラクターストーリー <small class="muted">（エンディングを1度見ると解放）</small></button>`}
       <button class="btn" id="td" style="min-width:220px">図鑑 <small class="muted">（エンド ${Object.keys(META.end).filter(k=>ENDINGS[k]).length}/${Object.keys(ENDINGS).length}）</small></button>
     </div>
     <p class="muted" style="margin-top:20px">クリック／タップ・Enterで文章送り。<br>キャラ案・デザイン：あかたん</p></div>`);
   $('#tn').onclick=()=>{ if(has && !confirm('セーブデータがあります。はじめからにしますか？')) return; create(); };
   $('#td').onclick=()=>openDex('chara');
+  if($('#ts')) $('#ts').onclick=openStories;
   $('#tc').onclick=()=>{ S=Object.assign(newState(), load()); closeOverlay(); toHub(); };
 }
 function create(){
@@ -1924,6 +1952,8 @@ const TALK = {
     {id:'h18', title:'アカルアの始まり', when:()=>S.flags.read&&S.flags.read.h17, lines:['h:アカルアはね、もともと白夜と二人で始めたお店なんだ〜。','h:あの人が刀を打って、私が何でもやる。……今思うと、変なお店だよね。','h:白夜が隠居してからは、独君と紅葉ちゃんが来てくれて。賑やかになったなぁ。']},
     {id:'h19', title:'人間である', when:()=>S.flags.read&&S.flags.read.h17&&S.day>=4, lines:['h:白夜ってね、すっごく強いの。私が呆れるくらい。','h:でも、本人はずっと「わしはしがない刀鍛冶さ」って言うんだ。','h:どんなに強くなっても、あの人は"人間"のまま。……私は、そういうところが好きになったの。','h:ふふ、のろけちゃった。内緒ね〜。']},
     {id:'h20', title:'煙管の匂い', when:()=>S.frag>=2, lines:['h:……すん。','h:ん？ いや、どこかから煙管の匂いがした気がして。','h:気のせいかな〜。あの人、こっちに来る時は絶対連絡くれないからさ。','h:……来たら来たで、お店の中で吸わないでって言わなきゃ。']},
+    {id:'h21', title:'白石家は大家族', when:()=>S.flags.read&&S.flags.read.h17, lines:['h:白石家ってね、もともとすっごい大家族なの。親戚まで数えたら、もう何人いるかわかんないくらい。','h:そこに私と白夜の子供たちも加わって……ふふ、お正月なんて大騒ぎだよ〜。','h:え、子供いるのかって？ いるいる、たくさん！ ……みんな、自慢の子たちだよ。']},
+    {id:'h22', title:'一番上の子', when:()=>S.flags.read&&S.flags.read.h21, lines:['h:一番上の子はね、波凪っていうの。白石 波凪。','h:昔、ウチで修行してたんだよ。独君の弟子として。','h:独君がまだ「Glitch」しか使えなかった頃でさ。二人で一緒に、色んなことを覚えていったの。','h:今は独り立ちして、別のところで暮らしてる。……独君とは、今でもすっごく仲良しだよ〜。']},
   ],
   t:[
     {id:'t1', title:'……何。', lines:['t:……何。','t:用がないなら、話しかけなくていいよ。','t:………………別に、嫌って意味じゃない。']},
@@ -1942,6 +1972,8 @@ const TALK = {
     {id:'t15', title:'向こうの話', when:()=>S.day>=6, lines:['t:……キミ、向こうでは何してたの。','t:……ふーん。','t:ボクは、向こうに戻りたいとは思わない。でも、向こうの話を聞くのは、嫌いじゃない。']},
     {id:'t7', title:'あと少し', when:()=>S.frag>=3, lines:['t:……座標、あと少しだね。','t:…………。','t:……なんでもない。']},
     {id:'t16', title:'白夜さん', when:()=>S.flags.read&&S.flags.read.h17, lines:['t:……白夜さん？ ハルカさんの旦那さん。','t:……何回か会ったことある。ボクのこと「お前さん」って呼ぶ。','t:料理、すごくうまい。……ラムネに合うお菓子、作ってくれた。','t:……また、会いたい。……別に、お菓子目当てじゃない。']},
+    {id:'t17', title:'弟子', when:()=>S.flags.read&&S.flags.read.h22, lines:['t:……波凪のこと、聞いたの。','t:……弟子。一応。ボクの。','t:あの頃のボク、「Glitch」しか使えなかった。教えられることなんて、ほとんどなかったのに。','t:……それでも、毎日ついてきた。戦い方も、店のことも、全部一緒に覚えた。','t:…………今は、ボクより強いかも。……言わないでね、本人に。']},
+    {id:'t18', title:'たまに来る', when:()=>S.flags.read&&S.flags.read.t17&&S.day>=5, lines:['t:……波凪、たまに店に来る。','t:来ると、うるさい。……ラムネ、勝手に食べるし。','t:……でも、来ないと、ちょっと静かすぎる。']},
   ],
   m:[
     {id:'m1', title:'独君どこだ〜い', lines:['m:あ、{name}！ 独君見なかった？','m:「独君どこだ〜い♡」って探してるのに、すぐどっか行っちゃうの。','m:……あなたの後ろに隠れてたりしないよね？']},
@@ -1959,11 +1991,12 @@ const TALK = {
     {id:'m12', title:'忘れたら許さない', when:()=>S.frag>=3, lines:['m:ねぇ、帰ったら、うちらのこと忘れちゃう？','m:……忘れたら、許さないからね？','m:冗談！ ……半分だけ。']},
     {id:'m13', title:'毎日新鮮', when:()=>S.day>=5, lines:['m:今日の独君もかっこよかった〜。','m:え？ いつもと同じ？ 毎日新鮮にかっこいいの！','m:{name}にはこの良さがわからないかな〜？ わかっても困るけど♡']},
     {id:'m15', title:'嬢ちゃん', when:()=>S.flags.read&&S.flags.read.h17, lines:['m:白夜さんの話、聞いた？','m:あの人ね、うちのこと「嬢ちゃん」って呼ぶの。孫みたいに可愛がってくれるんだよ〜。','m:でもね、初めて会った時、白夜さんのこと女の人だと思っちゃって……。','m:……ハルカさんに大笑いされた。']},
+    {id:'m16', title:'波凪のこと', when:()=>S.flags.read&&S.flags.read.h22, lines:['m:波凪の話？ うちも知ってるよ〜！','m:独君の弟子でしょ？ 独君のこと「師匠」って呼ぶの。','m:……独君を独り占めする時間が減るから、最初はちょっと複雑だったけど。','m:今は、うちにとっても家族みたいなもの。……独君の一番は、譲らないけどね♡']},
   ],
 };
 const IDLE = {
   h:['h:ん〜？ 今日はもうたくさん話したでしょ〜。また明日ね。','h:お茶でも淹れようか？ ……冗談、自分で淹れて〜。','h:独く〜ん、ちょっとこっち来てくれる〜？ ……あ、{name}だった。','h:ふふ、暇そうだね。私も暇〜。','h:無理はしないでね。それだけ。','h:……白夜、今ごろ何してるかな〜。'],
-  t:['t:……まだ何か用？','t:……ラムネ、持ってない？ ……ないならいい。','t:…………（マフラーに顔を埋めている）','t:……眠い。','t:……うるさい…。……今のは、キミに言ったんじゃない。'],
+  t:['t:……まだ何か用？','t:……ラムネ、持ってない？ ……ないならいい。','t:…………（マフラーに顔を埋めている）','t:……眠い。','t:……うるさい…。……今のは、キミに言ったんじゃない。','t:……波凪、最近来ないな。……別に、待ってない。'],
   m:['m:独君見なかった〜？ ……見てない？ そっか。','m:なぁに？ うち今、独君のこと考えるので忙しいんだけど？','m:えへへ、今日も指輪ぴかぴか♡','m:……ずっと見てるけど、何？','m:また明日ね〜！ 独君にもおやすみって言っといて！'],
 };
 
@@ -2178,7 +2211,22 @@ const PROFILES = [
   {id:'b', noimg:true, unlock:()=>META.talk.h17, name:'白石 白夜', kana:'しらいし びゃくや', info:'31歳 / 男 / 刀鍛冶 / 出身：日本 / 誕生日 12/1 / 現在は別の世界で隠居中',
     desc:'白石ハルカの夫。白い髪にオッドアイ。「わしはしがない刀鍛冶さ」。女性には「嬢ちゃん」、男性には「お前さん」と、誰にでも孫のように接する。よく女性と間違われる。煙管を手放さない。料理上手。',
     more:[{text:'ハルカと二人でアカルアを始めた。どんなに強くなっても、彼は"人間"であることを変えない。', need:()=>META.talk.h19},
-          {text:'今もときどき、煙管の匂いのする手紙とお土産がアカルアに届く。', need:()=>(S&&S.flags.ni_n6) || META.talk.h20}]},
+          {text:'今もときどき、煙管の匂いのする手紙とお土産がアカルアに届く。', need:()=>(S&&S.flags.ni_n6) || META.talk.h20},
+          {text:'白石家は大家族。ハルカとの間にも、たくさんの子供がいる。', need:()=>META.talk.h21}]},
+  {id:'hana', noimg:true, glyph:'凪', unlock:()=>META.talk.h22, name:'白石 波凪', kana:'しらいし はな', info:'白石ハルカと白石白夜の第一子 / 元アカルア所属 / 現在は独り立ちして別居中',
+    desc:'ハルカと白夜の一番上の子。独がまだ「Glitch」しか使えなかった頃のアカルアで、独の弟子として修行した。',
+    more:[{text:'戦い方も店のことも、独と一緒に覚えていった。いつしか独り立ちして、一人で暮らすようになった。', need:()=>META.talk.t17},
+          {text:'今でも独とはとても仲が良い。たまに店に来ては、ラムネを勝手に食べていく。', need:()=>META.talk.t18}]},
+];
+
+/* ---------- キャラクターストーリー（追加コンテンツ） ----------
+   エンディングを1度でも見ると、タイトル画面から遊べるようになる。
+   start にシーンIDを入れると遊べるようになる（null の間は「準備中」）。
+   ストーリーの最後のシーンは {storyEnd:'独 編 おしまい'} のように書く。 */
+const CHAR_STORIES = [
+  {id:'st_t', who:'t', title:'電子 独 編', sub:'独の目線で描く、アカルアの日々。', start:null},
+  {id:'st_m', who:'m', title:'電子 紅葉 編', sub:'紅葉の目線で描く物語。', start:null},
+  {id:'st_h', who:'h', title:'白石 ハルカ 編', sub:'ハルカの目線で描く物語。', start:null},
 ];
 
 /* ---------- エンディング ---------- */
