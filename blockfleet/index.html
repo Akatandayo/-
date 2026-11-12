@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0b1624">
+<title>BLOCK FLEET - 艦船建造海戦</title>
+<style>
+:root{
+  --bg:#0b1624;--panel:rgba(12,22,36,.86);--panel2:rgba(22,36,56,.92);--line:#2b4363;
+  --text:#e9f1fb;--muted:#8fa5c0;--accent:#ffb340;--accent2:#4fd1ff;--danger:#ff5d6c;--ok:#5ee08a;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif;
+  -webkit-user-select:none;user-select:none;overscroll-behavior:none}
+canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+button{font:inherit;color:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:8px 12px}
+button:active{transform:translateY(1px)}
+button.on{background:var(--accent);color:#1d1300;border-color:transparent;font-weight:700}
+button.pri{background:linear-gradient(180deg,#ffc35c,#f39a1e);color:#1d1300;border:none;font-weight:800}
+button.dng{background:#5a1f2a;border-color:#8a3040}
+input,textarea,select{font:inherit;color:var(--text);background:#081221;border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+.screen{position:fixed;inset:0;pointer-events:none;display:none}
+.screen.show{display:block}
+.screen .pe{pointer-events:auto}
+.hidden{display:none!important}
+
+/* ---------- menu ---------- */
+#scr-menu .center{position:absolute;left:50%;top:max(6vh,env(safe-area-inset-top));transform:translateX(-50%);text-align:center;width:min(92vw,420px)}
+#scr-menu .mbtm{position:absolute;left:50%;bottom:calc(max(10px,env(safe-area-inset-bottom)) + 26px);transform:translateX(-50%);width:min(92vw,420px)}
+.logo{font-size:clamp(40px,11vw,72px);font-weight:900;letter-spacing:.04em;line-height:1;margin:0;
+  text-shadow:0 4px 24px #0009;color:#fff}
+.logo span{color:var(--accent)}
+.sub{margin:10px 0 26px;color:#d6e6f5;text-shadow:0 2px 10px #000a;font-size:14px}
+.menu-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.menu-btns button{padding:14px;font-size:17px;font-weight:700;background:var(--panel);backdrop-filter:blur(6px)}
+.ver{position:absolute;bottom:max(10px,env(safe-area-inset-bottom));left:0;right:0;text-align:center;color:#c9d8e8;font-size:11px;text-shadow:0 1px 4px #000}
+
+/* ---------- editor ---------- */
+.topbar{position:absolute;top:max(8px,env(safe-area-inset-top));left:8px;right:8px;display:flex;gap:6px;align-items:center}
+.topbar input{flex:1;min-width:60px;max-width:260px}
+.topbar .sp{flex:1}
+#stats{position:absolute;top:calc(max(8px,env(safe-area-inset-top)) + 48px);left:8px;width:220px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:12px;line-height:1.55}
+#stats .row{display:flex;justify-content:space-between;gap:6px}
+#stats .row b{font-weight:700}
+#stats .warn{color:var(--danger);font-weight:700}
+#stats .note{color:var(--accent)}
+#stats.mini .body{display:none}
+#stats .hd{display:flex;justify-content:space-between;align-items:center;font-weight:800;color:var(--accent2);cursor:pointer}
+#tools{position:absolute;right:8px;top:calc(max(8px,env(safe-area-inset-top)) + 48px);display:flex;flex-direction:column;gap:6px;width:64px}
+#tools button{padding:6px 2px;font-size:11px;line-height:1.2;display:flex;flex-direction:column;align-items:center;gap:1px}
+#tools button .ic{font-size:18px}
+#cutbox{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px;font-size:10px;text-align:center}
+#cutbox input{width:100%;padding:0;margin:0}
+#bottom{position:absolute;left:0;right:0;bottom:0;padding:0 8px max(8px,env(safe-area-inset-bottom))}
+#pinfo{background:var(--panel);border:1px solid var(--line);border-radius:10px 10px 0 0;padding:5px 10px;font-size:12px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
+#pinfo b{color:var(--text)}
+#cats{display:flex;gap:4px;background:var(--panel);padding:5px 6px 0;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+#cats button{padding:5px 14px;font-size:13px;border-radius:8px 8px 0 0}
+#palette{display:flex;gap:6px;overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-top:none;border-radius:0 0 12px 12px;padding:6px;scrollbar-width:thin}
+#palette button{flex:0 0 auto;min-width:72px;padding:6px 8px;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:3px}
+#palette .sw{width:26px;height:18px;border-radius:4px;border:1px solid #0006;display:flex;align-items:center;justify-content:center;font-size:13px}
+#palette button.on{background:#3b2a0a;color:var(--accent);border-color:var(--accent)}
+#toast{position:absolute;left:50%;top:22%;transform:translateX(-50%);background:#000c;padding:8px 16px;border-radius:20px;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1}
+
+/* ---------- battle ---------- */
+#fleets{position:absolute;top:max(6px,env(safe-area-inset-top));left:6px;right:6px;display:flex;justify-content:space-between;gap:8px;pointer-events:none}
+.fleet{display:flex;flex-direction:column;gap:4px;width:min(46vw,240px)}
+.fleet.enemy{align-items:flex-end}
+.sc{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 7px;font-size:11px;width:100%}
+.sc .nm{display:flex;justify-content:space-between;gap:4px;white-space:nowrap;overflow:hidden}
+.sc .st{color:var(--accent);font-weight:700}
+.sc.dead{opacity:.45}
+.bar{height:5px;background:#0008;border-radius:3px;overflow:hidden;margin-top:3px}
+.bar i{display:block;height:100%;width:100%;background:var(--ok);transition:width .3s}
+.bar.fl i{background:var(--accent2)}
+.enemy .bar i{background:var(--danger)}
+.enemy .bar.fl i{background:#7fb2ff}
+#blog{position:absolute;left:8px;bottom:calc(max(8px,env(safe-area-inset-bottom)) + 60px);font-size:12px;line-height:1.5;text-shadow:0 1px 3px #000,0 0 6px #000;max-width:60vw;pointer-events:none}
+#blog div{animation:fade 6s forwards}
+@keyframes fade{0%,70%{opacity:1}100%{opacity:0}}
+#bctl{position:absolute;right:8px;bottom:max(8px,env(safe-area-inset-bottom));display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:96vw}
+#bctl button{padding:8px 10px;font-size:13px}
+#helm{position:absolute;left:8px;bottom:max(8px,env(safe-area-inset-bottom));display:grid;grid-template-columns:54px 54px 54px;grid-template-rows:46px 46px;gap:5px}
+#helm button{font-size:20px;padding:0}
+#helm .tl{grid-column:2;grid-row:1}
+#helm .lf{grid-column:1;grid-row:2}
+#helm .dn{grid-column:2;grid-row:2}
+#helm .rt{grid-column:3;grid-row:2}
+#helmInfo{position:absolute;left:8px;bottom:calc(max(8px,env(safe-area-inset-bottom)) + 104px);font-size:12px;background:var(--panel);border-radius:8px;padding:3px 8px}
+#bigmsg{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);font-size:clamp(36px,10vw,80px);font-weight:900;text-shadow:0 4px 30px #000;pointer-events:none;letter-spacing:.1em}
+
+/* ---------- modal ---------- */
+#modal{position:fixed;inset:0;background:#0009;display:flex;align-items:center;justify-content:center;z-index:10;padding:12px}
+.mbox{background:#0f1c2e;border:1px solid var(--line);border-radius:16px;width:min(560px,100%);max-height:calc(100% - 20px);display:flex;flex-direction:column;box-shadow:0 20px 60px #000a}
+.mhead{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);font-weight:800;font-size:17px}
+.mbody{padding:12px 14px;overflow-y:auto;-webkit-overflow-scrolling:touch;font-size:14px;line-height:1.6;-webkit-user-select:text;user-select:text}
+.mfoot{padding:10px 14px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.item{display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;margin-bottom:7px;background:#0b1626}
+.item .grow{flex:1;min-width:0}
+.item .t{font-weight:700}
+.item .d{font-size:12px;color:var(--muted)}
+.item.sel{border-color:var(--accent);background:#2a1f0b}
+.item.lock{opacity:.4}
+.item button{padding:5px 10px;font-size:13px}
+.stepper{display:flex;align-items:center;gap:6px}
+.stepper b{min-width:18px;text-align:center}
+.mbody h4{margin:14px 0 6px;color:var(--accent2)}
+.mbody ul{padding-left:20px;margin:6px 0}
+.tag{display:inline-block;font-size:11px;padding:1px 6px;border-radius:6px;background:#22344e;color:#bcd;margin-left:4px}
+textarea{width:100%;height:120px;font-size:11px;font-family:monospace}
+@media (max-width:560px){
+  #stats{width:160px;font-size:10.5px;padding:6px 8px}
+  .topbar button{padding:7px 8px;font-size:13px}
+  .topbar .lbl{display:none}
+  #tools{width:50px;gap:4px}
+  #tools button{font-size:9.5px;padding:4px 1px}
+  #tools button .ic{font-size:15px}
+  #pinfo{font-size:10.5px;gap:6px;padding:4px 8px}
+  #palette button{min-width:62px;font-size:11px;padding:5px 6px}
+  #cats button{padding:4px 10px;font-size:12px}
+  .sc{font-size:10px;padding:3px 6px}
+  #bctl button{padding:7px 8px;font-size:12px}
+  #bctl.man{flex-direction:column;align-items:stretch;width:92px}
+}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+"three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<!-- MENU -->
+<div id="scr-menu" class="screen">
+  <div class="center pe">
+    <h1 class="logo">BLOCK<span>FLEET</span></h1>
+    <div class="sub">ブロックで軍艦を設計し、大海原で撃ち合え</div>
+  </div>
+  <div class="mbtm pe">
+    <div class="menu-btns">
+      <button id="m-edit">⚓ 建造ドック</button>
+      <button id="m-camp">🎖 キャンペーン</button>
+      <button id="m-free">⚔ フリー海戦</button>
+      <button id="m-help">❓ 遊び方</button>
+    </div>
+  </div>
+  <div class="ver">BLOCK FLEET v1.0 — 砲撃は全自動。設計で勝負が決まる。</div>
+</div>
+
+<!-- EDITOR -->
+<div id="scr-editor" class="screen">
+  <div class="topbar pe">
+    <button id="e-back">◀</button>
+    <input id="e-name" maxlength="24" value="マイ艦">
+    <button id="e-file">📁<span class="lbl"> ファイル</span></button>
+    <button id="e-save">💾<span class="lbl"> 保存</span></button>
+    <span class="sp"></span>
+    <button id="e-go" class="pri">出撃 ▶</button>
+  </div>
+  <div id="stats" class="pe">
+    <div class="hd" id="stats-hd"><span>艦の性能</span><span id="stats-tg">▾</span></div>
+    <div class="body" id="stats-body"></div>
+  </div>
+  <div id="tools" class="pe">
+    <button id="t-mode" class="on"><span class="ic">🧱</span>設置</button>
+    <button id="t-mirror" class="on"><span class="ic">⇋</span>左右対称</button>
+    <button id="t-rot"><span class="ic">⟳</span>回転 <span id="t-rotv">0°</span></button>
+    <button id="t-undo"><span class="ic">↶</span>戻す</button>
+    <button id="t-redo"><span class="ic">↷</span>やり直し</button>
+    <button id="t-cam"><span class="ic">🎯</span>視点</button>
+    <div id="cutbox">断面 <span id="cutv">全</span><input id="t-cut" type="range" min="0" max="15" value="15"></div>
+  </div>
+  <div id="bottom" class="pe">
+    <div id="pinfo"></div>
+    <div id="cats"></div>
+    <div id="palette"></div>
+  </div>
+  <div id="toast"></div>
+</div>
+
+<!-- BATTLE -->
+<div id="scr-battle" class="screen">
+  <div id="fleets"><div class="fleet" id="f0"></div><div class="fleet enemy" id="f1"></div></div>
+  <div id="blog"></div>
+  <div id="bigmsg"></div>
+  <div id="helmInfo" class="pe hidden"></div>
+  <div id="helm" class="pe hidden">
+    <button class="tl" data-h="up">▲</button>
+    <button class="lf" data-h="left">◀</button>
+    <button class="dn" data-h="down">▼</button>
+    <button class="rt" data-h="right">▶</button>
+  </div>
+  <div id="bctl" class="pe">
+    <button id="b-manual">操舵: 自動</button>
+    <button id="b-cam">📷 自艦</button>
+    <button id="b-speed">速度 x1</button>
+    <button id="b-snd">🔊</button>
+    <button id="b-quit" class="dng">撤退</button>
+  </div>
+</div>
+
+<div id="modal" class="hidden"><div class="mbox"><div class="mhead"><span id="mtitle"></span><button id="mclose">✕</button></div><div class="mbody" id="mbody"></div><div class="mfoot" id="mfoot"></div></div></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const $=s=>document.querySelector(s);
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const rand=(a,b)=>a+Math.random()*(b-a);
+const gauss=()=>{let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
+const wrapA=a=>{while(a>Math.PI)a-=2*Math.PI;while(a<-Math.PI)a+=2*Math.PI;return a;};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// ================================================================
+//  定数 / 部品定義
+// ================================================================
+const XMIN=-8,XMAX=8,YMAX=15,ZMIN=-45,ZMAX=45;
+const G=20;                 // 重力（ゲーム単位）
+const FLOOD_RATE=0.45, FLOOD_CAP=9, COLLAPSE=0.62;
+const key=(x,y,z)=>((x+16)*32+y)*128+(z+64);
+const inB=c=>c[0]>=XMIN&&c[0]<=XMAX&&c[1]>=0&&c[1]<=YMAX&&c[2]>=ZMIN&&c[2]<=ZMAX;
+
+// w: 兵装  range射程 dmg威力 reload装填(s) pen貫通 splash爆風半径 barrels砲身数 yaw旋回速度 spread散布 cal口径表示
+const P={
+  hull:  {n:'船体',cat:0,sz:[1,1,1],hp:40, m:0.5, d:1,  ar:0,  c:5,  col:0x8e979f,shape:'box',ic:'■'},
+  deck:  {n:'甲板',cat:0,sz:[1,1,1],hp:35, m:0.45,d:1,  ar:0,  c:4,  col:0xb88d5a,shape:'box',ic:'▤'},
+  armor: {n:'装甲',cat:0,sz:[1,1,1],hp:170,m:1.6, d:1,  ar:1.3,c:20, col:0x4c545c,shape:'box',ic:'◼'},
+  corner:{n:'斜め',cat:0,sz:[1,1,1],hp:25, m:0.25,d:0.5,ar:0,  c:4,  col:0x8e979f,shape:'corner',rot:1,ic:'◣'},
+  slope: {n:'傾斜(上)',cat:0,sz:[1,1,1],hp:25,m:0.25,d:0.5,ar:0,c:4, col:0x8e979f,shape:'slope',rot:1,ic:'◢'},
+  slopeD:{n:'傾斜(下)',cat:0,sz:[1,1,1],hp:25,m:0.25,d:0.5,ar:0,c:4, col:0x8e979f,shape:'slopeD',rot:1,ic:'◥'},
+  engine:{n:'機関',cat:1,sz:[1,1,1],hp:60, m:1.5, d:1,  ar:0,  c:40, col:0xb5532c,shape:'box',power:10,ic:'⚙'},
+  bridge:{n:'艦橋',cat:1,sz:[1,2,1],hp:100,m:1.0, d:0.6,ar:0.3,c:50, col:0xc9d0d6,shape:'model',ic:'🏢'},
+  funnel:{n:'煙突',cat:1,sz:[1,2,1],hp:40, m:0.4, d:0.4,ar:0,  c:10, col:0x5a6168,shape:'model',ic:'🏭'},
+  mast:  {n:'マスト',cat:1,sz:[1,3,1],hp:20,m:0.15,d:0.1,ar:0,  c:5,  col:0x9aa2a8,shape:'model',ic:'📡'},
+  mg:    {n:'機銃',cat:2,sz:[1,1,1],hp:30, m:0.4, d:0.3,ar:0,  c:30, col:0x6b737b,shape:'model',rot:1,ic:'∴',
+          w:{range:150,dmg:6,reload:0.25,pen:0.2,splash:0,barrels:2,yaw:4,spread:0.016,cal:0.13,name:'25mm機銃'}},
+  gunS:  {n:'12.7cm砲',cat:2,sz:[1,1,1],hp:70,m:2,d:0.6,ar:0.3,c:80,col:0x6b737b,shape:'model',rot:1,ic:'┃',
+          w:{range:280,dmg:32,reload:2.6,pen:0.6,splash:0.9,barrels:1,yaw:1.6,spread:0.010,cal:0.2,name:'12.7cm砲'}},
+  gunM:  {n:'20cm連装砲',cat:2,sz:[3,1,3],hp:260,m:9,d:0.5,ar:0.9,c:260,col:0x6b737b,shape:'model',rot:1,ic:'‖',
+          w:{range:420,dmg:85,reload:6,pen:1.1,splash:1.4,barrels:2,yaw:0.9,spread:0.008,cal:0.3,name:'20cm砲'}},
+  gunL:  {n:'46cm三連装砲',cat:2,sz:[5,2,5],hp:900,m:36,d:0.45,ar:2.2,c:850,col:0x6b737b,shape:'model',rot:1,ic:'⫼',
+          w:{range:640,dmg:260,reload:14,pen:2.4,splash:2.3,barrels:3,yaw:0.4,spread:0.006,cal:0.45,name:'46cm砲'}},
+  torp:  {n:'魚雷発射管',cat:2,sz:[1,1,1],hp:50,m:1.2,d:0.4,ar:0,c:150,col:0x6b737b,shape:'model',rot:1,ic:'≡',
+          w:{range:380,dmg:420,reload:20,pen:3,splash:2.6,barrels:3,yaw:1.0,spread:0.04,cal:0.3,torp:true,spd:30,name:'魚雷'}},
+};
+for(const k in P){const w=P[k].w; if(w&&!w.torp) w.v=Math.sqrt(w.range*G*1.03);}
+const CATS=['船体','設備','兵装'];
+const HULLISH=new Set(['hull','corner','slope','slopeD','armor']);
+
+function dims(t,r){const s=P[t].sz;return (r&1)?[s[2],s[1],s[0]]:s;}
+function cellsOf(t,x,y,z,r){const [sx,sy,sz]=dims(t,r);const x0=x-((sx-1)>>1),z0=z-((sz-1)>>1);const o=[];
+  for(let i=0;i<sx;i++)for(let j=0;j<sy;j++)for(let k=0;k<sz;k++)o.push([x0+i,y+j,z0+k]);return o;}
+function centerOf(t,x,y,z,r){const [sx,,sz]=dims(t,r);return [x-((sx-1)>>1)+(sx-1)/2,y,z-((sz-1)>>1)+(sz-1)/2];}
+function mirrorRot(t,r){ if(!P[t].rot) return 0; return P[t].shape==='corner'?[3,2,1,0][r]:[0,3,2,1][r]; }
+
+// ================================================================
+//  浮力計算
+// ================================================================
+class Hydro{
+  constructor(){this.lv=new Float64Array(YMAX+2);this.lvx=new Float64Array(YMAX+2);this.lvz=new Float64Array(YMAX+2);this.m=0;this.mx=0;this.mz=0;}
+  addPart(p,s){const d=P[p.t];const cs=p.cells||cellsOf(p.t,p.x,p.y,p.z,p.r);const c0=p.ctr||centerOf(p.t,p.x,p.y,p.z,p.r);
+    for(const c of cs){this.lv[c[1]]+=s*d.d;this.lvx[c[1]]+=s*d.d*c[0];this.lvz[c[1]]+=s*d.d*c[2];}
+    this.m+=s*d.m;this.mx+=s*d.m*c0[0];this.mz+=s*d.m*c0[2];}
+  addMass(m,x,z){this.m+=m;this.mx+=m*x;this.mz+=m*z;}
+  solve(){
+    const lv=this.lv;let acc=0,h=-1;
+    for(let y=0;y<=YMAX;y++){ if(lv[y]>1e-6&&acc+lv[y]>=this.m){h=y+(this.m-acc)/lv[y];break;} acc+=Math.max(0,lv[y]); }
+    if(h<0||this.m<=0) return {h:YMAX+1,sink:this.m>0,heel:0,trim:0};
+    let bx=0,bz=0;for(let y=0;y<=YMAX;y++){const f=clamp(h-y,0,1);if(f<=0)break;bx+=f*this.lvx[y];bz+=f*this.lvz[y];}
+    const heel=clamp((bx-this.mx)/(this.m*2.5),-1.3,1.3);
+    const trim=clamp(-(bz-this.mz)/(this.m*16),-0.5,0.5);
+    return {h,sink:false,heel,trim};
+  }
+}
+
+function analyze(parts){
+  const hy=new Hydro();let cost=0,power=0,bridges=0,disp=0;const wc={};let minX=99,maxX=-99,minZ=99,maxZ=-99,maxY=-1;
+  for(const p of parts){const d=P[p.t];hy.addPart(p,1);cost+=d.c;if(d.power)power+=d.power;if(p.t==='bridge')bridges++;
+    if(d.w)wc[p.t]=(wc[p.t]||0)+1;
+    for(const c of (p.cells||cellsOf(p.t,p.x,p.y,p.z,p.r))){disp+=d.d;minX=Math.min(minX,c[0]);maxX=Math.max(maxX,c[0]);minZ=Math.min(minZ,c[2]);maxZ=Math.max(maxZ,c[2]);maxY=Math.max(maxY,c[1]);}}
+  const s=hy.solve();
+  const spd=power>0&&hy.m>0?Math.min(24,3+28*Math.sqrt(power/hy.m)):0;
+  return {mass:hy.m,disp,cost,power,bridges,wc,h:s.h,sink:s.sink||parts.length===0,heel:s.heel,trim:s.trim,spd,
+    L:parts.length?maxZ-minZ+1:0,B:parts.length?maxX-minX+1:0,H:maxY+1,n:parts.length};
+}
+
+// ================================================================
+//  レンダラー / シーン
+// ================================================================
+const canvas=$('#c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;
+const camera=new THREE.PerspectiveCamera(55,1,0.5,14000);
+const controls=new OrbitControls(camera,canvas);
+controls.enableDamping=true;controls.dampingFactor=0.12;controls.screenSpacePanning=false;
+
+const SUN=new THREE.Vector3(0.45,0.55,0.35).normalize();
+const seaScene=new THREE.Scene();
+seaScene.fog=new THREE.FogExp2(0xb9cfe2,0.00075);
+const editScene=new THREE.Scene();
+editScene.background=new THREE.Color(0x26313f);
+editScene.fog=new THREE.Fog(0x26313f,180,420);
+function addLights(sc,hemi=1.1,dir=2.4){
+  sc.add(new THREE.HemisphereLight(0xe3f0ff,0x2c4458,hemi));
+  const dl=new THREE.DirectionalLight(0xfff0dc,dir);dl.position.copy(SUN).multiplyScalar(100);sc.add(dl);
+  const dl2=new THREE.DirectionalLight(0x9fc0ff,0.5);dl2.position.set(-0.5,0.3,-0.6);sc.add(dl2);
+}
+addLights(seaScene);addLights(editScene,1.2,2.2);
+
+// 空
+const sky=new THREE.Mesh(new THREE.SphereGeometry(6000,32,16),new THREE.ShaderMaterial({
+  side:THREE.BackSide,depthWrite:false,fog:false,
+  uniforms:{top:{value:new THREE.Color(0x3d7cc9)},hor:{value:new THREE.Color(0xb9cfe2)},sun:{value:SUN}},
+  vertexShader:`varying vec3 vD;void main(){vD=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`uniform vec3 top,hor,sun;varying vec3 vD;void main(){float h=clamp(vD.y,0.,1.);vec3 c=mix(hor,top,pow(h,0.55));
+    float s=max(dot(normalize(vD),sun),0.);c+=vec3(1.,.85,.6)*(pow(s,600.)*4.+pow(s,12.)*.25);if(vD.y<0.)c=hor*0.85;
+    gl_FragColor=vec4(c,1.);
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
+    }`}));
+sky.renderOrder=-10;seaScene.add(sky);
+
+// 海
+const waterMat=new THREE.ShaderMaterial({
+  uniforms:{uTime:{value:0},uSun:{value:SUN},uFog:{value:seaScene.fog.color},uFogD:{value:seaScene.fog.density},
+    deep:{value:new THREE.Color(0x0a2c48)},shal:{value:new THREE.Color(0x1d6a86)},skyc:{value:new THREE.Color(0xa9c8e4)}},
+  vertexShader:`uniform float uTime;varying vec3 vW;varying float vH;
+    void main(){vec4 w=modelMatrix*vec4(position,1.);
+      float h=sin(w.x*.045+uTime*1.1)*.38+sin(w.z*.061+uTime*.85)*.32;
+      w.y+=h;vH=h;vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
+  fragmentShader:`uniform vec3 uSun,uFog,deep,shal,skyc;uniform float uFogD,uTime;varying vec3 vW;varying float vH;
+    vec2 wv(vec2 p,vec2 k,float w,float a){float ph=dot(p,k)+uTime*w;return k*cos(ph)*a;}
+    void main(){vec2 p=vW.xz;
+      vec2 g=wv(p,vec2(.045,0.),1.1,.38)+wv(p,vec2(0.,.061),.85,.32)+wv(p,vec2(.091,.13),2.1,.12)+wv(p,vec2(.23,-.138),2.9,.07)
+            +wv(p,vec2(-.31,.42),3.7,.035)+wv(p,vec2(.62,.21),5.3,.018)+wv(p,vec2(-.17,-.83),6.1,.012);
+      vec3 N=normalize(vec3(-g.x*2.2,1.,-g.y*2.2));
+      vec3 V=normalize(cameraPosition-vW);float fr=pow(1.-max(dot(N,V),0.),4.);
+      vec3 c=mix(deep,shal,clamp(vH*.7+.45,0.,1.)*.7);c=mix(c,skyc,clamp(fr,0.,1.)*.75);
+      vec3 H=normalize(uSun+V);c+=pow(max(dot(N,H),0.),900.)*vec3(1.,.93,.8)*.35;
+      c+=smoothstep(.55,.85,vH)*.08;
+      float d=length(cameraPosition-vW);float f=1.-exp(-uFogD*uFogD*d*d);c=mix(c,uFog,clamp(f,0.,1.));
+      gl_FragColor=vec4(c,1.);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }`});
+const water=new THREE.Mesh(new THREE.PlaneGeometry(5000,5000,220,220).rotateX(-Math.PI/2),waterMat);
+water.frustumCulled=false;seaScene.add(water);
+
+// ================================================================
+//  ブロックテクスチャ / ジオメトリ / マテリアル
+// ================================================================
+function makeBlockTex(){const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');
+  g.fillStyle='#fff';g.fillRect(0,0,64,64);
+  for(let i=0;i<300;i++){const v=225+Math.random()*30|0;g.fillStyle=`rgb(${v},${v},${v})`;g.fillRect(Math.random()*64,Math.random()*64,2,2);}
+  g.strokeStyle='rgba(0,0,0,.38)';g.lineWidth=4;g.strokeRect(0,0,64,64);
+  g.strokeStyle='rgba(255,255,255,.35)';g.lineWidth=2;g.strokeRect(4,4,56,56);
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;return t;}
+const blockMat=new THREE.MeshStandardMaterial({map:makeBlockTex(),roughness:0.75,metalness:0.15});
+function prism(pts,axis){ // pts: shape points, axis: 'y' or 'x'
+  const sh=new THREE.Shape();sh.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)sh.lineTo(pts[i][0],pts[i][1]);sh.closePath();
+  const g=new THREE.ExtrudeGeometry(sh,{depth:1,bevelEnabled:false});
+  if(axis==='y'){g.rotateX(-Math.PI/2);g.translate(0,-0.5,0);} else {g.rotateY(Math.PI/2);g.translate(-0.5,0,0);}
+  return g;}
+const GEO={
+  box:new THREE.BoxGeometry(1,1,1),
+  corner:prism([[-.5,.5],[.5,.5],[-.5,-.5]],'y'),       // +x+z の角が欠ける
+  slope:prism([[.5,-.5],[-.5,-.5],[.5,.5]],'x'),        // 上面が前(+z)に向かって下がる
+  slopeD:prism([[.5,-.5],[.5,.5],[-.5,.5]],'x'),        // 下面が前(+z)に向かって上がる
+};
+for(const k of ['corner','slope','slopeD']) GEO[k].computeVertexNormals();
+const MAT={
+  steel:new THREE.MeshStandardMaterial({color:0x7a838b,roughness:.55,metalness:.45}),
+  dark:new THREE.MeshStandardMaterial({color:0x3b4249,roughness:.6,metalness:.4}),
+  light:new THREE.MeshStandardMaterial({color:0xc4cbd2,roughness:.6,metalness:.2}),
+  black:new THREE.MeshStandardMaterial({color:0x1b1d20,roughness:.9}),
+  glass:new THREE.MeshStandardMaterial({color:0x16222c,roughness:.2,metalness:.6,emissive:0x0a1a26}),
+  barrel:new THREE.MeshStandardMaterial({color:0x50575e,roughness:.45,metalness:.6}),
+};
+const _gc={};
+function cyl(r,len,seg=10){const k=r+'_'+len;if(!_gc[k]){const g=new THREE.CylinderGeometry(r,r,len,seg);g.translate(0,len/2,0);g.rotateX(Math.PI/2);_gc[k]=g;}return _gc[k];}
+function bx(w,h,d){const k='b'+w+'_'+h+'_'+d;if(!_gc[k])_gc[k]=new THREE.BoxGeometry(w,h,d);return _gc[k];}
+function mesh(g,m,x=0,y=0,z=0){const o=new THREE.Mesh(g,m);o.position.set(x,y,z);return o;}
+
+function makeModel(t){
+  const group=new THREE.Group(),yaw=new THREE.Group(),pitch=new THREE.Group();const muzzles=[];
+  group.add(yaw);
+  const addBarrels=(n,sp,r,len,py,pz)=>{pitch.position.set(0,py,pz);yaw.add(pitch);
+    for(let i=0;i<n;i++){const x=(i-(n-1)/2)*sp;pitch.add(mesh(cyl(r,len),MAT.barrel,x,0,0));
+      pitch.add(mesh(cyl(r*1.35,len*0.25),MAT.dark,x,0,0));
+      const mz=new THREE.Object3D();mz.position.set(x,0,len);pitch.add(mz);muzzles.push(mz);}};
+  switch(t){
+    case 'bridge':{group.add(mesh(bx(.92,1.1,.92),MAT.light,0,.55,0));group.add(mesh(bx(1.08,.55,.98),MAT.light,0,1.38,0));
+      group.add(mesh(bx(1.1,.16,1.0),MAT.glass,0,1.4,0));group.add(mesh(bx(1.5,.14,.22),MAT.dark,0,1.75,0));
+      group.add(mesh(cyl(.05,.5),MAT.dark,0,1.85,0).rotateX(-Math.PI/2));break;}
+    case 'funnel':{const f=mesh(new THREE.CylinderGeometry(.42,.46,1.75,14),MAT.steel,0,.88,0);f.scale.set(1,1,1.25);group.add(f);
+      const cap=mesh(new THREE.CylinderGeometry(.44,.44,.22,14),MAT.black,0,1.85,0);cap.scale.set(1,1,1.25);group.add(cap);break;}
+    case 'mast':{group.add(mesh(new THREE.CylinderGeometry(.06,.09,3,6),MAT.dark,0,1.5,0));group.add(mesh(bx(1.7,.06,.06),MAT.dark,0,2.4,0));
+      group.add(mesh(bx(1.0,.05,.05),MAT.dark,0,1.8,0));break;}
+    case 'mg':{group.add(mesh(new THREE.CylinderGeometry(.33,.38,.22,10),MAT.dark,0,.11,0));
+      yaw.add(mesh(bx(.5,.3,.18),MAT.steel,0,.38,-.05));addBarrels(2,.18,.035,.85,.38,.05);break;}
+    case 'gunS':{group.add(mesh(new THREE.CylinderGeometry(.4,.44,.2,12),MAT.dark,0,.1,0));
+      yaw.add(mesh(bx(.78,.48,.82),MAT.steel,0,.44,-.06));yaw.add(mesh(bx(.6,.14,.3),MAT.steel,0,.6,.3));addBarrels(1,0,.065,1.3,.46,.32);break;}
+    case 'gunM':{group.add(mesh(new THREE.CylinderGeometry(1.15,1.25,.25,18),MAT.dark,0,.12,0));
+      yaw.add(mesh(bx(1.8,.72,1.85),MAT.steel,0,.6,-.1));yaw.add(mesh(bx(1.5,.3,.5),MAT.steel,0,.85,.8));
+      yaw.add(mesh(bx(1.2,.15,.3),MAT.dark,0,1.03,-.6));addBarrels(2,.55,.11,2.5,.62,.75);break;}
+    case 'gunL':{group.add(mesh(new THREE.CylinderGeometry(2.05,2.2,.4,24),MAT.dark,0,.2,0));
+      yaw.add(mesh(bx(3.3,1.25,3.4),MAT.steel,0,1.0,-.3));yaw.add(mesh(bx(2.9,.5,.9),MAT.steel,0,1.42,1.4));
+      yaw.add(mesh(bx(3.9,.18,.35),MAT.dark,0,1.75,-1.2));
+      addBarrels(3,.95,.19,4.6,.95,1.3);break;}
+    case 'torp':{group.add(mesh(new THREE.CylinderGeometry(.4,.42,.15,10),MAT.dark,0,.07,0));
+      for(let i=0;i<3;i++){const tb=mesh(cyl(.11,1.5),MAT.steel,(i-1)*.25,.3,-.7);yaw.add(tb);}
+      pitch.position.set(0,.3,.8);yaw.add(pitch);
+      for(let i=0;i<3;i++){const mz=new THREE.Object3D();mz.position.set((i-1)*.25,0,0);pitch.add(mz);muzzles.push(mz);}break;}
+  }
+  return {group,yaw,pitch,muzzles};
+}
+
+const ZERO_M=new THREE.Matrix4().makeScale(0,0,0);
+const RED_HULL=new THREE.Color(0x8b2d25),RED_ARMOR=new THREE.Color(0x5e2722);
+function buildShipVisual(parts,{waterline=-1,cutY=YMAX}={}){
+  const group=new THREE.Group();const groups={box:[],corner:[],slope:[],slopeD:[]};
+  for(const p of parts){if(p.y>cutY){p._im=null;p.model=null;continue;}const d=P[p.t];
+    if(d.shape==='model'){const m=makeModel(p.t);const c=p.ctr||centerOf(p.t,p.x,p.y,p.z,p.r);m.group.position.set(c[0],c[1],c[2]);m.group.rotation.y=p.r*Math.PI/2;group.add(m.group);p.model=m;p._im=null;}
+    else groups[d.shape].push(p);}
+  const mtx=new THREE.Matrix4(),q=new THREE.Quaternion(),pos=new THREE.Vector3(),sc=new THREE.Vector3(1,1,1),col=new THREE.Color(),UP=new THREE.Vector3(0,1,0);
+  for(const sh in groups){const arr=groups[sh];if(!arr.length)continue;
+    const im=new THREE.InstancedMesh(GEO[sh],blockMat,arr.length);im.frustumCulled=false;
+    arr.forEach((p,i)=>{pos.set(p.x,p.y+0.5,p.z);q.setFromAxisAngle(UP,p.r*Math.PI/2);mtx.compose(pos,q,sc);im.setMatrixAt(i,mtx);
+      const below=p.y+0.5<waterline&&HULLISH.has(p.t);
+      if(below) col.copy(p.t==='armor'?RED_ARMOR:RED_HULL); else col.setHex(P[p.t].col);
+      im.setColorAt(i,col);p._im=im;p._i=i;p.model=null;});
+    group.add(im);}
+  return group;
+}
+
+// ================================================================
+//  パーティクル
+// ================================================================
+class PSys{
+  constructor(max,additive){this.max=max;this.i=0;
+    this.pos=new Float32Array(max*3);this.col=new Float32Array(max*3);this.size=new Float32Array(max);this.alpha=new Float32Array(max);
+    this.vel=new Float32Array(max*3);this.life=new Float32Array(max);this.ml=new Float32Array(max);this.s0=new Float32Array(max);this.s1=new Float32Array(max);
+    this.a0=new Float32Array(max);this.gr=new Float32Array(max);this.dr=new Float32Array(max);
+    const g=new THREE.BufferGeometry();
+    this.aPos=new THREE.BufferAttribute(this.pos,3).setUsage(THREE.DynamicDrawUsage);this.aCol=new THREE.BufferAttribute(this.col,3).setUsage(THREE.DynamicDrawUsage);
+    this.aSize=new THREE.BufferAttribute(this.size,1).setUsage(THREE.DynamicDrawUsage);this.aAlpha=new THREE.BufferAttribute(this.alpha,1).setUsage(THREE.DynamicDrawUsage);
+    g.setAttribute('position',this.aPos);g.setAttribute('pcol',this.aCol);g.setAttribute('psize',this.aSize);g.setAttribute('palpha',this.aAlpha);
+    this.mat=new THREE.ShaderMaterial({uniforms:{uScale:{value:500}},transparent:true,depthWrite:false,
+      blending:additive?THREE.AdditiveBlending:THREE.NormalBlending,
+      vertexShader:`attribute vec3 pcol;attribute float psize;attribute float palpha;uniform float uScale;varying vec3 vC;varying float vA;
+        void main(){vec4 mv=modelViewMatrix*vec4(position,1.);float dz=-mv.z;vC=pcol;vA=palpha*smoothstep(6.,30.,dz);gl_PointSize=min(psize*uScale/max(dz,.1),360.);gl_Position=projectionMatrix*mv;}`,
+      fragmentShader:`varying vec3 vC;varying float vA;void main(){vec2 d=gl_PointCoord-.5;float r=length(d);if(r>.5||vA<.003)discard;
+        float a=smoothstep(.5,.1,r)*vA;gl_FragColor=vec4(vC,a);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+        }`});
+    this.pts=new THREE.Points(g,this.mat);this.pts.frustumCulled=false;this.pts.renderOrder=5;this.active=0;}
+  emit(x,y,z,vx,vy,vz,life,s0,s1,r,g,b,a0,gr=0,dr=0){const i=this.i;this.i=(i+1)%this.max;const i3=i*3;
+    this.pos[i3]=x;this.pos[i3+1]=y;this.pos[i3+2]=z;this.vel[i3]=vx;this.vel[i3+1]=vy;this.vel[i3+2]=vz;
+    this.col[i3]=r;this.col[i3+1]=g;this.col[i3+2]=b;this.life[i]=life;this.ml[i]=life;this.s0[i]=s0;this.s1[i]=s1;this.a0[i]=a0;this.gr[i]=gr;this.dr[i]=dr;
+    this.size[i]=s0;this.alpha[i]=0;this.active=this.max;}
+  update(dt){if(!this.active)return;let any=0;
+    for(let i=0;i<this.max;i++){if(this.life[i]<=0)continue;any=1;this.life[i]-=dt;const i3=i*3;
+      if(this.life[i]<=0){this.alpha[i]=0;this.size[i]=0;continue;}
+      const f=1-this.life[i]/this.ml[i];this.vel[i3+1]-=this.gr[i]*dt;const dm=Math.max(0,1-this.dr[i]*dt);
+      this.vel[i3]*=dm;this.vel[i3+1]*=dm;this.vel[i3+2]*=dm;
+      this.pos[i3]+=this.vel[i3]*dt;this.pos[i3+1]+=this.vel[i3+1]*dt;this.pos[i3+2]+=this.vel[i3+2]*dt;
+      this.size[i]=this.s0[i]+(this.s1[i]-this.s0[i])*f;this.alpha[i]=this.a0[i]*(1-f)*Math.min(1,f*12);}
+    if(!any)this.active=0;
+    this.aPos.needsUpdate=this.aCol.needsUpdate=this.aSize.needsUpdate=this.aAlpha.needsUpdate=true;}
+  clear(){this.life.fill(0);this.alpha.fill(0);this.size.fill(0);this.aAlpha.needsUpdate=this.aSize.needsUpdate=true;}
+}
+const fxAdd=new PSys(3000,true),fxNorm=new PSys(5000,false);
+seaScene.add(fxNorm.pts);seaScene.add(fxAdd.pts);
+
+function fxMuzzle(p,dir,s){
+  for(let i=0;i<6;i++){const v=rand(4,14)*s;fxAdd.emit(p.x,p.y,p.z,dir.x*v+rand(-1,1),dir.y*v+rand(-1,1),dir.z*v+rand(-1,1),rand(.08,.2),1.2*s,3*s,1,.75,.35,1);}
+  for(let i=0;i<4;i++){const v=rand(2,6)*s;fxNorm.emit(p.x,p.y,p.z,dir.x*v,dir.y*v+1,dir.z*v,rand(1.2,2.2),1.5*s,6*s,.75,.74,.72,.5,-.5,1.2);}
+}
+function fxSplash(p,s){
+  const n=Math.round(10+14*s);
+  for(let i=0;i<n;i++){const a=Math.random()*6.28,r=rand(0,1.2)*s;fxNorm.emit(p.x+Math.cos(a)*r,0.2,p.z+Math.sin(a)*r,Math.cos(a)*rand(.5,3)*s,rand(6,16)*Math.sqrt(s),Math.sin(a)*rand(.5,3)*s,rand(1,2),.8*s,2.4*s,.9,.95,1,.85,14,.3);}
+  for(let i=0;i<6;i++){const a=Math.random()*6.28;fxNorm.emit(p.x,0.3,p.z,Math.cos(a)*rand(2,6)*s,0.4,Math.sin(a)*rand(2,6)*s,rand(1.5,2.5),1.5*s,5*s,.85,.92,.97,.6,0,1.5);}
+}
+function fxExplode(p,s){
+  for(let i=0;i<10+s*10;i++){fxAdd.emit(p.x,p.y,p.z,rand(-6,6)*s,rand(-2,8)*s,rand(-6,6)*s,rand(.2,.5),1.5*s,4.5*s,1,rand(.4,.8),.15,1,0,2);}
+  for(let i=0;i<6+s*6;i++){fxNorm.emit(p.x,p.y,p.z,rand(-3,3)*s,rand(1,5)*s,rand(-3,3)*s,rand(1.5,3),2*s,8*s,.18,.16,.15,.7,-.6,1.2);}
+  for(let i=0;i<5+s*4;i++){fxNorm.emit(p.x,p.y,p.z,rand(-8,8),rand(4,14),rand(-8,8),rand(1,2),.35,.25,.12,.12,.12,1,20,.2);}
+}
+function fxSmoke(p,dark){fxNorm.emit(p.x+rand(-.4,.4),p.y,p.z+rand(-.4,.4),rand(-.5,.5)+2,rand(2,4),rand(-.5,.5),rand(3,5),1.5,7,dark,dark*.95,dark*.9,.55,-.3,.4);}
+function fxFire(p){fxAdd.emit(p.x+rand(-.4,.4),p.y,p.z+rand(-.4,.4),rand(-.3,.3),rand(1.5,3.5),rand(-.3,.3),rand(.3,.6),1.2,.5,1,.45,.08,.9);}
+
+// ================================================================
+//  サウンド (WebAudio 合成)
+// ================================================================
+let AC=null,NB=null,muted=false,sndN=0;
+function initAudio(){if(AC){if(AC.state==='suspended')AC.resume();return;}
+  try{AC=new (window.AudioContext||window.webkitAudioContext)();const len=AC.sampleRate*2;NB=AC.createBuffer(1,len,AC.sampleRate);
+    const d=NB.getChannelData(0);let l=0;for(let i=0;i<len;i++){const w=Math.random()*2-1;l=l*.6+w*.4;d[i]=l;}}catch(e){AC=null;}}
+function sfx(vol,freq,dur){if(!AC||muted||vol<0.015||sndN>16)return;sndN++;setTimeout(()=>sndN--,dur*900);
+  const t=AC.currentTime,src=AC.createBufferSource();src.buffer=NB;const f=AC.createBiquadFilter();f.type='lowpass';
+  f.frequency.setValueAtTime(freq,t);f.frequency.exponentialRampToValueAtTime(Math.max(30,freq*.25),t+dur);
+  const g=AC.createGain();g.gain.setValueAtTime(Math.min(1,vol),t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
+  src.connect(f);f.connect(g);g.connect(AC.destination);src.start(t,Math.random()*1.5);src.stop(t+dur+.05);}
+function sfxAt(p,vol,freq,dur){const d=p.distanceTo(controls.target);sfx(vol/(1+d/120),freq,dur);}
+window.addEventListener('pointerdown',initAudio,{passive:true});
+
+// ================================================================
+//  プリセット艦
+// ================================================================
+function makeBuilder(){const parts=[],occ=new Map();
+  const b={parts,
+    put(t,x,y,z,r=0,rep=false){const cs=cellsOf(t,x,y,z,r);if(!cs.every(inB))return false;
+      if(rep){for(const c of cs){const o=occ.get(key(...c));if(o)b.remove(o);}}else if(cs.some(c=>occ.has(key(...c))))return false;
+      const p={t,x,y,z,r};parts.push(p);for(const c of cs)occ.set(key(...c),p);return true;},
+    remove(p){const i=parts.indexOf(p);if(i>=0)parts.splice(i,1);for(const c of cellsOf(p.t,p.x,p.y,p.z,p.r))occ.delete(key(...c));},
+    box(t,x0,x1,y0,y1,z0,z1){for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++)for(let z=z0;z<=z1;z++)b.put(t,x,y,z);},
+    sym(t,x,y,z,r=0){b.put(t,x,y,z,r);if(x!==0)b.put(t,-x,y,z,mirrorRot(t,r));},
+  };return b;}
+function genHull(b,{L,hw,D,belt,engines=[]}){
+  const zs=-Math.floor(L/2),ze=zs+L-1,bl=Math.round(L*.28),sl=Math.round(L*.12);
+  const W=z=>{if(z<zs||z>ze)return -1;const fs=ze-bl;if(z>fs){const f=(z-fs)/bl;return Math.max(0,Math.round(hw*(1-Math.pow(f,1.6))));}
+    const as=zs+sl;if(z<as){const f=(as-z)/sl;return Math.round(hw*(1-.45*f*f));}return hw;};
+  for(let z=zs;z<=ze;z++){const w=W(z);for(let y=0;y<D;y++){const off=y===0?1:0,wy=w-off;if(wy<0)continue;
+    for(let x=-wy;x<=wy;x++){let t=y===D-1?'deck':'hull',r=0;const edge=Math.abs(x)===wy&&wy>0;
+      if(edge&&z>0&&W(z+1)-off<wy){t='corner';r=x>0?0:3;}
+      else if(edge&&z<0&&W(z-1)-off<wy){t='corner';r=x>0?1:2;}
+      else if(belt&&Math.abs(x)===wy&&y>=1&&y<=D-2&&z>=belt[0]&&z<=belt[1])t='armor';
+      b.put(t,x,y,z,r);}}}
+  for(const [x,z] of engines)b.put('engine',x,1,z,0,true);
+}
+const PRESETS={
+  dd:{name:'駆逐艦「疾風」',build(){const b=makeBuilder();genHull(b,{L:34,hw:2,D:3,engines:[[0,-4],[0,-2],[0,0],[0,2]]});
+    b.box('hull',-1,1,3,3,4,7);b.put('bridge',0,4,6);b.put('mast',0,4,4);
+    b.put('hull',0,3,9);b.put('gunS',0,4,9);b.put('gunS',0,3,12);
+    b.put('funnel',0,3,1);b.put('funnel',0,3,-1);b.put('torp',0,3,-4);b.put('torp',0,3,-7);
+    b.put('gunS',0,3,-12,2);b.sym('mg',2,3,0);return b.parts;}},
+  cl:{name:'軽巡洋艦「天津」',build(){const b=makeBuilder();genHull(b,{L:44,hw:3,D:3,engines:[[0,-6],[0,-4],[0,-2],[0,0],[0,2],[0,4]]});
+    b.box('hull',-1,1,3,4,4,8);b.put('bridge',0,5,7);b.put('mast',0,5,5);
+    b.put('gunS',0,3,15);b.put('hull',0,3,12);b.put('gunS',0,4,12);
+    b.put('funnel',0,3,1);b.put('funnel',0,3,-1);b.sym('gunS',2,3,-4);b.sym('torp',2,3,-8);
+    b.put('hull',0,3,-13);b.put('gunS',0,4,-13,2);b.put('gunS',0,3,-16,2);
+    b.sym('mg',3,3,5);b.sym('mg',3,3,-11);b.sym('mg',1,5,5);return b.parts;}},
+  ca:{name:'重巡洋艦「妙鷹」',build(){const b=makeBuilder();genHull(b,{L:52,hw:4,D:4,belt:[-12,12],engines:[[0,-9],[0,-6],[0,-3],[0,0],[0,3],[0,6],[-1,-3],[1,-3]]});
+    b.put('gunM',0,4,18);b.box('hull',-1,1,4,4,13,15);b.put('gunM',0,5,14);
+    b.box('hull',-2,2,4,5,4,9);b.box('hull',-1,1,6,6,6,9);b.put('bridge',0,7,8);b.put('mast',0,7,6);
+    b.put('funnel',0,4,1);b.put('funnel',0,4,-2);b.sym('gunS',3,4,-5);b.sym('gunS',3,4,-9);b.sym('torp',3,4,-13);
+    b.put('gunM',0,4,-21,2);b.box('hull',-1,1,4,4,-18,-16);b.put('gunM',0,5,-17,2);
+    b.sym('mg',4,4,3);b.sym('mg',4,4,10);b.sym('mg',2,6,5);return b.parts;}},
+  bb:{name:'戦艦「富嶽」',build(){const b=makeBuilder();const en=[];for(const z of [-12,-8,-4,0,4,8])for(const x of [-2,0,2])en.push([x,z]);
+    genHull(b,{L:70,hw:6,D:5,belt:[-22,20],engines:en});
+    b.put('gunL',0,5,23);b.box('hull',-2,2,5,5,14,18);b.put('gunL',0,6,16);
+    b.box('hull',-3,3,5,6,0,10);b.box('hull',-2,2,7,8,3,9);b.box('hull',-1,1,9,9,6,9);b.put('bridge',0,10,8);b.put('mast',0,10,6);
+    b.put('funnel',0,7,1);b.box('hull',-2,2,5,6,-11,-6);b.put('mast',0,7,-8);
+    b.put('gunL',0,5,-23,2);b.sym('gunM',4,5,-3);b.sym('gunM',4,5,-15);
+    b.sym('gunS',3,7,2);b.sym('gunS',3,7,8);
+    b.sym('mg',5,5,8);b.sym('mg',5,5,11);b.sym('mg',6,5,-9);b.sym('mg',2,9,4);b.sym('mg',1,10,7);return b.parts;}},
+  bbx:{name:'超弩級戦艦「紀伊」',build(){const b=makeBuilder();const en=[];for(let z=-16;z<=12;z+=4)for(const x of [-2,0,2])en.push([x,z]);
+    genHull(b,{L:84,hw:7,D:5,belt:[-28,26],engines:en});
+    b.put('gunL',0,5,28);b.box('hull',-2,2,5,5,18,22);b.put('gunL',0,6,20);
+    b.box('hull',-3,3,5,6,2,13);b.box('hull',-2,2,7,8,5,11);b.box('hull',-1,1,9,10,8,11);b.put('bridge',0,11,10);b.put('mast',0,11,8);
+    b.put('funnel',0,7,3);b.put('funnel',0,7,4);
+    b.box('hull',-2,2,5,5,-24,-20);b.put('gunL',0,6,-22,2);b.put('gunL',0,5,-30,2);
+    b.box('hull',-2,2,5,6,-16,-9);b.put('mast',0,7,-12);
+    b.sym('gunM',5,5,-1);b.sym('gunM',5,5,-7);b.sym('gunM',5,5,15);b.sym('gunS',3,7,3);b.sym('gunS',3,7,12);
+    b.sym('mg',6,5,6);b.sym('mg',6,5,10);b.sym('mg',6,5,-12);b.sym('mg',6,5,-18);b.sym('mg',2,9,6);b.sym('mg',1,11,9);return b.parts;}},
+};
+const _pc={};
+function presetSpec(id){if(!_pc[id])_pc[id]={name:PRESETS[id].name,parts:PRESETS[id].build().map(p=>[p.t,p.x,p.y,p.z,p.r])};return _pc[id];}
+
+// ================================================================
+//  保存データ
+// ================================================================
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
+let designs=LS.get('bf_designs',[]);
+let progress=LS.get('bf_progress',{cleared:0});
+const saveDesigns=()=>LS.set('bf_designs',designs);
+function encodeSpec(s){return btoa(unescape(encodeURIComponent(JSON.stringify({n:s.name,p:s.parts}))));}
+function decodeSpec(str){const o=JSON.parse(decodeURIComponent(escape(atob(str.trim()))));
+  if(!o||!Array.isArray(o.p))throw new Error('bad');return {name:String(o.n||'艦').slice(0,24),parts:o.p.filter(a=>Array.isArray(a)&&P[a[0]]).map(a=>[a[0],a[1]|0,a[2]|0,a[3]|0,(a[4]|0)&3])};}
+
+// ================================================================
+//  UI 共通
+// ================================================================
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('show',s.id===id));}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),1600);}
+function modal(title,body,buttons=[]){$('#mtitle').textContent=title;const mb=$('#mbody');mb.innerHTML='';if(typeof body==='string')mb.innerHTML=body;else mb.appendChild(body);
+  const f=$('#mfoot');f.innerHTML='';for(const b of buttons){const e=document.createElement('button');e.textContent=b.label;if(b.cls)e.className=b.cls;e.onclick=()=>{if(b.fn&&b.fn()===false)return;closeModal();};f.appendChild(e);}
+  f.classList.toggle('hidden',!buttons.length);$('#modal').classList.remove('hidden');}
+function closeModal(){$('#modal').classList.add('hidden');}
+$('#mclose').onclick=closeModal;
+$('#modal').addEventListener('pointerdown',e=>{if(e.target.id==='modal')closeModal();});
+function el(html){const d=document.createElement('div');d.innerHTML=html.trim();return d.firstElementChild;}
+
+function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+  const sc=renderer.domElement.height/(2*Math.tan(camera.fov*Math.PI/360));fxAdd.mat.uniforms.uScale.value=sc;fxNorm.mat.uniforms.uScale.value=sc;}
+addEventListener('resize',resize);resize();
+
+// ================================================================
+//  エディター
+// ================================================================
+const ed={parts:[],cells:new Map(),sel:'hull',cat:0,tool:'place',mirror:true,rot:0,cutY:YMAX,undo:[],redo:[],vis:null,stats:null};
+const edRoot=new THREE.Group();editScene.add(edRoot);
+(function buildDock(){
+  const pts=[];const y=0.001;
+  for(let x=XMIN;x<=XMAX+1;x++){pts.push(x-.5,y,ZMIN-.5,x-.5,y,ZMAX+.5);}
+  for(let z=ZMIN;z<=ZMAX+1;z++){pts.push(XMIN-.5,y,z-.5,XMAX+.5,y,z-.5);}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+  editScene.add(new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0x4d6582,transparent:true,opacity:.6})));
+  const cg=new THREE.BufferGeometry();cg.setAttribute('position',new THREE.Float32BufferAttribute([0,.01,ZMIN-.5,0,.01,ZMAX+.5],3));
+  editScene.add(new THREE.LineSegments(cg,new THREE.LineBasicMaterial({color:0xffb340})));
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(400,400).rotateX(-Math.PI/2),new THREE.MeshStandardMaterial({color:0x1c2633,roughness:1}));floor.position.y=-0.02;editScene.add(floor);
+  const bb=new THREE.Box3Helper(new THREE.Box3(new THREE.Vector3(XMIN-.5,0,ZMIN-.5),new THREE.Vector3(XMAX+.5,YMAX+1,ZMAX+.5)),0x3a5070);editScene.add(bb);
+  const arrow=new THREE.Mesh(new THREE.ConeGeometry(1.6,4,3).rotateX(Math.PI/2),new THREE.MeshBasicMaterial({color:0xffb340}));arrow.position.set(0,.5,ZMAX+4);editScene.add(arrow);
+})();
+const wlPlane=new THREE.Mesh(new THREE.PlaneGeometry(XMAX-XMIN+7,ZMAX-ZMIN+7).rotateX(-Math.PI/2),
+  new THREE.MeshBasicMaterial({color:0x3fa7ff,transparent:true,opacity:.22,depthWrite:false,side:THREE.DoubleSide}));
+editScene.add(wlPlane);
+const ghostMat=new THREE.MeshBasicMaterial({color:0x5ee08a,transparent:true,opacity:.35,depthWrite:false});
+const ghosts=[0,1].map(()=>{const m=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),ghostMat.clone());
+  m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry),new THREE.LineBasicMaterial({color:0xffffff})));m.visible=false;editScene.add(m);return m;});
+
+function edSnap(){return ed.parts.map(p=>[p.t,p.x,p.y,p.z,p.r]);}
+function edLoad(arr,name){ed.parts=[];ed.cells.clear();for(const a of arr){if(!P[a[0]])continue;const p={t:a[0],x:a[1],y:a[2],z:a[3],r:a[4]||0};
+  p.cells=cellsOf(p.t,p.x,p.y,p.z,p.r);if(!p.cells.every(inB)||p.cells.some(c=>ed.cells.has(key(...c))))continue;p.ctr=centerOf(p.t,p.x,p.y,p.z,p.r);
+  ed.parts.push(p);for(const c of p.cells)ed.cells.set(key(...c),p);}
+  if(name!=null){ed.name=name;$('#e-name').value=name;}edRebuild();}
+function edPush(){ed.undo.push(edSnap());if(ed.undo.length>60)ed.undo.shift();ed.redo=[];}
+function edAdd(p){p.cells=cellsOf(p.t,p.x,p.y,p.z,p.r);p.ctr=centerOf(p.t,p.x,p.y,p.z,p.r);ed.parts.push(p);for(const c of p.cells)ed.cells.set(key(...c),p);}
+function edDel(p){const i=ed.parts.indexOf(p);if(i<0)return;ed.parts.splice(i,1);for(const c of p.cells)ed.cells.delete(key(...c));}
+let _saveT=0;
+function edRebuild(){
+  if(ed.vis)edRoot.remove(ed.vis);
+  ed.stats=analyze(ed.parts);const s=ed.stats;
+  ed.vis=buildShipVisual(ed.parts,{waterline:s.sink?-1:s.h,cutY:ed.cutY});edRoot.add(ed.vis);
+  wlPlane.visible=!s.sink;wlPlane.position.y=s.h;
+  renderStats();clearTimeout(_saveT);_saveT=setTimeout(()=>LS.set('bf_current',{name:ed.name,parts:edSnap()}),300);
+}
+function renderStats(){const s=ed.stats;const w=s.wc;
+  const warns=[];
+  if(s.n===0)warns.push('ブロックがありません');
+  else if(s.sink)warns.push('⚠ 浮力不足：このままでは沈没します。船体を増やすか重い装備を減らそう');
+  if(s.n&&!s.power)warns.push('⚠ 機関なし：動けません');
+  if(s.n&&!s.bridges)warns.push('⚠ 艦橋なし：命中率が大幅低下');
+  if(s.n&&!Object.keys(w).length)warns.push('⚠ 兵装なし');
+  if(!s.sink&&Math.abs(s.heel)>0.05)warns.push(`⚠ 傾斜 ${(s.heel*57.3).toFixed(1)}°（左右の重量差）`);
+  if(!s.sink&&Math.abs(s.trim)>0.03)warns.push(`⚠ トリム ${(s.trim*57.3).toFixed(1)}°（前後の重量差）`);
+  const fb=s.sink?0:s.H-s.h;
+  const wl=Object.entries(w).map(([k,v])=>`${P[k].n}×${v}`).join('、')||'なし';
+  $('#stats-body').innerHTML=`
+  <div class="row"><span>全長×幅×高</span><b>${s.L}×${s.B}×${Math.max(0,s.H)}</b></div>
+  <div class="row"><span>ブロック数</span><b>${s.n}</b></div>
+  <div class="row"><span>重量</span><b>${(s.mass*100).toFixed(0)} t</b></div>
+  <div class="row"><span>最大排水量</span><b>${(s.disp*100).toFixed(0)} t</b></div>
+  <div class="row"><span>喫水 / 乾舷</span><b>${s.sink?'—':s.h.toFixed(2)} / ${s.sink?'—':fb.toFixed(1)}</b></div>
+  <div class="row"><span>予備浮力</span><b>${s.sink?'0':Math.round((1-s.mass/Math.max(1,s.disp))*100)}%</b></div>
+  <div class="row"><span>速力</span><b>${(s.spd*2.2).toFixed(1)} kt</b></div>
+  <div class="row"><span>コスト</span><b style="color:var(--accent)">${s.cost.toLocaleString()}</b></div>
+  <div style="margin-top:3px;color:var(--muted)">兵装: ${wl}</div>
+  ${warns.map(x=>`<div class="warn">${x}</div>`).join('')}
+  ${!warns.length?'<div class="note">✓ 出撃可能</div>':''}`;
+}
+function renderPalette(){
+  $('#cats').innerHTML='';CATS.forEach((c,i)=>{const b=document.createElement('button');b.textContent=c;b.className=i===ed.cat?'on':'';b.onclick=()=>{ed.cat=i;renderPalette();};$('#cats').appendChild(b);});
+  const pl=$('#palette');pl.innerHTML='';
+  for(const k in P){const d=P[k];if(d.cat!==ed.cat)continue;const b=document.createElement('button');b.className=k===ed.sel?'on':'';
+    const c='#'+d.col.toString(16).padStart(6,'0');
+    b.innerHTML=`<span class="sw" style="background:${c}">${d.ic}</span>${d.n}`;
+    b.onclick=()=>{ed.sel=k;if(ed.tool!=='place')setTool('place');renderPalette();};pl.appendChild(b);}
+  const d=P[ed.sel];let info=`<b>${d.n}</b><span>耐久 ${d.hp}</span><span>重量 ${(d.m*100)|0}t</span><span>浮力 ${(d.d*d.sz[0]*d.sz[1]*d.sz[2]*100)|0}t</span><span>コスト ${d.c}</span>`;
+  if(d.ar)info+=`<span>装甲 ${d.ar}</span>`;
+  if(d.power)info+=`<span>出力 ${d.power}</span>`;
+  if(d.w)info+=`<span>射程 ${d.w.range}</span><span>威力 ${d.w.dmg}${d.w.barrels>1?'×'+d.w.barrels:''}</span><span>装填 ${d.w.reload}s</span>`;
+  if(d.sz[0]>1||d.sz[1]>1)info+=`<span>サイズ ${d.sz.join('×')}</span>`;
+  $('#pinfo').innerHTML=info;
+}
+function setTool(t){ed.tool=t;const b=$('#t-mode');b.innerHTML=t==='place'?'<span class="ic">🧱</span>設置':'<span class="ic">🧹</span>削除';b.classList.toggle('on',t==='place');b.classList.toggle('dng',t!=='place');hideGhosts();}
+$('#t-mode').onclick=()=>setTool(ed.tool==='place'?'erase':'place');
+$('#t-mirror').onclick=()=>{ed.mirror=!ed.mirror;$('#t-mirror').classList.toggle('on',ed.mirror);};
+$('#t-rot').onclick=()=>{ed.rot=(ed.rot+1)%4;$('#t-rotv').textContent=ed.rot*90+'°';};
+$('#t-undo').onclick=()=>{if(!ed.undo.length)return;ed.redo.push(edSnap());edLoad(ed.undo.pop());};
+$('#t-redo').onclick=()=>{if(!ed.redo.length)return;ed.undo.push(edSnap());edLoad(ed.redo.pop());};
+$('#t-cam').onclick=()=>edCam();
+$('#t-cut').oninput=e=>{ed.cutY=+e.target.value;$('#cutv').textContent=ed.cutY>=YMAX?'全':ed.cutY;edRebuild();};
+$('#stats-hd').onclick=()=>{$('#stats').classList.toggle('mini');$('#stats-tg').textContent=$('#stats').classList.contains('mini')?'▸':'▾';};
+$('#e-name').oninput=e=>{ed.name=e.target.value||'無名艦';LS.set('bf_current',{name:ed.name,parts:edSnap()});};
+function edCam(){controls.target.set(0,3,0);camera.position.set(34,30,46);controls.update();}
+
+// ---- ボクセルレイキャスト (DDA) ----
+function voxelPick(ro,rd){
+  const o=[ro.x+.5,ro.y,ro.z+.5],d=[rd.x,rd.y,rd.z],lo=[XMIN,0,ZMIN],hi=[XMAX+1,YMAX+1,ZMAX+1];
+  let t0=-Infinity,t1=Infinity,ea=-1;
+  for(let a=0;a<3;a++){if(Math.abs(d[a])<1e-9){if(o[a]<lo[a]||o[a]>hi[a])return null;continue;}
+    let ta=(lo[a]-o[a])/d[a],tb=(hi[a]-o[a])/d[a];if(ta>tb)[ta,tb]=[tb,ta];if(ta>t0){t0=ta;ea=a;}if(tb<t1)t1=tb;}
+  if(t1<Math.max(t0,0))return null;
+  const t=Math.max(t0,0);const p=[o[0]+d[0]*t,o[1]+d[1]*t,o[2]+d[2]*t];
+  const c=[0,1,2].map(a=>clamp(Math.floor(p[a]+(d[a]>0?1e-6:-1e-6)),lo[a],hi[a]-1));
+  let n=null;if(t0>0&&ea>=0){n=[0,0,0];n[ea]=d[ea]>0?-1:1;}
+  const st=[],tM=[],tD=[];
+  for(let a=0;a<3;a++){st[a]=d[a]>0?1:d[a]<0?-1:0;tD[a]=st[a]?Math.abs(1/d[a]):Infinity;
+    tM[a]=st[a]>0?t+(c[a]+1-p[a])/d[a]:st[a]<0?t+(c[a]-p[a])/d[a]:Infinity;}
+  for(let it=0;it<500;it++){
+    if(c[1]<=ed.cutY){const pt=ed.cells.get(key(c[0],c[1],c[2]));if(pt)return {part:pt,cell:c.slice(),n};}
+    let a=tM[0]<tM[1]?(tM[0]<tM[2]?0:2):(tM[1]<tM[2]?1:2);
+    const prev=c.slice();c[a]+=st[a];tM[a]+=tD[a];n=[0,0,0];n[a]=-st[a];
+    if(c[a]<lo[a]||c[a]>hi[a]-1){if(a===1&&st[1]<0)return {ground:true,cell:prev,n:[0,1,0]};return null;}
+  }
+  return null;
+}
+const ray=new THREE.Raycaster(),ndc=new THREE.Vector2();
+function pickAt(cx,cy){const r=canvas.getBoundingClientRect();ndc.set((cx-r.left)/r.width*2-1,-(cy-r.top)/r.height*2+1);
+  ray.setFromCamera(ndc,camera);return voxelPick(ray.ray.origin,ray.ray.direction);}
+function placementFor(hit){
+  if(!hit||!hit.n)return null;const t=ed.sel,d=P[t];const r=d.rot?ed.rot:0;const [sx,,sz]=dims(t,r);
+  let x,y,z;
+  if(hit.ground){[x,y,z]=hit.cell;y=0;}else{x=hit.cell[0]+hit.n[0];y=hit.cell[1]+hit.n[1];z=hit.cell[2]+hit.n[2];}
+  if(hit.n[0])x+=hit.n[0]*((sx-1)>>1);if(hit.n[2])z+=hit.n[2]*((sz-1)>>1);
+  if(hit.n[1]<0)y-=d.sz[1]-1;
+  const list=[{t,x,y,z,r}];
+  if(ed.mirror){const m={t,x:-x,y,z,r:mirrorRot(t,r)};if(!(m.x===x&&m.r===r)){
+    const a=new Set(cellsOf(t,x,y,z,r).map(c=>key(...c)));if(!cellsOf(m.t,m.x,m.y,m.z,m.r).some(c=>a.has(key(...c))))list.push(m);}}
+  const valid=list.map(p=>cellsOf(p.t,p.x,p.y,p.z,p.r).every(c=>inB(c)&&!ed.cells.has(key(...c))));
+  return {list,valid};
+}
+function hideGhosts(){ghosts.forEach(g=>g.visible=false);}
+function showGhost(g,t,x,y,z,r,ok){const [sx,sy,sz]=dims(t,r);const c=centerOf(t,x,y,z,r);g.scale.set(sx+.04,sy+.04,sz+.04);g.position.set(c[0],y+sy/2,c[2]);
+  g.material.color.setHex(ok?0x5ee08a:0xff5d6c);g.visible=true;}
+function edHover(cx,cy){hideGhosts();const hit=pickAt(cx,cy);if(!hit)return;
+  if(ed.tool==='erase'){if(hit.part){const p=hit.part;showGhost(ghosts[0],p.t,p.x,p.y,p.z,p.r,false);
+      const m=edMirrorOf(p);if(m)showGhost(ghosts[1],m.t,m.x,m.y,m.z,m.r,false);}return;}
+  const pl=placementFor(hit);if(!pl)return;pl.list.forEach((p,i)=>showGhost(ghosts[i],p.t,p.x,p.y,p.z,p.r,pl.valid[i]));}
+function edMirrorOf(p){if(!ed.mirror||p.x===0&&!P[p.t].rot)return null;const c=cellsOf(p.t,-p.x,p.y,p.z,mirrorRot(p.t,p.r))[0];const q=ed.cells.get(key(...c));
+  return q&&q!==p&&q.t===p.t&&q.x===-p.x&&q.y===p.y&&q.z===p.z?q:null;}
+function edTap(cx,cy){const hit=pickAt(cx,cy);if(!hit)return;
+  if(ed.tool==='erase'){if(!hit.part)return;edPush();const m=edMirrorOf(hit.part);edDel(hit.part);if(m)edDel(m);edRebuild();edHover(cx,cy);return;}
+  const pl=placementFor(hit);if(!pl)return;
+  if(!pl.valid[0]){toast(pl.list[0].y+P[pl.list[0].t].sz[1]-1>YMAX||!cellsOf(pl.list[0].t,pl.list[0].x,pl.list[0].y,pl.list[0].z,pl.list[0].r).every(inB)?'範囲外です':'他のブロックと重なっています');return;}
+  edPush();pl.list.forEach((p,i)=>{if(pl.valid[i])edAdd({...p});});edRebuild();if(lastPointerType==='mouse')edHover(cx,cy);}
+
+// ---- ポインター処理 (タップ / ドラッグ判別) ----
+let downInfo=null,activePtr=0,lastPointerType='mouse';
+canvas.addEventListener('pointerdown',e=>{activePtr++;lastPointerType=e.pointerType;
+  downInfo=activePtr===1?{x:e.clientX,y:e.clientY,t:performance.now()}:null;});
+canvas.addEventListener('pointermove',e=>{lastPointerType=e.pointerType;
+  if(downInfo&&Math.hypot(e.clientX-downInfo.x,e.clientY-downInfo.y)>8)downInfo=null;
+  if(mode==='editor'&&e.pointerType==='mouse'&&!e.buttons)edHover(e.clientX,e.clientY);});
+const ptrUp=e=>{activePtr=Math.max(0,activePtr-1);
+  if(e.type==='pointerup'&&downInfo&&performance.now()-downInfo.t<600&&mode==='editor'&&e.button===0)edTap(e.clientX,e.clientY);
+  downInfo=null;};
+canvas.addEventListener('pointerup',ptrUp);canvas.addEventListener('pointercancel',ptrUp);
+canvas.addEventListener('pointerleave',()=>{if(mode==='editor'&&lastPointerType==='mouse')hideGhosts();});
+addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+  if(mode==='editor'){
+    if(e.key==='r'||e.key==='R')$('#t-rot').click();
+    else if(e.key==='e'||e.key==='E')$('#t-mode').click();
+    else if(e.key==='m'||e.key==='M')$('#t-mirror').click();
+    else if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();e.shiftKey?$('#t-redo').click():$('#t-undo').click();}
+    else if((e.ctrlKey||e.metaKey)&&e.key==='y'){e.preventDefault();$('#t-redo').click();}
+  } else if(mode==='battle')helmKey(e.key,true);
+});
+addEventListener('keyup',e=>{if(mode==='battle')helmKey(e.key,false);});
+
+// ---- ファイル操作 ----
+$('#e-back').onclick=()=>goMenu();
+$('#e-save').onclick=()=>{const name=(ed.name||'無名艦').trim();const i=designs.findIndex(d=>d.name===name);
+  const sp={name,parts:edSnap()};if(i>=0)designs[i]=sp;else designs.push(sp);saveDesigns();toast(`「${name}」を保存しました`);};
+$('#e-file').onclick=()=>{
+  const box=el('<div></div>');
+  box.appendChild(el('<h4 style="margin-top:0">新規作成</h4>'));
+  const newRow=el('<div style="display:flex;gap:6px;flex-wrap:wrap"></div>');
+  const nb=el('<button>空のドック</button>');nb.onclick=()=>{edPush();edLoad([],'新しい艦');closeModal();};newRow.appendChild(nb);
+  for(const id in PRESETS){const b=el(`<button>${esc(PRESETS[id].name)}</button>`);b.onclick=()=>{edPush();const s=presetSpec(id);edLoad(s.parts,s.name.replace(/「|」/g,' ').trim()+' 改');closeModal();};newRow.appendChild(b);}
+  box.appendChild(newRow);
+  box.appendChild(el('<h4>保存した艦</h4>'));
+  if(!designs.length)box.appendChild(el('<div class="d" style="color:var(--muted)">まだありません。「💾 保存」で保存できます。</div>'));
+  designs.forEach((d,i)=>{const st=analyze(d.parts.map(a=>({t:a[0],x:a[1],y:a[2],z:a[3],r:a[4]||0})));
+    const it=el(`<div class="item"><div class="grow"><div class="t">${esc(d.name)}</div><div class="d">ブロック${st.n} / コスト${st.cost} / ${(st.spd*2.2).toFixed(1)}kt</div></div></div>`);
+    const lb=el('<button>読込</button>');lb.onclick=()=>{edPush();edLoad(d.parts,d.name);closeModal();};
+    const db=el('<button class="dng">削除</button>');db.onclick=()=>{if(confirm(`「${d.name}」を削除しますか？`)){designs.splice(i,1);saveDesigns();closeModal();$('#e-file').click();}};
+    it.appendChild(lb);it.appendChild(db);box.appendChild(it);});
+  box.appendChild(el('<h4>共有コード</h4>'));
+  const ta=el('<textarea placeholder="ここに共有コードを貼り付けて「コード読込」"></textarea>');box.appendChild(ta);
+  const row=el('<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"></div>');
+  const ex=el('<button>現在の艦をコード化</button>');ex.onclick=()=>{ta.value=encodeSpec({name:ed.name,parts:edSnap()});ta.select();try{navigator.clipboard.writeText(ta.value);toast('コピーしました');}catch(e){}};
+  const im=el('<button>コード読込</button>');im.onclick=()=>{try{const s=decodeSpec(ta.value);edPush();edLoad(s.parts,s.name);closeModal();toast('読み込みました');}catch(e){alert('コードが正しくありません');}};
+  row.appendChild(ex);row.appendChild(im);box.appendChild(row);
+  modal('ファイル',box);
+};
+$('#e-go').onclick=()=>{const s=ed.stats;if(s.sink){alert('この艦は浮きません。船体ブロックを増やしてください。');return;}
+  if(!Object.keys(s.wc).length){alert('兵装がありません。兵装タブから砲を配置してください。');return;}
+  openSortie();};
+
+// ================================================================
+//  艦 (戦闘用)
+// ================================================================
+const _v1=new THREE.Vector3(),_v2=new THREE.Vector3(),_v3=new THREE.Vector3();
+class Ship{
+  constructor(spec,team){
+    this.name=spec.name;this.team=team;this.cells=new Map();this.hydro=new Hydro();this.initDisp=0;this.parts=[];
+    let minZ=99,maxZ=-99,maxY=0,rad=0;
+    for(const a of spec.parts){const p={t:a[0],x:a[1],y:a[2],z:a[3],r:a[4]||0};if(!P[p.t])continue;
+      p.cells=cellsOf(p.t,p.x,p.y,p.z,p.r);if(!p.cells.every(inB)||p.cells.some(c=>this.cells.has(key(...c))))continue;
+      p.ctr=centerOf(p.t,p.x,p.y,p.z,p.r);const d=P[p.t];p.hp=d.hp;p.alive=true;
+      for(const c of p.cells){this.cells.set(key(...c),p);minZ=Math.min(minZ,c[2]);maxZ=Math.max(maxZ,c[2]);maxY=Math.max(maxY,c[1]);rad=Math.max(rad,Math.hypot(c[0],c[2]));}
+      this.hydro.addPart(p,1);this.initDisp+=d.d*p.cells.length;this.parts.push(p);}
+    this.aliveDisp=this.initDisp;this.minZ=minZ;this.maxZ=maxZ;this.len=maxZ-minZ+1;this.topY=maxY+1;this.radius=rad+3;
+    let mxl=0;for(let y=0;y<=YMAX;y++)mxl=Math.max(mxl,this.hydro.lv[y]);this.deckY=0;for(let y=0;y<=YMAX;y++)if(this.hydro.lv[y]>=mxl*.5)this.deckY=y+1;
+    const s=this.hydro.solve();this.h=s.h;this.heel=s.heel;this.trim=s.trim;this.h0=s.h;
+    this.hull=buildShipVisual(this.parts,{waterline:s.h});
+    this.root=new THREE.Group();this.tilt=new THREE.Group();this.root.add(this.tilt);this.tilt.add(this.hull);this.hull.position.y=-this.h;
+    this.weapons=this.parts.filter(p=>P[p.t].w).map(p=>({p,w:P[p.t].w,reload:rand(.3,1)*P[p.t].w.reload,yaw:0,base:p.r*Math.PI/2}));
+    this.bridges=this.parts.filter(p=>p.t==='bridge').length;this.power=this.parts.reduce((a,p)=>a+(P[p.t].power||0),0);
+    this.pos=new THREE.Vector3();this.heading=0;this.speed=0;this.throttle=1;this.rudder=0;this.vel=new THREE.Vector3();
+    this.breaches=[];this.fires=[];this.flood=0;this.sinking=false;this.gone=false;this.out=false;this.sinkT=0;
+    this.dmgDealt=0;this.kills=0;this.side=Math.random()<.5?1:-1;this.target=null;this.retarget=0;this.dirty=false;
+    this.invMat=new THREE.Matrix4();this.phase=Math.random()*10;this.fxT=0;this.status='';
+    const ranked=this.weapons.map(x=>({r:x.w.range,v:x.w.dmg*x.w.barrels/x.w.reload})).sort((a,b)=>b.v-a.v);
+    this.prefRange=ranked.length?Math.max(90,ranked[0].r*.72):200;
+    this.updateSpeed();
+  }
+  updateSpeed(){const m=this.hydro.m;this.maxSpd=this.power>0&&m>0?Math.min(24,3+28*Math.sqrt(this.power/m)):0;this.turnRate=0.55/Math.sqrt(Math.max(10,this.len)/20);}
+  place(x,z,hd){this.pos.set(x,0,z);this.heading=hd;this.root.position.copy(this.pos);this.root.rotation.y=hd;}
+  weaponsAlive(){let n=0;for(const w of this.weapons)if(w.p.alive)n++;return n;}
+  destroyPart(p,by){
+    if(!p.alive)return;p.alive=false;const d=P[p.t];
+    for(const c of p.cells)this.cells.delete(key(...c));
+    this.hydro.addPart(p,-1);this.aliveDisp-=d.d*p.cells.length;this.dirty=true;
+    if(p._im){p._im.setMatrixAt(p._i,ZERO_M);p._im.instanceMatrix.needsUpdate=true;}
+    if(p.model)p.model.group.visible=false;
+    if(d.power){this.power-=d.power;}
+    if(p.t==='bridge'){this.bridges--;if(this.bridges===0)blog(`「${this.name}」艦橋大破！命中率低下`,this.team);}
+    if(d.w)blog(`「${this.name}」${d.n} 破壊`,this.team);
+    if(p.y<this.h-0.05&&d.d>0)this.breaches.push({x:p.ctr[0],z:p.ctr[2],left:FLOOD_CAP*(p.cells.length>1?2:1)});
+    if(Math.random()<(d.w?.6:.12)&&this.fires.length<8)this.fires.push({x:p.ctr[0],y:p.y+.5,z:p.ctr[2],t:rand(15,40),e:0});
+    this.updateSpeed();
+    if(by&&!this.out&&this.weaponsAlive()===0){this.out=true;this.status='戦闘不能';blog(`「${this.name}」戦闘不能！`,this.team);by.kills++;}
+  }
+  damage(p,dmg,pen,by){
+    if(!p.alive)return;const d=P[p.t];const eff=d.ar>0?dmg*clamp(pen/d.ar,.08,1):dmg;
+    const done=Math.min(p.hp,eff);p.hp-=eff;if(by)by.dmgDealt+=done;
+    if(p.hp<=0)this.destroyPart(p,by);
+  }
+  hit(p,lp,sh){
+    this.damage(p,sh.dmg,sh.pen,sh.owner);
+    const r=sh.splash;if(r>0){const seen=new Set([p]);const r2=r*r;
+      for(let x=Math.floor(lp.x-r);x<=Math.ceil(lp.x+r);x++)for(let y=Math.max(0,Math.floor(lp.y-r));y<=Math.min(YMAX,Math.ceil(lp.y+r));y++)for(let z=Math.floor(lp.z-r);z<=Math.ceil(lp.z+r);z++){
+        if(x<XMIN||x>XMAX||z<ZMIN||z>ZMAX)continue;const q=this.cells.get(key(x,y,z));if(!q||seen.has(q))continue;
+        const dd=(x-lp.x)**2+(y+.5-lp.y)**2+(z-lp.z)**2;if(dd>r2)continue;seen.add(q);this.damage(q,sh.dmg*.55*(1-Math.sqrt(dd)/r),sh.pen*.7,sh.owner);}}
+  }
+  startSinking(by){if(this.sinking)return;this.sinking=true;this.out=true;this.status='撃沈';
+    this.sinkHeel=(Math.abs(this.heel)>.05?Math.sign(this.heel):(Math.random()<.5?-1:1))*rand(.4,1.4);this.sinkTrim=rand(-.25,.25);
+    blog(`★「${this.name}」撃沈！`,this.team);sfxAt(this.pos,1.5,700,2.5);
+    for(let i=0;i<6;i++){const p=this.parts[(Math.random()*this.parts.length)|0];if(p)this.fires.push({x:p.ctr[0],y:p.y+.5,z:p.ctr[2],t:30,e:0});}}
+  update(dt,t){
+    // 浸水
+    for(const b of this.breaches){if(b.left<=0)continue;const a=Math.min(b.left,FLOOD_RATE*dt);b.left-=a;this.hydro.addMass(a,b.x,b.z);this.flood+=a;this.dirty=true;}
+    if(this.dirty){this.dirty=false;this.updateSpeed();const s=this.hydro.solve();this.tH=s.h;this.tHeel=s.heel;this.tTrim=s.trim;
+      if(!this.sinking&&(s.sink||this.aliveDisp/this.initDisp<COLLAPSE||Math.abs(this.heel)>1.0||this.tH>this.deckY-0.15))this.startSinking();}
+    if(this.tH!=null&&!this.sinking){const k=Math.min(1,dt*.7);this.h+=(this.tH-this.h)*k;this.heel+=(this.tHeel-this.heel)*k;this.trim+=(this.tTrim-this.trim)*k;}
+    // 移動
+    const mx=this.sinking?0:this.maxSpd;const tgtSpd=this.throttle*mx;this.speed+=(tgtSpd-this.speed)*Math.min(1,dt*.18);
+    if(!this.sinking){const tf=Math.min(1,.25+Math.abs(this.speed)/Math.max(4,this.maxSpd));this.heading+=this.rudder*this.turnRate*tf*dt;}
+    this.vel.set(Math.sin(this.heading)*this.speed,0,Math.cos(this.heading)*this.speed);
+    this.pos.addScaledVector(this.vel,dt);this.root.position.copy(this.pos);this.root.rotation.y=this.heading;
+    // 姿勢
+    const bob=Math.sin(t*.8+this.phase)*.12,rb=Math.sin(t*.6+this.phase*2)*.012,pb=Math.sin(t*.45+this.phase)*.006;
+    this.hull.position.y=-this.h;
+    if(this.sinking){this.sinkT+=dt;const k=Math.min(1,this.sinkT/9);
+      this.tilt.rotation.set(this.trim+(this.sinkTrim-this.trim)*k,0,this.heel+(this.sinkHeel-this.heel)*k);
+      this.tilt.position.y-=(.25+this.sinkT*.12)*dt;
+      if(this.tilt.position.y<-(this.topY+6)){this.gone=true;this.root.visible=false;}
+      if(Math.random()<dt*20){_v1.set(rand(-3,3),0,rand(this.minZ,this.maxZ));this.root.localToWorld(_v1);_v1.y=0.2;fxNorm.emit(_v1.x,.2,_v1.z,rand(-1,1),rand(1,3),rand(-1,1),rand(1,2),1,3,.9,.95,1,.7,2,.5);}
+    } else {this.tilt.position.y=bob;this.tilt.rotation.set(this.trim+pb,0,this.heel+rb-this.rudder*this.speed*.0025);}
+    // エフェクト
+    this.fxT+=dt;if(this.fxT>.06&&!this.gone){this.fxT=0;
+      for(const f of this.fires){f.t-=.06;if(f.t<=0)continue;_v1.set(f.x,f.y,f.z);this.hull.localToWorld(_v1);if(_v1.y>0.2){fxFire(_v1);if(Math.random()<.6)fxSmoke(_v1,.15);}}
+      this.fires=this.fires.filter(f=>f.t>0);
+      if(Math.abs(this.speed)>1.5&&!this.sinking){const sp=Math.abs(this.speed);
+        _v1.set(rand(-1,1),0,this.minZ-0.5);this.root.localToWorld(_v1);fxNorm.emit(_v1.x,.25,_v1.z,rand(-1,1),.3,rand(-1,1),rand(4,7),1.4,4.5,.92,.96,1,.55,0,.3);
+        for(const s of [-1,1]){_v1.set(s*1.2,0,this.maxZ-2);this.root.localToWorld(_v1);_v2.set(s*sp*.25,0,0).applyAxisAngle(THREE.Object3D.DEFAULT_UP,this.heading);
+          fxNorm.emit(_v1.x,.3,_v1.z,_v2.x,rand(.5,1.5),_v2.z,rand(1.5,2.5),.8,2.6,.95,.98,1,.6,1.5,.6);}
+        if(this.power>0&&Math.random()<.5)for(const p of this.parts)if(p.t==='funnel'&&p.alive&&Math.random()<.5){_v1.set(p.ctr[0],p.y+2.1,p.ctr[2]);this.hull.localToWorld(_v1);fxNorm.emit(_v1.x,_v1.y,_v1.z,rand(-.3,.3),1.5,rand(-.3,.3),rand(3,5),.8,4,.35,.35,.37,.35,-.2,.3);}
+      }}
+  }
+}
+
+// ================================================================
+//  戦闘
+// ================================================================
+const battle={ships:[],shells:[],torps:[],time:0,speed:1,over:false,follow:0,manual:false,stage:-1,hudT:0,helm:{up:0,down:0,left:0,right:0}};
+const shellMesh=new THREE.InstancedMesh(new THREE.SphereGeometry(1,6,4),new THREE.MeshBasicMaterial({color:0xffe08a,fog:false}),800);
+shellMesh.frustumCulled=false;shellMesh.count=0;seaScene.add(shellMesh);
+const torpMesh=new THREE.InstancedMesh(new THREE.CylinderGeometry(.16,.16,2.2,6).rotateX(Math.PI/2),new THREE.MeshStandardMaterial({color:0x2a2f33}),200);
+torpMesh.frustumCulled=false;torpMesh.count=0;seaScene.add(torpMesh);
+const battleRoot=new THREE.Group();seaScene.add(battleRoot);
+
+function blog(msg,team){const b=$('#blog');const d=document.createElement('div');d.textContent=msg;d.style.color=team===0?'#ffb0b8':'#ffe08a';b.appendChild(d);while(b.children.length>6)b.firstChild.remove();setTimeout(()=>d.remove(),6000);}
+
+function startBattle(mySpecs,enemySpecs,stage=-1){
+  clearBattle();battle.stage=stage;battle.over=false;battle.time=0;battle.follow=0;battle.camMode='own';
+  const mk=(specs,team)=>specs.forEach((sp,i)=>{const s=new Ship(sp,team);const off=(i%2?1:-1)*Math.ceil(i/2)*80;
+    const z=team===0?-280:280;s.place(off+rand(-10,10),z+rand(-20,20),team===0?0:Math.PI);s.throttle=1;battle.ships.push(s);battleRoot.add(s.root);});
+  mk(mySpecs,0);mk(enemySpecs,1);
+  buildHud();setMode('battle');
+  const me=battle.ships[0];controls.target.copy(me.pos).setY(4);camera.position.set(me.pos.x-70,45,me.pos.z-90);
+  $('#bigmsg').textContent='';showBig('戦闘開始',1800);
+  $('#b-speed').textContent='速度 x'+battle.speed;
+}
+function clearBattle(){for(const s of battle.ships)battleRoot.remove(s.root);battle.ships=[];battle.shells=[];battle.torps=[];fxAdd.clear();fxNorm.clear();shellMesh.count=0;torpMesh.count=0;$('#blog').innerHTML='';}
+function showBig(t,ms){const b=$('#bigmsg');b.textContent=t;clearTimeout(showBig._t);if(ms)showBig._t=setTimeout(()=>b.textContent='',ms);}
+
+function buildHud(){for(const team of [0,1]){const f=$('#f'+team);f.innerHTML='';
+  battle.ships.filter(s=>s.team===team).forEach(s=>{const c=el(`<div class="sc"><div class="nm"><span>${esc(s.name)}</span><span class="st"></span></div><div class="bar"><i></i></div><div class="bar fl"><i></i></div></div>`);
+    s.hud={el:c,st:c.querySelector('.st'),hp:c.querySelector('.bar i'),fl:c.querySelector('.bar.fl i')};f.appendChild(c);});}}
+function updateHud(){for(const s of battle.ships){const h=s.hud;if(!h)continue;
+  h.hp.style.width=clamp((s.aliveDisp/s.initDisp-COLLAPSE)/(1-COLLAPSE),0,1)*100+'%';
+  h.fl.style.width=clamp((s.deckY-0.15-s.h)/(s.deckY-0.15-s.h0),0,1)*100+'%';
+  h.st.textContent=s.status||(s.flood>1?'浸水中':'')+(s.bridges===0&&!s.status?' 艦橋損傷':'');h.el.classList.toggle('dead',s.out);}
+  const me=battle.ships.find(s=>s.team===0&&!s.out);
+  if(battle.manual&&me)$('#helmInfo').textContent=`速力 ${(me.speed*2.2).toFixed(1)}kt / 舵 ${me.rudder>0.05?'左':me.rudder<-0.05?'右':'中央'} / 出力 ${Math.round(me.throttle*100)}%`;
+}
+
+function nearestEnemy(s){let best=null,bd=1e9;for(const o of battle.ships){if(o.team===s.team||o.out)continue;const d=o.pos.distanceToSquared(s.pos);if(d<bd){bd=d;best=o;}}return best;}
+function aiSteer(s,dt){
+  const tg=s.target;if(!tg){s.throttle=.4;s.rudder=0;return;}
+  _v1.subVectors(tg.pos,s.pos);const d=_v1.length();_v1.divideScalar(d||1);
+  const k=clamp((d-s.prefRange)/(s.prefRange*.5),-1,1);
+  const tx=_v1.z*s.side,tz=-_v1.x*s.side;
+  let dx=tx*(1-Math.abs(k)*.6)+_v1.x*k,dz=tz*(1-Math.abs(k)*.6)+_v1.z*k;
+  const r=Math.hypot(s.pos.x,s.pos.z);if(r>650){dx-=s.pos.x/r*(r-650)/80;dz-=s.pos.z/r*(r-650)/80;}
+  // 味方との衝突回避
+  for(const o of battle.ships){if(o===s||o.gone)continue;const ox=s.pos.x-o.pos.x,oz=s.pos.z-o.pos.z,od=Math.hypot(ox,oz);const lim=(s.len+o.len)*.6;if(od<lim&&od>0){dx+=ox/od*1.5;dz+=oz/od*1.5;}}
+  const want=Math.atan2(dx,dz);const err=wrapA(want-s.heading);s.rudder=clamp(err*2.2,-1,1);s.throttle=1;
+}
+function helmKey(k,down){const m={w:'up',ArrowUp:'up',s:'down',ArrowDown:'down',a:'left',ArrowLeft:'left',d:'right',ArrowRight:'right'}[k];if(m)battle.helm[m]=down?1:0;}
+document.querySelectorAll('#helm button').forEach(b=>{const h=b.dataset.h;
+  b.addEventListener('pointerdown',e=>{e.preventDefault();battle.helm[h]=1;});
+  for(const ev of ['pointerup','pointerleave','pointercancel'])b.addEventListener(ev,()=>battle.helm[h]=0);});
+function manualSteer(s,dt){const H=battle.helm;
+  if(H.up)s.throttle=Math.min(1,s.throttle+dt*.6);if(H.down)s.throttle=Math.max(-.4,s.throttle-dt*.6);
+  const want=(H.left?1:0)-(H.right?1:0);s.rudder+=(want-s.rudder)*Math.min(1,dt*3);
+}
+
+function ballistic(dx,dy,v){const v2=v*v,disc=v2*v2-G*(G*dx*dx+2*dy*v2);if(disc<0)return null;return Math.atan((v2-Math.sqrt(disc))/(G*dx));}
+const _aim=new THREE.Vector3(),_wp=new THREE.Vector3(),_la=new THREE.Vector3(),_dir=new THREE.Vector3();
+function updateWeapons(s,dt){
+  if(s.out)return;const tg=s.target;
+  const bf=s.bridges>0?1:2.6;
+  for(const W of s.weapons){const p=W.p;if(!p.alive||!p.model)continue;W.reload-=dt;const w=W.w,m=p.model;
+    let want=0,ok=false;
+    if(tg&&!tg.gone){
+      if(!W.aimPart||!W.aimPart.alive||Math.random()<dt*.3){W.aimPart=tg.parts[(Math.random()*tg.parts.length)|0];if(!W.aimPart.alive)W.aimPart=null;}
+      const ap=W.aimPart;if(ap){
+        _aim.set(ap.ctr[0],ap.y+.5,ap.ctr[2]);tg.hull.localToWorld(_aim);m.group.getWorldPosition(_wp);
+        const dist=Math.hypot(_aim.x-_wp.x,_aim.z-_wp.z);
+        if(dist<=w.range){
+          // 偏差射撃
+          let tt=w.torp?dist/w.spd:0;
+          if(!w.torp){const th=ballistic(dist,_aim.y-_wp.y,w.v)??0.78;tt=dist/(w.v*Math.cos(th));}
+          _aim.addScaledVector(tg.vel,tt);
+          if(w.torp){const d2=Math.hypot(_aim.x-_wp.x,_aim.z-_wp.z);_aim.copy(tg.pos).addScaledVector(tg.vel,d2/w.spd);}
+          _la.copy(_aim).applyMatrix4(s.invMat);
+          want=wrapA(Math.atan2(_la.x-m.group.position.x,_la.z-m.group.position.z)-W.base);
+          ok=true;
+          if(!w.torp){const th=ballistic(dist,_aim.y-_wp.y,w.v);m.pitch.rotation.x=-(th??0.78);}
+        }
+      }
+    }
+    const err=wrapA(want-W.yaw);const stp=w.yaw*dt;W.yaw+=clamp(err,-stp,stp);m.yaw.rotation.y=W.yaw;
+    if(!ok&&!w.torp)m.pitch.rotation.x*=0.95;
+    if(ok&&Math.abs(err)<0.05&&W.reload<=0){W.reload=w.reload*rand(.92,1.08);fire(s,W,_aim.clone(),bf);}
+  }
+}
+function fire(s,W,aim,bf){const w=W.w,m=W.p.model;
+  const tgt=aim;m.group.getWorldPosition(_wp);const dist=Math.hypot(tgt.x-_wp.x,tgt.z-_wp.z);
+  m.muzzles.forEach((mz,i)=>{
+    const mp=new THREE.Vector3();mz.getWorldPosition(mp);
+    if(w.torp){const spread=(i-(m.muzzles.length-1)/2)*0.05+gauss()*w.spread*bf*.4;const a=Math.atan2(tgt.x-mp.x,tgt.z-mp.z)+spread;
+      const v=new THREE.Vector3(Math.sin(a)*w.spd,0,Math.cos(a)*w.spd);mp.y=-0.5;
+      battle.torps.push({pos:mp,vel:v,owner:s,team:s.team,dmg:w.dmg,pen:w.pen,splash:w.splash,life:w.range/w.spd,wk:0});
+      fxSplash(mp,.4);return;}
+    const sg=w.spread*dist*bf;const ax=tgt.x+gauss()*sg,az=tgt.z+gauss()*sg*1.6,ay=tgt.y;
+    const dx=Math.hypot(ax-mp.x,az-mp.z);const th=ballistic(dx,ay-mp.y,w.v)??0.785;
+    const hx=(ax-mp.x)/dx,hz=(az-mp.z)/dx;
+    const vel=new THREE.Vector3(hx*Math.cos(th)*w.v,Math.sin(th)*w.v,hz*Math.cos(th)*w.v);
+    battle.shells.push({pos:mp,prev:mp.clone(),vel,owner:s,team:s.team,dmg:w.dmg,pen:w.pen,splash:w.splash,cal:w.cal,life:20});
+    _dir.copy(vel).normalize();if(w.cal>0.15||Math.random()<.3)fxMuzzle(mp,_dir,w.cal*3);
+  });
+  const big=w.cal;sfxAt(_wp,big>.4?1.6:big>.25?1.0:big>.15?.6:.18,big>.4?900:big>.25?1400:2600,big>.4?1.6:big>.25?.9:.35);
+}
+const _lp=new THREE.Vector3(),_pt=new THREE.Vector3(),_m4=new THREE.Matrix4();
+function findHit(pt,team){
+  for(const s of battle.ships){if(s.team===team||s.gone)continue;
+    const dx=pt.x-s.pos.x,dz=pt.z-s.pos.z;if(dx*dx+dz*dz>s.radius*s.radius)continue;
+    _lp.copy(pt).applyMatrix4(s.invMat);const ix=Math.round(_lp.x),iy=Math.floor(_lp.y),iz=Math.round(_lp.z);
+    if(ix<XMIN||ix>XMAX||iy<0||iy>YMAX||iz<ZMIN||iz>ZMAX)continue;
+    const p=s.cells.get(key(ix,iy,iz));if(p)return {s,p,lp:_lp.clone()};}
+  return null;}
+function updateShells(dt){
+  const arr=battle.shells;
+  for(let i=arr.length-1;i>=0;i--){const sh=arr[i];sh.prev.copy(sh.pos);sh.vel.y-=G*dt;sh.pos.addScaledVector(sh.vel,dt);sh.life-=dt;
+    let hit=null;const len=sh.prev.distanceTo(sh.pos),n=Math.max(1,Math.ceil(len/0.45));
+    let near=false;for(const s of battle.ships){if(s.team===sh.team||s.gone)continue;const dx=sh.pos.x-s.pos.x,dz=sh.pos.z-s.pos.z,r=s.radius+len;if(dx*dx+dz*dz<r*r&&sh.pos.y<s.topY+4){near=true;break;}}
+    if(near)for(let k=1;k<=n;k++){_pt.lerpVectors(sh.prev,sh.pos,k/n);hit=findHit(_pt,sh.team);if(hit){sh.pos.copy(_pt);break;}}
+    if(hit){hit.s.hit(hit.p,hit.lp,sh);fxExplode(sh.pos,Math.max(.5,sh.cal*3.2));sfxAt(sh.pos,sh.cal>.25?1.1:.35,sh.cal>.25?1100:2400,sh.cal>.25?1.1:.3);arr.splice(i,1);continue;}
+    if(sh.pos.y<0||sh.life<=0){if(sh.pos.y<0){fxSplash(sh.pos,Math.max(.35,sh.cal*2.6));if(sh.cal>.25)sfxAt(sh.pos,.4,500,.8);}arr.splice(i,1);continue;}
+    if(sh.cal>.15&&Math.random()<.7)fxAdd.emit(sh.pos.x,sh.pos.y,sh.pos.z,0,0,0,.18,sh.cal*2,sh.cal*.5,1,.5,.15,.45);
+  }
+  const m=new THREE.Matrix4(),n=Math.min(arr.length,800);
+  for(let i=0;i<n;i++){const sh=arr[i];const s=Math.max(.18,sh.cal);m.makeScale(s,s,s).setPosition(sh.pos);shellMesh.setMatrixAt(i,m);}
+  shellMesh.count=n;shellMesh.instanceMatrix.needsUpdate=true;
+}
+function updateTorps(dt){
+  const arr=battle.torps;
+  for(let i=arr.length-1;i>=0;i--){const t=arr[i];const prev=t.pos.clone();t.pos.addScaledVector(t.vel,dt);t.life-=dt;let hit=null;
+    const n=Math.max(1,Math.ceil(prev.distanceTo(t.pos)/.5));
+    for(let k=1;k<=n&&!hit;k++){_pt.lerpVectors(prev,t.pos,k/n);hit=findHit(_pt,t.team);}
+    if(hit){hit.s.hit(hit.p,hit.lp,t);_v3.set(t.pos.x,.5,t.pos.z);fxExplode(_v3,2.2);fxSplash(_v3,2.6);sfxAt(t.pos,1.5,600,1.8);blog(`「${hit.s.name}」に魚雷命中！`,hit.s.team);arr.splice(i,1);continue;}
+    if(t.life<=0){arr.splice(i,1);continue;}
+    t.wk+=dt;if(t.wk>.05){t.wk=0;fxNorm.emit(t.pos.x,.15,t.pos.z,rand(-.3,.3),.2,rand(-.3,.3),rand(3,5),.6,2,.95,.98,1,.6,0,.3);}
+  }
+  const m=new THREE.Matrix4(),q=new THREE.Quaternion(),sc=new THREE.Vector3(1,1,1);const n=Math.min(arr.length,200);
+  for(let i=0;i<n;i++){const t=arr[i];q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP,Math.atan2(t.vel.x,t.vel.z));m.compose(t.pos,q,sc);torpMesh.setMatrixAt(i,m);}
+  torpMesh.count=n;torpMesh.instanceMatrix.needsUpdate=true;
+}
+function updateBattle(dt){
+  battle.time+=dt;const ships=battle.ships;
+  for(const s of ships){if(s.gone)continue;
+    s.retarget-=dt;if(s.retarget<=0||!s.target||s.target.out){s.target=nearestEnemy(s);s.retarget=3;}
+    const manual=battle.manual&&s.team===0&&s===battle.ships.find(x=>x.team===0&&!x.out);
+    if(s.out){s.throttle=Math.max(0,s.throttle-dt*.2);s.rudder*=.98;}
+    else if(manual)manualSteer(s,dt);else aiSteer(s,dt);
+    s.update(dt,battle.time);}
+  // 艦同士の衝突
+  for(let i=0;i<ships.length;i++)for(let j=i+1;j<ships.length;j++){const a=ships[i],b=ships[j];if(a.gone||b.gone)continue;
+    const dx=b.pos.x-a.pos.x,dz=b.pos.z-a.pos.z,d=Math.hypot(dx,dz),lim=(a.len+b.len)*.28;if(d<lim&&d>0){const push=(lim-d)/2;a.pos.x-=dx/d*push;a.pos.z-=dz/d*push;b.pos.x+=dx/d*push;b.pos.z+=dz/d*push;}}
+  for(const s of ships){if(s.gone)continue;s.root.updateMatrixWorld(true);s.invMat.copy(s.hull.matrixWorld).invert();}
+  for(const s of ships)if(!s.gone)updateWeapons(s,dt);
+  updateShells(dt);updateTorps(dt);
+  if(!battle.over){const a0=ships.some(s=>s.team===0&&!s.out),a1=ships.some(s=>s.team===1&&!s.out);
+    if(!a0||!a1){battle.over=true;const win=a0;showBig(win?'勝利':'敗北');setTimeout(()=>showResult(win),3500);}}
+}
+
+// ---- カメラ ----
+function followTarget(){const own=battle.ships.filter(s=>s.team===0&&!s.gone),en=battle.ships.filter(s=>s.team===1&&!s.gone);
+  if(battle.camMode==='own'){const l=own.length?own:battle.ships;return l[battle.follow%l.length]?.pos;}
+  if(battle.camMode==='enemy'){const l=en.length?en:battle.ships;return l[battle.follow%l.length]?.pos;}
+  const all=battle.ships.filter(s=>!s.gone);if(!all.length)return null;const c=new THREE.Vector3();all.forEach(s=>c.add(s.pos));return c.divideScalar(all.length);}
+const _ct=new THREE.Vector3();
+function updateBattleCam(dt){const p=followTarget();if(!p)return;_ct.set(p.x,4,p.z);const d=_ct.sub(controls.target).multiplyScalar(Math.min(1,dt*3));
+  controls.target.add(d);camera.position.add(d);}
+$('#b-cam').onclick=()=>{const modes=['own','enemy','all'];const own=battle.ships.filter(s=>s.team===0&&!s.gone).length,en=battle.ships.filter(s=>s.team===1&&!s.gone).length;
+  if(battle.camMode==='own'&&battle.follow+1<own)battle.follow++;else if(battle.camMode==='enemy'&&battle.follow+1<en)battle.follow++;
+  else{battle.camMode=modes[(modes.indexOf(battle.camMode)+1)%3];battle.follow=0;}
+  $('#b-cam').textContent='📷 '+({own:'自艦',enemy:'敵艦',all:'全体'})[battle.camMode]+(battle.camMode!=='all'?(battle.follow+1):'');};
+$('#b-speed').onclick=()=>{battle.speed=battle.speed>=4?1:battle.speed*2;$('#b-speed').textContent='速度 x'+battle.speed;};
+$('#b-manual').onclick=()=>{battle.manual=!battle.manual;$('#b-manual').textContent='操舵: '+(battle.manual?'手動':'自動');$('#b-manual').classList.toggle('on',battle.manual);
+  $('#helm').classList.toggle('hidden',!battle.manual);$('#bctl').classList.toggle('man',battle.manual);$('#helmInfo').classList.toggle('hidden',!battle.manual);};
+$('#b-snd').onclick=()=>{muted=!muted;$('#b-snd').textContent=muted?'🔇':'🔊';};
+$('#b-quit').onclick=()=>{if(battle.over){showResult(battle.ships.some(s=>s.team===0&&!s.out));return;}if(confirm('撤退しますか？（敗北扱い）')){battle.over=true;showResult(false);}};
+
+function showResult(win){
+  if(mode!=='battle')return;
+  if(win&&battle.stage>=0&&progress.cleared<=battle.stage){progress.cleared=battle.stage+1;LS.set('bf_progress',progress);}
+  const rows=battle.ships.map(s=>`<div class="item"><div class="grow"><div class="t">${s.team===0?'🔵':'🔴'} ${esc(s.name)}</div><div class="d">与ダメージ ${Math.round(s.dmgDealt)} / 状態: ${s.sinking?'撃沈':s.out?'戦闘不能':'健在'}（残存 ${Math.round(Math.max(0,s.aliveDisp/s.initDisp)*100)}%）</div></div></div>`).join('');
+  const btns=[{label:'建造ドックへ',fn:()=>goEditor()},{label:'メニュー',fn:()=>goMenu()}];
+  if(battle.lastArgs)btns.unshift({label:'再戦',cls:'pri',fn:()=>startBattle(...battle.lastArgs)});
+  if(win&&battle.stage>=0&&battle.stage+1<STAGES.length)btns.unshift({label:'次の海戦へ',cls:'pri',fn:()=>{closeModal();openFleetSelect(battle.stage+1);return false;}});
+  modal(win?'🎉 勝利！':'💥 敗北…',`<div style="margin-bottom:8px">${win?(battle.stage>=0?esc(STAGES[battle.stage].name)+' をクリアしました！':'敵艦隊を撃滅しました！'):'艦の設計を見直して再挑戦しよう。装甲・浮力・兵装のバランスが鍵です。'}</div>${rows}`,btns);
+}
+
+// ================================================================
+//  キャンペーン / フリー / 出撃
+// ================================================================
+const STAGES=[
+  {name:'第1海戦 哨戒線',desc:'敵駆逐艦1隻を撃沈せよ',enemies:['dd']},
+  {name:'第2海戦 水雷戦隊',desc:'魚雷に注意。駆逐艦2隻',enemies:['dd','dd']},
+  {name:'第3海戦 巡洋艦迎撃',desc:'軽巡洋艦と駆逐艦',enemies:['cl','dd']},
+  {name:'第4海戦 重巡部隊',desc:'20cm砲を持つ重巡洋艦が出現',enemies:['ca','cl']},
+  {name:'第5海戦 戦艦出現',desc:'46cm砲搭載の戦艦。装甲は厚い',enemies:['bb']},
+  {name:'第6海戦 主力艦隊',desc:'戦艦・重巡・駆逐の連合艦隊',enemies:['bb','ca','dd']},
+  {name:'最終海戦 超弩級',desc:'46cm三連装砲4基の超弩級戦艦',enemies:['bbx','ca','ca']},
+];
+function specList(){const l=[];
+  if(ed.parts.length)l.push({id:'cur',name:ed.name+'（編集中）',spec:{name:ed.name,parts:edSnap()},mine:true});
+  designs.forEach((d,i)=>l.push({id:'d'+i,name:d.name,spec:d,mine:true}));
+  for(const id in PRESETS)l.push({id:'p'+id,name:PRESETS[id].name,spec:presetSpec(id),preset:true});
+  for(const it of l){const s=analyze(it.spec.parts.map(a=>({t:a[0],x:a[1],y:a[2],z:a[3],r:a[4]||0})));it.st=s;it.ok=!s.sink&&Object.keys(s.wc).length>0;}
+  return l;}
+function specDesc(s){return `コスト${s.cost.toLocaleString()} / ${(s.spd*2.2).toFixed(1)}kt / ${Object.entries(s.wc).map(([k,v])=>P[k].n+'×'+v).join(' ')}`;}
+function openCampaign(){const box=el('<div></div>');
+  STAGES.forEach((st,i)=>{const lock=i>progress.cleared;const cost=st.enemies.reduce((a,e)=>a+analyze(presetSpec(e).parts.map(a=>({t:a[0],x:a[1],y:a[2],z:a[3],r:a[4]}))).cost,0);
+    const it=el(`<div class="item ${lock?'lock':''}"><div class="grow"><div class="t">${i<progress.cleared?'✅ ':''}${esc(st.name)}</div><div class="d">${esc(st.desc)}<br>敵: ${st.enemies.map(e=>esc(PRESETS[e].name)).join('、')}（総コスト ${cost.toLocaleString()}）</div></div></div>`);
+    const b=el(`<button ${lock?'disabled':''}>${lock?'🔒':'出撃'}</button>`);if(!lock)b.onclick=()=>{closeModal();openFleetSelect(i);};it.appendChild(b);box.appendChild(it);});
+  modal('キャンペーン',box);}
+function openFleetSelect(stage,preselect){
+  const list=specList();const sel=new Set(preselect||[]);if(!sel.size){const f=list.find(x=>x.ok&&x.mine)||list.find(x=>x.ok);if(f)sel.add(f.id);}
+  const box=el('<div></div>');
+  if(stage>=0)box.appendChild(el(`<div style="margin-bottom:8px"><b>${esc(STAGES[stage].name)}</b><br><span style="color:var(--muted)">出撃する艦を最大3隻選んでください</span></div>`));
+  const render=()=>{box.querySelectorAll('.item').forEach(e=>e.remove());
+    for(const it of list){const e=el(`<div class="item ${sel.has(it.id)?'sel':''} ${it.ok?'':'lock'}"><div class="grow"><div class="t">${sel.has(it.id)?'☑':'☐'} ${esc(it.name)}${it.preset?'<span class="tag">プリセット</span>':''}</div><div class="d">${it.ok?specDesc(it.st):'出撃不可（浮かない/兵装なし）'}</div></div></div>`);
+      if(it.ok)e.onclick=()=>{if(sel.has(it.id))sel.delete(it.id);else if(sel.size<3)sel.add(it.id);else toast('最大3隻です');render();};box.appendChild(e);}};
+  render();
+  modal('出撃艦の選択',box,[{label:'キャンセル'},{label:'出撃！',cls:'pri',fn:()=>{if(!sel.size){toast('艦を選んでください');return false;}
+    const mine=list.filter(x=>sel.has(x.id)).map(x=>x.spec);const en=STAGES[stage].enemies.map(presetSpec);battle.lastArgs=[mine,en,stage];startBattle(mine,en,stage);}}]);
+}
+function openSortie(){ // エディタから
+  openFleetSelect(Math.min(progress.cleared,STAGES.length-1),['cur']);
+}
+function openFree(){
+  const list=specList().filter(x=>x.ok);const cnt=[{},{}];
+  const f=list.find(x=>x.mine)||list[0];if(f)cnt[0][f.id]=1;const e=list.find(x=>x.id==='pdd');if(e)cnt[1][e.id]=1;
+  const box=el('<div></div>');
+  const render=()=>{box.innerHTML='';
+    [0,1].forEach(team=>{box.appendChild(el(`<h4 ${team===0?'style="margin-top:0"':''}>${team===0?'🔵 自軍':'🔴 敵軍'}（最大4隻）</h4>`));
+      for(const it of list){const n=cnt[team][it.id]||0;const row=el(`<div class="item ${n?'sel':''}"><div class="grow"><div class="t">${esc(it.name)}</div><div class="d">${specDesc(it.st)}</div></div><div class="stepper"><button>−</button><b>${n}</b><button>＋</button></div></div>`);
+        const [m,p]=row.querySelectorAll('button');const tot=()=>Object.values(cnt[team]).reduce((a,b)=>a+b,0);
+        m.onclick=()=>{cnt[team][it.id]=Math.max(0,n-1);render();};p.onclick=()=>{if(tot()>=4){toast('最大4隻です');return;}cnt[team][it.id]=n+1;render();};box.appendChild(row);}});};
+  render();
+  modal('フリー海戦',box,[{label:'キャンセル'},{label:'開戦！',cls:'pri',fn:()=>{const sides=[0,1].map(t=>{const a=[];for(const it of list)for(let i=0;i<(cnt[t][it.id]||0);i++)a.push(it.spec);return a;});
+    if(!sides[0].length||!sides[1].length){toast('両軍に1隻以上必要です');return false;}battle.lastArgs=[sides[0],sides[1],-1];startBattle(sides[0],sides[1],-1);}}]);
+}
+function openHelp(){modal('遊び方',`
+<h4 style="margin-top:0">🛠 建造ドック</h4>
+<ul><li><b>タップ/クリック</b>でブロック設置。面をタップするとその隣に置けます。</li>
+<li><b>ドラッグ</b>で視点回転、<b>ピンチ/ホイール</b>でズーム、<b>2本指/右ドラッグ</b>で移動。</li>
+<li>「設置」ボタンで<b>削除モード</b>に切替。「左右対称」で反対舷にも同時配置。</li>
+<li>斜め・傾斜ブロックや砲は「回転」で向きを変更（砲は初期向き）。</li>
+<li>「断面」スライダーで上の層を隠し、船体内部に機関を配置できます。</li>
+<li>キー操作: R=回転 / E=削除切替 / M=対称 / Ctrl+Z=戻す</li></ul>
+<h4>⚖ 浮力と重量</h4>
+<ul><li>ブロックは水面下にある分だけ浮力を生みます。重い砲や装甲を積みすぎると<b>沈みます</b>。</li>
+<li>青い半透明の面が喫水線。喫水線より下の船体は赤く塗られます。</li>
+<li>左右・前後の重量バランスが崩れると艦が傾きます。</li></ul>
+<h4>⚙ 部品</h4>
+<ul><li><b>機関</b>: 多いほど速い。破壊されると減速。</li>
+<li><b>艦橋</b>: 1つ以上必要。全損すると命中率が大きく低下。</li>
+<li><b>装甲</b>: 重いが頑丈。貫通力の低い砲弾をほぼ無効化。</li>
+<li><b>兵装</b>: 機銃(近距離連射)・12.7cm砲・20cm連装砲・46cm三連装砲・魚雷。砲撃は<b>全自動</b>。</li></ul>
+<h4>⚔ 海戦</h4>
+<ul><li>艦は自動で敵を狙い、最適な距離を保って砲撃します。「操舵: 手動」で自分で操艦も可能（WASD / 矢印 / 画面ボタン）。</li>
+<li>喫水線下に穴が開くと<b>浸水</b>し、浮力を失うと撃沈。船体の大部分を失っても撃沈。兵装を全て失うと戦闘不能。</li>
+<li>キャンペーンで勝ち進むと次の海戦が解放されます。</li></ul>`,[{label:'閉じる'}]);}
+
+// ================================================================
+//  モード切替
+// ================================================================
+let mode='menu',showcase=null;
+function setMode(m){mode=m;
+  if(m==='editor'){showScreen('scr-editor');controls.maxPolarAngle=Math.PI*.95;controls.minDistance=5;controls.maxDistance=250;controls.enablePan=true;controls.autoRotate=false;}
+  else if(m==='battle'){showScreen('scr-battle');controls.maxPolarAngle=Math.PI*.47;controls.minDistance=15;controls.maxDistance=900;controls.enablePan=true;controls.autoRotate=false;
+    battleRoot.visible=true;if(showcase)showcase.root.visible=false;}
+  else {showScreen('scr-menu');controls.maxPolarAngle=Math.PI*.47;controls.minDistance=30;controls.maxDistance=300;controls.autoRotate=true;controls.autoRotateSpeed=0.6;}
+  hideGhosts();closeModal();
+}
+function goMenu(){clearBattle();setMode('menu');
+  if(!showcase){showcase=new Ship(presetSpec("bb"),0);showcase.throttle=0;seaScene.add(showcase.root);showcase.place(0,0,0);}
+  showcase.root.visible=true;controls.target.set(0,6,0);camera.position.set(75,22,90);}
+function goEditor(){clearBattle();setMode('editor');renderPalette();edRebuild();edCam();}
+$('#m-edit').onclick=goEditor;$('#m-camp').onclick=openCampaign;$('#m-free').onclick=openFree;$('#m-help').onclick=openHelp;
+
+// 初期化
+{const cur=LS.get('bf_current',null);
+ if(cur&&Array.isArray(cur.parts))edLoad(cur.parts,cur.name||'マイ艦');
+ else {const s=presetSpec('dd');edLoad(s.parts,'マイ駆逐艦');}
+ ed.undo=[];}
+if(innerWidth<560){$('#stats').classList.add('mini');$('#stats-tg').textContent='▸';}
+goMenu();
+
+// ================================================================
+//  メインループ
+// ================================================================
+let last=performance.now();
+function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000);last=now;
+  waterMat.uniforms.uTime.value=now/1000;
+  if(mode==='battle'){const n=battle.speed;for(let i=0;i<n;i++)updateBattle(dt);updateBattleCam(dt);fxAdd.update(dt*n);fxNorm.update(dt*n);
+    battle.hudT-=dt;if(battle.hudT<=0){battle.hudT=.2;updateHud();}}
+  else if(mode==='menu'&&showcase){showcase.update(dt,now/1000);fxAdd.update(dt);fxNorm.update(dt);}
+  const sc=mode==='editor'?editScene:seaScene;
+  if(sc===seaScene){water.position.set(Math.round(camera.position.x/50)*50,0,Math.round(camera.position.z/50)*50);sky.position.copy(camera.position);}
+  controls.update();renderer.render(sc,camera);}
+requestAnimationFrame(loop);
+window.__bf={fxAdd,fxNorm,waterMat,camera,controls,battle,ed,startBattle,presetSpec,analyze,goEditor,goMenu,updateBattle};
+</script>
+</body>
+</html>
