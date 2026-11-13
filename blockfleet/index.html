@@ -36,7 +36,7 @@ input,textarea,select{font:inherit;color:var(--text);background:#081221;border:1
 .logo span{color:var(--accent)}
 .sub{margin:10px 0 26px;color:#d6e6f5;text-shadow:0 2px 10px #000a;font-size:14px}
 .menu-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.menu-btns button{padding:14px;font-size:17px;font-weight:700;background:var(--panel);backdrop-filter:blur(6px)}
+.menu-btns button{padding:12px 6px;font-size:16px;font-weight:700;background:var(--panel);backdrop-filter:blur(6px)}
 .ver{position:absolute;bottom:max(10px,env(safe-area-inset-bottom));left:0;right:0;text-align:center;color:#c9d8e8;font-size:11px;text-shadow:0 1px 4px #000}
 
 /* ---------- editor ---------- */
@@ -121,6 +121,7 @@ label.gl input[type=range]{flex:1;max-width:60%}
 .rew{background:#0b1626;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:8px}
 .rew .row{display:flex;justify-content:space-between;font-size:13px}.rew .tot{border-top:1px solid var(--line);margin-top:4px;padding-top:4px;font-size:15px}.rew .tot b{color:var(--accent)}
 .rankup{margin-top:6px;padding:6px 8px;border-radius:8px;background:#3b2a0a;color:#ffd66b;font-weight:700}
+.rcode{font-size:34px;font-weight:900;letter-spacing:8px;color:var(--accent);margin:2px 0 6px;font-family:monospace}
 #bigmsg{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);font-size:clamp(36px,10vw,80px);font-weight:900;text-shadow:0 4px 30px #000;pointer-events:none;letter-spacing:.1em}
 
 /* ---------- modal ---------- */
@@ -180,9 +181,10 @@ textarea{width:100%;height:120px;font-size:11px;font-family:monospace}
       <button id="m-shop">🏭 工廠</button>
       <button id="m-camp">🎖 キャンペーン</button>
       <button id="m-wave">🌊 連続海戦</button>
+      <button id="m-online">🌐 オンライン</button>
       <button id="m-free">⚔ フリー海戦</button>
       <button id="m-help">❓ 遊び方</button>
-      <button id="m-set" style="grid-column:1/3;padding:10px;font-size:15px">⚙ 設定</button>
+      <button id="m-set">⚙ 設定</button>
     </div>
   </div>
   <div class="ver">BLOCK FLEET v2.0 — 戦って資金を稼ぎ、工廠で兵装を揃えよう</div>
@@ -472,8 +474,8 @@ class Hydro{
     for(let y=0;y<=YMAX;y++){ if(lv[y]>1e-6&&acc+lv[y]>=this.m){h=y+(this.m-acc)/lv[y];break;} acc+=Math.max(0,lv[y]); }
     if(h<0||this.m<=0) return {h:YMAX+1,sink:this.m>0,heel:0,trim:0};
     let bx=0,bz=0;for(let y=0;y<=YMAX;y++){const f=clamp(h-y,0,1);if(f<=0)break;bx+=f*this.lvx[y];bz+=f*this.lvz[y];}
-    const heel=clamp((bx-this.mx)/(this.m*2.5),-1.3,1.3);
-    const trim=clamp(-(bz-this.mz)/(this.m*16),-0.5,0.5);
+    const heel=clamp((bx-this.mx)/(this.m*12),-.12,.12);
+    const trim=clamp(-(bz-this.mz)/(this.m*110),-.035,.035);
     return {h,sink:false,heel,trim};
   }
 }
@@ -540,7 +542,7 @@ const waterMat=new THREE.ShaderMaterial({
     deep:{value:new THREE.Color(0x0a2c48)},shal:{value:new THREE.Color(0x1d6a86)},skyc:{value:new THREE.Color(0xa9c8e4)}},
   vertexShader:`uniform float uTime;varying vec3 vW;varying float vH;
     void main(){vec4 w=modelMatrix*vec4(position,1.);
-      float h=sin(w.x*.045+uTime*1.1)*.38+sin(w.z*.061+uTime*.85)*.32;
+      float h=sin(w.x*.045+uTime*1.1)*.17+sin(w.z*.061+uTime*.85)*.14;
       w.y+=h;vH=h;vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
   fragmentShader:`uniform vec3 uSun,uFog,deep,shal,skyc;uniform float uFogD,uTime;varying vec3 vW;varying float vH;
     vec2 wv(vec2 p,vec2 k,float w,float a){float ph=dot(p,k)+uTime*w;return k*cos(ph)*a;}
@@ -549,9 +551,9 @@ const waterMat=new THREE.ShaderMaterial({
             +wv(p,vec2(-.31,.42),3.7,.035)+wv(p,vec2(.62,.21),5.3,.018)+wv(p,vec2(-.17,-.83),6.1,.012);
       vec3 N=normalize(vec3(-g.x*2.2,1.,-g.y*2.2));
       vec3 V=normalize(cameraPosition-vW);float fr=pow(1.-max(dot(N,V),0.),4.);
-      vec3 c=mix(deep,shal,clamp(vH*.7+.45,0.,1.)*.7);c=mix(c,skyc,clamp(fr,0.,1.)*.75);
+      vec3 c=mix(deep,shal,clamp(vH*1.6+.45,0.,1.)*.7);c=mix(c,skyc,clamp(fr,0.,1.)*.75);
       vec3 H=normalize(uSun+V);c+=pow(max(dot(N,H),0.),900.)*vec3(1.,.93,.8)*.35;
-      c+=smoothstep(.55,.85,vH)*.08;
+      c+=smoothstep(.24,.3,vH)*.08;
       float d=length(cameraPosition-vW);float f=1.-exp(-uFogD*uFogD*d*d);c=mix(c,uFog,clamp(f,0.,1.));
       gl_FragColor=vec4(c,1.);
       #include <tonemapping_fragment>
@@ -959,7 +961,7 @@ function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show'
 function modal(title,body,buttons=[]){$('#mtitle').textContent=title;const mb=$('#mbody');mb.innerHTML='';if(typeof body==='string')mb.innerHTML=body;else mb.appendChild(body);
   const f=$('#mfoot');f.innerHTML='';for(const b of buttons){const e=document.createElement('button');e.textContent=b.label;if(b.cls)e.className=b.cls;e.onclick=()=>{if(b.fn&&b.fn()===false)return;closeModal();};f.appendChild(e);}
   f.classList.toggle('hidden',!buttons.length);$('#modal').classList.remove('hidden');}
-function closeModal(){$('#modal').classList.add('hidden');}
+function closeModal(){$('#modal').classList.add('hidden');try{NET.lobby=false;}catch(e){}}
 $('#mclose').onclick=closeModal;
 $('#modal').addEventListener('pointerdown',e=>{if(e.target.id==='modal')closeModal();});
 function el(html){const d=document.createElement('div');d.innerHTML=html.trim();return d.firstElementChild;}
@@ -1018,8 +1020,8 @@ function renderStats(){const s=ed.stats;const w=s.wc;
   if(s.n&&!s.armed)warns.push('⚠ 兵装なし');
   if(s.np-s.planes.H>0&&s.fdeck<MIN_FDECK)warns.push(`⚠ 飛行甲板が不足（${s.fdeck}/${MIN_FDECK}）：艦載機を発艦できません`);
   if(s.planes.H&&!s.heli)warns.push('⚠ ヘリ甲板がありません：ヘリを発艦できません');
-  if(!s.sink&&Math.abs(s.heel)>0.05)warns.push(`⚠ 傾斜 ${(s.heel*57.3).toFixed(1)}°（左右の重量差）`);
-  if(!s.sink&&Math.abs(s.trim)>0.05)warns.push(`⚠ トリム ${(s.trim*57.3).toFixed(1)}°（前後の重量差）`);
+  if(!s.sink&&Math.abs(s.heel)>0.03)warns.push(`⚠ 傾斜 ${(s.heel*57.3).toFixed(1)}°（左右の重量差）`);
+  if(!s.sink&&Math.abs(s.trim)>0.02)warns.push(`⚠ トリム ${(s.trim*57.3).toFixed(1)}°（前後の重量差）`);
   const miss=missing(ed.parts);if(miss.length)warns.push(`⚠ 未所持パーツ ${miss.reduce((a,x)=>a+x.n,0)}個（購入費 ${fmtG(missingCost(miss))}）`);
   const fb=s.sink?0:s.H-s.h;
   const wl=Object.entries(w).map(([k,v])=>`${P[k].n}×${v}`).join('、')||'なし';
@@ -1343,12 +1345,11 @@ class Ship{
   startSinking(by){if(this.sinking)return;this.sinking=true;this.out=true;this.status='撃沈';
     this.sinkHeel=(Math.abs(this.heel)>.05?Math.sign(this.heel):(Math.random()<.5?-1:1))*rand(.4,1.4);this.sinkTrim=rand(-.25,.25);
     if(by)by.kills++;if(typeof onShipSunk==='function')onShipSunk(this,by);
-    blog(`★「${this.name}」撃沈！`,this.team);floatText(this.pos,'撃沈！','big '+(this.team===1?'y':'r'),8);sfxAt(this.pos,1.5,700,2.5);
+    blog(`★「${this.name}」撃沈！`,this.team);floatText(this.pos,'撃沈！','big '+hitCls(this.team),8);sfxAt(this.pos,1.5,700,2.5);
     for(let i=0;i<6;i++){const p=this.parts[(Math.random()*this.parts.length)|0];if(p)this.fires.push({x:p.ctr[0],y:p.y+.5,z:p.ctr[2],t:30});}}
   update(dt,t){
     // 応急修理・レーダー回転
     if(this.dcN>0&&!this.sinking&&this.hp<this.maxHP&&this.healed<this.maxHP*.35){const a=Math.min(this.maxHP-this.hp,this.maxHP*.004*this.dcN*dt);this.hp+=a;this.healed+=a;}
-    for(const p of this.spin)if(p.model)p.model.yaw.rotation.y+=dt*2.2;
     if(this.dummy){if(this.hp<this.maxHP*.25){this.hp=this.maxHP;floatText(this.pos,'標的艦 修復','g',2);}}
     else if(!this.out&&!this.canFight()){this.out=true;this.status='戦闘不能';blog(`「${this.name}」戦闘不能！`,this.team);}
     // 損傷に応じて少し沈み込み・傾く（見た目）
@@ -1367,7 +1368,9 @@ class Ship{
       if(this.tilt.position.y<-(this.topY+6)){this.gone=true;this.root.visible=false;}
       if(Math.random()<dt*20){_v1.set(rand(-3,3),0,rand(this.minZ,this.maxZ));this.root.localToWorld(_v1);_v1.y=0.2;fxNorm.emit(_v1.x,.2,_v1.z,rand(-1,1),rand(1,3),rand(-1,1),rand(1,2),1,3,.9,.95,1,.7,2,.5);}
     } else {this.tilt.position.y=bob;this.tilt.rotation.set(this.trim+pb,0,this.heel+this.dmgHeel*dr+rb-this.rudder*this.speed*.0025);}
-    // エフェクト
+    this.fx(dt);
+  }
+  fx(dt){const dr=1-this.hp/this.maxHP;for(const p of this.spin)if(p.model)p.model.yaw.rotation.y+=dt*2.2;
     this.fxT+=dt;if(this.fxT>.06&&!this.gone){this.fxT=0;
       for(const f of this.fires){f.t-=.06;if(f.t<=0)continue;_v1.set(f.x,f.y,f.z);this.hull.localToWorld(_v1);if(_v1.y>0.2){fxFire(_v1);if(Math.random()<.6)fxSmoke(_v1,.15);}}
       this.fires=this.fires.filter(f=>f.t>0);
@@ -1384,7 +1387,7 @@ class Ship{
 // ================================================================
 //  戦闘
 // ================================================================
-const battle={drops:[0,0],planes:[],missiles:[],airOf:[[],[]],downed:[0,0],ships:[],shells:[],torps:[],time:0,speed:1,over:false,follow:0,manual:false,stage:-1,hudT:0,helm:{up:0,down:0,left:0,right:0}};
+const battle={myTeam:0,net:null,drops:[0,0],planes:[],missiles:[],airOf:[[],[]],downed:[0,0],ships:[],shells:[],torps:[],time:0,speed:1,over:false,follow:0,manual:false,stage:-1,hudT:0,helm:{up:0,down:0,left:0,right:0}};
 const shellMesh=new THREE.InstancedMesh(new THREE.SphereGeometry(1,6,4),new THREE.MeshBasicMaterial({color:0xffe08a,fog:false}),800);
 shellMesh.frustumCulled=false;shellMesh.count=0;seaScene.add(shellMesh);
 const torpMesh=new THREE.InstancedMesh(new THREE.CylinderGeometry(.16,.16,2.2,6).rotateX(Math.PI/2),new THREE.MeshStandardMaterial({color:0x2a2f33}),200);
@@ -1401,19 +1404,20 @@ const missileMesh=new THREE.InstancedMesh(new THREE.CylinderGeometry(.14,.14,1.7
 missileMesh.frustumCulled=false;missileMesh.count=0;seaScene.add(missileMesh);
 const PCOL=[{F:new THREE.Color(0xdfe6ee),B:new THREE.Color(0xc9d6e6),T:new THREE.Color(0xb7cbe0),J:new THREE.Color(0xa9b3c4),X:new THREE.Color(0x9fb6d4),H:new THREE.Color(0xd8dfe6)},{F:new THREE.Color(0x6d7a4a),B:new THREE.Color(0x5d6a3e),T:new THREE.Color(0x52603a),J:new THREE.Color(0x4c5446),X:new THREE.Color(0x56634a),H:new THREE.Color(0x707a52)}];
 
-function blog(msg,team){const b=$('#blog');const d=document.createElement('div');d.textContent=msg;d.style.color=team===0?'#ffb0b8':'#ffe08a';b.appendChild(d);while(b.children.length>6)b.firstChild.remove();setTimeout(()=>d.remove(),6000);}
+const hitCls=t=>t===battle.myTeam?'r':'y';
+function blog(msg,team,net=true){if(battle.net==='host'&&net)NET.ev.push({k:'lg',m:msg,tm:team});const b=$('#blog');const d=document.createElement('div');d.textContent=msg;d.style.color=team==='i'?'#ffe08a':team===battle.myTeam?'#ffb0b8':'#ffe08a';b.appendChild(d);while(b.children.length>6)b.firstChild.remove();setTimeout(()=>d.remove(),6000);}
 
-function clearBattle(){for(const s of battle.ships)battleRoot.remove(s.root);battle.ships=[];battle.shells=[];battle.torps=[];battle.planes=[];battle.missiles=[];battle.airOf=[[],[]];battle.downed=[0,0];battle.drops=[0,0];fxAdd.clear();fxNorm.clear();shellMesh.count=0;torpMesh.count=0;planeMesh.count=0;heliMesh.count=0;missileMesh.count=0;parkMesh.count=0;battle.focus=null;focusRing.visible=false;clearFloat();$('#blog').innerHTML='';}
+function clearBattle(){for(const s of battle.ships)battleRoot.remove(s.root);battle.ships=[];battle.shells=[];battle.torps=[];battle.planes=[];battle.missiles=[];battle.airOf=[[],[]];battle.downed=[0,0];battle.drops=[0,0];fxAdd.clear();fxNorm.clear();shellMesh.count=0;torpMesh.count=0;planeMesh.count=0;heliMesh.count=0;missileMesh.count=0;parkMesh.count=0;battle.focus=null;battle.focus1=null;battle.netHelm=null;battle.net=null;battle.myTeam=0;battle.dc=false;focusRing.visible=false;clearFloat();$('#blog').innerHTML='';}
 function showBig(t,ms){const b=$('#bigmsg');b.textContent=t;clearTimeout(showBig._t);if(ms)showBig._t=setTimeout(()=>b.textContent='',ms);}
 
-function buildHud(){for(const team of [0,1]){const f=$('#f'+team);f.innerHTML='';
+function buildHud(){for(const side of [0,1]){const team=side===0?battle.myTeam:1-battle.myTeam;const f=$('#f'+side);f.innerHTML='';
   battle.ships.filter(s=>s.team===team&&!s.gone).forEach(s=>{const c=el(`<div class="sc"><div class="nm"><span>${esc(s.name)}</span><span class="st"></span></div><div class="bar hpb"><i></i><b class="hpt"></b></div>${s.airTotal?'<div class="bar fl"><i></i></div>':''}</div>`);
     s.hud={el:c,st:c.querySelector('.st'),hp:c.querySelector('.bar i'),hpt:c.querySelector('.hpt'),fl:c.querySelector('.bar.fl i')};f.appendChild(c);});}}
 function updateHud(){for(const s of battle.ships){const h=s.hud;if(!h)continue;
   h.hp.style.width=clamp(s.hp/s.maxHP,0,1)*100+'%';if(h.hpt)h.hpt.textContent=Math.ceil(s.hp).toLocaleString();
   if(h.fl)h.fl.style.width=(s.airTotal?s.planesLeft()/s.airTotal:0)*100+'%';
   h.st.textContent=(s.airTotal?`✈${s.planesLeft()} `:'')+(s.status||(s.bridges===0?'艦橋損傷':''));h.el.classList.toggle('dead',s.out);}
-  const me=battle.ships.find(s=>s.team===0&&!s.out);
+  const me=battle.ships.find(s=>s.team===battle.myTeam&&!s.out);
   if(battle.manual&&me)$('#helmInfo').textContent=`速力 ${(me.speed*2.2).toFixed(1)}kt / 舵 ${me.rudder>0.05?'左':me.rudder<-0.05?'右':'中央'} / 出力 ${Math.round(me.throttle*100)}%`;
 }
 
@@ -1434,7 +1438,7 @@ function helmKey(k,down){const m={w:'up',ArrowUp:'up',s:'down',ArrowDown:'down',
 document.querySelectorAll('#helm button').forEach(b=>{const h=b.dataset.h;
   b.addEventListener('pointerdown',e=>{e.preventDefault();battle.helm[h]=1;});
   for(const ev of ['pointerup','pointerleave','pointercancel'])b.addEventListener(ev,()=>battle.helm[h]=0);});
-function manualSteer(s,dt){const H=battle.helm;
+function manualSteer(s,dt,H=battle.helm){
   if(H.up)s.throttle=Math.min(1,s.throttle+dt*.6);if(H.down)s.throttle=Math.max(-.4,s.throttle-dt*.6);
   const want=(H.left?1:0)-(H.right?1:0);s.rudder+=(want-s.rudder)*Math.min(1,dt*3);
 }
@@ -1487,10 +1491,11 @@ function updateWeapons(s,dt){
 function fireBeam(s,W,mode,tg){const w=W.w,m=W.p.model;const mp=new THREE.Vector3();m.muzzles[0].getWorldPosition(mp);let end;
   if(mode===2&&W.air){end=W.air.pos.clone();hurtAir(W.air,w.aaDmg*s.dmgMul,s);}
   else if(tg&&W.aimPart){const ap=W.aimPart;const lp=new THREE.Vector3(ap.ctr[0],ap.y+.5,ap.ctr[2]);end=tg.hull.localToWorld(lp.clone());s.shots++;
-    if(Math.random()<(w.big?.95:.85)){const dm=tg.hit(ap,lp,{dmg:w.dmg*s.dmgMul,pen:w.pen,splash:w.big?2.5:0,owner:s});s.hits++;floatDmg(tg,end,dm,tg.team===1?'y':'r');
+    if(Math.random()<(w.big?.95:.85)){const dm=tg.hit(ap,lp,{dmg:w.dmg*s.dmgMul,pen:w.pen,splash:w.big?2.5:0,owner:s});s.hits++;floatDmg(tg,end,dm,hitCls(tg.team));
       if(w.big){fxExplode(end,2.2);sfxAt(end,1.2,900,1.2);}}}
   else return;
-  const big=!!w.big,n=Math.min(big?160:80,Math.ceil(mp.distanceTo(end)/(big?1.5:2.5)));
+  beamFx(mp,end,!!w.big);if(battle.net==='host')NET.ev.push({k:'bm',a:v3a(mp),b:v3a(end),g:w.big?1:0});}
+function beamFx(mp,end,big){const n=Math.min(big?160:80,Math.ceil(mp.distanceTo(end)/(big?1.5:2.5)));
   for(let i=0;i<=n;i++){const f=i/n;fxAdd.emit(mp.x+(end.x-mp.x)*f,mp.y+(end.y-mp.y)*f,mp.z+(end.z-mp.z)*f,0,0,0,big?.35:.14,big?2.6:.9,big?1.2:.5,big?.6:.35,big?.8:.85,1,.9);}
   fxAdd.emit(end.x,end.y,end.z,0,0,0,.25,big?8:3,big?12:5,.5,.95,1,1);sfxAt(mp,big?1:.22,big?1500:5200,big?1:.25);}
 function fireAA(s,W,bf){const w=W.w,m=W.p.model,tgt=W.air;
@@ -1499,7 +1504,7 @@ function fireAA(s,W,bf){const w=W.w,m=W.p.model,tgt=W.air;
     const t=Math.max(.05,W.ft||1),dist=mp.distanceTo(_aim),sg=w.spread*dist*bf;
     _v3.set(_aim.x+gauss()*sg,_aim.y+gauss()*sg,_aim.z+gauss()*sg);
     const vel=new THREE.Vector3().subVectors(_v3,mp).divideScalar(t);vel.y+=.5*G*t;
-    battle.shells.push({aa:true,fuse:t,aaR:w.aaR,aaDmg:w.aaDmg*s.dmgMul,pos:mp,prev:mp.clone(),vel,owner:s,team:s.team,cal:w.cal*.7,life:t+.2,dmg:0});
+    addShell({aa:true,fuse:t,aaR:w.aaR,aaDmg:w.aaDmg*s.dmgMul,pos:mp,prev:mp.clone(),vel,owner:s,team:s.team,cal:w.cal*.7,life:t+.2,dmg:0});
     if(w.cal>.15){_dir.copy(vel).normalize();fxMuzzle(mp,_dir,w.cal*2);}else if(Math.random()<.3)fxAdd.emit(mp.x,mp.y,mp.z,0,0,0,.06,.6,.3,1,.8,.4,.9);
   });
   sfxAt(_wp,w.missile?.5:w.cal>.15?.35:.06,w.missile?1800:w.cal>.15?2200:3800,w.missile?.8:.25);
@@ -1517,7 +1522,7 @@ function fire(s,W,aim,bf,tg){const w=W.w,m=W.p.model;
     const dx=Math.hypot(ax-mp.x,az-mp.z);const th=(w.lob?ballisticHi:ballistic)(dx,ay-mp.y,w.v)??0.785;
     const hx=(ax-mp.x)/dx,hz=(az-mp.z)/dx;
     const vel=new THREE.Vector3(hx*Math.cos(th)*w.v,Math.sin(th)*w.v,hz*Math.cos(th)*w.v);
-    battle.shells.push({pos:mp,prev:mp.clone(),vel,owner:s,team:s.team,dmg:dm,pen:w.pen,splash:w.splash,cal:w.cal,life:30,rail:w.rail,plasma:w.plasma});s.shots++;
+    addShell({pos:mp,prev:mp.clone(),vel,owner:s,team:s.team,dmg:dm,pen:w.pen,splash:w.splash,cal:w.cal,life:30,rail:w.rail,plasma:w.plasma});s.shots++;
     _dir.copy(vel).normalize();if(w.cal>0.15||Math.random()<.3)fxMuzzle(mp,_dir,w.cal*3);
   });
   const big=w.cal;if(w.missile){sfxAt(_wp,.9,1500,1.4);return;}
@@ -1531,7 +1536,7 @@ function launchMissile(kind,s,pos,dir,w,target,aimPart,delay=0){
   if(kind!=='sam'&&target&&target.ecm&&Math.random()<target.ecm)m.jam=1+Math.random()*2;
   battle.missiles.push(m);fxMuzzle(pos,dir,w.big?1.6:.8);return m;
 }
-function hurtAir(a,dmg,by){if(a.isMissile){if(!a.alive)return;a.hp-=dmg;if(a.hp<=0){a.alive=false;fxExplode(a.pos,a.big?1.6:.7);if(by){by.intercepts++;if(Math.random()<.35)floatText(a.pos,'迎撃','b');}}}else damagePlane(a,dmg,by);}
+function hurtAir(a,dmg,by){if(a.isMissile){if(!a.alive)return;a.hp-=dmg;if(a.hp<=0){a.alive=false;fxExplode(a.pos,a.big?1.6:.7);if(battle.net==='host')NET.ev.push({k:'ex',p:v3a(a.pos),s:a.big?1.6:.7});if(by){by.intercepts++;if(Math.random()<.35)floatText(a.pos,'迎撃','b');}}}else damagePlane(a,dmg,by);}
 function airBurst(pos,team,r,dmg,by){for(const a of battle.airOf[1-team]){const d=a.pos.distanceTo(pos);if(d<r)hurtAir(a,dmg*(1-.5*d/r),by);}}
 const _g=new THREE.Vector3(),_mq=new THREE.Quaternion(),_ZA=new THREE.Vector3(0,0,1),_ONE=new THREE.Vector3(1,1,1),_BIG=new THREE.Vector3(2.2,2.2,2.2);
 function updateMissiles(dt){
@@ -1554,18 +1559,21 @@ function updateMissiles(dt){
       let tg=m.target;if(!tg||tg.dead||tg.removed||tg.alive===false){tg=null;let bd=500*500;for(const a of battle.airOf[1-m.team]){const d=a.pos.distanceToSquared(m.pos);if(d<bd){bd=d;tg=a;}}m.target=tg;}
       if(m.t<.4||!tg)_g.set(m.dir.x,m.t<.4?1:m.dir.y,m.dir.z).normalize();
       else{const d=tg.pos.distanceTo(m.pos);_g.copy(tg.pos).addScaledVector(tg.vel,d/m.spd*.8).sub(m.pos).normalize();
-        if(d<4){airBurst(m.pos,m.team,m.aaR,m.aaDmg,m.owner);fxExplode(m.pos,.9);m.alive=false;continue;}}
+        if(d<4){airBurst(m.pos,m.team,m.aaR,m.aaDmg,m.owner);fxExplode(m.pos,.9);if(battle.net==='host')NET.ev.push({k:'ex',p:v3a(m.pos),s:.9});m.alive=false;continue;}}
       m.dir.lerp(_g,Math.min(1,dt*6)).normalize();
     }
     const prev=_v2.copy(m.pos);m.vel.copy(m.dir).multiplyScalar(m.spd);m.pos.addScaledVector(m.vel,dt);
     if(m.kind!=='sam'&&m.t>.3){const n=Math.max(1,Math.ceil(prev.distanceTo(m.pos)/.5));let hit=null;
       for(let k=1;k<=n&&!hit;k++){_pt.lerpVectors(prev,m.pos,k/n);hit=findHit(_pt,m.team);}
-      if(hit){const dm=hit.s.hit(hit.p,hit.lp,m);floatText(m.pos,(m.kind==='bm'?'弾道ミサイル命中 ':'ミサイル命中 ')+Math.round(dm),'big '+(hit.s.team===1?'y':'r'));
+      if(hit){const dm=hit.s.hit(hit.p,hit.lp,m);if(battle.net==='host')NET.ev.push({k:'mx',i:battle.ships.indexOf(hit.s),p:v3a(m.pos),lp:v3a(hit.lp),g:m.big?1:0});floatText(m.pos,(m.kind==='bm'?'弾道ミサイル命中 ':'ミサイル命中 ')+Math.round(dm),'big '+(hitCls(hit.s.team)));
         fxExplode(m.pos,m.big?4:2.4);sfxAt(m.pos,m.big?1.8:1.4,m.big?600:900,m.big?2:1.5);blog(`「${hit.s.name}」に${m.kind==='bm'?'弾道':'対艦'}ミサイル命中！`,hit.s.team);m.alive=false;continue;}}
     if(m.pos.y<0||m.life<=0){fxSplash(m.pos,m.big?1.6:.7);m.alive=false;continue;}
     fxNorm.emit(m.pos.x,m.pos.y,m.pos.z,rand(-.3,.3),rand(-.3,.3),rand(-.3,.3),rand(1.2,2.2),m.big?1:.5,m.big?5:2.6,.9,.9,.9,.45,-.2,.6);
     fxAdd.emit(m.pos.x-m.dir.x,m.pos.y-m.dir.y,m.pos.z-m.dir.z,-m.dir.x*5,-m.dir.y*5,-m.dir.z*5,.1,m.big?2:1,.4,1,.6,.2,1);
   }
+  renderMissiles();
+}
+function renderMissiles(){const arr=battle.missiles;
   let n=0;for(const m of arr){if(!m.alive||m.t<0||n>=300)continue;_mq.setFromUnitVectors(_ZA,m.dir);_m4.compose(m.pos,_mq,m.big?_BIG:_ONE);missileMesh.setMatrixAt(n++,_m4);}
   missileMesh.count=n;missileMesh.instanceMatrix.needsUpdate=true;
 }
@@ -1575,7 +1583,7 @@ function launchPlane(s,type){const A=AIR[type];const lp=s.deckPoint(true,type);c
   const p={type,team:s.team,home:s,pos:lp,vel:new THREE.Vector3(Math.sin(s.heading),0,Math.cos(s.heading)).multiplyScalar(heli?s.speed:A.spd*.6),yaw:s.heading,pitch:0,bank:0,
     hp:A.hp,state:'climb',st:heli?2:2.5,fuel:A.fuel,ammo:type==='F'?70:type==='X'?90:0,armed:type!=='F'&&type!=='X',gcd:0,dead:false,removed:false,spd:heli?Math.max(4,s.speed):Math.max(s.speed+10,A.spd*.6),tgt:null,tp:null,final:false};
   battle.planes.push(p);s.air.airborne++;}
-function damagePlane(p,dmg,by){if(p.dead)return;p.hp-=dmg;if(p.hp<=0){p.dead=true;if(by)by.planeKills++;if(p.team===1&&Math.random()<.5)floatText(p.pos,'撃墜','b');if(p.home)p.home.air.airborne--;p.home=null;fxExplode(p.pos,.6);battle.downed[p.team]++;
+function damagePlane(p,dmg,by){if(p.dead)return;p.hp-=dmg;if(p.hp<=0){p.dead=true;if(by)by.planeKills++;if(p.team!==battle.myTeam&&Math.random()<.5)floatText(p.pos,'撃墜','b');if(p.home)p.home.air.airborne--;p.home=null;fxExplode(p.pos,.6);battle.downed[p.team]++;
   if(Math.random()<.3)sfxAt(p.pos,.4,1600,.6);}}
 function tracer(p){for(let k=0;k<3;k++){const f=k*.05;fxAdd.emit(p.pos.x+p.vel.x*f,p.pos.y+p.vel.y*f,p.pos.z+p.vel.z*f,p.vel.x*1.6,p.vel.y*1.6,p.vel.z*1.6,.25,.5,.3,1,.85,.4,1);}}
 function landPlane(p){p.removed=true;const h=p.home;if(!h)return;h.air.airborne--;h.air.rearm.push({type:p.type,t:12});}
@@ -1651,7 +1659,7 @@ function updatePlane(p,dt){const A=AIR[p.type],heli=p.type==='H';
     else if(p.type==='B'){
       const px=ts.pos.x+ts.vel.x*2.2,pz=ts.pos.z+ts.vel.z*2.2,d=Math.hypot(px-p.pos.x,pz-p.pos.z);gx=px;gz=pz;alt=75;
       if(p.state==='dive'||(d<80&&p.pos.y>45)){p.state='dive';dive=true;
-        if(p.pos.y<24){p.armed=false;battle.drops[0]++;battle.shells.push({pos:p.pos.clone(),prev:p.pos.clone(),vel:p.vel.clone().multiplyScalar(.9),owner:p.home,team:p.team,dmg:230,pen:1.5,splash:1.9,cal:.32,life:10,bomb:true,heavy:true});
+        if(p.pos.y<24){p.armed=false;battle.drops[0]++;addShell({pos:p.pos.clone(),prev:p.pos.clone(),vel:p.vel.clone().multiplyScalar(.9),owner:p.home,team:p.team,dmg:230,pen:1.5,splash:1.9,cal:.32,life:10,bomb:true,heavy:true});
           p.state='pull';p.st=3;}}
     } else {
       const d0=Math.hypot(ts.pos.x-p.pos.x,ts.pos.z-p.pos.z),tt=d0/30;const px=ts.pos.x+ts.vel.x*tt,pz=ts.pos.z+ts.vel.z*tt;
@@ -1676,7 +1684,9 @@ function updatePlane(p,dt){const A=AIR[p.type],heli=p.type==='H';
 const _pe=new THREE.Euler(0,0,0,'YXZ'),_PS=new THREE.Vector3(1.4,1.4,1.4);
 function updateAir(dt){
   for(const p of battle.planes)if(!p.removed)updatePlane(p,dt);
-  battle.planes=battle.planes.filter(p=>!p.removed);
+  battle.planes=battle.planes.filter(p=>!p.removed);renderAir();
+}
+function renderAir(){
   let n=0,nh=0;for(const p of battle.planes){_pe.set(-p.pitch,p.yaw,p.bank);_mq.setFromEuler(_pe);_m4.compose(p.pos,_mq,_PS);const c=p.dead?RED_ARMOR:PCOL[p.team][p.type];
     if(p.type==='H'){if(nh>=110)continue;heliMesh.setMatrixAt(nh,_m4);heliMesh.setColorAt(nh,c);nh++;}else{if(n>=MAX_PLANES+20)continue;planeMesh.setMatrixAt(n,_m4);planeMesh.setColorAt(n,c);n++;}}
   planeMesh.count=n;planeMesh.instanceMatrix.needsUpdate=true;if(planeMesh.instanceColor)planeMesh.instanceColor.needsUpdate=true;
@@ -1690,25 +1700,33 @@ function findHit(pt,team){
     if(ix<XMIN||ix>XMAX||iy<0||iy>YMAX||iz<ZMIN||iz>ZMAX)continue;
     const p=s.cells.get(key(ix,iy,iz));if(p)return {s,p,lp:_lp.clone()};}
   return null;}
+const v3a=v=>[Math.round(v.x*100)/100,Math.round(v.y*100)/100,Math.round(v.z*100)/100];
+let _sid=0;
+function addShell(sh){sh.id=++_sid;battle.shells.push(sh);
+  if(battle.net==='host')NET.ev.push({k:'sh',id:sh.id,p:v3a(sh.pos),v:v3a(sh.vel),c:+(+sh.cal).toFixed(3),f:(sh.rail?1:0)|(sh.plasma?2:0)|(sh.aa?4:0)|(sh.bomb?8:0),fu:sh.aa?+sh.fuse.toFixed(2):0,r:sh.aaR||0});}
+function aaBurstFx(sh){if(sh.aaR>4){fxNorm.emit(sh.pos.x,sh.pos.y,sh.pos.z,rand(-.5,.5),rand(-.5,.5),rand(-.5,.5),rand(2,3),2,6,.12,.12,.13,.75,-.1,.6);fxAdd.emit(sh.pos.x,sh.pos.y,sh.pos.z,0,0,0,.15,2.5,4,1,.7,.3,1);}
+  else if(Math.random()<.4)fxAdd.emit(sh.pos.x,sh.pos.y,sh.pos.z,0,0,0,.1,.8,1.4,1,.75,.35,1);}
+function shellTrail(sh){if(sh.plasma){fxAdd.emit(sh.pos.x,sh.pos.y,sh.pos.z,0,0,0,.3,3,1,1,.45,.9,1);fxAdd.emit(sh.prev.x,sh.prev.y,sh.prev.z,0,0,0,.35,2,.5,.9,.3,.8,.7);}
+  else if(sh.rail){fxAdd.emit(sh.pos.x,sh.pos.y,sh.pos.z,0,0,0,.4,1.4,.4,.35,.85,1,.9);fxAdd.emit(sh.prev.x,sh.prev.y,sh.prev.z,0,0,0,.4,1.2,.3,.35,.85,1,.7);}
+  else if(sh.cal>.15&&Math.random()<.7)fxAdd.emit(sh.pos.x,sh.pos.y,sh.pos.z,0,0,0,.18,sh.cal*2,sh.cal*.5,1,.5,.15,.45);}
 function updateShells(dt){
   const arr=battle.shells;
   for(let i=arr.length-1;i>=0;i--){const sh=arr[i];sh.prev.copy(sh.pos);sh.vel.y-=G*dt;sh.pos.addScaledVector(sh.vel,dt);sh.life-=dt;
-    if(sh.aa){sh.fuse-=dt;if(sh.fuse<=0){airBurst(sh.pos,sh.team,sh.aaR,sh.aaDmg,sh.owner);
-        if(sh.aaR>4){fxNorm.emit(sh.pos.x,sh.pos.y,sh.pos.z,rand(-.5,.5),rand(-.5,.5),rand(-.5,.5),rand(2,3),2,6,.12,.12,.13,.75,-.1,.6);fxAdd.emit(sh.pos.x,sh.pos.y,sh.pos.z,0,0,0,.15,2.5,4,1,.7,.3,1);}
-        else if(Math.random()<.4)fxAdd.emit(sh.pos.x,sh.pos.y,sh.pos.z,0,0,0,.1,.8,1.4,1,.75,.35,1);
+    if(sh.aa){sh.fuse-=dt;if(sh.fuse<=0){airBurst(sh.pos,sh.team,sh.aaR,sh.aaDmg,sh.owner);aaBurstFx(sh);
         arr.splice(i,1);continue;}
       if(sh.pos.y<0){arr.splice(i,1);continue;}continue;}
     let hit=null;const len=sh.prev.distanceTo(sh.pos),n=Math.max(1,Math.ceil(len/0.45));
     let near=false;for(const s of battle.ships){if(s.team===sh.team||s.gone)continue;const dx=sh.pos.x-s.pos.x,dz=sh.pos.z-s.pos.z,r=s.radius+len;if(dx*dx+dz*dz<r*r&&sh.pos.y<s.topY+4){near=true;break;}}
     if(near)for(let k=1;k<=n;k++){_pt.lerpVectors(sh.prev,sh.pos,k/n);hit=findHit(_pt,sh.team);if(hit){sh.pos.copy(_pt);break;}}
-    if(hit){const dm=hit.s.hit(hit.p,hit.lp,sh);if(sh.owner&&!sh.bomb)sh.owner.hits++;
-      if(sh.ricochet&&sh.cal>=.25)floatText(sh.pos,'跳弾','g');else if(sh.bomb)floatText(sh.pos,'爆弾命中','y');floatDmg(hit.s,sh.pos,dm,hit.s.team===1?'y':'r');
+    if(hit){const dm=hit.s.hit(hit.p,hit.lp,sh);if(sh.owner&&!sh.bomb)sh.owner.hits++;if(battle.net==='host')NET.ev.push({k:'hx',id:sh.id,i:battle.ships.indexOf(hit.s),p:v3a(_pt),lp:v3a(hit.lp),c:sh.cal,f:sh.plasma?2:0,sp:sh.splash||0});
+      if(sh.ricochet&&sh.cal>=.25)floatText(sh.pos,'跳弾','g');else if(sh.bomb)floatText(sh.pos,'爆弾命中','y');floatDmg(hit.s,sh.pos,dm,hitCls(hit.s.team));
       fxExplode(sh.pos,Math.max(.5,sh.cal*3.2));if(sh.plasma)for(let k=0;k<20;k++)fxAdd.emit(sh.pos.x,sh.pos.y,sh.pos.z,rand(-8,8),rand(-2,8),rand(-8,8),rand(.3,.6),3,7,1,.4,.9,1);sfxAt(sh.pos,sh.cal>.25?1.1:.35,sh.cal>.25?1100:2400,sh.cal>.25?1.1:.3);arr.splice(i,1);continue;}
     if(sh.pos.y<0||sh.life<=0){if(sh.pos.y<0){fxSplash(sh.pos,Math.max(.35,sh.cal*2.6));if(sh.cal>.25)sfxAt(sh.pos,.4,500,.8);}arr.splice(i,1);continue;}
-    if(sh.plasma){fxAdd.emit(sh.pos.x,sh.pos.y,sh.pos.z,0,0,0,.3,3,1,1,.45,.9,1);fxAdd.emit(sh.prev.x,sh.prev.y,sh.prev.z,0,0,0,.35,2,.5,.9,.3,.8,.7);}
-    else if(sh.rail){fxAdd.emit(sh.pos.x,sh.pos.y,sh.pos.z,0,0,0,.4,1.4,.4,.35,.85,1,.9);fxAdd.emit(sh.prev.x,sh.prev.y,sh.prev.z,0,0,0,.4,1.2,.3,.35,.85,1,.7);}
-    else if(sh.cal>.15&&Math.random()<.7)fxAdd.emit(sh.pos.x,sh.pos.y,sh.pos.z,0,0,0,.18,sh.cal*2,sh.cal*.5,1,.5,.15,.45);
+    shellTrail(sh);
   }
+  renderShells();
+}
+function renderShells(){const arr=battle.shells;
   const m=new THREE.Matrix4(),n=Math.min(arr.length,800);
   for(let i=0;i<n;i++){const sh=arr[i];const s=Math.max(.18,sh.cal);m.makeScale(s,s,s).setPosition(sh.pos);shellMesh.setMatrixAt(i,m);}
   shellMesh.count=n;shellMesh.instanceMatrix.needsUpdate=true;
@@ -1721,10 +1739,13 @@ function updateTorps(dt){
     t.pos.addScaledVector(t.vel,dt);t.life-=dt;let hit=null;
     const n=Math.max(1,Math.ceil(prev.distanceTo(t.pos)/.5));
     for(let k=1;k<=n&&!hit;k++){_pt.lerpVectors(prev,t.pos,k/n);hit=findHit(_pt,t.team);}
-    if(hit){const dm=hit.s.hit(hit.p,hit.lp,t);floatText(t.pos,'魚雷命中 '+Math.round(dm),'big '+(hit.s.team===1?'y':'r'));_v3.set(t.pos.x,.5,t.pos.z);fxExplode(_v3,2.2);fxSplash(_v3,2.6);sfxAt(t.pos,1.5,600,1.8);blog(`「${hit.s.name}」に魚雷命中！`,hit.s.team);arr.splice(i,1);continue;}
+    if(hit){const dm=hit.s.hit(hit.p,hit.lp,t);if(battle.net==='host')NET.ev.push({k:'tx',i:battle.ships.indexOf(hit.s),p:v3a(t.pos),lp:v3a(hit.lp)});floatText(t.pos,'魚雷命中 '+Math.round(dm),'big '+(hitCls(hit.s.team)));_v3.set(t.pos.x,.5,t.pos.z);fxExplode(_v3,2.2);fxSplash(_v3,2.6);sfxAt(t.pos,1.5,600,1.8);blog(`「${hit.s.name}」に魚雷命中！`,hit.s.team);arr.splice(i,1);continue;}
     if(t.life<=0){arr.splice(i,1);continue;}
     t.wk+=dt;if(t.wk>.05){t.wk=0;fxNorm.emit(t.pos.x,.15,t.pos.z,rand(-.3,.3),.2,rand(-.3,.3),rand(3,5),.6,2,.95,.98,1,.6,0,.3);}
   }
+  renderTorps();
+}
+function renderTorps(){const arr=battle.torps;
   const m=new THREE.Matrix4(),q=new THREE.Quaternion(),sc=new THREE.Vector3(1,1,1);const n=Math.min(arr.length,200);
   for(let i=0;i<n;i++){const t=arr[i];q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP,Math.atan2(t.vel.x,t.vel.z));sc.setScalar(t.big?2.2:1);m.compose(t.pos,q,sc);torpMesh.setMatrixAt(i,m);}
   torpMesh.count=n;torpMesh.instanceMatrix.needsUpdate=true;
@@ -1734,8 +1755,9 @@ function updateBattle(dt){
   for(const s of ships){if(s.gone)continue;
     s.retarget-=dt;if(s.retarget<=0||!s.target||s.target.out){s.target=nearestEnemy(s);s.retarget=3;}
     const manual=battle.manual&&s.team===0&&s===battle.ships.find(x=>x.team===0&&!x.out);
+    const manual1=battle.netHelm&&battle.netHelm.man&&s.team===1&&s===battle.ships.find(x=>x.team===1&&!x.out);
     if(s.out){s.throttle=Math.max(0,s.throttle-dt*.2);s.rudder*=.98;}
-    else if(manual)manualSteer(s,dt);else aiSteer(s,dt);
+    else if(manual)manualSteer(s,dt);else if(manual1)manualSteer(s,dt,battle.netHelm.h);else aiSteer(s,dt);
     s.update(dt,battle.time);}
   // 艦同士の衝突
   for(let i=0;i<ships.length;i++)for(let j=i+1;j<ships.length;j++){const a=ships[i],b=ships[j];if(a.gone||b.gone)continue;
@@ -1745,6 +1767,7 @@ function updateBattle(dt){
   for(const p of battle.planes)if(!p.dead&&!p.removed)ao[p.team].push(p);
   for(const m of battle.missiles)if(m.alive&&m.kind==='ssm'&&m.t>=0)ao[m.team].push(m);
   if(battle.focus)for(const s of ships)if(s.team===0&&!s.out)s.target=battle.focus;
+  if(battle.focus1&&(battle.focus1.out||battle.focus1.gone))battle.focus1=null;if(battle.focus1)for(const s of ships)if(s.team===1&&!s.out)s.target=battle.focus1;
   for(const s of ships)if(!s.gone){updateWeapons(s,dt);updateCarrier(s,dt);}
   updateShells(dt);updateTorps(dt);updateMissiles(dt);updateAir(dt);updateParked();updateFocus(dt);
   battleEndCheck(dt);
@@ -1752,10 +1775,10 @@ function updateBattle(dt){
 
 // ---- フローティングテキスト ----
 const FT=[];
-function floatDmg(ship,pos,dmg,cls){if(mode!=='battle'||dmg<1)return;const a=ship.ftAgg;
+function floatDmg(ship,pos,dmg,cls){if(battle.net==='host')NET.ev.push({k:'fd',i:battle.ships.indexOf(ship),p:v3a(pos),d:Math.round(dmg)});if(mode!=='battle'||dmg<1)return;const a=ship.ftAgg;
   if(a&&FT.includes(a.f)&&a.f.t<.7){a.sum+=dmg;a.f.el.textContent=Math.round(a.sum);a.f.p.copy(pos);a.f.t=Math.min(a.f.t,.2);a.f.el.classList.toggle('big',a.sum>=300);return;}
   floatText(pos,String(Math.round(dmg)),cls+(dmg>=300?' big':''));ship.ftAgg={f:FT[FT.length-1],sum:dmg};}
-function floatText(pos,text,cls,life=1.8){if(mode!=='battle')return;if(pos.distanceTo(controls.target)>Math.max(600,camera.position.distanceTo(controls.target)*3))return;if(FT.length>28){const o=FT.shift();o.el.remove();}
+function floatText(pos,text,cls,life=1.8,net=true){if(battle.net==='host'&&net)NET.ev.push({k:'ft',p:v3a(pos),t:text,c:cls,l:life});if(mode!=='battle')return;if(pos.distanceTo(controls.target)>Math.max(600,camera.position.distanceTo(controls.target)*3))return;if(FT.length>28){const o=FT.shift();o.el.remove();}
   const e=document.createElement('div');e.className='ft '+cls;e.textContent=text;$('#ftxt').appendChild(e);let oy=0;for(const f of FT)if(f.t<.8&&f.p.distanceToSquared(pos)<3600)oy-=24;FT.push({el:e,p:pos.clone(),t:0,life,ox:rand(-24,24),oy:Math.max(-110,oy)});}
 function updateFloat(dt){for(let i=FT.length-1;i>=0;i--){const f=FT[i];f.t+=dt;if(f.t>f.life){f.el.remove();FT.splice(i,1);continue;}
   _v1.copy(f.p);_v1.y+=5+f.t*6;_v1.project(camera);if(_v1.z>1||Math.abs(_v1.x)>1.2||Math.abs(_v1.y)>1.2){f.el.style.opacity=0;continue;}
@@ -1775,9 +1798,9 @@ function drawMinimap(){const W=mmc.width,c=mmx,h=W/2;c.clearRect(0,0,W,W);
   c.fillStyle='rgba(255,255,255,.08)';c.beginPath();c.moveTo(X(t.x),Y(t.z));c.arc(X(t.x),Y(t.z),W*.3,a-Math.PI/2-.5,a-Math.PI/2+.5);c.closePath();c.fill();
   for(const tp of battle.torps){c.fillStyle='#cfe8ff';c.fillRect(X(tp.pos.x)-1,Y(tp.pos.z)-1,2,2);}
   for(const m of battle.missiles){if(!m.alive||m.t<0)continue;c.fillStyle='#fff';c.fillRect(X(m.pos.x)-1.5,Y(m.pos.z)-1.5,3,3);}
-  for(const p of battle.planes){if(p.dead)continue;c.fillStyle=p.team===0?'#8fe3ff':'#ffb0b0';c.fillRect(X(p.pos.x)-1.5,Y(p.pos.z)-1.5,3,3);}
+  for(const p of battle.planes){if(p.dead)continue;c.fillStyle=p.team===battle.myTeam?'#8fe3ff':'#ffb0b0';c.fillRect(X(p.pos.x)-1.5,Y(p.pos.z)-1.5,3,3);}
   for(const s of battle.ships){if(s.gone)continue;const L=Math.max(s.len/2,9/k),fx=Math.sin(s.heading)*L,fz=Math.cos(s.heading)*L;
-    c.strokeStyle=s.out?'#77808a':s.team===0?'#4fd1ff':'#ff5d6c';c.lineWidth=s.airTotal?7:5;c.lineCap='round';
+    c.strokeStyle=s.out?'#77808a':s.team===battle.myTeam?'#4fd1ff':'#ff5d6c';c.lineWidth=s.airTotal?7:5;c.lineCap='round';
     c.beginPath();c.moveTo(X(s.pos.x-fx),Y(s.pos.z-fz));c.lineTo(X(s.pos.x+fx),Y(s.pos.z+fz));c.stroke();
     c.fillStyle='#fff';c.beginPath();c.arc(X(s.pos.x+fx),Y(s.pos.z+fz),2,0,7);c.fill();
     if(s===battle.focus){c.strokeStyle='#ff4050';c.lineWidth=2;c.beginPath();c.arc(X(s.pos.x),Y(s.pos.z),12,0,7);c.stroke();}}
@@ -1793,9 +1816,9 @@ function battleTap(cx,cy){let best=null,bd=46;
     const vx=bx-ax,vy=by-ay,l2=vx*vx+vy*vy||1,u=clamp(((cx-ax)*vx+(cy-ay)*vy)/l2,0,1),d=Math.hypot(ax+vx*u-cx,ay+vy*u-cy);
     if(d<bd){bd=d;best=s;}}
   if(!best)return;
-  if(best.team===1&&!best.out){battle.focus=battle.focus===best?null:best;
-    if(battle.focus){blog(`🎯 攻撃目標：「${best.name}」`,1);floatText(best.pos,'攻撃目標','big r',1.4);}else blog('🎯 攻撃目標を解除',1);}
-  else if(best.team===0){battle.camMode='own';battle.follow=battle.ships.filter(s=>s.team===0&&!s.gone).indexOf(best);$('#b-cam').textContent='📷 自艦'+(battle.follow+1);}
+  if(best.team!==battle.myTeam&&!best.out){battle.focus=battle.focus===best?null:best;if(battle.net==='guest')netSend({k:'focus',i:battle.focus?battle.ships.indexOf(battle.focus):-1});
+    if(battle.focus){blog(`🎯 攻撃目標：「${best.name}」`,'i',false);floatText(best.pos,'攻撃目標','big r',1.4);}else blog('🎯 攻撃目標を解除','i',false);}
+  else if(best.team===battle.myTeam){battle.camMode='own';battle.follow=battle.ships.filter(s=>s.team===battle.myTeam&&!s.gone).indexOf(best);$('#b-cam').textContent='📷 自艦'+(battle.follow+1);}
 }
 function updateFocus(dt){const f=battle.focus;if(f&&(f.out||f.gone))battle.focus=null;
   focusRing.visible=!!battle.focus&&mode==='battle';if(!focusRing.visible)return;
@@ -1817,22 +1840,22 @@ function updateParked(){let n=0;
   heliMesh.instanceMatrix.needsUpdate=true;if(heliMesh.instanceColor)heliMesh.instanceColor.needsUpdate=true;}
 
 // ---- カメラ ----
-function followTarget(){const own=battle.ships.filter(s=>s.team===0&&!s.gone),en=battle.ships.filter(s=>s.team===1&&!s.gone);
+function followTarget(){const own=battle.ships.filter(s=>s.team===battle.myTeam&&!s.gone),en=battle.ships.filter(s=>s.team!==battle.myTeam&&!s.gone);
   if(battle.camMode==='own'){const l=own.length?own:battle.ships;return l[battle.follow%l.length]?.pos;}
   if(battle.camMode==='enemy'){const l=en.length?en:battle.ships;return l[battle.follow%l.length]?.pos;}
-  if(battle.camMode==='air'){let pl=battle.camPlane;if(!pl||pl.dead||pl.removed){pl=battle.camPlane=battle.planes.find(q=>q.team===0&&!q.dead&&q.state!=='climb')||battle.planes.find(q=>!q.dead);}
+  if(battle.camMode==='air'){let pl=battle.camPlane;if(!pl||pl.dead||pl.removed){pl=battle.camPlane=battle.planes.find(q=>q.team===battle.myTeam&&!q.dead&&q.state!=='climb')||battle.planes.find(q=>!q.dead);}
     if(pl)return pl.pos;}
   const all=battle.ships.filter(s=>!s.gone);if(!all.length)return null;const c=new THREE.Vector3();all.forEach(s=>c.add(s.pos));return c.divideScalar(all.length);}
 const _ct=new THREE.Vector3();
 function updateBattleCam(dt){const p=followTarget();if(!p)return;_ct.set(p.x,battle.camMode==='air'?p.y:4,p.z);const d=_ct.sub(controls.target).multiplyScalar(Math.min(1,dt*3));
   controls.target.add(d);camera.position.add(d);}
-$('#b-cam').onclick=()=>{const modes=battle.planes.some(q=>!q.dead)?['own','enemy','air','all']:['own','enemy','all'];battle.camPlane=null;const own=battle.ships.filter(s=>s.team===0&&!s.gone).length,en=battle.ships.filter(s=>s.team===1&&!s.gone).length;
+$('#b-cam').onclick=()=>{const modes=battle.planes.some(q=>!q.dead)?['own','enemy','air','all']:['own','enemy','all'];battle.camPlane=null;const own=battle.ships.filter(s=>s.team===battle.myTeam&&!s.gone).length,en=battle.ships.filter(s=>s.team!==battle.myTeam&&!s.gone).length;
   if(battle.camMode==='own'&&battle.follow+1<own)battle.follow++;else if(battle.camMode==='enemy'&&battle.follow+1<en)battle.follow++;
   else{battle.camMode=modes[(modes.indexOf(battle.camMode)+1)%modes.length];battle.follow=0;}
   $('#b-cam').textContent='📷 '+({own:'自艦',enemy:'敵艦',air:'航空機',all:'全体'})[battle.camMode]+(battle.camMode==='own'||battle.camMode==='enemy'?(battle.follow+1):'');
   if(battle.camMode==='air'){const p=followTarget();if(p){controls.target.copy(p);camera.position.set(p.x-25,p.y+12,p.z-30);}}};
-$('#b-speed').onclick=()=>{battle.speed=battle.speed>=8?1:battle.speed*2;$('#b-speed').textContent='速度 x'+battle.speed;};
-$('#b-manual').onclick=()=>{battle.manual=!battle.manual;$('#b-manual').textContent='操舵: '+(battle.manual?'手動':'自動');$('#b-manual').classList.toggle('on',battle.manual);
+$('#b-speed').onclick=()=>{if(battle.net==='guest'){toast('速度はホストが決めます');return;}if(battle.net==='host'&&battle.speed>=2){battle.speed=1;$('#b-speed').textContent='速度 x1';return;}battle.speed=battle.speed>=8?1:battle.speed*2;$('#b-speed').textContent='速度 x'+battle.speed;};
+$('#b-manual').onclick=()=>{battle.manual=!battle.manual;if(battle.net==='guest'){NET.lastHelm='';netSend({k:'helm',man:battle.manual,h:{...battle.helm}});}$('#b-manual').textContent='操舵: '+(battle.manual?'手動':'自動');$('#b-manual').classList.toggle('on',battle.manual);
   $('#helm').classList.toggle('hidden',!battle.manual);$('#bctl').classList.toggle('man',battle.manual);$('#mm').classList.toggle('up',battle.manual);$('#blog').classList.toggle('up',battle.manual);$('#helmInfo').classList.toggle('hidden',!battle.manual);};
 $('#b-snd').onclick=()=>{muted=!muted;settings.sfx=!muted;LS.set('bf_settings',settings);$('#b-snd').textContent=muted?'🔇':'🔊';updateAmbient();};
 function applySettings(){renderer.setPixelRatio({high:Math.min(devicePixelRatio,2),mid:Math.min(devicePixelRatio,1.5),low:1}[settings.q]||1);resize();
@@ -1848,7 +1871,7 @@ function openSettings(){const box=el(`<div>
   box.querySelector('#s-amb').onchange=e=>{settings.amb=e.target.checked;initAudio();applySettings();};
   box.querySelector('#s-reset').onclick=()=>{if(confirm('キャンペーンの進行と★をリセットしますか？（保存した艦は消えません）')){progress={cleared:0,stars:{}};LS.set('bf_progress',progress);toast('リセットしました');}};
   modal('設定',box,[{label:'閉じる'}]);}
-$('#b-quit').onclick=()=>{if(battle.mode==='test'){goEditor();return;}if(battle.over){showResult(battle.ships.some(s=>s.team===0&&!s.out));return;}if(confirm('撤退しますか？（敗北扱い）')){battle.over=true;showResult(false);}};
+$('#b-quit').onclick=()=>{if(battle.mode==='test'){goEditor();return;}if(battle.mode==='online'&&!battle.over){if(confirm('対戦から退出しますか？（敗北扱い・接続終了）')){battle.over=true;netLeave();showResult(false);}return;}if(battle.over){showResult(battle.ships.some(s=>s.team===0&&!s.out));return;}if(confirm('撤退しますか？（敗北扱い）')){battle.over=true;showResult(false);}};
 
 const starStr=n=>'★'.repeat(n)+'☆'.repeat(3-n);
 const specParts=sp=>sp.parts.map(a=>({t:normT(a[0]),x:a[1],y:a[2],z:a[3],r:a[4]||0}));
@@ -1884,7 +1907,7 @@ function startBattle(mySpecs,enemySpecs,stage=-1,bmode){
   else enemySpecs.forEach((sp,i)=>{const off=(i%2?1:-1)*Math.ceil(i/2)*80;addShip(sp,1,off+rand(-10,10),280+rand(-20,20),Math.PI);});
   buildHud();setMode('battle');
   $('#b-quit').textContent=battle.mode==='test'?'終了':'撤退';
-  setTimeout(()=>{if(mode==='battle'&&battle.time<8)blog(battle.mode==='test'?'🎯 試運転：標的艦を自由に撃ってみよう（報酬なし）':'💡 敵艦をタップで攻撃目標を指定 / 右下のレーダーはタップで拡大',1);},2500);
+  setTimeout(()=>{if(mode==='battle'&&battle.time<8)blog(battle.mode==='test'?'🎯 試運転：標的艦を自由に撃ってみよう（報酬なし）':'💡 敵艦をタップで攻撃目標を指定 / 右下のレーダーはタップで拡大','i',false);},2500);
   const me=battle.ships[0];controls.target.copy(me.pos).setY(4);camera.position.set(me.pos.x-70,45,me.pos.z-90);
   $('#bigmsg').textContent='';showBig(battle.mode==='wave'?'WAVE 1':battle.mode==='test'?'試運転':'戦闘開始',1800);
   $('#b-speed').textContent='速度 x'+battle.speed;
@@ -1897,20 +1920,20 @@ function spawnWave(n){battle.wave=n;
   waveFleet(n).forEach((id,i)=>{const off=(i%2?1:-1)*Math.ceil(i/2)*80;addShip(presetSpec(id),1,bx+Math.cos(a)*off,bz-Math.sin(a)*off,a+Math.PI,{hpMul:hm});});
   buildHud();}
 function onShipSunk(s,by){if(!battle.earn||battle.mode==='test')return;
-  if(s.team===1){const v=Math.round(100+s.maxHP*.04+s.value*.05);battle.earn.sink+=v;battle.earn.sunk++;if(mode==='battle')floatText(s.pos,`+${fmtG(v)}`,'y',3);}}
+  if(s.team===1){const v=Math.round(100+s.maxHP*.04+s.value*.05);battle.earn.sink+=v;battle.earn.sunk++;if(mode==='battle')floatText(s.pos,`+${fmtG(v)}`,'y',3,false);}}
 function battleEndCheck(dt){
   if(battle.over||battle.mode==='test')return;const ships=battle.ships;
   const a0=ships.some(s=>s.team===0&&!s.out),a1=ships.some(s=>s.team===1&&!s.out);
   if(battle.mode==='wave'&&a0&&!a1){
-    if(!battle.waveT){battle.waveT=4;const b=waveReward(battle.wave);battle.waveBonus+=b;showBig(`WAVE ${battle.wave} クリア`,2600);blog(`🌊 WAVE ${battle.wave} クリア！ +${fmtG(b)}`,1);
+    if(!battle.waveT){battle.waveT=4;const b=waveReward(battle.wave);battle.waveBonus+=b;showBig(`WAVE ${battle.wave} クリア`,2600);blog(`🌊 WAVE ${battle.wave} クリア！ +${fmtG(b)}`,'i');
       for(const s of ships)if(s.team===0&&!s.sinking){s.hp=Math.min(s.maxHP,s.hp+s.maxHP*.3);for(const t of PT)s.air.stock[t]=s.air.cap[t];}}
     battle.waveT-=dt;if(battle.waveT<=0){battle.waveT=0;spawnWave(battle.wave+1);showBig(`WAVE ${battle.wave}`,1600);}
     return;}
-  if(!a0||!a1){battle.over=true;const win=a0;showBig(win?'勝利':battle.mode==='wave'?'艦隊全滅':'敗北');setTimeout(()=>showResult(win),3500);}
+  if(!a0||!a1){battle.over=true;const win=a0;if(battle.net==='host'){netSend(makeSnap());netSend({k:'end',a0,a1,st:ships.map(s=>[Math.round(s.dmgDealt),s.shots,s.hits,s.planeKills,s.intercepts])});}showBig(win?'勝利':battle.mode==='wave'?'艦隊全滅':'敗北');setTimeout(()=>showResult(win),3500);}
 }
 function showResult(win){
   if(mode!=='battle'||battle.mode==='test')return;
-  const mine=battle.ships.filter(s=>s.team===0);const lines=[];let total=0;const add=(l,v)=>{v=Math.round(v);if(v>0){lines.push([l,v]);total+=v;}};
+  const mine=battle.ships.filter(s=>s.team===battle.myTeam);const lines=[];let total=0;const add=(l,v)=>{v=Math.round(v);if(v>0){lines.push([l,v]);total+=v;}};
   const dmg=mine.reduce((a,s)=>a+s.dmgDealt,0);let starHtml='',head='';
   if(battle.mode==='campaign'){const st=battle.stage,S=STAGES[st];
     if(win){add('勝利報酬',S.reward);if(battle.startCleared<=st)add('初回クリアボーナス',S.reward);if(progress.cleared<=st)progress.cleared=st+1;}
@@ -1921,18 +1944,21 @@ function showResult(win){
       <div class="d" style="text-align:center;margin-bottom:8px">${win?'✔':'✘'} 勝利　${win&&noLoss?'✔':'✘'} 撃沈されずに勝利　${win&&healthy?'✔':'✘'} 全艦HP50%以上で勝利</div>`;
     head=win?esc(S.name)+' をクリアしました！':'艦の設計を見直して再挑戦しよう。工廠で強い兵装を買うのも手です。';}
   else if(battle.mode==='wave'){const cleared=battle.wave-1;head=`WAVE ${cleared} までクリア${cleared>(inv.best||0)?'（自己ベスト更新！）':''}`;inv.best=Math.max(inv.best||0,cleared);add('ウェーブ報酬',battle.waveBonus);}
+  else if(battle.mode==='online'){const en=battle.ships.filter(s=>s.team!==battle.myTeam);add(win?'勝利報酬':'参加報酬',win&&!battle.dc?1000:250);add('撃沈報酬',150*en.filter(s=>s.sinking).length);
+    head=battle.dc?'相手が切断したため対戦終了':win?`${esc(NET.names[1-battle.myTeam]||'相手')} に勝利しました！`:`${esc(NET.names[1-battle.myTeam]||'相手')} に敗北…`;}
   else{if(win)add('勝利報酬',150*battle.ships.filter(s=>s.team===1).length);head=win?'敵艦隊を撃滅しました！':'敗北…設計を見直そう。';}
-  add('撃沈報酬',battle.earn.sink);add('与ダメージボーナス',dmg*.04);
+  if(battle.mode!=='online')add('撃沈報酬',battle.earn.sink);add('与ダメージボーナス',dmg*.04);
   if(battle.mode==='free'){for(const l of lines)l[1]=Math.round(l[1]*.5);total=Math.round(total*.5);lines.push(['（フリー海戦は報酬50%）',0]);}
   addMoney(total);const up=addXP(total);saveInv();
   const score=s=>s.dmgDealt+s.planeKills*60+s.intercepts*40;
   let mvp=null;for(const s of mine)if(!mvp||score(s)>score(mvp))mvp=s;
   const rows=battle.ships.filter(s=>s.team===0||!s.gone||s.sinking).map(s=>{const ex=[];if(s.shots)ex.push(`命中率 ${Math.round(s.hits/s.shots*100)}%`);if(s.planeKills)ex.push(`撃墜 ${s.planeKills}`);if(s.intercepts)ex.push(`迎撃 ${s.intercepts}`);
-    return `<div class="item"><div class="grow"><div class="t">${s.team===0?'🔵':'🔴'} ${esc(s.name)}${s===mvp&&score(s)>0?' <span class="tag" style="background:#5a420c;color:#ffd66b">👑 MVP</span>':''}</div>
+    return `<div class="item"><div class="grow"><div class="t">${s.team===battle.myTeam?'🔵':'🔴'} ${esc(s.name)}${s===mvp&&score(s)>0?' <span class="tag" style="background:#5a420c;color:#ffd66b">👑 MVP</span>':''}</div>
     <div class="d">与ダメージ ${Math.round(s.dmgDealt).toLocaleString()}${ex.length?' / '+ex.join(' / '):''}<br>状態: ${s.sinking?'撃沈':s.out?'戦闘不能':'健在'}（HP ${Math.round(s.hp/s.maxHP*100)}%）</div></div></div>`;}).join('');
   const rew=`<div class="rew">${lines.map(([l,v])=>`<div class="row"><span>${l}</span><b>${v?'+'+fmtG(v):''}</b></div>`).join('')}<div class="row tot"><span>獲得資金</span><b>+${fmtG(total)}</b></div>
     <div class="row"><span>獲得経験値</span><b>+${Math.round(total).toLocaleString()} XP</b></div>${up.up?`<div class="rankup">⭐ 昇進！「${RANKS[up.rank][0]}」になりました（ボーナス +${fmtG(up.bonus)}）<br><small>新しい兵装が工廠で購入できるようになりました</small></div>`:''}</div>`;
-  const btns=[{label:'建造ドックへ',fn:()=>goEditor()},{label:'工廠',fn:()=>{goMenu();openShop();return false;}},{label:'メニュー',fn:()=>goMenu()}];
+  let btns=[{label:'建造ドックへ',fn:()=>goEditor()},{label:'工廠',fn:()=>{goMenu();openShop();return false;}},{label:'メニュー',fn:()=>goMenu()}];
+  if(battle.mode==='online'){btns=[{label:'メニュー',fn:()=>{netLeave();goMenu();}}];if(NET.connected)btns.unshift({label:'ロビーへ戻る',cls:'pri',fn:()=>{goMenu();renderLobby(true);return false;}});battle.lastArgs=null;}
   if(battle.lastArgs)btns.unshift({label:battle.mode==='wave'?'もう一度':'再戦',cls:'pri',fn:()=>{const a=battle.lastArgs;ensureOwned(a[0],()=>startBattle(...a));return false;}});
   if(win&&battle.mode==='campaign'&&battle.stage+1<STAGES.length)btns.unshift({label:'次の海戦へ',cls:'pri',fn:()=>{closeModal();openFleetSelect(battle.stage+1);return false;}});
   const air=battle.downed[0]+battle.downed[1]?`<div class="d" style="margin-bottom:6px">航空機損失: 自軍 ${battle.downed[0]}機 / 敵軍 ${battle.downed[1]}機</div>`:'';
@@ -1971,14 +1997,15 @@ function openCampaign(){const box=el('<div></div>');
   modal('キャンペーン',box);}
 function openFleetSelect(stage,preselect,bmode){
   const list=specList();const sel=new Set(preselect||[]);if(!sel.size){const f=list.find(x=>x.ok&&x.mine&&!x.miss.length)||list.find(x=>x.ok&&x.mine)||list.find(x=>x.ok);if(f)sel.add(f.id);}
-  const box=el('<div></div>');const wave=bmode==='wave',max=wave?3:3;
-  box.appendChild(el(`<div style="margin-bottom:8px"><b>${wave?'🌊 連続海戦':esc(STAGES[stage].name)}</b><br><span style="color:var(--muted)">出撃する艦を最大${max}隻選んでください${wave?`（自己ベスト WAVE ${inv.best||0}）`:''}</span></div>`));
+  const box=el('<div></div>');const wave=bmode==='wave',online=bmode==='online',max=3;
+  box.appendChild(el(`<div style="margin-bottom:8px"><b>${online?'🌐 オンライン対戦の艦隊':wave?'🌊 連続海戦':esc(STAGES[stage].name)}</b><br><span style="color:var(--muted)">出撃する艦を最大${max}隻選んでください${wave?`（自己ベスト WAVE ${inv.best||0}）`:''}</span></div>`));
   const render=()=>{box.querySelectorAll('.item').forEach(e=>e.remove());
     for(const it of list){const e=el(`<div class="item ${sel.has(it.id)?'sel':''} ${it.ok?'':'lock'}"><div class="grow"><div class="t">${sel.has(it.id)?'☑':'☐'} ${esc(it.name)}${it.preset?'<span class="tag">プリセット</span>':''}</div><div class="d">${it.ok?specDesc(it.st):'出撃不可（浮かない/兵装なし）'}</div>${it.ok?missDesc(it.miss):''}</div></div>`);
       if(it.ok)e.onclick=()=>{if(sel.has(it.id))sel.delete(it.id);else if(sel.size<max)sel.add(it.id);else toast(`最大${max}隻です`);render();};box.appendChild(e);}};
   render();
-  modal(wave?'連続海戦':'出撃艦の選択',box,[{label:'キャンセル'},{label:'出撃！',cls:'pri',fn:()=>{if(!sel.size){toast('艦を選んでください');return false;}
-    const mine=list.filter(x=>sel.has(x.id)).map(x=>x.spec);const en=wave?[]:STAGES[stage].enemies.map(presetSpec);
+  modal(online?'艦隊の選択':wave?'連続海戦':'出撃艦の選択',box,[{label:'キャンセル',fn:()=>{if(online){renderLobby(true);return false;}}},{label:online?'この艦隊で準備完了':'出撃！',cls:'pri',fn:()=>{if(!sel.size){toast('艦を選んでください');return false;}
+    const mine=list.filter(x=>sel.has(x.id)).map(x=>x.spec);
+    if(online){ensureOwned(mine,()=>{const sp=mine.map(x=>({name:x.name,parts:x.parts.map(a=>[normT(a[0]),a[1],a[2],a[3],a[4]||0]),paint:x.paint}));const mi=NET.role==='host'?0:1;NET.fleets[mi]=sp;netSend({k:'fleet',specs:sp});renderLobby(true);});return false;}const en=wave?[]:STAGES[stage].enemies.map(presetSpec);
     const args=[mine,en,wave?-1:stage,wave?'wave':'campaign'];battle.lastArgs=args;ensureOwned(mine,()=>startBattle(...args));return false;}}]);
 }
 function openSortie(){openFleetSelect(Math.min(progress.cleared,STAGES.length-1),['cur']);}
@@ -2051,7 +2078,167 @@ function openHelp(){modal('遊び方',`
 <h4>🏆 モード</h4>
 <ul><li><b>キャンペーン</b>：全12海戦。初回クリアは報酬2倍。★2＝撃沈されずに勝利、★3＝全艦HP50%以上で勝利（★3初達成でボーナス）。</li>
 <li><b>連続海戦</b>：次々に現れる敵艦隊と戦い続ける。ウェーブごとに報酬、HPが30%回復。どこまで行けるか挑戦！</li>
-<li><b>フリー海戦</b>：好きな艦同士で対戦（報酬50%）。自分の設計同士の対戦も可能。</li></ul>`,[{label:'閉じる'}]);}
+<li><b>フリー海戦</b>：好きな艦同士で対戦（報酬50%）。自分の設計同士の対戦も可能。</li>
+<li><b>🌐 オンライン対戦</b>：友達とリアルタイムで対戦（P2P通信）。片方が「部屋を作る」→表示された<b>6文字の部屋コード</b>を相手に伝え、相手は「部屋に入る」でコードを入力。両者が艦隊を選んだらホストが「開戦！」。ホストの端末が戦闘を計算します（速度はホストがx1/x2を選択）。勝利 1,000G／敗北 250G。</li></ul>`,[{label:'閉じる'}]);}
+
+// ================================================================
+//  オンライン対戦（WebRTC P2P / PeerJS）
+//  ホストが戦闘を計算し、状態を約10回/秒でゲストへ送信する方式
+// ================================================================
+const NET={role:null,peer:null,conn:null,bc:null,code:'',fleets:[null,null],names:['',''],connected:false,ev:[],snapT:0,snapAt:0,lobby:false};
+const NET_BC=new URLSearchParams(location.search).has('bc');
+const PEER_PREFIX='blockfleet-v2-';
+const myName=()=>(LS.get('bf_pname','')||'提督').slice(0,16);
+function loadPeerJS(){return new Promise((res,rej)=>{if(window.Peer)return res();const s=document.createElement('script');
+  s.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js';s.onload=()=>window.Peer?res():rej(new Error('load'));s.onerror=()=>rej(new Error('load'));document.head.appendChild(s);});}
+function rawSend(o){try{if(NET.conn&&NET.conn.open)NET.conn.send(o);else if(NET.bc)NET.bc.postMessage(o);}catch(e){}}
+let _cid=0;const _chunks={};
+// 大きなメッセージ（艦の設計データ等）は分割して送る（WebRTCの1メッセージ上限対策）
+function netSend(o){const str=JSON.stringify(o);if(str.length<12000){rawSend(o);return;}const id=++_cid,n=Math.ceil(str.length/12000);
+  for(let i=0;i<n;i++)rawSend({k:'_c',id,i,n,d:str.slice(i*12000,(i+1)*12000)});}
+function netRecv(m){if(m&&m.k==='_c'){if(typeof m.d!=='string'||!(m.n>0)||m.n>400)return;const c=_chunks[m.id]||(_chunks[m.id]={n:m.n,p:[],got:0});
+    if(c.p[m.i]==null){c.p[m.i]=m.d;c.got++;}if(c.got===c.n){delete _chunks[m.id];try{netOnMsg(JSON.parse(c.p.join('')));}catch(e){}}return;}netOnMsg(m);}
+function genCode(){const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<6;i++)s+=A[(Math.random()*A.length)|0];return s;}
+function netReset(){try{NET.conn&&NET.conn.close();}catch(e){}try{NET.peer&&NET.peer.destroy();}catch(e){}try{NET.bc&&NET.bc.close();}catch(e){}
+  Object.assign(NET,{role:null,peer:null,conn:null,bc:null,code:'',fleets:[null,null],names:['',''],connected:false,ev:[],lobby:false});}
+function netLeave(){if(NET.connected)netSend({k:'bye'});setTimeout(netReset,150);}
+function netError(msg){toast(msg);netReset();openOnline();}
+async function netHost(){netReset();NET.role='host';NET.code=genCode();NET.names[0]=myName();
+  if(NET_BC){NET.bc=new BroadcastChannel('bf-'+NET.code);NET.bc.onmessage=e=>netRecv(e.data);renderLobby(true);return;}
+  try{await loadPeerJS();}catch(e){netError('通信ライブラリを読み込めません（インターネット接続を確認）');return;}
+  NET.peer=new Peer(PEER_PREFIX+NET.code);
+  NET.peer.on('open',()=>renderLobby(NET.lobby));
+  NET.peer.on('connection',c=>{if(NET.conn&&NET.conn.open){c.on('open',()=>{c.send({k:'full'});setTimeout(()=>c.close(),300);});return;}setupConn(c);});
+  NET.peer.on('error',e=>{if(e.type==='unavailable-id'){NET.code=genCode();try{NET.peer.destroy();}catch(_){}netHost();}else if(!NET.connected)netError('接続エラー: '+(e.type||''));});
+  renderLobby(true);}
+async function netJoin(code){code=String(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length!==6){toast('6文字の部屋コードを入力してください');return;}
+  netReset();NET.role='guest';NET.code=code;NET.names[1]=myName();
+  if(NET_BC){NET.bc=new BroadcastChannel('bf-'+code);NET.bc.onmessage=e=>netRecv(e.data);netSend({k:'hello',name:myName(),v:2});renderLobby(true);return;}
+  try{await loadPeerJS();}catch(e){netError('通信ライブラリを読み込めません（インターネット接続を確認）');return;}
+  NET.peer=new Peer();
+  NET.peer.on('open',()=>{const c=NET.peer.connect(PEER_PREFIX+code,{reliable:true,serialization:'json'});setupConn(c);
+    setTimeout(()=>{if(!NET.connected&&NET.role==='guest')netError('部屋が見つかりません（コードを確認）');},12000);});
+  NET.peer.on('error',e=>{if(!NET.connected)netError(e.type==='peer-unavailable'?'部屋が見つかりません（コードを確認）':'接続エラー: '+(e.type||''));});
+  renderLobby(true);}
+function setupConn(c){NET.conn=c;
+  c.on('open',()=>{if(NET.role==='guest')netSend({k:'hello',name:myName(),v:2});});
+  c.on('data',d=>netRecv(d));c.on('close',()=>netClosed());c.on('error',()=>netClosed());}
+function netClosed(){if(!NET.role)return;const wasBattle=mode==='battle'&&battle.mode==='online'&&!battle.over;const had=NET.connected;netReset();
+  if(wasBattle){battle.over=true;battle.dc=true;showBig('相手が切断しました',2500);setTimeout(()=>showResult(true),2500);}
+  else if(had){toast('相手との接続が切れました');if(mode!=='battle')closeModal();}}
+// 相手から届いた艦データを検証
+function cleanSpecs(arr){if(!Array.isArray(arr))return null;const out=[];
+  for(const sp of arr.slice(0,3)){if(!sp||!Array.isArray(sp.parts))continue;const parts=[];
+    for(const a of sp.parts.slice(0,30000)){if(!Array.isArray(a))continue;const t=normT(String(a[0]));if(!P[t])continue;parts.push([t,a[1]|0,a[2]|0,a[3]|0,(a[4]|0)&3]);}
+    const pt=sp.paint&&typeof sp.paint==='object'?{h:sp.paint.h|0,d:sp.paint.d|0,b:sp.paint.b|0}:undefined;
+    if(parts.length)out.push({name:String(sp.name||'艦').slice(0,24),parts,paint:pt});}
+  return out.length?out:null;}
+function netOnMsg(m){if(!m||typeof m!=='object')return;
+  switch(m.k){
+    case 'hello':NET.connected=true;NET.names[NET.role==='host'?1:0]=String(m.name||'提督').slice(0,16);
+      if(NET.role==='host'){netSend({k:'hello',name:myName(),v:2});if(NET.fleets[0])netSend({k:'fleet',specs:NET.fleets[0]});}
+      else if(NET.fleets[1])netSend({k:'fleet',specs:NET.fleets[1]});
+      toast('相手が接続しました');renderLobby();break;
+    case 'full':netError('この部屋は満員です');break;
+    case 'fleet':{const sp=cleanSpecs(m.specs);if(sp){NET.fleets[NET.role==='host'?1:0]=sp;renderLobby();}break;}
+    case 'start':if(NET.role==='guest'){const f0=cleanSpecs(m.fleets&&m.fleets[0]),f1=cleanSpecs(m.fleets&&m.fleets[1]);if(f0&&f1)startGuestBattle(f0,f1);}break;
+    case 'snap':if(NET.role==='guest'&&mode==='battle'&&battle.net==='guest')applySnap(m);break;
+    case 'helm':if(NET.role==='host'&&m.h)battle.netHelm={man:!!m.man,h:{up:+!!m.h.up,down:+!!m.h.down,left:+!!m.h.left,right:+!!m.h.right}};break;
+    case 'focus':if(NET.role==='host'){const s=battle.ships[m.i|0];battle.focus1=m.i>=0&&s&&s.team===0?s:null;}break;
+    case 'end':if(NET.role==='guest'&&mode==='battle'&&!battle.over){
+      (m.st||[]).forEach((a,i)=>{const s=battle.ships[i];if(s&&Array.isArray(a)){s.dmgDealt=+a[0]||0;s.shots=a[1]|0;s.hits=a[2]|0;s.planeKills=a[3]|0;s.intercepts=a[4]|0;}});
+      battle.over=true;const win=!!m.a1&&!m.a0;showBig(win?'勝利':'敗北');setTimeout(()=>showResult(win),3500);}break;
+    case 'bye':netClosed();break;
+  }}
+// ---- ロビー ----
+function openOnline(){if(NET.role){renderLobby(true);return;}
+  const box=el(`<div><div class="d" style="color:var(--muted);margin-bottom:6px">友達とリアルタイムで対戦できます（P2P通信）。片方が<b>部屋を作り</b>、もう片方が<b>部屋コード</b>を入力して参加します。両方ともインターネット接続が必要です。</div>
+    <label class="gl">プレイヤー名 <input id="on-name" maxlength="16" value="${esc(myName())}"></label>
+    <h4>🏠 部屋を作る</h4><button id="on-host" class="pri" style="width:100%">部屋を作る（ホスト）</button>
+    <h4>🚪 部屋に入る</h4><div style="display:flex;gap:6px"><input id="on-code" placeholder="部屋コード（6文字）" maxlength="6" style="text-transform:uppercase;flex:1;letter-spacing:3px"><button id="on-join">参加</button></div>
+    <div class="d" style="color:var(--muted);margin-top:10px">※ 対戦で使う艦の兵装は各自の所持品が必要です。報酬：勝利 1,000G／敗北 250G＋撃沈ボーナス。</div></div>`);
+  const saveName=()=>LS.set('bf_pname',box.querySelector('#on-name').value.trim().slice(0,16));
+  box.querySelector('#on-host').onclick=()=>{saveName();netHost();};
+  box.querySelector('#on-join').onclick=()=>{saveName();netJoin(box.querySelector('#on-code').value);};
+  modal('🌐 オンライン対戦',box,[{label:'閉じる'}]);}
+function renderLobby(force){if(!NET.role)return;if(mode==='battle'&&!battle.over)return;if(!force&&!NET.lobby)return;
+  const mi=NET.role==='host'?0:1,oi=1-mi,mf=NET.fleets[mi],of=NET.fleets[oi];
+  const fl=f=>f?f.map(s=>esc(s.name)).join('、'):'未選択';
+  const box=el(`<div>
+    ${NET.role==='host'?`<div style="text-align:center;margin-bottom:8px"><div class="d" style="color:var(--muted)">部屋コード（相手に伝えてください）</div>
+      <div class="rcode">${NET.code}</div><button id="lb-copy" style="padding:4px 10px;font-size:12px">コードをコピー</button></div>`:`<div class="d" style="margin-bottom:6px">部屋コード <b>${NET.code}</b></div>`}
+    <div class="item ${NET.connected?'sel':''}"><div class="grow"><div class="t">${NET.connected?'✅ 接続済み：'+esc(NET.names[oi]||'相手'):NET.role==='host'?'⏳ 相手の参加を待っています…':'⏳ 接続中…'}</div></div></div>
+    <div class="item"><div class="grow"><div class="t">🔵 あなた（${esc(myName())}）</div><div class="d">艦隊: ${fl(mf)}</div></div><button id="lb-fleet">${mf?'変更':'艦隊を選ぶ'}</button></div>
+    <div class="item"><div class="grow"><div class="t">🔴 相手</div><div class="d">${of?'準備完了 — '+fl(of):NET.connected?'艦隊を選択中…':'—'}</div></div></div>
+    <div class="d" style="color:var(--muted);margin-top:6px">${NET.role==='host'?'両者の艦隊がそろったら「開戦！」を押してください。':'ホストが開戦するまでお待ちください。'}</div></div>`);
+  const cp=box.querySelector('#lb-copy');if(cp)cp.onclick=()=>{try{navigator.clipboard.writeText(NET.code);toast('コピーしました');}catch(e){}};
+  box.querySelector('#lb-fleet').onclick=()=>{NET.lobby=false;openFleetSelect(-1,null,'online');};
+  const btns=[{label:'退出',cls:'dng',fn:()=>{netLeave();NET.lobby=false;}}];
+  if(NET.role==='host')btns.push({label:'開戦！',cls:'pri',fn:()=>{if(!NET.connected){toast('相手がまだ接続していません');return false;}if(!mf||!of){toast('両者の艦隊がそろっていません');return false;}
+    netSend({k:'start',fleets:[mf,of]});startBattle(mf,of,-1,'online');battle.net='host';battle.netHelm=null;battle.focus1=null;NET.lobby=false;}});
+  modal('🌐 オンライン対戦ロビー',box,btns);NET.lobby=true;}
+function startGuestBattle(f0,f1){closeModal();NET.lobby=false;startBattle(f0,f1,-1,'online');battle.net='guest';battle.myTeam=1;buildHud();
+  const me=battle.ships.find(s=>s.team===1);if(me){controls.target.copy(me.pos).setY(4);camera.position.set(me.pos.x+70,45,me.pos.z+90);}
+  $('#b-speed').textContent='速度 x1（ホスト）';}
+// ---- ホスト：状態送信 ----
+function makeSnap(){const r=v=>Math.round(v*100)/100;
+  const S={k:'snap',sp:battle.speed,
+    ships:battle.ships.map(s=>{const w=[];for(const W of s.weapons){const m=W.p.model;w.push(r(m?m.yaw.rotation.y:0),r(m?m.pitch.rotation.x:0));}
+      return [r(s.pos.x),r(s.pos.z),r(s.heading),r(s.speed),r(s.tilt.position.y),+s.tilt.rotation.x.toFixed(4),+s.tilt.rotation.z.toFixed(4),r(s.h),Math.round(s.hp),(s.sinking?1:0)|(s.gone?2:0)|(s.out?4:0),PT.map(t=>s.air.stock[t]),w,s.air.airborne,s.air.rearm.length];}),
+    pl:battle.planes.map(p=>[p.team,PT.indexOf(p.type),r(p.pos.x),r(p.pos.y),r(p.pos.z),r(p.yaw),r(p.pitch),r(p.bank),r(p.vel.x),r(p.vel.y),r(p.vel.z),p.dead?1:0]),
+    ms:battle.missiles.filter(m=>m.alive&&m.t>=0).map(m=>[r(m.pos.x),r(m.pos.y),r(m.pos.z),r(m.dir.x),r(m.dir.y),r(m.dir.z),r(m.spd),m.big?1:0]),
+    tp:battle.torps.map(t=>[r(t.pos.x),r(t.pos.z),r(t.vel.x),r(t.vel.z),t.big?1:0]),ev:NET.ev};
+  NET.ev=[];return S;}
+function hostNetTick(dt){NET.snapT-=dt;if(NET.snapT<=0){NET.snapT=.1;netSend(makeSnap());}}
+// ---- ゲスト：受信した状態を描画 ----
+function applySnap(m){NET.snapAt=performance.now();battle.speed=m.sp||1;
+  (m.ships||[]).forEach((n,i)=>{const s=battle.ships[i];if(s)s.ns=n;});
+  battle.planes=(m.pl||[]).map(a=>({team:a[0],type:PT[a[1]]||'F',bp:new THREE.Vector3(a[2],a[3],a[4]),pos:new THREE.Vector3(a[2],a[3],a[4]),yaw:a[5],pitch:a[6],bank:a[7],vel:new THREE.Vector3(a[8],a[9],a[10]),dead:!!a[11]}));
+  battle.missiles=(m.ms||[]).map(a=>({bp:new THREE.Vector3(a[0],a[1],a[2]),pos:new THREE.Vector3(a[0],a[1],a[2]),dir:new THREE.Vector3(a[3],a[4],a[5]),spd:a[6],big:!!a[7],alive:true,t:1,kind:'ssm'}));
+  battle.torps=(m.tp||[]).map(a=>({bp:new THREE.Vector3(a[0],-.5,a[1]),pos:new THREE.Vector3(a[0],-.5,a[1]),vel:new THREE.Vector3(a[2],0,a[3]),big:!!a[4],wk:Math.random()*.05}));
+  guestEvents(m.ev||[]);}
+const V3=a=>new THREE.Vector3(+a[0]||0,+a[1]||0,+a[2]||0);
+const swapCls=c=>String(c).replace(/\b(y|r)\b/g,x=>x==='y'?'r':'y');
+function scorchAt(i,lp,sp){const s=battle.ships[i];if(!s||!lp)return;const v=V3(lp);s.scorch(v,Math.max(.8,Math.min(2.6,(sp||0)*.8)));if(sp>1.4&&s.fires.length<10&&Math.random()<.3)s.fires.push({x:v.x,y:v.y+.3,z:v.z,t:rand(18,40)});}
+function guestEvents(ev){let snd=0;
+  for(const e of ev){switch(e.k){
+    case 'sh':{const p=V3(e.p),v=V3(e.v);battle.shells.push({id:e.id,pos:p,prev:p.clone(),vel:v,cal:e.c,rail:e.f&1,plasma:e.f&2,aa:e.f&4,bomb:e.f&8,fuse:e.fu,aaR:e.r,life:30});
+      if(!(e.f&8)){_dir.copy(v).normalize();if(e.c>.15||Math.random()<.3)fxMuzzle(p,_dir,e.c*(e.f&4?2:3));if(snd<4&&(e.c>.15||Math.random()<.2)){snd++;sfxAt(p,e.c>.4?1.6:e.c>.25?1:e.c>.15?.6:.18,e.c>.4?900:e.c>.25?1400:2600,e.c>.4?1.6:e.c>.25?.9:.35);}}break;}
+    case 'hx':{const i=battle.shells.findIndex(x=>x.id===e.id);if(i>=0)battle.shells.splice(i,1);const p=V3(e.p);fxExplode(p,Math.max(.5,e.c*3.2));
+      if(e.f&2)for(let k=0;k<20;k++)fxAdd.emit(p.x,p.y,p.z,rand(-8,8),rand(-2,8),rand(-8,8),rand(.3,.6),3,7,1,.4,.9,1);sfxAt(p,e.c>.25?1.1:.35,e.c>.25?1100:2400,e.c>.25?1.1:.3);scorchAt(e.i,e.lp,e.sp);break;}
+    case 'tx':{const p=V3(e.p);p.y=.5;fxExplode(p,2.2);fxSplash(p,2.6);sfxAt(p,1.5,600,1.8);scorchAt(e.i,e.lp,2.4);break;}
+    case 'mx':{const p=V3(e.p);fxExplode(p,e.g?4:2.4);sfxAt(p,e.g?1.8:1.4,e.g?600:900,e.g?2:1.5);scorchAt(e.i,e.lp,e.g?3:2.4);break;}
+    case 'ex':fxExplode(V3(e.p),+e.s||.8);break;
+    case 'bm':beamFx(V3(e.a),V3(e.b),!!e.g);break;
+    case 'ft':floatText(V3(e.p),String(e.t).slice(0,40),swapCls(e.c),+e.l||1.8);break;
+    case 'fd':{const s=battle.ships[e.i];if(s)floatDmg(s,V3(e.p),+e.d||0,hitCls(s.team));break;}
+    case 'lg':blog(String(e.m).slice(0,80),e.tm==='i'?'i':e.tm|0);break;
+  }}}
+function guestShells(dt){const arr=battle.shells;
+  for(let i=arr.length-1;i>=0;i--){const sh=arr[i];sh.prev.copy(sh.pos);sh.vel.y-=G*dt;sh.pos.addScaledVector(sh.vel,dt);sh.life-=dt;
+    if(sh.aa){sh.fuse-=dt;if(sh.fuse<=0){aaBurstFx(sh);arr.splice(i,1);continue;}if(sh.pos.y<0)arr.splice(i,1);continue;}
+    if(sh.pos.y<0||sh.life<=0){if(sh.pos.y<0)fxSplash(sh.pos,Math.max(.35,sh.cal*2.6));arr.splice(i,1);continue;}
+    shellTrail(sh);}}
+function guestUpdate(dt){const sp=battle.speed||1,sdt=dt*sp;battle.time+=sdt;const age=Math.min(.6,(performance.now()-NET.snapAt)/1000)*sp,k=Math.min(1,dt*8);
+  for(const s of battle.ships){const n=s.ns;if(!n)continue;
+    const px=n[0]+Math.sin(n[2])*n[3]*age,pz=n[1]+Math.cos(n[2])*n[3]*age;
+    if(!s.netInit){s.pos.set(px,0,pz);s.heading=n[2];s.netInit=1;}
+    s.pos.x+=(px-s.pos.x)*k;s.pos.z+=(pz-s.pos.z)*k;s.heading+=wrapA(n[2]-s.heading)*k;s.speed=n[3];
+    s.root.position.copy(s.pos);s.root.rotation.y=s.heading;
+    s.tilt.position.y+=(n[4]-s.tilt.position.y)*k;s.tilt.rotation.x+=(n[5]-s.tilt.rotation.x)*k;s.tilt.rotation.z+=(n[6]-s.tilt.rotation.z)*k;s.h=n[7];s.hull.position.y=-s.h;
+    s.hp=n[8];const fl=n[9];if(fl&1&&!s.sinking){s.sinking=true;s.status='撃沈';}s.out=!!(fl&4);if(fl&2&&!s.gone){s.gone=true;s.root.visible=false;}if(s.out&&!s.sinking)s.status='戦闘不能';
+    PT.forEach((t,i)=>s.air.stock[t]=n[10][i]|0);s.air.airborne=n[12]|0;s.air.rearm.length=n[13]|0;
+    const w=n[11]||[];s.weapons.forEach((W,i)=>{const m=W.p.model;if(!m||w[i*2]==null)return;m.yaw.rotation.y+=wrapA(w[i*2]-m.yaw.rotation.y)*k;m.pitch.rotation.x+=(w[i*2+1]-m.pitch.rotation.x)*k;});
+    s.fx(sdt);s.root.updateMatrixWorld(true);}
+  for(const p of battle.planes){p.pos.copy(p.bp).addScaledVector(p.vel,age);if(p.dead){if(Math.random()<.6)fxSmoke(p.pos,.12);if(Math.random()<.4)fxFire(p.pos);}
+    else if(p.type!=='H'&&Math.random()<.25)fxNorm.emit(p.pos.x,p.pos.y,p.pos.z,0,0,0,.8,.35,.9,1,1,1,.35);}
+  for(const m of battle.missiles){m.pos.copy(m.bp).addScaledVector(m.dir,m.spd*age);
+    fxNorm.emit(m.pos.x,m.pos.y,m.pos.z,rand(-.3,.3),rand(-.3,.3),rand(-.3,.3),rand(1.2,2.2),m.big?1:.5,m.big?5:2.6,.9,.9,.9,.45,-.2,.6);
+    fxAdd.emit(m.pos.x-m.dir.x,m.pos.y-m.dir.y,m.pos.z-m.dir.z,-m.dir.x*5,-m.dir.y*5,-m.dir.z*5,.1,m.big?2:1,.4,1,.6,.2,1);}
+  for(const t of battle.torps){t.pos.copy(t.bp).addScaledVector(t.vel,age);t.wk+=dt;if(t.wk>.05){t.wk=0;fxNorm.emit(t.pos.x,.15,t.pos.z,rand(-.3,.3),.2,rand(-.3,.3),rand(3,5),.6,2,.95,.98,1,.6,0,.3);}}
+  guestShells(sdt);heliMesh.count=0;renderAir();renderMissiles();renderTorps();renderShells();updateParked();updateFocus(dt);
+  if(battle.manual){NET.helmT=(NET.helmT||0)-dt;const h=JSON.stringify(battle.helm);if(NET.helmT<=0&&h!==NET.lastHelm){NET.helmT=.1;NET.lastHelm=h;netSend({k:'helm',man:true,h:{...battle.helm}});}}
+}
 
 // ================================================================
 //  モード切替
@@ -2068,7 +2255,7 @@ function goMenu(){clearBattle();setMode('menu');
   if(!showcase){showcase=new Ship(presetSpec("bb"),0);showcase.throttle=0;seaScene.add(showcase.root);showcase.place(0,0,0);}
   showcase.root.visible=true;controls.target.set(0,6,0);camera.position.set(75,22,90);updateMoneyUI();dailyBonus();}
 function goEditor(){clearBattle();setMode('editor');renderPalette();edRebuild();edCam();updateMoneyUI();}
-$('#m-set').onclick=openSettings;$('#m-shop').onclick=()=>openShop();$('#m-wave').onclick=openWave;$('#t-shop').onclick=()=>openShop(ed.cat>=3?ed.cat:3);$('#t-test').onclick=openTest;$('#m-edit').onclick=goEditor;$('#m-camp').onclick=openCampaign;$('#m-free').onclick=openFree;$('#m-help').onclick=openHelp;
+$('#m-set').onclick=openSettings;$('#m-online').onclick=openOnline;$('#m-shop').onclick=()=>openShop();$('#m-wave').onclick=openWave;$('#t-shop').onclick=()=>openShop(ed.cat>=3?ed.cat:3);$('#t-test').onclick=openTest;$('#m-edit').onclick=goEditor;$('#m-camp').onclick=openCampaign;$('#m-free').onclick=openFree;$('#m-help').onclick=openHelp;
 
 // 初期化
 {const cur=LS.get('bf_current',null);
@@ -2085,7 +2272,7 @@ goMenu();
 let last=performance.now();
 function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000);last=now;
   waterMat.uniforms.uTime.value=now/1000;
-  if(mode==='battle'){const n=battle.speed;for(let i=0;i<n;i++)updateBattle(dt);updateBattleCam(dt);fxAdd.update(dt*n);fxNorm.update(dt*n);
+  if(mode==='battle'){const n=battle.speed;if(battle.net==='guest')guestUpdate(dt);else{for(let i=0;i<n;i++)updateBattle(dt);if(battle.net==='host')hostNetTick(dt);}updateBattleCam(dt);fxAdd.update(dt*n);fxNorm.update(dt*n);
     updateFloat(dt);battle.mmT=(battle.mmT||0)-dt;if(battle.mmT<=0){battle.mmT=.08;drawMinimap();}
     battle.hudT-=dt;if(battle.hudT<=0){battle.hudT=.2;updateHud();}}
   else if(mode==='menu'&&showcase){showcase.update(dt,now/1000);fxAdd.update(dt);fxNorm.update(dt);}
@@ -2093,7 +2280,7 @@ function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/
   if(sc===seaScene){water.position.set(Math.round(camera.position.x/50)*50,0,Math.round(camera.position.z/50)*50);sky.position.copy(camera.position);}
   controls.update();renderer.render(sc,camera);}
 requestAnimationFrame(loop);
-window.__bf={get inv(){return inv},buy,missing,openShop,openWave,openTest,STAGES,HP_SCALE,P,fxAdd,fxNorm,waterMat,camera,controls,battle,ed,startBattle,presetSpec,analyze,goEditor,goMenu,updateBattle};
+window.__bf={NET,netHost,netJoin,renderLobby,netSend,get inv(){return inv},buy,missing,openShop,openWave,openTest,STAGES,HP_SCALE,P,fxAdd,fxNorm,waterMat,camera,controls,battle,ed,startBattle,presetSpec,analyze,goEditor,goMenu,updateBattle};
 </script>
 </body>
 </html>
