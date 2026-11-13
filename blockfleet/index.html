@@ -1419,7 +1419,7 @@ function floatDmg(ship,pos,dmg,cls){if(mode!=='battle'||dmg<1)return;const a=shi
   if(a&&FT.includes(a.f)&&a.f.t<.7){a.sum+=dmg;a.f.el.textContent=Math.round(a.sum);a.f.p.copy(pos);a.f.t=Math.min(a.f.t,.2);a.f.el.classList.toggle('big',a.sum>=300);return;}
   floatText(pos,String(Math.round(dmg)),cls+(dmg>=300?' big':''));ship.ftAgg={f:FT[FT.length-1],sum:dmg};}
 function floatText(pos,text,cls,life=1.8){if(mode!=='battle')return;if(pos.distanceTo(controls.target)>Math.max(600,camera.position.distanceTo(controls.target)*3))return;if(FT.length>28){const o=FT.shift();o.el.remove();}
-  const e=document.createElement('div');e.className='ft '+cls;e.textContent=text;$('#ftxt').appendChild(e);let oy=0;for(const f of FT)if(f.t<.6&&f.p.distanceToSquared(pos)<400)oy-=22;FT.push({el:e,p:pos.clone(),t:0,life,ox:rand(-24,24),oy:Math.max(-110,oy)});}
+  const e=document.createElement('div');e.className='ft '+cls;e.textContent=text;$('#ftxt').appendChild(e);let oy=0;for(const f of FT)if(f.t<.8&&f.p.distanceToSquared(pos)<3600)oy-=24;FT.push({el:e,p:pos.clone(),t:0,life,ox:rand(-24,24),oy:Math.max(-110,oy)});}
 function updateFloat(dt){for(let i=FT.length-1;i>=0;i--){const f=FT[i];f.t+=dt;if(f.t>f.life){f.el.remove();FT.splice(i,1);continue;}
   _v1.copy(f.p);_v1.y+=5+f.t*6;_v1.project(camera);if(_v1.z>1||Math.abs(_v1.x)>1.2||Math.abs(_v1.y)>1.2){f.el.style.opacity=0;continue;}
   f.el.style.transform=`translate(${(_v1.x+1)/2*innerWidth+f.ox}px,${(1-_v1.y)/2*innerHeight+f.oy}px) translate(-50%,-50%)`;f.el.style.opacity=f.t<f.life-.5?1:(f.life-f.t)/.5;}}
